@@ -2,10 +2,11 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BarChart3, Home, LayoutDashboard, Settings, ShieldAlert, Users, Stamp, Award, Layers } from "lucide-react"
+import { BarChart3, Home, LayoutDashboard, Settings, Users, Stamp, Database, Upload, Code } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { useState } from "react"
+import { Button } from "@/components/ui/button"
 
 const sidebarLinks = [
   {
@@ -14,91 +15,37 @@ const sidebarLinks = [
     icon: <LayoutDashboard className="h-5 w-5" />,
   },
   {
+    title: "Catalog Management",
+    icon: <Stamp className="h-5 w-5" />,
+    submenu: [
+      {
+        title: "Catalog Browser",
+        href: "/admin/catalog",
+      },
+      {
+        title: "Catalog Ingestion",
+        href: "/admin/catalog-ingestion",
+      },
+      {
+        title: "Catalog Code System",
+        href: "/admin/catalog-system",
+      }
+    ],
+  },
+  {
+    title: "User Management",
+    href: "/admin/users",
+    icon: <Users className="h-5 w-5" />,
+  },
+  {
     title: "Analytics",
     href: "/admin/analytics",
     icon: <BarChart3 className="h-5 w-5" />,
   },
   {
-    title: "User Management",
-    icon: <Users className="h-5 w-5" />,
-    submenu: [
-      {
-        title: "All Users",
-        href: "/admin/users",
-      },
-      {
-        title: "Roles & Permissions",
-        href: "/admin/users/roles",
-      },
-      {
-        title: "Reviewer Management",
-        href: "/admin/users/reviewers",
-      },
-    ],
-  },
-  {
-    title: "Authentication",
-    icon: <Award className="h-5 w-5" />,
-    submenu: [
-      {
-        title: "Pending Reviews",
-        href: "/admin/authentication/pending",
-      },
-      {
-        title: "Review History",
-        href: "/admin/authentication/history",
-      },
-      {
-        title: "Authentication Settings",
-        href: "/admin/authentication/settings",
-      },
-    ],
-  },
-  {
-    title: "Content Moderation",
-    icon: <ShieldAlert className="h-5 w-5" />,
-    submenu: [
-      {
-        title: "Reported Content",
-        href: "/admin/moderation/reports",
-      },
-      {
-        title: "Marketplace Listings",
-        href: "/admin/moderation/listings",
-      },
-      {
-        title: "Community Posts",
-        href: "/admin/moderation/community",
-      },
-    ],
-  },
-  {
-    title: "Catalog Management",
-    icon: <Stamp className="h-5 w-5" />,
-    submenu: [
-      {
-        title: "Stamp Catalog",
-        href: "/admin/catalog",
-      },
-      {
-        title: "Categories",
-        href: "/admin/settings/categories",
-      },
-    ],
-  },
-  {
     title: "Settings",
+    href: "/admin/settings",
     icon: <Settings className="h-5 w-5" />,
-    submenu: [
-      {
-        title: "General",
-        href: "/admin/settings/general",
-      },
-      {
-        title: "Notifications",
-        href: "/admin/settings/notifications",
-      },
-    ],
   },
 ]
 
@@ -129,7 +76,7 @@ export default function AdminSidebar() {
       <div className="p-6 border-b">
         <Link href="/admin" className="flex items-center gap-2 font-semibold text-lg">
           <Stamp className="h-6 w-6 text-primary" />
-          <span>Stamps of Approval Admin</span>
+          <span>SOA Admin</span>
         </Link>
       </div>
       <div className="py-4">
@@ -169,7 +116,20 @@ export default function AdminSidebar() {
                           {link.icon}
                           <span>{link.title}</span>
                         </div>
-                        <Layers className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="24"
+                          height="24"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")}
+                        >
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
                       </div>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="pl-10 space-y-1">
@@ -211,6 +171,29 @@ export default function AdminSidebar() {
               )
             })}
           </nav>
+        </div>
+
+        <div className="mt-6 px-4 py-2">
+          <div className="rounded-md bg-blue-50 dark:bg-blue-950 p-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900">
+                <Upload className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200">Catalog Ingestion</h4>
+                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                  Upload and process catalog data
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="link"
+              className="text-xs text-blue-700 dark:text-blue-300 px-0 py-1 h-auto font-medium"
+              asChild
+            >
+              <Link href="/admin/catalog-ingestion">Get Started →</Link>
+            </Button>
+          </div>
         </div>
       </div>
     </div>

@@ -19,7 +19,7 @@ const marketplaceActivity = [
     type: "listing_created",
     title: "Coronation Series 1953 - UK",
     date: "1 week ago",
-    status: "pending",
+    status: "active",
   },
   {
     id: 3,
@@ -198,9 +198,7 @@ function renderActivityItem(activity: any) {
             </p>
             <p className="text-sm text-muted-foreground">{activity.date}</p>
           </div>
-          <Badge variant={activity.status === "active" ? "default" : "secondary"}>
-            {activity.status === "active" ? "Active" : "Pending"}
-          </Badge>
+          <Badge variant="default">Listed</Badge>
         </>
       )
       break

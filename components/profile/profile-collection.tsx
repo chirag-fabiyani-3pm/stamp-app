@@ -4,21 +4,9 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  Search,
-  Grid3X3,
-  List,
-  Plus,
-  Trash2,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react"
+import { Search, Grid3X3, List, Plus, Trash2, ChevronLeft, ChevronRight } from "lucide-react"
 import Link from "next/link"
 import {
   Dialog,
@@ -28,8 +16,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 
 // Sample stamps data
 const sampleStamps = [
@@ -40,10 +26,8 @@ const sampleStamps = [
     year: 1935,
     denomination: "1d",
     condition: "Excellent",
-    image: "/silver-jubilee.jpg",
+    image: "/images/silver-jubilee.png",
     addedDate: "Mar 15, 2023",
-    marketplaceStatus: "active",
-    price: 45.0,
     description:
       "Silver Jubilee stamp from New Zealand in excellent condition. Part of the 1935 series commemorating King George V's 25th year on the throne.",
   },
@@ -54,10 +38,8 @@ const sampleStamps = [
     year: 1953,
     denomination: "3d",
     condition: "Good",
-    image: "/coronation-series.jpg",
+    image: "/images/coronation-series.png",
     addedDate: "Apr 2, 2023",
-    marketplaceStatus: "pending",
-    price: 35.0,
     description:
       "Coronation stamp from the United Kingdom issued in 1953 to commemorate the coronation of Queen Elizabeth II.",
   },
@@ -68,10 +50,8 @@ const sampleStamps = [
     year: 1947,
     denomination: "1 Anna",
     condition: "Fair",
-    image: "/independence-issue.jpg",
+    image: "/images/independence-issue.png",
     addedDate: "May 10, 2023",
-    marketplaceStatus: null,
-    price: null,
     description:
       "Independence issue stamp from India released in 1947 to commemorate India's independence from British rule.",
   },
@@ -82,10 +62,8 @@ const sampleStamps = [
     year: 1976,
     denomination: "13c",
     condition: "Mint",
-    image: "/placeholder.svg?height=200&width=200&text=US+1976",
+    image: "/images/bicentennial.png",
     addedDate: "Jun 22, 2023",
-    marketplaceStatus: null,
-    price: null,
     description:
       "Mint condition Bicentennial stamp from the United States issued in 1976 to commemorate the 200th anniversary of American independence.",
   },
@@ -96,11 +74,8 @@ const sampleStamps = [
     year: 2000,
     denomination: "45c",
     condition: "Very Good",
-    image: "/olympic-games.jpg",
+    image: "/images/olympic-games.png",
     addedDate: "Jul 5, 2023",
-    marketplaceStatus: "rejected",
-    rejectionReason: "Image quality insufficient to verify authenticity",
-    price: 15.5,
     description: "Olympic Games stamp from Australia issued in 2000 to commemorate the Sydney Olympics.",
   },
   {
@@ -110,10 +85,8 @@ const sampleStamps = [
     year: 1961,
     denomination: "12c",
     condition: "Good",
-    image: "/flora-series.jpg",
+    image: "/images/flora-series.png",
     addedDate: "Aug 12, 2023",
-    marketplaceStatus: null,
-    price: null,
     description: "Flora Series stamp from South Africa issued in 1961 featuring native South African plants.",
   },
   {
@@ -123,10 +96,8 @@ const sampleStamps = [
     year: 1982,
     denomination: "30c",
     condition: "Very Good",
-    image: "/placeholder.svg?height=200&width=200&text=CA+1982",
+    image: "/images/maple-leaf.png",
     addedDate: "Sep 3, 2023",
-    marketplaceStatus: null,
-    price: null,
     description: "Maple Leaf stamp from Canada issued in 1982.",
   },
   {
@@ -136,10 +107,8 @@ const sampleStamps = [
     year: 1967,
     denomination: "50 Yen",
     condition: "Good",
-    image: "/placeholder.svg?height=200&width=200&text=JP+1967",
+    image: "/images/emperor-series.png",
     addedDate: "Oct 15, 2023",
-    marketplaceStatus: null,
-    price: null,
     description: "Emperor Series stamp from Japan issued in 1967.",
   },
   {
@@ -149,10 +118,8 @@ const sampleStamps = [
     year: 1990,
     denomination: "2 Yuan",
     condition: "Excellent",
-    image: "/placeholder.svg?height=200&width=200&text=CN+1990",
+    image: "/images/cultural-heritage.png",
     addedDate: "Nov 20, 2023",
-    marketplaceStatus: null,
-    price: null,
     description: "Cultural Heritage stamp from China issued in 1990.",
   },
 ]
@@ -161,17 +128,10 @@ export default function ProfileCollection() {
   const [searchTerm, setSearchTerm] = useState("")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [countryFilter, setCountryFilter] = useState("all")
-  const [statusFilter, setStatusFilter] = useState("all")
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedStamp, setSelectedStamp] = useState<any>(null)
-  const [isListDialogOpen, setIsListDialogOpen] = useState(false)
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
-  const [listingData, setListingData] = useState({
-    price: "",
-    description: "",
-    type: "sale",
-  })
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
   const itemsPerPage = 6
 
@@ -184,14 +144,7 @@ export default function ProfileCollection() {
 
     const matchesCountry = countryFilter === "all" || stamp.country === countryFilter
 
-    const matchesStatus =
-      statusFilter === "all" ||
-      (statusFilter === "listed" && stamp.marketplaceStatus === "active") ||
-      (statusFilter === "unlisted" && stamp.marketplaceStatus === null) ||
-      (statusFilter === "pending" && stamp.marketplaceStatus === "pending") ||
-      (statusFilter === "rejected" && stamp.marketplaceStatus === "rejected")
-
-    return matchesSearch && matchesCountry && matchesStatus
+    return matchesSearch && matchesCountry
   })
 
   // Calculate pagination
@@ -201,17 +154,6 @@ export default function ProfileCollection() {
 
   // Get unique countries for filter
   const countries = ["all", ...Array.from(new Set(sampleStamps.map((stamp) => stamp.country)))]
-
-  // Handle listing a stamp
-  const handleListStamp = (stamp: any) => {
-    setSelectedStamp(stamp)
-    setListingData({
-      price: stamp.price ? stamp.price.toString() : "",
-      description: stamp.description || "",
-      type: "sale",
-    })
-    setIsListDialogOpen(true)
-  }
 
   // Handle deleting a stamp
   const handleDeleteStamp = (stamp: any) => {
@@ -225,45 +167,12 @@ export default function ProfileCollection() {
     setIsDetailsDialogOpen(true)
   }
 
-  // Get status badge variant and icon
-  const getStatusBadge = (status: string | null) => {
-    switch (status) {
-      case "active":
-        return {
-          variant: "default",
-          label: "Listed",
-          icon: <CheckCircle className="h-3 w-3 mr-1" />,
-        }
-      case "pending":
-        return {
-          variant: "secondary",
-          label: "Pending",
-          icon: <Clock className="h-3 w-3 mr-1" />,
-        }
-      case "rejected":
-        return {
-          variant: "destructive",
-          label: "Rejected",
-          icon: <AlertCircle className="h-3 w-3 mr-1" />,
-        }
-      default:
-        return {
-          variant: "outline",
-          label: "Not Listed",
-          icon: null,
-        }
-    }
-  }
-
   return (
     <div className="space-y-6">
       <Tabs defaultValue="all" className="space-y-6">
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <TabsList>
             <TabsTrigger value="all">All Stamps</TabsTrigger>
-            <TabsTrigger value="listed">Listed</TabsTrigger>
-            <TabsTrigger value="pending">Pending</TabsTrigger>
-            <TabsTrigger value="rejected">Rejected</TabsTrigger>
           </TabsList>
 
           <div className="flex gap-2">
@@ -326,45 +235,6 @@ export default function ProfileCollection() {
 
           {renderStampsList(paginatedStamps)}
         </TabsContent>
-
-        <TabsContent value="listed">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h2 className="text-xl font-medium">Listed Stamps</h2>
-              <p className="text-sm text-muted-foreground">
-                {sampleStamps.filter((s) => s.marketplaceStatus === "active").length} stamps currently listed
-              </p>
-            </div>
-          </div>
-
-          {renderStampsList(sampleStamps.filter((s) => s.marketplaceStatus === "active").slice(0, itemsPerPage))}
-        </TabsContent>
-
-        <TabsContent value="pending">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h2 className="text-xl font-medium">Pending Approval</h2>
-              <p className="text-sm text-muted-foreground">
-                {sampleStamps.filter((s) => s.marketplaceStatus === "pending").length} stamps awaiting approval
-              </p>
-            </div>
-          </div>
-
-          {renderStampsList(sampleStamps.filter((s) => s.marketplaceStatus === "pending").slice(0, itemsPerPage))}
-        </TabsContent>
-
-        <TabsContent value="rejected">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h2 className="text-xl font-medium">Rejected Listings</h2>
-              <p className="text-sm text-muted-foreground">
-                {sampleStamps.filter((s) => s.marketplaceStatus === "rejected").length} stamps rejected from marketplace
-              </p>
-            </div>
-          </div>
-
-          {renderStampsList(sampleStamps.filter((s) => s.marketplaceStatus === "rejected").slice(0, itemsPerPage))}
-        </TabsContent>
       </Tabs>
 
       {/* Pagination */}
@@ -403,91 +273,6 @@ export default function ProfileCollection() {
           </Button>
         </div>
       )}
-
-      {/* List Stamp Dialog */}
-      <Dialog open={isListDialogOpen} onOpenChange={setIsListDialogOpen}>
-        <DialogContent>
-          {selectedStamp && (
-            <>
-              <DialogHeader>
-                <DialogTitle>List Stamp for Sale or Trade</DialogTitle>
-                <DialogDescription>Create a marketplace listing for your stamp</DialogDescription>
-              </DialogHeader>
-
-              <div className="grid grid-cols-[100px_1fr] gap-4 py-4">
-                <div>
-                  <img
-                    src={selectedStamp.image || "/placeholder.svg"}
-                    alt={selectedStamp.name}
-                    className="w-full rounded-md"
-                  />
-                </div>
-                <div>
-                  <h3 className="font-medium">{selectedStamp.name}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedStamp.country}, {selectedStamp.year} • {selectedStamp.denomination}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Condition: {selectedStamp.condition}</p>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex gap-4">
-                  <div className="flex-1">
-                    <Label htmlFor="listing-type">Listing Type</Label>
-                    <Select
-                      value={listingData.type}
-                      onValueChange={(value) => setListingData({ ...listingData, type: value })}
-                    >
-                      <SelectTrigger id="listing-type">
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="sale">For Sale</SelectItem>
-                        <SelectItem value="trade">For Trade</SelectItem>
-                        <SelectItem value="auction">Auction</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {listingData.type !== "trade" && (
-                    <div className="flex-1">
-                      <Label htmlFor="price">Price ($)</Label>
-                      <Input
-                        id="price"
-                        type="number"
-                        min="0.01"
-                        step="0.01"
-                        value={listingData.price}
-                        onChange={(e) => setListingData({ ...listingData, price: e.target.value })}
-                        placeholder="Enter price"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={listingData.description}
-                    onChange={(e) => setListingData({ ...listingData, description: e.target.value })}
-                    placeholder="Describe your stamp and its condition"
-                    rows={4}
-                  />
-                </div>
-              </div>
-
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsListDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={() => setIsListDialogOpen(false)}>Create Listing</Button>
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
 
       {/* Delete Stamp Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
@@ -575,22 +360,6 @@ export default function ProfileCollection() {
                         <p className="text-sm font-medium">Added to Collection</p>
                         <p className="text-sm">{selectedStamp.addedDate}</p>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium">Marketplace Status</p>
-                        <div className="flex items-center">
-                          {selectedStamp.marketplaceStatus ? (
-                            <Badge
-                              variant={getStatusBadge(selectedStamp.marketplaceStatus).variant as any}
-                              className="flex items-center gap-1 mt-1"
-                            >
-                              {getStatusBadge(selectedStamp.marketplaceStatus).icon}
-                              {getStatusBadge(selectedStamp.marketplaceStatus).label}
-                            </Badge>
-                          ) : (
-                            <span className="text-sm">Not Listed</span>
-                          )}
-                        </div>
-                      </div>
                     </div>
                   </div>
 
@@ -601,51 +370,12 @@ export default function ProfileCollection() {
                     </div>
                   )}
 
-                  {selectedStamp.marketplaceStatus === "rejected" && selectedStamp.rejectionReason && (
-                    <div className="bg-destructive/10 p-3 rounded-md">
-                      <h3 className="text-sm font-medium text-destructive flex items-center gap-1">
-                        <AlertCircle className="h-4 w-4" /> Rejection Reason
-                      </h3>
-                      <p className="text-sm mt-1">{selectedStamp.rejectionReason}</p>
-                    </div>
-                  )}
-
                   <div className="pt-4">
                     <h3 className="text-sm font-medium text-muted-foreground mb-2">Actions</h3>
                     <div className="flex flex-wrap gap-2">
                       <Button variant="outline" size="sm" asChild>
                         <Link href={`/catalog/stamp-${selectedStamp.id}`}>View in Catalog</Link>
                       </Button>
-
-                      {!selectedStamp.marketplaceStatus && (
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            setIsDetailsDialogOpen(false)
-                            handleListStamp(selectedStamp)
-                          }}
-                        >
-                          List in Marketplace
-                        </Button>
-                      )}
-
-                      {selectedStamp.marketplaceStatus === "active" && (
-                        <Button variant="outline" size="sm">
-                          Edit Listing
-                        </Button>
-                      )}
-
-                      {selectedStamp.marketplaceStatus === "rejected" && (
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            setIsDetailsDialogOpen(false)
-                            handleListStamp(selectedStamp)
-                          }}
-                        >
-                          Relist
-                        </Button>
-                      )}
 
                       <Button
                         variant="outline"
@@ -678,7 +408,6 @@ export default function ProfileCollection() {
             onClick={() => {
               setSearchTerm("")
               setCountryFilter("all")
-              setStatusFilter("all")
             }}
           >
             Clear Filters
@@ -697,15 +426,6 @@ export default function ProfileCollection() {
                 alt={`${stamp.country} ${stamp.name} stamp`}
                 className="object-cover w-full h-full"
               />
-              {stamp.marketplaceStatus && (
-                <Badge
-                  className="absolute top-2 right-2 flex items-center gap-1"
-                  variant={getStatusBadge(stamp.marketplaceStatus).variant as any}
-                >
-                  {getStatusBadge(stamp.marketplaceStatus).icon}
-                  {getStatusBadge(stamp.marketplaceStatus).label}
-                </Badge>
-              )}
             </div>
             <CardContent className="p-4">
               <h3 className="font-medium">{stamp.name}</h3>
@@ -714,7 +434,10 @@ export default function ProfileCollection() {
                 <span>{stamp.year}</span>
               </div>
               <div className="mt-2 flex justify-between items-center">
-                <span className="inline-block bg-primary/10 text-primary text-xs px-2 py-1 rounded-md">
+                <span
+                  className="inline-block bg-primary/10 text-primary text-xs px-2 py-1 rounded-md"
+                  title="Stamp denomination (face value)"
+                >
                   {stamp.denomination}
                 </span>
                 <span className="text-xs text-muted-foreground">Condition: {stamp.condition}</span>
@@ -724,20 +447,6 @@ export default function ProfileCollection() {
                 <Button variant="outline" size="sm" className="flex-1" onClick={() => handleViewDetails(stamp)}>
                   Details
                 </Button>
-
-                {!stamp.marketplaceStatus ? (
-                  <Button size="sm" className="flex-1" onClick={() => handleListStamp(stamp)}>
-                    List
-                  </Button>
-                ) : stamp.marketplaceStatus === "active" ? (
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => handleListStamp(stamp)}>
-                    Edit
-                  </Button>
-                ) : stamp.marketplaceStatus === "rejected" ? (
-                  <Button size="sm" className="flex-1" onClick={() => handleListStamp(stamp)}>
-                    Relist
-                  </Button>
-                ) : null}
               </div>
             </CardContent>
           </Card>
@@ -753,15 +462,6 @@ export default function ProfileCollection() {
                 alt={`${stamp.country} ${stamp.name} stamp`}
                 className="object-cover w-full h-full rounded-md"
               />
-              {stamp.marketplaceStatus && (
-                <Badge
-                  className="absolute -top-2 -right-2 flex items-center gap-1"
-                  variant={getStatusBadge(stamp.marketplaceStatus).variant as any}
-                >
-                  {getStatusBadge(stamp.marketplaceStatus).icon}
-                  {getStatusBadge(stamp.marketplaceStatus).label}
-                </Badge>
-              )}
             </div>
             <div className="flex-1">
               <h3 className="font-medium">{stamp.name}</h3>
@@ -774,29 +474,11 @@ export default function ProfileCollection() {
                 <span>•</span>
                 <span>Condition: {stamp.condition}</span>
               </div>
-              {stamp.marketplaceStatus === "rejected" && stamp.rejectionReason && (
-                <div className="text-xs text-destructive mt-1">Rejection reason: {stamp.rejectionReason}</div>
-              )}
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => handleViewDetails(stamp)}>
                 Details
               </Button>
-
-              {!stamp.marketplaceStatus ? (
-                <Button size="sm" onClick={() => handleListStamp(stamp)}>
-                  List
-                </Button>
-              ) : stamp.marketplaceStatus === "active" ? (
-                <Button variant="outline" size="sm" onClick={() => handleListStamp(stamp)}>
-                  Edit
-                </Button>
-              ) : stamp.marketplaceStatus === "rejected" ? (
-                <Button size="sm" onClick={() => handleListStamp(stamp)}>
-                  Relist
-                </Button>
-              ) : null}
-
               <Button variant="ghost" size="sm" onClick={() => handleDeleteStamp(stamp)}>
                 <Trash2 className="h-4 w-4 text-muted-foreground" />
               </Button>

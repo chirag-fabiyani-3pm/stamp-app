@@ -1,36 +1,50 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+
+interface HistoryEvent {
+  date: string
+  event: string
+}
+
 interface StampHistorySectionProps {
-  history: string
+  history: HistoryEvent[]
 }
 
 export default function StampHistorySection({ history }: StampHistorySectionProps) {
+  // Sort history events by date (oldest to newest)
+  const sortedHistory = [...history].sort((a, b) => {
+    return new Date(a.date).getTime() - new Date(b.date).getTime()
+  })
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-xl font-medium mb-3">Historical Context</h3>
-        <p className="text-muted-foreground">{history}</p>
-      </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Historical Timeline</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="relative border-l border-muted pl-6 ml-3">
+          {sortedHistory.map((item, index) => {
+            // Format date for display
+            const date = new Date(item.date)
+            const formattedDate = date.toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-muted p-6 rounded-lg">
-          <h4 className="font-medium mb-2">Historical Events of the Era</h4>
-          <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
-            <li>Major political developments of the time</li>
-            <li>Cultural and social context</li>
-            <li>Economic conditions that influenced the stamp's issuance</li>
-            <li>Postal system developments</li>
-          </ul>
+            return (
+              <div key={index} className="mb-8 relative">
+                <div className="absolute -left-[31px] mt-1.5 h-5 w-5 rounded-full border border-primary bg-background flex items-center justify-center">
+                  <div className="h-2 w-2 rounded-full bg-primary"></div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-sm font-medium">{formattedDate}</div>
+                  <div className="text-muted-foreground">{item.event}</div>
+                </div>
+              </div>
+            )
+          })}
         </div>
-
-        <div className="bg-muted p-6 rounded-lg">
-          <h4 className="font-medium mb-2">Philatelic Significance</h4>
-          <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
-            <li>Importance in stamp collecting history</li>
-            <li>Notable features that make this stamp special</li>
-            <li>Printing techniques and innovations</li>
-            <li>Collection and preservation notes</li>
-          </ul>
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }

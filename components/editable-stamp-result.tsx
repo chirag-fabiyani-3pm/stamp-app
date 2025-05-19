@@ -66,11 +66,7 @@ export default function EditableStampResult({ data, onComplete }: EditableStampR
             <div className="flex justify-center mb-4">
               <Badge className="text-sm">AI Identified</Badge>
             </div>
-            <img
-              src="/typography-chalk-king-george-v-silver-jubilee-medal-archives-new-zealand-postal-history-revenue-stamp-definitive-stamp-edward-vii-george-v-philately-monarchy-of-the-united-kingdom-thumbnail.png"
-              alt="Stamp"
-              className="mx-auto max-h-64 object-contain mb-4"
-            />
+            <img src="/images/silver-jubilee.png" alt="Stamp" className="mx-auto max-h-64 object-contain mb-4" />
             <p className="text-sm text-center text-muted-foreground">
               You can edit the details to ensure accuracy before adding to your collection or marketplace.
             </p>
@@ -163,7 +159,7 @@ export default function EditableStampResult({ data, onComplete }: EditableStampR
               id="estimatedValue"
               value={editedData.estimatedValue}
               onChange={(e) => handleChange("estimatedValue", e.target.value)}
-              placeholder="e.g., $45 - $60"
+              placeholder="e.g., NZ$45 - NZ$60"
             />
           </div>
         </div>

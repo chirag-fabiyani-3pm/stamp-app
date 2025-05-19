@@ -1,56 +1,121 @@
 import Link from "next/link"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 
 interface RelatedStampsProps {
-  currentStampId: number
+  currentStampId: string
+}
+
+// Sample related stamps data
+const relatedStampsData = {
+  "silver-jubilee": [
+    {
+      id: "chalon-head",
+      name: "Chalon Head",
+      country: "New Zealand",
+      year: 1855,
+      denomination: "1 Penny",
+      image: "/placeholder.svg",
+      description: "The iconic first stamp of New Zealand featuring Queen Victoria",
+    },
+    {
+      id: "smiling-boys",
+      name: "Smiling Boys Health",
+      country: "New Zealand",
+      year: 1931,
+      denomination: "1 Penny + 1 Penny",
+      image: "/placeholder.svg",
+      description: "Rare charity stamp issued to fund children's health camps",
+    },
+    {
+      id: "coronation-series",
+      name: "Coronation Series",
+      country: "United Kingdom",
+      year: 1953,
+      denomination: "2 Shillings 6 Pence",
+      image: "/placeholder.svg",
+      description: "Commemorating the coronation of Queen Elizabeth II",
+    },
+  ],
+  "coronation-series": [
+    {
+      id: "silver-jubilee",
+      name: "Silver Jubilee",
+      country: "New Zealand",
+      year: 1935,
+      denomination: "1 Penny",
+      image: "/placeholder.svg",
+      description: "Commemorating King George V's 25th year on the throne",
+    },
+    {
+      id: "queen-elizabeth-2",
+      name: "Queen Elizabeth II",
+      country: "Australia",
+      year: 1953,
+      denomination: "3 Pence",
+      image: "/placeholder.svg",
+      description: "Australian stamp celebrating the coronation of Queen Elizabeth II",
+    },
+    {
+      id: "independence-issue",
+      name: "Independence Issue",
+      country: "India",
+      year: 1947,
+      denomination: "3.5 Annas",
+      image: "/placeholder.svg",
+      description: "Commemorating India's independence from British rule",
+    },
+  ],
+  // Default related stamps for any other stamp
+  default: [
+    {
+      id: "silver-jubilee",
+      name: "Silver Jubilee",
+      country: "New Zealand",
+      year: 1935,
+      denomination: "1 Penny",
+      image: "/placeholder.svg",
+      description: "Commemorating King George V's 25th year on the throne",
+    },
+    {
+      id: "coronation-series",
+      name: "Coronation Series",
+      country: "United Kingdom",
+      year: 1953,
+      denomination: "2 Shillings 6 Pence",
+      image: "/placeholder.svg",
+      description: "Commemorating the coronation of Queen Elizabeth II",
+    },
+    {
+      id: "independence-issue",
+      name: "Independence Issue",
+      country: "India",
+      year: 1947,
+      denomination: "3.5 Annas",
+      image: "/placeholder.svg",
+      description: "Commemorating India's independence from British rule",
+    },
+  ],
 }
 
 export default function RelatedStamps({ currentStampId }: RelatedStampsProps) {
-  // In a real app, this would fetch related stamps from an API or database
-  // For now, we'll just show some sample related stamps
-  const relatedStamps = [
-    {
-      id: currentStampId === 1 ? 2 : 1,
-      name: currentStampId === 1 ? "Coronation Series" : "Silver Jubilee",
-      country: currentStampId === 1 ? "United Kingdom" : "New Zealand",
-      year: currentStampId === 1 ? 1953 : 1935,
-      denomination: currentStampId === 1 ? "3d" : "1d",
-      image:
-        currentStampId === 1
-          ? "/placeholder.svg?height=200&width=200&text=UK+1953"
-          : "/placeholder.svg?height=200&width=200&text=NZ+1935",
-    },
-    {
-      id: currentStampId === 3 ? 2 : 3,
-      name: currentStampId === 3 ? "Coronation Series" : "Independence Issue",
-      country: currentStampId === 3 ? "United Kingdom" : "India",
-      year: currentStampId === 3 ? 1953 : 1947,
-      denomination: currentStampId === 3 ? "3d" : "1 Anna",
-      image:
-        currentStampId === 3
-          ? "/placeholder.svg?height=200&width=200&text=UK+1953"
-          : "/placeholder.svg?height=200&width=200&text=India+1947",
-    },
-    {
-      id: 4,
-      name: "Bicentennial",
-      country: "United States",
-      year: 1976,
-      denomination: "13c",
-      image: "/placeholder.svg?height=200&width=200&text=US+1976",
-    },
-  ]
+  // Get related stamps based on current stamp ID, or use default if not found
+  const relatedStamps = relatedStampsData[currentStampId as keyof typeof relatedStampsData] || relatedStampsData.default
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-6">Related Stamps</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+    <div className="space-y-4">
+      <h2 className="text-2xl font-semibold">Related Stamps</h2>
+      <p className="text-muted-foreground">
+        Stamps from the same era, country, or with similar historical significance.
+      </p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-6">
         {relatedStamps.map((stamp) => (
           <Card key={stamp.id} className="overflow-hidden">
             <div className="aspect-square relative">
               <img
                 src={stamp.image || "/placeholder.svg"}
-                alt={`${stamp.country} ${stamp.name} stamp`}
+                alt={`${stamp.name} stamp from ${stamp.country}, ${stamp.year}`}
                 className="object-cover w-full h-full"
               />
             </div>
@@ -60,11 +125,12 @@ export default function RelatedStamps({ currentStampId }: RelatedStampsProps) {
                 <span>{stamp.country}</span>
                 <span>{stamp.year}</span>
               </div>
+              <p className="text-sm mt-2 line-clamp-2">{stamp.description}</p>
             </CardContent>
             <CardFooter className="p-4 pt-0">
-              <Link href={`/catalog/stamp-${stamp.id}`} className="text-sm text-primary hover:underline">
-                View Details
-              </Link>
+              <Button asChild variant="outline" className="w-full">
+                <Link href={`/stamps/${stamp.id}`}>View Details</Link>
+              </Button>
             </CardFooter>
           </Card>
         ))}
