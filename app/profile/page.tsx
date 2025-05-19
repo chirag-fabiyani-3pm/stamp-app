@@ -3,7 +3,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import ProfileInfo from "@/components/profile/profile-info"
 import ProfileSettings from "@/components/profile/profile-settings"
 import ProfileCollection from "@/components/profile/profile-collection"
-import ProfileActivity from "@/components/profile/profile-activity"
 import AuthCheck from "@/components/auth-check"
 
 export default function ProfilePage() {
@@ -17,10 +16,9 @@ export default function ProfilePage() {
           </div>
 
           <Tabs defaultValue="profile" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="collection">Collection</TabsTrigger>
-              <TabsTrigger value="activity">Activity</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
 
@@ -30,10 +28,6 @@ export default function ProfilePage() {
 
             <TabsContent value="collection">
               <ProfileCollection />
-            </TabsContent>
-
-            <TabsContent value="activity">
-              <ProfileActivity />
             </TabsContent>
 
             <TabsContent value="settings">

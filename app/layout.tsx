@@ -5,34 +5,27 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
+import { StampExpertBot } from "@/components/stamp-expert-bot"
+import { Toaster } from "@/components/ui/toaster"
+import { PWAProvider } from "@/components/pwa/PWAProvider"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: {
-    template: "%s | Stamps of Approval",
-    default: "Stamps of Approval - AI-Powered Stamp Collection Platform",
-  },
-  description: "Identify, catalog, and trade stamps with our AI-powered platform for stamp collectors worldwide.",
-  generator: "Next.js",
-  applicationName: "Stamps of Approval",
-  keywords: ["stamps", "philately", "stamp collecting", "AI", "authentication", "catalog", "marketplace"],
-  authors: [{ name: "Stamps of Approval Team" }],
-  creator: "Stamps of Approval",
-  publisher: "Stamps of Approval",
-  formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
-  },
+  title: "Stamp Catalog",
+  description: "A comprehensive stamp cataloging application",
   manifest: "/manifest.json",
+  themeColor: "#000000",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Stamps of Approval",
+    title: "Stamp Catalog",
   },
-  other: {
-    "mobile-web-app-capable": "yes",
+  icons: {
+    icon: "/icons/icon-192x192.png",
+    shortcut: "/icons/icon-192x192.png",
+    apple: "/icons/icon-192x192.png",
   },
 }
 
@@ -48,22 +41,33 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="apple-touch-icon" href="/pwa/icon-192x192.png" />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#000000" />
+        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Stamp Catalog" />
       </head>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <div className="flex min-h-screen flex-col">
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </div>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <PWAProvider>
+            <div className="flex min-h-screen flex-col">
+              <Header />
+              <main className="flex-1">{children}</main>
+              <Footer />
+              <StampExpertBot />
+              <Toaster />
+            </div>
+          </PWAProvider>
         </ThemeProvider>
       </body>
     </html>
   )
 }
 
-
-import './globals.css'
+import "./globals.css"

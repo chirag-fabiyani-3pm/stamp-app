@@ -1,503 +1,240 @@
+"use client"
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Users, MessageSquare, Tag, TrendingUp, ArrowUpRight, Award, CheckCircle, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Users, Tag, ArrowUpRight, Database, Upload, Clock, BookOpen, Code } from "lucide-react"
 import Link from "next/link"
-import AdminRecentActivity from "@/components/admin/admin-recent-activity"
 import { Progress } from "@/components/ui/progress"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+
+// Sample data for demonstration
+const recentIngestions = [
+  {
+    id: "ing-001",
+    source: "Stanley Gibbons 2023 - Commonwealth",
+    status: "completed",
+    items: 2450,
+    date: "2 days ago",
+  },
+  {
+    id: "ing-002",
+    source: "Scott 2023 Volume 3 (G-I)",
+    status: "processing",
+    items: 1820,
+    date: "In progress",
+    progress: 68,
+  },
+]
+
+// Sample catalog code examples
+const catalogCodeExamples = [
+  { number: 1, code: "NZ-55-1D-Imp", description: "1855 1d Red Imperforate (Chalon Head)" },
+  { number: 2, code: "NZ-55-2D-Wmk", description: "1855 2d Blue with Watermark" },
+  { number: 10, code: "NZ-57-6D-Imp", description: "1857 6d Brown Imperforate (Chalon Head)" },
+  { number: 14, code: "NZ-59-2D-Oprt", description: "1859 2d Blue Overprint" },
+]
 
 export default function AdminDashboard() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <h1 className="text-2xl font-bold">Admin Dashboard</h1>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <Clock className="mr-2 h-4 w-4" />
-            Last updated: 5 minutes ago
-          </Button>
-          <Button size="sm">
-            <ArrowUpRight className="mr-2 h-4 w-4" />
-            View Site
+          <Button size="sm" asChild>
+            <Link href="/">
+              <ArrowUpRight className="mr-2 h-4 w-4" />
+              View Site
+            </Link>
           </Button>
         </div>
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Quick Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="overflow-hidden border-l-4 border-l-blue-500">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">2,853</div>
-            <p className="text-xs text-muted-foreground flex items-center mt-1">
-              <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
-              <span className="text-green-500 font-medium">12%</span> from last month
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="overflow-hidden border-l-4 border-l-orange-500">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Active Listings</CardTitle>
-            <Tag className="h-4 w-4 text-orange-500" />
+            <CardTitle className="text-sm font-medium">Catalog Records</CardTitle>
+            <Database className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">1,247</div>
-            <p className="text-xs text-muted-foreground flex items-center mt-1">
-              <ArrowUpRight className="h-3 w-3 mr-1 text-green-500" />
-              <span className="text-green-500 font-medium">8%</span> from last month
-            </p>
+            <p className="text-xs text-muted-foreground mt-1">Stamp catalog entries</p>
           </CardContent>
         </Card>
 
         <Card className="overflow-hidden border-l-4 border-l-green-500">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Community Posts</CardTitle>
-            <MessageSquare className="h-4 w-4 text-green-500" />
+            <CardTitle className="text-sm font-medium">User Accounts</CardTitle>
+            <Users className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3,672</div>
-            <p className="text-xs text-muted-foreground flex items-center mt-1">
-              <ArrowUpRight className="h-3 w-3 mr-1 text-green-500" />
-              <span className="text-green-500 font-medium">24%</span> from last month
-            </p>
+            <div className="text-2xl font-bold">214</div>
+            <p className="text-xs text-muted-foreground mt-1">Registered users</p>
           </CardContent>
         </Card>
 
-        <Card className="overflow-hidden border-l-4 border-l-purple-500">
+        <Card className="overflow-hidden border-l-4 border-l-orange-500">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Authentications</CardTitle>
-            <Award className="h-4 w-4 text-purple-500" />
+            <CardTitle className="text-sm font-medium">Stamp Varieties</CardTitle>
+            <Tag className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">428</div>
-            <p className="text-xs text-muted-foreground flex items-center mt-1">
-              <ArrowUpRight className="h-3 w-3 mr-1 text-green-500" />
-              <span className="text-green-500 font-medium">32%</span> from last month
-            </p>
+            <div className="text-2xl font-bold">3,842</div>
+            <p className="text-xs text-muted-foreground mt-1">Unique varieties tracked</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Authentication Overview */}
+      {/* SOA Catalog Code System */}
       <Card>
-        <CardHeader>
-          <CardTitle>Authentication System</CardTitle>
-          <CardDescription>Overview of stamp authentication activity</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>SOA Catalog Code System</CardTitle>
+            <CardDescription>Unified stamp identification system</CardDescription>
+          </div>
+          <Code className="h-5 w-5 text-primary" />
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-sm font-medium">Pending Reviews</h3>
-                <Badge variant="outline" className="bg-amber-50 text-amber-700 hover:bg-amber-50">
-                  24 Pending
-                </Badge>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs">
-                  <span>Awaiting first review</span>
-                  <span className="font-medium">12</span>
-                </div>
-                <Progress value={50} className="h-2 bg-muted" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs">
-                  <span>Awaiting additional reviews</span>
-                  <span className="font-medium">8</span>
-                </div>
-                <Progress value={33} className="h-2 bg-muted" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs">
-                  <span>Awaiting final approval</span>
-                  <span className="font-medium">4</span>
-                </div>
-                <Progress value={17} className="h-2 bg-muted" />
-              </div>
-              <Button variant="outline" size="sm" className="w-full" asChild>
-                <Link href="/admin/authentication/pending">View All Pending</Link>
-              </Button>
+          <div className="space-y-4">
+            <p className="text-sm">
+              The SOA catalog system provides a standardized format for stamp identification: 
+              <span className="font-mono bg-muted px-2 py-0.5 rounded ml-1">Country-Year-Denomination-Feature</span>
+            </p>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left font-medium p-2">Number</th>
+                    <th className="text-left font-medium p-2">SOA Code</th>
+                    <th className="text-left font-medium p-2">Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {catalogCodeExamples.map((example, index) => (
+                    <tr key={index} className="border-b">
+                      <td className="p-2">{example.number}</td>
+                      <td className="p-2 font-mono">{example.code}</td>
+                      <td className="p-2">{example.description}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-sm font-medium">Reviewer Distribution</h3>
-                <Badge variant="outline" className="bg-blue-50 text-blue-700 hover:bg-blue-50">
-                  86 Reviewers
-                </Badge>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs">
-                  <span>Apprentice Reviewers</span>
-                  <span className="font-medium">62</span>
-                </div>
-                <Progress value={72} className="h-2 bg-muted" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs">
-                  <span>Certified Authenticators</span>
-                  <span className="font-medium">18</span>
-                </div>
-                <Progress value={21} className="h-2 bg-muted" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs">
-                  <span>Master Philatelists</span>
-                  <span className="font-medium">6</span>
-                </div>
-                <Progress value={7} className="h-2 bg-muted" />
-              </div>
-              <Button variant="outline" size="sm" className="w-full" asChild>
-                <Link href="/admin/users?filter=reviewers">Manage Reviewers</Link>
-              </Button>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-sm font-medium">Recent Authentications</h3>
-                <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50">
-                  128 Completed
-                </Badge>
-              </div>
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={`/placeholder.svg?height=32&width=32&text=S${i}`} />
-                      <AvatarFallback>S{i}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">1935 Silver Jubilee - New Zealand</p>
-                      <p className="text-xs text-muted-foreground">Authenticated {i * 2} hours ago</p>
-                    </div>
-                    <Badge variant="secondary" className="shrink-0">
-                      <CheckCircle className="h-3 w-3 mr-1" /> Genuine
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-              <Button variant="outline" size="sm" className="w-full" asChild>
-                <Link href="/admin/authentication/history">View History</Link>
+            <div className="flex justify-end">
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/admin/catalog-system">View Full Documentation</Link>
               </Button>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Activity and Moderation */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Latest actions across the platform</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <AdminRecentActivity />
-          </CardContent>
-        </Card>
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+          <CardDescription>Common administrative tasks</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Button className="h-auto py-4 flex flex-col items-center justify-center gap-2" asChild>
+              <Link href="/admin/catalog-ingestion">
+                <Upload className="h-6 w-6 mb-1" />
+                <div className="text-sm font-medium">Ingest Catalog Data</div>
+                <div className="text-xs text-muted-foreground">Upload and process catalog pages</div>
+              </Link>
+            </Button>
+            
+            <Button variant="outline" className="h-auto py-4 flex flex-col items-center justify-center gap-2" asChild>
+              <Link href="/admin/users">
+                <Users className="h-6 w-6 mb-1" />
+                <div className="text-sm font-medium">Manage Users</div>
+                <div className="text-xs text-muted-foreground">View and edit user accounts</div>
+              </Link>
+            </Button>
+            
+            <Button variant="outline" className="h-auto py-4 flex flex-col items-center justify-center gap-2" asChild>
+              <Link href="/admin/catalog">
+                <BookOpen className="h-6 w-6 mb-1" />
+                <div className="text-sm font-medium">Browse Catalog</div>
+                <div className="text-xs text-muted-foreground">View and edit catalog entries</div>
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>Moderation Queue</CardTitle>
-            <CardDescription>Content requiring review</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="listings">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="listings">Listings</TabsTrigger>
-                <TabsTrigger value="posts">Posts</TabsTrigger>
-                <TabsTrigger value="reports">Reports</TabsTrigger>
-                <TabsTrigger value="auth">Authentication</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="listings" className="space-y-4 pt-4">
-                <div className="space-y-4">
-                  <div className="bg-muted/50 p-3 rounded-md">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-medium">Silver Jubilee 1935 - New Zealand</h3>
-                        <p className="text-sm text-muted-foreground">Listed by StampCollector123 • 2 hours ago</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline">
-                          Reject
-                        </Button>
-                        <Button size="sm">Approve</Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-muted/50 p-3 rounded-md">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-medium">Rare German States Collection</h3>
-                        <p className="text-sm text-muted-foreground">Listed by VintageStamps • 5 hours ago</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline">
-                          Reject
-                        </Button>
-                        <Button size="sm">Approve</Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-muted/50 p-3 rounded-md">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-medium">US Bicentennial Complete Set</h3>
-                        <p className="text-sm text-muted-foreground">Listed by USACollector • 1 day ago</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline">
-                          Reject
-                        </Button>
-                        <Button size="sm">Approve</Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-center">
-                  <Link href="/admin/moderation/listings">
-                    <Button variant="link">View All Pending Listings</Button>
-                  </Link>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="posts" className="space-y-4 pt-4">
-                <div className="space-y-4">
-                  <div className="bg-muted/50 p-3 rounded-md">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-medium">Question about authentication services</h3>
-                        <p className="text-sm text-muted-foreground">Posted by NewCollector • 3 hours ago</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline">
-                          Reject
-                        </Button>
-                        <Button size="sm">Approve</Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-muted/50 p-3 rounded-md">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-medium">Upcoming stamp exhibition in London</h3>
-                        <p className="text-sm text-muted-foreground">Posted by EventOrganizer • 6 hours ago</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline">
-                          Reject
-                        </Button>
-                        <Button size="sm">Approve</Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-center">
-                  <Link href="/admin/moderation/community">
-                    <Button variant="link">View All Pending Posts</Button>
-                  </Link>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="reports" className="space-y-4 pt-4">
-                <div className="space-y-4">
-                  <div className="bg-muted/50 p-3 rounded-md">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-medium">Potentially counterfeit stamp listing</h3>
-                        <p className="text-sm text-muted-foreground">Reported by StampExpert • 1 hour ago</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline">
-                          Dismiss
-                        </Button>
-                        <Button size="sm" variant="destructive">
-                          Take Action
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-muted/50 p-3 rounded-md">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-medium">Inappropriate comment in discussion</h3>
-                        <p className="text-sm text-muted-foreground">Reported by CollectorPro • 4 hours ago</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline">
-                          Dismiss
-                        </Button>
-                        <Button size="sm" variant="destructive">
-                          Take Action
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-center">
-                  <Link href="/admin/moderation/reports">
-                    <Button variant="link">View All Reports</Button>
-                  </Link>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="auth" className="space-y-4 pt-4">
-                <div className="space-y-4">
-                  <div className="bg-muted/50 p-3 rounded-md">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-medium">1935 King George V Silver Jubilee</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Reviewed by <Badge variant="outline">Apprentice</Badge> StampLearner • 3 hours ago
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline">
-                          Reject
-                        </Button>
-                        <Button size="sm">Approve</Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-muted/50 p-3 rounded-md">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-medium">1922 Peace and Commerce Issue - France</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Reviewed by <Badge variant="outline">Apprentice</Badge> NewCollector • 5 hours ago
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline">
-                          Reject
-                        </Button>
-                        <Button size="sm">Approve</Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-center">
-                  <Link href="/admin/authentication/pending">
-                    <Button variant="link">View All Pending Authentications</Button>
-                  </Link>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Platform Health */}
+      {/* Recent Ingestion Jobs */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Platform Health</CardTitle>
-            <CardDescription>System status and performance metrics</CardDescription>
+            <CardTitle>Recent Catalog Ingestion</CardTitle>
+            <CardDescription>Latest catalog data processing jobs</CardDescription>
           </div>
-          <Button variant="outline" size="sm">
-            View Details
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/admin/catalog-ingestion">View All</Link>
           </Button>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium">System Status</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">API Services</span>
-                  <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50">
-                    Operational
-                  </Badge>
+          <div className="space-y-4">
+            {recentIngestions.map((job) => (
+              <div key={job.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                <div className="flex-1">
+                  <div className="font-medium">{job.source}</div>
+                  <div className="text-sm text-muted-foreground flex items-center gap-2">
+                    <Clock className="h-3 w-3" /> {job.date}
+                  </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Database</span>
-                  <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50">
-                    Operational
+                
+                <div className="flex flex-col items-end gap-2">
+                  <Badge variant={job.status === "completed" ? "default" : "outline"} className="self-end">
+                    {job.status === "completed" ? "Completed" : "Processing"}
                   </Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Authentication</span>
-                  <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50">
-                    Operational
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Storage</span>
-                  <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50">
-                    Operational
-                  </Badge>
+                  
+                  {job.status === "processing" && (
+                    <div className="w-32">
+                      <Progress value={job.progress} className="h-2" />
+                      <div className="text-xs text-right mt-1">{job.progress}% complete</div>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium">Response Times</h3>
-              <div className="space-y-2">
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span>API Response (avg)</span>
-                    <span className="font-medium">124ms</span>
-                  </div>
-                  <Progress value={25} className="h-2 bg-muted" />
-                </div>
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span>Database Queries (avg)</span>
-                    <span className="font-medium">86ms</span>
-                  </div>
-                  <Progress value={17} className="h-2 bg-muted" />
-                </div>
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span>Page Load Time (avg)</span>
-                    <span className="font-medium">1.2s</span>
-                  </div>
-                  <Progress value={60} className="h-2 bg-muted" />
-                </div>
-              </div>
+      {/* Getting Started Guide */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Getting Started</CardTitle>
+          <CardDescription>Quick guide for administrators</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="border-l-4 border-blue-500 pl-4 py-1">
+              <h3 className="font-medium">1. Upload Catalog Data</h3>
+              <p className="text-sm text-muted-foreground">
+                Start by ingesting stamp catalog data using the AI-powered ingestion tool. You can upload scanned pages from 
+                standard catalogs like Stanley Gibbons, Scott, or Michel.
+              </p>
             </div>
-
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium">Error Rates (24h)</h3>
-              <div className="space-y-2">
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span>API Errors</span>
-                    <span className="font-medium">0.02%</span>
-                  </div>
-                  <Progress value={0.2} className="h-2 bg-muted" />
-                </div>
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span>Authentication Failures</span>
-                    <span className="font-medium">0.5%</span>
-                  </div>
-                  <Progress value={0.5} className="h-2 bg-muted" />
-                </div>
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span>Database Timeouts</span>
-                    <span className="font-medium">0.01%</span>
-                  </div>
-                  <Progress value={0.1} className="h-2 bg-muted" />
-                </div>
-              </div>
+            
+            <div className="border-l-4 border-blue-500 pl-4 py-1">
+              <h3 className="font-medium">2. Review Extracted Data</h3>
+              <p className="text-sm text-muted-foreground">
+                After processing, review the extracted data for accuracy. The system will automatically assign SOA 
+                (Stamps of Approval) universal codes to each entry.
+              </p>
+            </div>
+            
+            <div className="border-l-4 border-blue-500 pl-4 py-1">
+              <h3 className="font-medium">3. Manage User Accounts</h3>
+              <p className="text-sm text-muted-foreground">
+                Create and manage user accounts for staff members who need access to the administrative functions.
+              </p>
             </div>
           </div>
         </CardContent>

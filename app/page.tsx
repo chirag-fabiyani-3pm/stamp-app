@@ -105,11 +105,7 @@ export default function Home() {
               </div>
             </div>
             <div className="bg-background p-6 rounded-lg shadow-lg">
-              <img
-                src="/how-it-works.jpg"
-                alt="Stamp recognition demo"
-                className="rounded-md w-full"
-              />
+              <img src="/how-it-works.jpg" alt="Stamp recognition demo" className="rounded-md w-full" />
             </div>
           </div>
         </div>
