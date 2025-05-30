@@ -7,19 +7,205 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { 
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { Progress } from "@/components/ui/progress"
-import { Check, Camera, Upload, RotateCcw, AlertCircle, Loader2 } from "lucide-react"
+import { Check, Camera, Upload, RotateCcw, AlertCircle, Loader2, X } from "lucide-react"
 import Image from "next/image"
 import StampViewer from "@/components/scan/stamp-viewer"
 import ReferenceInfo from "@/components/scan/reference-info"
 import StampObservationManager from "@/components/scan/stamp-observation-manager"
-import StampOptions from "@/components/scan/stamp-options"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
+import { AuthGuard } from "@/components/auth/route-guard"
+
+// API Response interfaces
+interface ApiStampResponse {
+  isStamp?: boolean
+  id: string
+  catalogId: string
+  name: string
+  publisher: string
+  country: string
+  stampImageUrl: string
+  catalogName: string
+  catalogNumber: string
+  seriesName: string
+  issueDate: string
+  denominationValue: number
+  denominationCurrency: string
+  denominationSymbol: string
+  color: string
+  design: string
+  theme: string
+  artist: string
+  engraver: string
+  printing: string
+  paperType: string
+  perforation: string
+  size: string
+  specialNotes: string
+  historicalContext: string
+  printingQuantity: number
+  usagePeriod: string
+  rarenessLevel: string
+  hasGum: boolean
+  gumCondition: string
+  description: string
+  watermark: string | null
+}
+
+interface ImageSearchResponse {
+  aiResponse: ApiStampResponse
+  similarStamps: ApiStampResponse[]
+}
+
+// Helper function to get JWT from cookies or localStorage
+const getJWT = (): string | null => {
+  // Try to get from localStorage first
+  if (typeof window !== 'undefined') {
+    try {
+      const stampUserData = localStorage.getItem('stamp_user_data');
+      if (stampUserData) {
+        const userData = JSON.parse(stampUserData);
+        if (userData && userData.jwt) {
+          return userData.jwt;
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing stamp_user_data from localStorage:', error);
+    }
+
+    // Try to get from cookies
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+      const [name, value] = cookie.trim().split('=');
+      if (name === 'stamp_jwt') {
+        return value;
+      }
+    }
+  }
+  return null;
+};
+
+// Helper function to transform API stamp to internal format
+const transformApiStampToInternal = (apiStamp: ApiStampResponse, capturedImageUrl?: string) => {
+  return {
+    id: apiStamp.id,
+    name: apiStamp.name,
+    // Use captured image since API response won't have stampImageUrl for aiResponse
+    imagePath: capturedImageUrl || apiStamp.stampImageUrl || "/placeholder-stamp.png",
+    country: apiStamp.country,
+    year: new Date(apiStamp.issueDate).getFullYear().toString(),
+    description: apiStamp.description,
+    watermarkOptions: apiStamp.watermark ? [apiStamp.watermark, "None"] : ["None"],
+    perforationOptions: [apiStamp.perforation, "Imperforate", "10", "12.5", "Roulette 7"],
+    possibleErrors: [
+      "Colour Shift",
+      "Double Print", 
+      "Doctor Blade",
+      "Ink Blob",
+      "White Spots",
+      "Colour Omitted",
+      "Re-Entries",
+      "Re-Touch",
+      "Offset",
+      "Print Process Error"
+    ],
+    certifiers: ["Expert Committee", "RPSNZ", "BPA", "APS"],
+    paperTypes: [apiStamp.paperType, "Thick", "Thin", "Wove", "Laid"],
+    printTypes: [apiStamp.printing, "Typography", "Lithography", "Intaglio"],
+    millimeterMeasurements: [apiStamp.size, "20 x 24", "21 x 25", "19 x 23", "Other"],
+    colors: [apiStamp.color, "Red", "Blue", "Green", "Brown"],
+    grades: ["Fine", "Very Fine", "Good", "Poor", "Superb"],
+    rarityRatings: [apiStamp.rarenessLevel, "Common", "Scarce", "Rare", "Very Rare", "Extremely Rare"],
+    // Additional API data
+    catalogId: apiStamp.catalogId,
+    catalogName: apiStamp.catalogName,
+    catalogNumber: apiStamp.catalogNumber,
+    seriesName: apiStamp.seriesName,
+    denominationValue: apiStamp.denominationValue,
+    denominationCurrency: apiStamp.denominationCurrency,
+    denominationSymbol: apiStamp.denominationSymbol,
+    design: apiStamp.design,
+    theme: apiStamp.theme,
+    artist: apiStamp.artist,
+    engraver: apiStamp.engraver,
+    printingQuantity: apiStamp.printingQuantity,
+    usagePeriod: apiStamp.usagePeriod,
+    hasGum: apiStamp.hasGum,
+    gumCondition: apiStamp.gumCondition,
+    specialNotes: apiStamp.specialNotes,
+    historicalContext: apiStamp.historicalContext
+  };
+};
+
+// Helper function to map API stamp data to form fields
+const mapApiStampToFormData = (apiStamp: ApiStampResponse) => {
+  return {
+    // Basic identification
+    watermark: apiStamp.watermark || "unknown-watermark",
+    perforation: apiStamp.perforation || "unknown-perforation", 
+    paper: apiStamp.paperType || "unknown-paper",
+    printType: apiStamp.printing || "unknown-print",
+    certifier: "none-certifier", // Not provided by API
+    itemType: "Stamp", // Default from API context
+    color: apiStamp.color || "unknown-color",
+    millimeterSize: apiStamp.size || "unknown-size",
+    
+    // Error and condition info
+    errors: [], // Will be filled during observation
+    colourShift: {
+      active: false,
+      directions: []
+    },
+    shiftDistance: {
+      left: 0,
+      right: 0, 
+      up: 0,
+      down: 0
+    },
+    
+    // Grading and rarity
+    grade: "", // Will be assessed during observation
+    visualAppeal: 50, // Default, will be assessed
+    rarityRating: apiStamp.rarenessLevel || "unknown-rarity",
+    
+    // Catalog and identification
+    plateNumber: "", // Not provided by API
+    words: `${apiStamp.denominationValue} ${apiStamp.denominationCurrency}`,
+    
+    // Purchase info (empty for new scans)
+    purchasePrice: "",
+    purchaseDate: "",
+    notes: `${apiStamp.specialNotes}${apiStamp.historicalContext ? ` | ${apiStamp.historicalContext}` : ''}`,
+    
+    // Additional API data for reference
+    catalogId: apiStamp.catalogId,
+    catalogName: apiStamp.catalogName,
+    catalogNumber: apiStamp.catalogNumber,
+    seriesName: apiStamp.seriesName,
+    country: apiStamp.country,
+    issueDate: apiStamp.issueDate,
+    design: apiStamp.design,
+    theme: apiStamp.theme,
+    artist: apiStamp.artist,
+    engraver: apiStamp.engraver,
+    printingQuantity: apiStamp.printingQuantity,
+    usagePeriod: apiStamp.usagePeriod,
+    hasGum: apiStamp.hasGum,
+    gumCondition: apiStamp.gumCondition
+  };
+};
 
 // Mock database of reference stamps
 const referenceStampDatabase = [
@@ -33,15 +219,15 @@ const referenceStampDatabase = [
     watermarkOptions: ["None", "Large Star", "Small Star", "NZ"],
     perforationOptions: ["Imperforate", "10", "12.5", "Roulette 7"],
     possibleErrors: [
-      "Colour Shift", 
-      "Double Print", 
-      "Doctor Blade", 
-      "Ink Blob", 
-      "White Spots", 
-      "Colour Omitted", 
-      "Re-Entries", 
-      "Re-Touch", 
-      "Offset", 
+      "Colour Shift",
+      "Double Print",
+      "Doctor Blade",
+      "Ink Blob",
+      "White Spots",
+      "Colour Omitted",
+      "Re-Entries",
+      "Re-Touch",
+      "Offset",
       "Print Process Error"
     ],
     certifiers: ["Expert Committee", "RPSNZ", "BPA", "APS"],
@@ -62,12 +248,12 @@ const referenceStampDatabase = [
     watermarkOptions: ["None", "Large Star", "NZ"],
     perforationOptions: ["Imperforate", "10", "12.5", "Roulette 7"],
     possibleErrors: [
-      "Colour Shift", 
-      "Offset", 
-      "Doctor Blade", 
-      "Re-Entries", 
-      "Colour Omitted", 
-      "White Spots", 
+      "Colour Shift",
+      "Offset",
+      "Doctor Blade",
+      "Re-Entries",
+      "Colour Omitted",
+      "White Spots",
       "Double Print"
     ],
     certifiers: ["Expert Committee", "RPSNZ", "BPA", "APS"],
@@ -88,11 +274,11 @@ const referenceStampDatabase = [
     watermarkOptions: ["None", "Large Star", "Script"],
     perforationOptions: ["Imperforate", "10", "12.5"],
     possibleErrors: [
-      "Colour Shift", 
-      "Colour Omitted", 
-      "Re-Touch", 
-      "Double Print", 
-      "Doctor Blade", 
+      "Colour Shift",
+      "Colour Omitted",
+      "Re-Touch",
+      "Double Print",
+      "Doctor Blade",
       "White Spots"
     ],
     certifiers: ["Expert Committee", "RPSNZ", "BPA", "APS"],
@@ -113,10 +299,10 @@ const referenceStampDatabase = [
     watermarkOptions: ["Small Crown"],
     perforationOptions: ["Imperforate"],
     possibleErrors: [
-      "Re-Entries", 
-      "Plate Varieties", 
-      "Ink Blob", 
-      "Double Print", 
+      "Re-Entries",
+      "Plate Varieties",
+      "Ink Blob",
+      "Double Print",
       "Re-Touch"
     ],
     certifiers: ["Expert Committee", "RPSL", "BPA", "APS"],
@@ -193,12 +379,12 @@ const simulatedStampDatabase = [
       flawImage: null
     },
     collectorGroup: "",
-    rarityRating: "Scarce (S) - 100,000-1,000,000 exist",
+    rarityRating: "Very Rare (VR) - 100-1,000 exist",
     grade: "Fine",
-    purchasePrice: "500.00",
-    purchaseDate: "2022-11-03",
-    notes: "First adhesive postage stamp in the world",
-    visualAppeal: 80
+    purchasePrice: "2500.00",
+    purchaseDate: "2023-03-15",
+    notes: "Classic example with clear Maltese Cross cancellation",
+    visualAppeal: 92
   },
   {
     refId: "chalon-2d-blue",
@@ -338,51 +524,15 @@ const simulatedStampDatabase = [
   }
 ];
 
-export default function ScanPage() {
+function ScanPage() {
   // State for the scan interface
-  const [currentView, setCurrentView] = useState<"scan" | "reference" | "observation" | "options">("scan");
+  const [currentView, setCurrentView] = useState<"scan" | "reference" | "observation">("scan");
   const [scanID, setScanID] = useState<string>("");
   const [selectedStamp, setSelectedStamp] = useState<any>(null);
   const [scanProgress, setScanProgress] = useState(0);
   const [isScanning, setIsScanning] = useState(false);
   const [recognitionStatus, setRecognitionStatus] = useState<"idle" | "scanning" | "success" | "error">("idle");
-  
-  // Root level options state
-  const [stampRootOptions, setStampRootOptions] = useState({
-    id: "",
-    name: "",
-    certifier: "",
-    itemType: "",
-    colour: "",
-    country: "",
-    wordsSymbols: "",
-    imageDescription: "",
-    dateOfIssue: "",
-    paperType: "",
-    perforationType: "",
-    watermarkType: "",
-    error: "",
-    cancellation: "",
-    plates: "",
-    plating: {
-      positionNumber: "",
-      gridReference: "",
-      flawDescription: "",
-      textOnFace: "",
-      plateNumber: "",
-      settingNumber: "",
-      textColor: "",
-      flawImage: null
-    },
-    collectorGroup: "",
-    rarityRating: "",
-    grade: "",
-    purchasePrice: "",
-    purchaseDate: "",
-    notes: "",
-    visualAppeal: 50
-  });
-  
+
   // Observation states
   const [stampObservations, setStampObservations] = useState({
     watermark: "unknown-watermark",
@@ -413,7 +563,7 @@ export default function ScanPage() {
     purchaseDate: "",
     notes: ""
   });
-  
+
   // Camera/scan related refs and states
   const videoRef = useRef<HTMLVideoElement>(null);
   const visibleVideoRef = useRef<HTMLVideoElement>(null);
@@ -421,77 +571,98 @@ export default function ScanPage() {
   const [cameraActive, setCameraActive] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
-  
+
+  // State for detailed stamp modal
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [detailModalStamp, setDetailModalStamp] = useState<any>(null);
+
   // Effect to synchronize srcObject between videos when active
   useEffect(() => {
     if (cameraActive && videoRef.current?.srcObject && visibleVideoRef.current) {
       visibleVideoRef.current.srcObject = videoRef.current.srcObject;
     }
   }, [cameraActive, videoRef.current?.srcObject]);
-  
+
   // Add a polyfill helper for browser compatibility
   const getMediaDevices = () => {
     const navigator = window.navigator as any;
-    
+
     // Try legacy APIs and alternative methods
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       return navigator.mediaDevices;
     }
-    
+
     // Legacy webkit prefix used in some mobile browsers
     if (navigator.webkitGetUserMedia || navigator.mozGetUserMedia) {
       navigator.mediaDevices = navigator.mediaDevices || {};
-      
+
       // Add polyfill for getUserMedia for older browsers
-      navigator.mediaDevices.getUserMedia = function(constraints: MediaStreamConstraints) {
+      navigator.mediaDevices.getUserMedia = function (constraints: MediaStreamConstraints) {
         const getUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
-        
+
         // If it's not a real function, reject
         if (!getUserMedia) {
           return Promise.reject(new Error("getUserMedia is not implemented in this browser"));
         }
-        
+
         // Otherwise, wrap the legacy callback version in a promise
         return new Promise((resolve, reject) => {
           getUserMedia.call(navigator, constraints, resolve, reject);
         });
       };
-      
+
       return navigator.mediaDevices;
     }
-    
+
     // No getUserMedia support
     return null;
   };
-  
-  // Camera functions
+
+  // Add mobile detection utility
+  const isMobileDevice = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+      (navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
+  };
+
+  // Modified camera functions
   const startCamera = async () => {
+    // For mobile devices, we'll use the native camera app instead
+    if (isMobileDevice()) {
+      // On mobile, we'll trigger the file input with camera capture
+      const fileInput = document.getElementById('mobile-camera-input') as HTMLInputElement;
+      if (fileInput) {
+        fileInput.click();
+      }
+      return;
+    }
+
+    // Desktop camera logic (existing code)
     try {
       setCameraError(null);
       console.log("Starting camera...");
-      
+
       // Check if running in a secure context
       if (window.isSecureContext === false) {
         console.error("Not in a secure context, camera API may not work");
       }
-      
+
       // Get appropriate media devices object with polyfill support
       const mediaDevices = getMediaDevices();
       if (!mediaDevices) {
         throw new Error("Camera API is not supported in your browser. Please use a modern browser or try the file upload option.");
       }
-      
+
       // Use simple constraints for mobile
       let constraints: MediaStreamConstraints = {
         audio: false,
         video: true
       };
-      
+
       // Try with more specific constraints only for browsers that support them
       try {
         // Test if detailed constraints work
         await mediaDevices.getSupportedConstraints();
-        
+
         // If supported, use more specific constraints
         constraints = {
           audio: false,
@@ -504,16 +675,16 @@ export default function ScanPage() {
       } catch (error) {
         console.warn("Detailed constraints not supported, using basic video: true");
       }
-      
+
       console.log("Requesting camera with constraints:", constraints);
-      
+
       // Request camera access with appropriate error handling
       let stream;
       try {
         stream = await mediaDevices.getUserMedia(constraints);
       } catch (err: any) {
         console.error("First camera request failed:", err);
-        
+
         // Fallback to simplest possible constraints as last resort
         if (err.name === "OverconstrainedError" || err.name === "ConstraintNotSatisfiedError") {
           console.log("Trying fallback with minimal constraints");
@@ -522,46 +693,46 @@ export default function ScanPage() {
           throw err; // Re-throw if it's not a constraints issue
         }
       }
-      
+
       console.log("Camera stream obtained successfully");
-      
+
       // Make sure the video element exists
       if (!videoRef.current) {
         console.error("Video element reference is null");
         throw new Error("Video element not found");
       }
-      
+
       // Set up the video element with the stream
       videoRef.current.srcObject = stream;
-      
+
       console.log("Setting up event listeners");
       // Create a promise to handle video loading
       const videoLoadPromise = new Promise<void>((resolve, reject) => {
         if (!videoRef.current) return reject("Video element not found");
-        
+
         // Set timeout for metadata loading
         const timeoutId = setTimeout(() => {
           console.warn("Video metadata loading timed out, trying to continue anyway");
           resolve(); // Resolve anyway after timeout
         }, 3000);
-        
+
         // Set up event listeners
         videoRef.current.onloadedmetadata = () => {
           console.log("Video metadata loaded");
           clearTimeout(timeoutId);
           resolve();
         };
-        
+
         videoRef.current.onerror = (e) => {
           console.error("Video element error:", e);
           clearTimeout(timeoutId);
           reject("Video loading failed");
         };
       });
-      
+
       // Wait for video to be ready
       await videoLoadPromise;
-      
+
       if (videoRef.current) {
         console.log("Playing video");
         try {
@@ -576,7 +747,7 @@ export default function ScanPage() {
     } catch (error) {
       console.error("Camera access error:", error);
       setCameraActive(false);
-      
+
       // Provide specific error messages based on error type
       if (error instanceof DOMException) {
         if (error.name === 'NotAllowedError') {
@@ -597,20 +768,20 @@ export default function ScanPage() {
       }
     }
   };
-  
+
   const stopCamera = () => {
     try {
       console.log("Stopping camera...");
-      
+
       if (!videoRef.current || !videoRef.current.srcObject) {
         console.log("No active camera to stop");
         return;
       }
-      
+
       // Get all tracks and stop them
       const stream = videoRef.current.srcObject as MediaStream;
       const tracks = stream.getTracks();
-      
+
       if (tracks.length === 0) {
         console.log("No tracks found in the stream");
       } else {
@@ -620,7 +791,7 @@ export default function ScanPage() {
           console.log(`Stopped track: ${track.kind}`);
         });
       }
-      
+
       // Clean up video element
       videoRef.current.srcObject = null;
       setCameraActive(false);
@@ -631,70 +802,70 @@ export default function ScanPage() {
       setCameraActive(false);
     }
   };
-  
+
   const captureImage = () => {
     try {
       console.log("Capturing image from camera...");
-      
+
       if (!canvasRef.current) {
         console.error("Canvas reference is null");
         setCameraError("Cannot capture image: canvas not available");
         return;
       }
-      
+
       // Need to check both video refs now
       if (!videoRef.current || !visibleVideoRef.current) {
         console.error("Video reference is null");
         setCameraError("Cannot capture image: video not available");
         return;
       }
-      
+
       // Use the visible video for capture since it's the one displaying in the UI
       const videoToCapture = visibleVideoRef.current;
-      
+
       // Check if video is actually playing
       if (videoToCapture.paused || videoToCapture.ended || !cameraActive) {
         console.error("Video is not actively playing");
         setCameraError("Cannot capture image: camera not active");
         return;
       }
-      
+
       const context = canvasRef.current.getContext('2d');
       if (!context) {
         console.error("Could not get canvas context");
         setCameraError("Cannot capture image: browser support issue");
         return;
       }
-      
+
       console.log(`Video dimensions: ${videoToCapture.videoWidth}x${videoToCapture.videoHeight}`);
-      
+
       // Set canvas dimensions to match video
       canvasRef.current.width = videoToCapture.videoWidth || 640;
       canvasRef.current.height = videoToCapture.videoHeight || 480;
-      
+
       // Clear the canvas first
       context.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-      
+
       // Draw the video frame to the canvas
       context.drawImage(videoToCapture, 0, 0, canvasRef.current.width, canvasRef.current.height);
       console.log("Image drawn to canvas");
-      
+
       // Convert to image and display
       const imageDataUrl = canvasRef.current.toDataURL('image/png');
       console.log("Image captured successfully");
-      
+
       // Clean up camera resources
       stopCamera();
-      
+
       // Set the captured image and start identification
       setCapturedImage(imageDataUrl);
-      simulateIdentification(imageDataUrl);
+      performImageIdentification(imageDataUrl);
     } catch (error) {
       console.error("Error capturing image:", error);
       setCameraError("Failed to capture image. Please try again.");
     }
   };
-  
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -702,167 +873,157 @@ export default function ScanPage() {
       reader.onload = (e) => {
         const imageDataUrl = e.target?.result as string;
         setCapturedImage(imageDataUrl);
-        
-        // Always use penny-black for consistent demo experience
-        findStampMatch("penny-black");
+
+        // Use the new API-based identification
+        performImageIdentification(imageDataUrl);
       };
       reader.readAsDataURL(file);
     }
   };
-  
-  // Enhanced simulate function for a better demo
-  const simulateIdentification = (imageDataUrl: string) => {
+
+  // Handle mobile camera capture
+  const handleMobileCameraCapture = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const imageDataUrl = e.target?.result as string;
+        setCapturedImage(imageDataUrl);
+
+        // Use the new API-based identification
+        performImageIdentification(imageDataUrl);
+      };
+      reader.readAsDataURL(file);
+    }
+    // Reset the input so the same file can be selected again
+    event.target.value = '';
+  };
+
+  // Enhanced API-based identification function
+  const performImageIdentification = async (imageDataUrl: string) => {
     setIsScanning(true);
     setScanProgress(0);
     setRecognitionStatus("scanning");
-    
-    // Always use penny-black for consistent demo experience
-    const stampToRecognize = "penny-black";
-    
-    // Simulate progress with more realistic timing
-    const progressInterval = setInterval(() => {
-      setScanProgress(prev => {
-        if (prev >= 95) {
-          clearInterval(progressInterval);
-          return prev;
-        }
-        // Add some randomness to the progress for realism
-        return Math.min(95, prev + Math.floor(Math.random() * 15) + 5);
-      });
-    }, 200);
-    
-    // Simulate completion after a short delay
-    setTimeout(() => {
-      clearInterval(progressInterval);
-      setScanProgress(100);
+
+    try {
+      // Convert data URL to blob
+      const response = await fetch(imageDataUrl);
+      const blob = await response.blob();
       
-      // Use the pre-selected stamp for guaranteed auto-population demonstration
-      findStampMatch(stampToRecognize);
-      setIsScanning(false);
-      setRecognitionStatus("success");
-    }, 2000);
-  };
-  
-  // Function to find and set the matched stamp - modified to auto-populate
-  const findStampMatch = (stampId: string) => {
-    const stamp = referenceStampDatabase.find(s => s.id === stampId);
-    if (stamp) {
-      setSelectedStamp(stamp);
-      const newScanID = Date.now().toString(36).substring(2, 7).toUpperCase();
-      setScanID(newScanID);
-      
-      // Check if this stamp exists in a simulated database and auto-populate data
-      // In a real application, this would be a database lookup
-      const existingStampData = simulatedStampDatabase.find(s => s.refId === stampId);
-      
-      if (existingStampData) {
-        // Auto-populate from existing data
-        // Convert any legacy string-based plating data to the new object format if needed
-        const platingData = typeof existingStampData.plating === 'string' 
-          ? {
-              positionNumber: "",
-              gridReference: "",
-              flawDescription: existingStampData.plating || "", // Use old string as description
-              textOnFace: "",
-              plateNumber: existingStampData.plates || "",
-              settingNumber: "",
-              textColor: "",
-              flawImage: null
-            }
-          : existingStampData.plating || {
-              positionNumber: "",
-              gridReference: "",
-              flawDescription: "",
-              textOnFace: "",
-              plateNumber: existingStampData.plates || "",
-              settingNumber: "",
-              textColor: "",
-              flawImage: null
-            };
-            
-        setStampRootOptions({
-          id: newScanID,
-          name: existingStampData.name,
-          certifier: existingStampData.certifier,
-          itemType: existingStampData.itemType,
-          colour: existingStampData.colour,
-          country: existingStampData.country,
-          wordsSymbols: existingStampData.wordsSymbols,
-          imageDescription: existingStampData.imageDescription,
-          dateOfIssue: existingStampData.dateOfIssue,
-          paperType: existingStampData.paperType,
-          perforationType: existingStampData.perforationType,
-          watermarkType: existingStampData.watermarkType,
-          error: existingStampData.error,
-          cancellation: existingStampData.cancellation,
-          plates: existingStampData.plates,
-          plating: platingData,
-          collectorGroup: existingStampData.collectorGroup || "",
-          rarityRating: existingStampData.rarityRating,
-          grade: existingStampData.grade,
-          purchasePrice: existingStampData.purchasePrice,
-          purchaseDate: existingStampData.purchaseDate,
-          notes: existingStampData.notes,
-          visualAppeal: existingStampData.visualAppeal,
-        });
-        
-        // Also update observations to match existing data
-        setStampObservations({
-          watermark: existingStampData.watermarkType || "unknown-watermark",
-          perforation: existingStampData.perforationType || "unknown-perforation",
-          paper: existingStampData.paperType || "unknown-paper",
-          printType: "unknown-print", // Assume this might not be in our data
-          certifier: existingStampData.certifier || "none-certifier",
-          itemType: existingStampData.itemType || "unknown-type",
-          color: existingStampData.colour || "unknown-color",
-          millimeterSize: "unknown-size",
-          errors: existingStampData.error !== "None" ? [existingStampData.error] : [],
-          colourShift: {
-            active: existingStampData.error === "Colour Shift",
-            directions: []
-          },
-          shiftDistance: {
-            left: 0,
-            right: 0,
-            up: 0,
-            down: 0
-          },
-          grade: existingStampData.grade || "",
-          visualAppeal: existingStampData.visualAppeal || 50,
-          rarityRating: existingStampData.rarityRating || "unknown-rarity",
-          plateNumber: existingStampData.plates || "",
-          words: existingStampData.wordsSymbols || "",
-          purchasePrice: existingStampData.purchasePrice || "",
-          purchaseDate: existingStampData.purchaseDate || "",
-          notes: existingStampData.notes || ""
-        });
-      } else {
-        // Pre-populate with defaults from reference stamp
-        setStampRootOptions(prev => ({
-          ...prev,
-          id: newScanID,
-          name: stamp.name,
-          country: stamp.country,
-          colour: stamp.colors[0] || "",
-          perforationType: stamp.perforationOptions[0] || "",
-          watermarkType: stamp.watermarkOptions[0] || "",
-          plating: {
-            positionNumber: "",
-            gridReference: "",
-            flawDescription: "",
-            textOnFace: "",
-            plateNumber: "",
-            settingNumber: "",
-            textColor: "",
-            flawImage: null
-          }
-        }));
+      // Create FormData for multipart/form-data
+      const formData = new FormData();
+      formData.append('StampImage', blob, 'stamp-image.jpg');
+
+      // Get JWT token
+      const jwt = getJWT();
+      if (!jwt) {
+        throw new Error('No JWT token found. Please login first.');
       }
+
+      // Simulate progress
+      const progressInterval = setInterval(() => {
+        setScanProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return Math.min(90, prev + Math.floor(Math.random() * 15) + 5);
+        });
+      }, 200);
+
+      // Make API call
+      const apiResponse = await fetch('https://3pm-stampapp-prod.azurewebsites.net/api/v1/StampCatalog/SearchByImage', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${jwt}`
+        },
+        body: formData
+      });
+
+      clearInterval(progressInterval);
+
+      if (!apiResponse.ok) {
+        throw new Error(`API request failed: ${apiResponse.status} ${apiResponse.statusText}`);
+      }
+
+      const searchResult: ImageSearchResponse = await apiResponse.json();
+      setScanProgress(100);
+
+      // Process the API response
+      if (searchResult.aiResponse && searchResult.aiResponse.isStamp) {
+        processStampMatches(searchResult, imageDataUrl);
+        setIsScanning(false);
+        setRecognitionStatus("success");
+      } else {
+        throw new Error('No stamp detected in the image');
+      }
+
+    } catch (error) {
+      console.error('Image identification failed:', error);
+      setIsScanning(false);
+      setRecognitionStatus("error");
       
-      setCurrentView("reference");
+      // Show error to user
+      alert(`Image identification failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
-  
+
+  // Function to process API stamp matches
+  const processStampMatches = (searchResult: ImageSearchResponse, imageDataUrl: string) => {
+    let primaryMatch: any = null;
+    const similarMatches: any[] = [];
+
+    // Process the main AI response as the primary match
+    if (searchResult.aiResponse) {
+      const transformedStamp = transformApiStampToInternal(searchResult.aiResponse, imageDataUrl);
+      primaryMatch = {
+        ...transformedStamp,
+        apiData: searchResult.aiResponse
+      };
+    }
+
+    // Process similar stamps as reference matches (use catalog images, not captured image)
+    if (searchResult.similarStamps && searchResult.similarStamps.length > 0) {
+      searchResult.similarStamps.forEach((similarStamp, index) => {
+        const transformedStamp = transformApiStampToInternal(similarStamp, undefined);
+        similarMatches.push({
+          ...transformedStamp,
+          apiData: similarStamp
+        });
+      });
+    }
+
+    if (primaryMatch) {
+      // Set the structured response with separate primary and similar matches
+      setSelectedStamp({ 
+        primaryMatch, 
+        similarMatches, 
+        selectedIndex: 0,
+        selectedType: 'primary' // Track whether primary or similar stamp is selected
+      });
+      const newScanID = Date.now().toString(36).substring(2, 7).toUpperCase();
+      setScanID(newScanID);
+      setCurrentView("reference");
+    } else {
+      throw new Error('No matching stamps found');
+    }
+  };
+
+  // Function to handle user's final stamp selection
+  const selectFinalStamp = (selectedMatch: any, index: number) => {
+    // Update the selected stamp to the user's choice
+    setSelectedStamp({ ...selectedMatch, finalSelection: true });
+
+    // Use the API data to pre-populate form fields
+    if (selectedMatch.apiData) {
+      const formData = mapApiStampToFormData(selectedMatch.apiData);
+      setStampObservations(formData);
+    } else {
+      // Fallback to basic pre-population for legacy stamps
+      console.log("Using reference stamp defaults for:", selectedMatch.name);
+    }
+  };
+
   // Handle observation form updates
   const updateObservation = (field: string, value: any) => {
     setStampObservations(prev => ({
@@ -870,7 +1031,7 @@ export default function ScanPage() {
       [field]: value
     }));
   };
-  
+
   const toggleErrorType = (errorType: string) => {
     setStampObservations(prev => {
       const errors = [...prev.errors];
@@ -881,22 +1042,22 @@ export default function ScanPage() {
       }
     });
   };
-  
+
   const toggleColourShiftDirection = (direction: string) => {
     setStampObservations(prev => {
       const directions = [...prev.colourShift.directions];
       if (directions.includes(direction)) {
-        return { 
-          ...prev, 
-          colourShift: { 
+        return {
+          ...prev,
+          colourShift: {
             ...prev.colourShift,
             directions: directions.filter(d => d !== direction)
           }
         };
       } else {
-        return { 
-          ...prev, 
-          colourShift: { 
+        return {
+          ...prev,
+          colourShift: {
             ...prev.colourShift,
             directions: [...directions, direction]
           }
@@ -904,7 +1065,7 @@ export default function ScanPage() {
       }
     });
   };
-  
+
   const updateShiftDistance = (direction: string, value: number) => {
     setStampObservations(prev => ({
       ...prev,
@@ -914,33 +1075,16 @@ export default function ScanPage() {
       }
     }));
   };
-  
-  // Root options update handler
-  const updateRootOption = (field: string, value: any) => {
-    setStampRootOptions(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-  
+
   // Navigation functions
   const goToObservation = () => {
     setCurrentView("observation");
   };
-  
+
   const goToReference = () => {
     setCurrentView("reference");
   };
-  
-  const goToOptions = () => {
-    setCurrentView("options");
-  };
-  
-  const openDefectiveFolder = () => {
-    // In a real app, this would open a folder of defective images
-    alert("Opening defective image folder...");
-  };
-  
+
   const resetScan = () => {
     setCapturedImage(null);
     setSelectedStamp(null);
@@ -973,67 +1117,33 @@ export default function ScanPage() {
       purchaseDate: "",
       notes: ""
     });
-    setStampRootOptions({
-      id: "",
-      name: "",
-      certifier: "",
-      itemType: "",
-      colour: "",
-      country: "",
-      wordsSymbols: "",
-      imageDescription: "",
-      dateOfIssue: "",
-      paperType: "",
-      perforationType: "",
-      watermarkType: "",
-      error: "",
-      cancellation: "",
-      plates: "",
-      plating: {
-        positionNumber: "",
-        gridReference: "",
-        flawDescription: "",
-        textOnFace: "",
-        plateNumber: "",
-        settingNumber: "",
-        textColor: "",
-        flawImage: null
-      },
-      collectorGroup: "",
-      rarityRating: "",
-      grade: "",
-      purchasePrice: "",
-      purchaseDate: "",
-      notes: "",
-      visualAppeal: 50
-    });
     setCurrentView("scan");
   };
-  
+
   const applyObservations = () => {
-    // After recording observations, go to root options
-    goToOptions();
-  };
-  
-  const saveRootOptions = () => {
-    // In a real app, this would save all data to a database
+    // After recording observations, save and complete the process
     console.log("Saving all stamp data for stamp ID:", scanID);
     console.log("Reference stamp:", selectedStamp?.name);
     console.log("Observations:", stampObservations);
-    console.log("Root Options:", stampRootOptions);
-    
+
     // Show success message
     setCurrentView("scan");
     setCapturedImage(null);
     setSelectedStamp(null);
-    
+
     // Show success Alert instead of using alert()
     setRecognitionStatus("success");
     setTimeout(() => {
       resetScan();
     }, 3000);
   };
-  
+
+  // Function to open stamp detail modal
+  const openStampDetail = (stamp: any) => {
+    setDetailModalStamp(stamp);
+    setDetailModalOpen(true);
+  };
+
   // Updates for mobile responsiveness
   return (
     <div className="container mx-auto py-4 md:py-6 px-4 md:px-6 max-w-4xl">
@@ -1041,7 +1151,7 @@ export default function ScanPage() {
         <div className="size-6 md:size-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground">S</div>
         Stamp Scanner
       </h1>
-      
+
       {/* Always render the video element but keep it hidden when not active */}
       <video
         ref={videoRef}
@@ -1053,7 +1163,7 @@ export default function ScanPage() {
         className={cameraActive ? "hidden" : "hidden"}
         style={{ position: "absolute", width: 0, height: 0 }}
       ></video>
-      
+
       {currentView === "scan" && (
         <Card className="mb-4 md:mb-6 border-2 shadow-md overflow-hidden">
           <CardHeader className="bg-muted/50 p-4 md:p-6">
@@ -1100,17 +1210,17 @@ export default function ScanPage() {
                             </Alert>
                           )}
                           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full max-w-xs sm:max-w-none justify-center">
-                            <Button 
-                              onClick={startCamera} 
+                            <Button
+                              onClick={startCamera}
                               className="gap-2 w-full sm:w-auto text-xs sm:text-sm"
                               size="default"
                             >
                               <Camera className="size-3 sm:size-4" />
-                              Access Camera
+                              {isMobileDevice() ? "Open Camera" : "Access Camera"}
                             </Button>
                             <div className="relative w-full sm:w-auto">
-                              <Button 
-                                variant="outline" 
+                              <Button
+                                variant="outline"
                                 className="gap-2 w-full sm:w-auto text-xs sm:text-sm"
                                 size="default"
                               >
@@ -1125,15 +1235,25 @@ export default function ScanPage() {
                               />
                             </div>
                           </div>
+
+                          {/* Hidden input for mobile camera capture */}
+                          <input
+                            id="mobile-camera-input"
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
+                            className="hidden"
+                            onChange={handleMobileCameraCapture}
+                          />
                         </div>
                       </div>
                     )}
                   </div>
-                  
+
                   {cameraActive && (
                     <div className="flex justify-center mt-4 md:mt-6">
-                      <Button 
-                        onClick={captureImage} 
+                      <Button
+                        onClick={captureImage}
                         className="px-6 md:px-8 gap-2 w-full sm:w-auto"
                         size="default"
                       >
@@ -1144,17 +1264,17 @@ export default function ScanPage() {
                   )}
                 </>
               )}
-              
+
               {capturedImage && (
                 <div className="space-y-4">
-                  <div className="border-2 rounded-lg mx-auto overflow-hidden bg-white">
+                  <div className="border-2 rounded-lg mx-auto overflow-hidden bg-white max-w-md">
                     <img
                       src={capturedImage}
                       alt="Captured stamp"
-                      className="w-full object-contain"
+                      className="w-full h-auto object-contain max-h-96"
                     />
                   </div>
-                  
+
                   {isScanning ? (
                     <div className="space-y-4 mx-auto">
                       <div className="flex justify-between items-center">
@@ -1168,24 +1288,32 @@ export default function ScanPage() {
                     </div>
                   ) : (
                     <div className="flex flex-col sm:flex-row justify-center gap-3 mt-4 md:mt-6">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         onClick={resetScan}
                         className="gap-2 w-full sm:w-auto"
                       >
                         <RotateCcw className="size-4" />
                         Retake
                       </Button>
-                      <Button 
-                        onClick={() => simulateIdentification(capturedImage)}
+                      <Button
+                        onClick={() => {
+                          if (capturedImage) {
+                            performImageIdentification(capturedImage);
+                          } else {
+                            console.error('No captured image available');
+                            alert('No image available to identify. Please capture or upload an image first.');
+                          }
+                        }}
                         className="gap-2 w-full sm:w-auto"
+                        disabled={!capturedImage}
                       >
                         <Check className="size-4" />
                         Identify Stamp
                       </Button>
                     </div>
                   )}
-                  
+
                   {recognitionStatus === "error" && (
                     <Alert variant="destructive" className="mt-4">
                       <AlertCircle className="h-4 w-4" />
@@ -1197,11 +1325,11 @@ export default function ScanPage() {
                   )}
                 </div>
               )}
-              
+
               <canvas ref={canvasRef} className="hidden"></canvas>
             </div>
           </CardContent>
-          
+
           {recognitionStatus === "success" && !capturedImage && (
             <CardFooter className="bg-muted/30 p-4">
               <Alert className="w-full bg-green-50 border-green-400">
@@ -1215,162 +1343,617 @@ export default function ScanPage() {
           )}
         </Card>
       )}
-      
+
       {currentView === "reference" && selectedStamp && (
         <div className="space-y-4 md:space-y-6">
           <Card className="border-2 shadow-md">
             <CardHeader className="bg-muted/50 flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 p-4 md:pb-3">
               <div>
-                <CardTitle className="text-lg md:text-xl">Reference Stamp</CardTitle>
+                <CardTitle className="text-lg md:text-xl">
+                  {selectedStamp.primaryMatch ? "AI Identified Stamp" : "Reference Stamp"}
+                </CardTitle>
                 <CardDescription>
-                  Match your stamp with this reference information
+                  {selectedStamp.primaryMatch
+                    ? "Our AI has identified your stamp. Review the details and similar stamps below."
+                    : "Match your stamp with this reference information"
+                  }
                 </CardDescription>
-              </div>
-              <div className="flex items-center text-sm">
-                <span className="mr-2 text-muted-foreground">Image ID: </span>
-                <Badge variant="outline" className="font-mono">{scanID}</Badge>
               </div>
             </CardHeader>
             <CardContent className="p-4 md:p-6">
-              {/* Auto-population notification */}
-              {simulatedStampDatabase.some(s => s.refId === selectedStamp.id) && (
-                <Alert className="mb-4 md:mb-6 bg-primary/10 border-primary">
-                  <Check className="h-4 w-4 text-primary" />
-                  <AlertTitle>Stamp found in collection</AlertTitle>
-                  <AlertDescription>
-                    This stamp has been identified in your collection. Details have been automatically filled in.
-                  </AlertDescription>
-                </Alert>
-              )}
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <StampViewer 
-                    stamp={selectedStamp} 
-                    scanID={scanID} 
-                    onBack={resetScan}
-                  />
-                </div>
-                
-                <ReferenceInfo 
-                  stamp={selectedStamp}
-                  onAccept={goToObservation}
-                  onReject={resetScan}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-      
-      {currentView === "observation" && selectedStamp && (
-        <div className="flex-1 overflow-hidden">
-          <StampObservationManager
-            selectedStamp={{
-              id: selectedStamp.refId,
-              image: selectedStamp.imagePath || capturedImage || "",
-            }}
-            onSave={applyObservations}
-            onCancel={() => setCurrentView("scan")}
-          />
-        </div>
-      )}
-      
-      {currentView === "options" && selectedStamp && (
-        <div className="space-y-4 md:space-y-6">
-          <Card className="border-2 shadow-md">
-            <CardHeader className="bg-muted/50 flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 p-4 md:pb-3">
-              <div>
-                <CardTitle className="text-lg md:text-xl">Stamp Cataloging Options</CardTitle>
-                <CardDescription>
-                  Adjust and finalize catalog details for this stamp
-                </CardDescription>
-              </div>
-              <div className="flex items-center text-sm">
-                <span className="mr-2 text-muted-foreground">Image ID: </span>
-                <Badge variant="outline" className="font-mono">{scanID}</Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              {/* Auto-population reminder */}
-              {simulatedStampDatabase.some(s => s.refId === selectedStamp.id) && (
-                <div className="px-4 md:px-6 pt-4 md:pt-6">
-                  <Alert className="bg-primary/10 border-primary">
-                    <Check className="h-4 w-4 text-primary" />
-                    <AlertTitle>Pre-populated details</AlertTitle>
-                    <AlertDescription>
-                      Fields have been pre-filled based on your existing records. You can review and modify if needed.
-                    </AlertDescription>
-                  </Alert>
-                </div>
-              )}
-              
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-4 md:p-6 pt-4">
-                <div className="lg:col-span-1">
-                  <div className="sticky top-4">
-                    <div className="mb-4 overflow-hidden bg-white rounded-lg shadow-md">
-                      <Card className="border-none shadow-sm">
-                        <CardContent className="p-4 aspect-square relative">
-                          <div className="absolute inset-0">
-                            <Image
-                              src={selectedStamp.imagePath}
-                              alt={selectedStamp.name}
-                              fill
-                              className="object-contain p-2"
-                            />
-                          </div>
-                        </CardContent>
-                      </Card>
+              {selectedStamp.primaryMatch ? (
+                // New structure with primary match and similar stamps
+                <div className="space-y-6">
+                  {/* Primary AI Match */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-semibold">AI Identified Stamp</h3>
+                      <Badge variant="default" className="text-xs">Primary Match</Badge>
                     </div>
                     
-                    <Card className="border-none shadow-sm">
-                      <CardHeader className="pb-2 pt-3">
-                        <CardTitle className="text-base">Reference Details</CardTitle>
-                      </CardHeader>
-                      <CardContent className="px-4 pb-4 pt-0">
-                        <div className="text-sm space-y-2">
-                          <div className="flex justify-between border-b border-muted pb-1">
-                            <span className="text-muted-foreground">Name:</span>
-                            <span className="font-medium">{selectedStamp.name}</span>
+                    <Card className={`border-2 max-w-sm mx-auto ${selectedStamp.selectedType === 'primary' && selectedStamp.selectedIndex === 0
+                      ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
+                      : 'border-border'
+                    }`}>
+                      <CardContent className="space-y-4 flex-1 flex flex-col px-4 py-4">
+                        <div className="aspect-square relative bg-white rounded border overflow-hidden">
+                          <Image
+                            src={selectedStamp.primaryMatch.imagePath}
+                            alt={selectedStamp.primaryMatch.name}
+                            fill
+                            className="object-contain p-2"
+                          />
+                        </div>
+                        <div className="space-y-3 flex-1 flex flex-col">
+                          <div>
+                            <h3 className="font-semibold text-sm line-clamp-2 mb-2 leading-tight">{selectedStamp.primaryMatch.name}</h3>
+                            <p className="text-xs text-muted-foreground truncate leading-relaxed">{selectedStamp.primaryMatch.description}</p>
                           </div>
-                          {selectedStamp.description && (
-                            <div className="flex justify-between border-b border-muted pb-1">
-                              <span className="text-muted-foreground">Description:</span>
-                              <span className="font-medium">{selectedStamp.description}</span>
+
+                          {/* Essential info only */}
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap gap-1.5">
+                              <Badge variant="outline" className="text-xs px-2 py-1">
+                                {selectedStamp.primaryMatch.country}
+                              </Badge>
+                              <Badge variant="secondary" className="text-xs px-2 py-1">
+                                {selectedStamp.primaryMatch.year}
+                              </Badge>
                             </div>
-                          )}
-                          {selectedStamp.year && (
-                            <div className="flex justify-between border-b border-muted pb-1">
-                              <span className="text-muted-foreground">Year:</span>
-                              <span className="font-medium">{selectedStamp.year}</span>
+                            
+                            {/* Show denomination and series if available */}
+                            {(selectedStamp.primaryMatch.denominationValue || selectedStamp.primaryMatch.seriesName) && (
+                              <div className="flex flex-wrap gap-1.5">
+                                {selectedStamp.primaryMatch.denominationValue && (
+                                  <Badge variant="outline" className="text-xs bg-muted/30 px-2 py-1">
+                                    {selectedStamp.primaryMatch.denominationValue}{selectedStamp.primaryMatch.denominationSymbol}
+                                  </Badge>
+                                )}
+                                {selectedStamp.primaryMatch.seriesName && (
+                                  <Badge variant="outline" className="text-xs bg-muted/30 px-2 py-1 max-w-[120px] truncate">
+                                    {selectedStamp.primaryMatch.seriesName}
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
+                            
+                            {/* Show color and catalog info */}
+                            <div className="flex flex-wrap gap-1.5">
+                              {(selectedStamp.primaryMatch.colors && selectedStamp.primaryMatch.colors.length > 0) || selectedStamp.primaryMatch.color ? (
+                                <Badge variant="outline" className="text-xs bg-muted/30 px-2 py-1">
+                                  {selectedStamp.primaryMatch.color || selectedStamp.primaryMatch.colors[0]}
+                                </Badge>
+                              ) : null}
+                              {selectedStamp.primaryMatch.catalogName && selectedStamp.primaryMatch.catalogNumber && (
+                                <Badge variant="outline" className="text-xs bg-muted/30 px-2 py-1">
+                                  {selectedStamp.primaryMatch.catalogName} {selectedStamp.primaryMatch.catalogNumber}
+                                </Badge>
+                              )}
                             </div>
-                          )}
-                          {selectedStamp.country && (
-                            <div className="flex justify-between border-b border-muted pb-1">
-                              <span className="text-muted-foreground">Country:</span>
-                              <span className="font-medium">{selectedStamp.country}</span>
-                            </div>
-                          )}
+                            
+                            {/* Show rarity if available */}
+                            {selectedStamp.primaryMatch.rarenessLevel && (
+                              <div className="flex flex-wrap gap-1.5">
+                                <Badge variant="secondary" className="text-xs px-2 py-1">
+                                  {selectedStamp.primaryMatch.rarenessLevel}
+                                </Badge>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Action buttons */}
+                          <div className="flex flex-col sm:flex-row gap-2 pt-3 mt-auto">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 text-xs h-8 min-w-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openStampDetail(selectedStamp.primaryMatch);
+                              }}
+                            >
+                              View Details
+                            </Button>
+                            <Button
+                              size="sm"
+                              className="flex-1 text-xs h-8 min-w-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedStamp((prev: any) => ({ ...prev, selectedIndex: 0, selectedType: 'primary' }));
+                              }}
+                              variant={selectedStamp.selectedType === 'primary' && selectedStamp.selectedIndex === 0 ? "default" : "outline"}
+                            >
+                              {selectedStamp.selectedType === 'primary' && selectedStamp.selectedIndex === 0 ? "Selected" : "Select"}
+                            </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
                   </div>
+
+                  {/* Similar Stamps Section */}
+                  {selectedStamp.similarMatches && selectedStamp.similarMatches.length > 0 && (
+                    <div className="space-y-4">
+                      <Alert className="bg-blue-50 border-blue-200">
+                        <AlertCircle className="h-4 w-4 text-blue-600" />
+                        <AlertTitle>Similar Stamps Found</AlertTitle>
+                        <AlertDescription>
+                          We found {selectedStamp.similarMatches.length} similar stamp{selectedStamp.similarMatches.length !== 1 ? 's' : ''} that might be related to your stamp.
+                          You can review these as alternative options.
+                        </AlertDescription>
+                      </Alert>
+
+                      {/* Similar stamps grid */}
+                      <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                        {selectedStamp.similarMatches.map((match: any, index: number) => (
+                          <Card
+                            key={match.id}
+                            className={`cursor-pointer transition-all duration-200 hover:shadow-lg border-2 min-h-[450px] w-full ${selectedStamp.selectedType === 'similar' && selectedStamp.selectedIndex === index
+                              ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
+                              : 'border-border hover:border-primary/50'
+                              }`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openStampDetail(match);
+                            }}
+                          >
+                            <CardContent className="space-y-4 flex-1 flex flex-col px-4 py-4">
+                              <div className="aspect-square relative bg-white rounded border overflow-hidden">
+                                <Image
+                                  src={match.imagePath}
+                                  alt={match.name}
+                                  fill
+                                  className="object-contain p-2"
+                                />
+                              </div>
+                              <div className="space-y-3 flex-1 flex flex-col">
+                                <div>
+                                  <h3 className="font-semibold text-sm line-clamp-2 mb-2 leading-tight">{match.name}</h3>
+                                  <p className="text-xs text-muted-foreground truncate leading-relaxed">{match.description}</p>
+                                </div>
+
+                                {/* Essential info only */}
+                                <div className="space-y-2">
+                                  <div className="flex flex-wrap gap-1.5">
+                                    <Badge variant="outline" className="text-xs px-2 py-1">
+                                      {match.country}
+                                    </Badge>
+                                    <Badge variant="secondary" className="text-xs px-2 py-1">
+                                      {match.year}
+                                    </Badge>
+                                  </div>
+                                  
+                                  {/* Show denomination and series if available */}
+                                  {(match.denominationValue || match.seriesName) && (
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {match.denominationValue && (
+                                        <Badge variant="outline" className="text-xs bg-muted/30 px-2 py-1">
+                                          {match.denominationValue}{match.denominationSymbol}
+                                        </Badge>
+                                      )}
+                                      {match.seriesName && (
+                                        <Badge variant="outline" className="text-xs bg-muted/30 px-2 py-1 max-w-[120px] truncate">
+                                          {match.seriesName}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  )}
+                                  
+                                  {/* Show color and catalog info */}
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {(match.colors && match.colors.length > 0) || match.color ? (
+                                      <Badge variant="outline" className="text-xs bg-muted/30 px-2 py-1">
+                                        {match.color || match.colors[0]}
+                                      </Badge>
+                                    ) : null}
+                                    {match.catalogName && match.catalogNumber && (
+                                      <Badge variant="outline" className="text-xs bg-muted/30 px-2 py-1">
+                                        {match.catalogName} {match.catalogNumber}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  
+                                  {/* Show rarity if available */}
+                                  {match.rarenessLevel && (
+                                    <div className="flex flex-wrap gap-1.5">
+                                      <Badge variant="secondary" className="text-xs px-2 py-1">
+                                        {match.rarenessLevel}
+                                      </Badge>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Action buttons - pushed to bottom */}
+                                <div className="flex flex-col sm:flex-row gap-2 pt-3 mt-auto">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex-1 text-xs h-8 min-w-0"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openStampDetail(match);
+                                    }}
+                                  >
+                                    View Details
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    className="flex-1 text-xs h-8 min-w-0"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedStamp((prev: any) => ({ ...prev, selectedIndex: index, selectedType: 'similar' }));
+                                    }}
+                                    variant={selectedStamp.selectedType === 'similar' && selectedStamp.selectedIndex === index ? "default" : "outline"}
+                                  >
+                                    {selectedStamp.selectedType === 'similar' && selectedStamp.selectedIndex === index ? "Selected" : "Select"}
+                                  </Button>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+
+                      {/* Show summary for large numbers of similar matches */}
+                      {selectedStamp.similarMatches.length > 6 && (
+                        <div className="text-center text-sm text-muted-foreground bg-muted/30 p-3 rounded">
+                          <p>Showing all {selectedStamp.similarMatches.length} similar stamps for reference.</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="flex flex-col sm:flex-row justify-center gap-3 pt-4 border-t">
+                    <Button
+                      variant="outline"
+                      onClick={resetScan}
+                      className="gap-2"
+                    >
+                      <RotateCcw className="size-4" />
+                      Start Over
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        let selectedMatch;
+                        if (selectedStamp.selectedType === 'primary') {
+                          selectedMatch = selectedStamp.primaryMatch;
+                        } else {
+                          selectedMatch = selectedStamp.similarMatches[selectedStamp.selectedIndex];
+                        }
+                        selectFinalStamp(selectedMatch, selectedStamp.selectedIndex);
+                        goToObservation();
+                      }}
+                      className="gap-2"
+                      disabled={!selectedStamp.selectedType || (selectedStamp.selectedType === 'similar' && selectedStamp.selectedIndex === undefined)}
+                    >
+                      <Check className="size-4" />
+                      Confirm Selection
+                    </Button>
+                  </div>
                 </div>
-                
-                <div className="lg:col-span-2">
-                  <StampOptions 
-                    stampData={stampRootOptions}
-                    onUpdate={updateRootOption}
-                    onSave={saveRootOptions}
-                    onOpenDefectiveFolder={openDefectiveFolder}
-                    referenceData={selectedStamp}
-                  />
-                </div>
-              </div>
+              ) : (
+                // Single match view (existing logic)
+                <>
+                  {/* Auto-population notification */}
+                  {simulatedStampDatabase.some(s => s.refId === selectedStamp.id) && (
+                    <Alert className="mb-4 md:mb-6 bg-primary/10 border-primary">
+                      <Check className="h-4 w-4 text-primary" />
+                      <AlertTitle>Stamp found in collection</AlertTitle>
+                      <AlertDescription>
+                        This stamp has been identified in your collection. Details have been automatically filled in.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <StampViewer
+                        stamp={selectedStamp}
+                        scanID={scanID}
+                        onBack={resetScan}
+                      />
+                    </div>
+
+                    <ReferenceInfo
+                      stamp={selectedStamp}
+                      onAccept={goToObservation}
+                      onReject={resetScan}
+                    />
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>
       )}
+
+      {currentView === "observation" && selectedStamp && (
+        <div className="flex-1 overflow-hidden">
+          <StampObservationManager
+            selectedStamp={{
+              id: selectedStamp.finalSelection ? selectedStamp.id : selectedStamp.refId,
+              image: selectedStamp.finalSelection ? selectedStamp.imagePath : (selectedStamp.imagePath || capturedImage || ""),
+              scannedImage: capturedImage || undefined,
+              apiData: selectedStamp.finalSelection ? selectedStamp.apiData : null,
+              stampData: selectedStamp
+            }}
+            onCancel={() => setCurrentView("scan")}
+          />
+        </div>
+      )}
+
+      {/* Stamp Detail Modal */}
+      <Dialog open={detailModalOpen} onOpenChange={setDetailModalOpen}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="pb-3">
+            <DialogTitle className="text-lg">{detailModalStamp?.name}</DialogTitle>
+          </DialogHeader>
+
+          {detailModalStamp && (
+            <div className="space-y-4">
+              {/* Image */}
+              <div className="w-full aspect-square relative bg-white rounded-lg border overflow-hidden">
+                <Image
+                  src={detailModalStamp.imagePath}
+                  alt={detailModalStamp.name}
+                  fill
+                  className="object-contain p-4"
+                />
+              </div>
+
+              {/* All Information in compact list */}
+              <div className="space-y-3">
+                {/* Basic Details */}
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-foreground border-b pb-1">Basic Information</h3>
+                  <div className="space-y-1.5 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Country</span>
+                      <span className="font-medium">{detailModalStamp.country}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Year</span>
+                      <span className="font-medium">{detailModalStamp.year}</span>
+                    </div>
+                    {detailModalStamp.seriesName && (
+                      <div className="flex justify-between items-start">
+                        <span className="text-muted-foreground">Series</span>
+                        <span className="font-medium text-right max-w-[200px] text-xs leading-tight">{detailModalStamp.seriesName}</span>
+                      </div>
+                    )}
+                    {detailModalStamp.denominationValue && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Denomination</span>
+                        <span className="font-medium">{detailModalStamp.denominationValue}{detailModalStamp.denominationSymbol}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-start">
+                      <span className="text-muted-foreground">Description</span>
+                      <span className="font-medium text-right max-w-[200px] text-xs leading-tight">{detailModalStamp.description}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Catalog Information */}
+                {(detailModalStamp.catalogName || detailModalStamp.catalogNumber || detailModalStamp.catalogId) && (
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-semibold text-foreground border-b pb-1">Catalog Information</h3>
+                    <div className="space-y-1.5 text-sm">
+                      {detailModalStamp.catalogName && detailModalStamp.catalogNumber && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground">{detailModalStamp.catalogName}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {detailModalStamp.catalogNumber}
+                          </Badge>
+                        </div>
+                      )}
+                      {detailModalStamp.catalogId && (
+                        <div className="flex justify-between items-start">
+                          <span className="text-muted-foreground">Catalog ID</span>
+                          <span className="font-medium text-right max-w-[200px] text-xs leading-tight break-all">{detailModalStamp.catalogId}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Technical Specifications */}
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-foreground border-b pb-1">Technical Details</h3>
+                  <div className="space-y-1.5 text-sm">
+                    {(detailModalStamp.colors && detailModalStamp.colors.length > 0) || detailModalStamp.color && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Color</span>
+                        <Badge variant="secondary" className="text-xs">
+                          {detailModalStamp.color || detailModalStamp.colors[0]}
+                        </Badge>
+                      </div>
+                    )}
+
+                    {detailModalStamp.design && (
+                      <div className="flex justify-between items-start">
+                        <span className="text-muted-foreground">Design</span>
+                        <span className="font-medium text-right max-w-[200px] text-xs leading-tight">{detailModalStamp.design}</span>
+                      </div>
+                    )}
+
+                    {detailModalStamp.theme && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Theme</span>
+                        <Badge variant="outline" className="text-xs">
+                          {detailModalStamp.theme}
+                        </Badge>
+                      </div>
+                    )}
+
+                    {((detailModalStamp.watermarkOptions && detailModalStamp.watermarkOptions.length > 0) || detailModalStamp.watermark) && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Watermark</span>
+                        <Badge variant="outline" className="text-xs">
+                          {detailModalStamp.watermark || detailModalStamp.watermarkOptions[0]}
+                        </Badge>
+                      </div>
+                    )}
+
+                    {((detailModalStamp.perforationOptions && detailModalStamp.perforationOptions.length > 0) || detailModalStamp.perforation) && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Perforation</span>
+                        <Badge variant="outline" className="text-xs">
+                          {detailModalStamp.perforation || detailModalStamp.perforationOptions[0]}
+                        </Badge>
+                      </div>
+                    )}
+
+                    {((detailModalStamp.paperTypes && detailModalStamp.paperTypes.length > 0) || detailModalStamp.paperType) && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Paper</span>
+                        <Badge variant="outline" className="text-xs">
+                          {detailModalStamp.paperType || detailModalStamp.paperTypes[0]}
+                        </Badge>
+                      </div>
+                    )}
+
+                    {((detailModalStamp.printTypes && detailModalStamp.printTypes.length > 0) || detailModalStamp.printing) && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Printing</span>
+                        <Badge variant="outline" className="text-xs">
+                          {detailModalStamp.printing || detailModalStamp.printTypes[0]}
+                        </Badge>
+                      </div>
+                    )}
+
+                    {detailModalStamp.size && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Size</span>
+                        <span className="font-medium text-xs">{detailModalStamp.size}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Production Information */}
+                {(detailModalStamp.artist || detailModalStamp.engraver || detailModalStamp.printingQuantity || detailModalStamp.usagePeriod) && (
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-semibold text-foreground border-b pb-1">Production Details</h3>
+                    <div className="space-y-1.5 text-sm">
+                      {detailModalStamp.artist && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground">Artist</span>
+                          <span className="font-medium text-xs">{detailModalStamp.artist}</span>
+                        </div>
+                      )}
+                      {detailModalStamp.engraver && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground">Engraver</span>
+                          <span className="font-medium text-xs">{detailModalStamp.engraver}</span>
+                        </div>
+                      )}
+                      {detailModalStamp.printingQuantity && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground">Print Quantity</span>
+                          <span className="font-medium text-xs">{detailModalStamp.printingQuantity.toLocaleString()}</span>
+                        </div>
+                      )}
+                      {detailModalStamp.usagePeriod && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground">Usage Period</span>
+                          <span className="font-medium text-xs">{detailModalStamp.usagePeriod}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Condition & Rarity */}
+                {(detailModalStamp.rarenessLevel || detailModalStamp.hasGum !== undefined || detailModalStamp.gumCondition) && (
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-semibold text-foreground border-b pb-1">Condition & Rarity</h3>
+                    <div className="space-y-1.5 text-sm">
+                      {detailModalStamp.rarenessLevel && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground">Rarity</span>
+                          <Badge variant="secondary" className="text-xs">
+                            {detailModalStamp.rarenessLevel}
+                          </Badge>
+                        </div>
+                      )}
+                      {detailModalStamp.hasGum !== undefined && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground">Has Gum</span>
+                          <Badge variant={detailModalStamp.hasGum ? "default" : "outline"} className="text-xs">
+                            {detailModalStamp.hasGum ? "Yes" : "No"}
+                          </Badge>
+                        </div>
+                      )}
+                      {detailModalStamp.gumCondition && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground">Gum Condition</span>
+                          <span className="font-medium text-xs">{detailModalStamp.gumCondition}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Historical Information */}
+                {(detailModalStamp.specialNotes || detailModalStamp.historicalContext) && (
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-semibold text-foreground border-b pb-1">Historical Information</h3>
+                    <div className="space-y-1.5 text-sm">
+                      {detailModalStamp.specialNotes && (
+                        <div>
+                          <span className="text-muted-foreground block mb-1">Special Notes</span>
+                          <p className="text-xs leading-relaxed bg-muted/30 p-2 rounded">{detailModalStamp.specialNotes}</p>
+                        </div>
+                      )}
+                      {detailModalStamp.historicalContext && (
+                        <div>
+                          <span className="text-muted-foreground block mb-1">Historical Context</span>
+                          <p className="text-xs leading-relaxed bg-muted/30 p-2 rounded">{detailModalStamp.historicalContext}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-2 pt-4 border-t">
+            <Button variant="outline" onClick={() => setDetailModalOpen(false)} className="flex-1">
+              Close
+            </Button>
+            <Button
+              onClick={() => {
+                if (detailModalStamp) {
+                  // Check if it's the primary match
+                  if (selectedStamp.primaryMatch && selectedStamp.primaryMatch.id === detailModalStamp.id) {
+                    setSelectedStamp((prev: any) => ({ ...prev, selectedIndex: 0, selectedType: 'primary' }));
+                  } else {
+                    // Check if it's in similar matches
+                    const matchIndex = selectedStamp.similarMatches?.findIndex((m: any) => m.id === detailModalStamp.id);
+                    if (matchIndex !== -1) {
+                      setSelectedStamp((prev: any) => ({ ...prev, selectedIndex: matchIndex, selectedType: 'similar' }));
+                    }
+                  }
+                }
+                setDetailModalOpen(false);
+              }}
+              className="flex-1"
+            >
+              Select This Stamp
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
+  )
+}
+
+export default function ProtectedScanPage() {
+  return (
+    <AuthGuard>
+      <ScanPage />
+    </AuthGuard>
   )
 }

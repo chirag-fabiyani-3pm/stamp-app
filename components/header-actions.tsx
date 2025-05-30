@@ -18,44 +18,68 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Menu, User, LogOut, LayoutDashboard, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/components/ui/use-toast"
+import { 
+  isAuthenticated, 
+  isAdmin, 
+  getUserDisplayName, 
+  getUserAvatar, 
+  signOut,
+  getUserData 
+} from "@/lib/api/auth"
 
 export function HeaderActions() {
   const pathname = usePathname()
   const router = useRouter()
   const { toast } = useToast()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [userRole, setUserRole] = useState<string | null>(null)
-  const [userName, setUserName] = useState<string | null>(null)
+  const [userIsAdmin, setUserIsAdmin] = useState(false)
+  const [userName, setUserName] = useState<string>("")
+  const [userAvatar, setUserAvatar] = useState<string | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
 
   useEffect(() => {
-    // Check if user is logged in
-    const loggedInStatus = localStorage.getItem("isLoggedIn")
-    const storedUserRole = localStorage.getItem("userRole")
-    const storedUserName = localStorage.getItem("userName")
+    // Check authentication status
+    const checkAuth = () => {
+      const authenticated = isAuthenticated()
+      const adminStatus = isAdmin()
+      const displayName = getUserDisplayName()
+      const avatar = getUserAvatar()
 
-    setIsLoggedIn(loggedInStatus === "true")
-    setUserRole(storedUserRole)
-    setUserName(storedUserName)
-  }, [pathname]) // Re-check when pathname changes
+      setIsLoggedIn(authenticated)
+      setUserIsAdmin(adminStatus)
+      setUserName(displayName)
+      setUserAvatar(avatar)
+    }
+
+    // Check on mount
+    checkAuth()
+
+    // Check when pathname changes (in case of login/logout)
+    checkAuth()
+  }, [pathname])
 
   const handleLogout = () => {
-    // Clear user data
-    localStorage.removeItem("isLoggedIn")
-    localStorage.removeItem("userRole")
-    localStorage.removeItem("userEmail")
-    localStorage.removeItem("userName")
-
+    signOut()
+    
     setIsLoggedIn(false)
-    setUserRole(null)
+    setUserIsAdmin(false)
+    setUserName("")
+    setUserAvatar(null)
 
     toast({
-      title: "Logged out successfully",
-      description: "You have been logged out of your account",
+      title: "Signed out successfully",
+      description: "You have been signed out of your account",
     })
+  }
 
-    // Redirect to home page
-    router.push("/")
+  // Get user initials for avatar fallback
+  const getUserInitials = (name: string): string => {
+    if (!name) return "U"
+    const names = name.split(" ")
+    if (names.length >= 2) {
+      return `${names[0][0]}${names[1][0]}`.toUpperCase()
+    }
+    return name.substring(0, 2).toUpperCase()
   }
 
   // Scan button with sparkle icon
@@ -98,8 +122,8 @@ export function HeaderActions() {
           <DropdownMenuTrigger className="outline-none">
             <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0">
               <Avatar className="h-8 w-8">
-                <AvatarImage src="/man-avatar-profile-picture.avif" alt={userName || "User"} />
-                <AvatarFallback>{userName?.substring(0, 2) || "U"}</AvatarFallback>
+                <AvatarImage src={userAvatar || "/man-avatar-profile-picture.avif"} alt={userName || "User"} />
+                <AvatarFallback>{getUserInitials(userName)}</AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
@@ -108,7 +132,7 @@ export function HeaderActions() {
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium leading-none">{userName || "User"}</p>
                 <p className="text-xs leading-none text-muted-foreground">
-                  {userRole === "admin" ? "Administrator" : "Member"}
+                  {userIsAdmin ? "Administrator" : "Member"}
                 </p>
               </div>
             </DropdownMenuLabel>
@@ -119,7 +143,7 @@ export function HeaderActions() {
                 <span>Profile</span>
               </Link>
             </DropdownMenuItem>
-            {userRole === "admin" && (
+            {userIsAdmin && (
               <DropdownMenuItem asChild>
                 <Link href="/admin" className="cursor-pointer flex items-center">
                   <LayoutDashboard className="mr-2 h-4 w-4" />
@@ -130,21 +154,14 @@ export function HeaderActions() {
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="cursor-pointer flex items-center">
               <LogOut className="mr-2 h-4 w-4" />
-              <span>Log out</span>
+              <span>Sign out</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ) : (
-        <div className="flex items-center gap-2">
-          <Link href="/login">
-            <Button variant="ghost" size="sm">
-              Log in
-            </Button>
-          </Link>
-          <Link href="/register">
-            <Button size="sm">Sign up</Button>
-          </Link>
-        </div>
+        <Link href="/login">
+          <Button>Sign in</Button>
+        </Link>
       )}
 
       {/* Mobile Menu */}
@@ -209,7 +226,7 @@ export function HeaderActions() {
                   Profile
                 </Link>
 
-                {userRole === "admin" && (
+                {userIsAdmin && (
                   <Link
                     href="/admin"
                     className={cn(
@@ -231,20 +248,15 @@ export function HeaderActions() {
                   className="mt-4"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
-                  Log out
+                  Sign out
                 </Button>
               </>
             )}
 
             {!isLoggedIn && (
-              <div className="flex flex-col gap-2 mt-4">
+              <div className="mt-4">
                 <Link href="/login" onClick={() => setIsSheetOpen(false)}>
-                  <Button variant="outline" className="w-full">
-                    Log in
-                  </Button>
-                </Link>
-                <Link href="/register" onClick={() => setIsSheetOpen(false)}>
-                  <Button className="w-full">Sign up</Button>
+                  <Button className="w-full">Sign in</Button>
                 </Link>
               </div>
             )}

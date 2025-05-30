@@ -1,3 +1,5 @@
+"use client"
+
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Camera, Database, BarChart3, Users } from "lucide-react"
@@ -105,7 +107,61 @@ export default function Home() {
               </div>
             </div>
             <div className="bg-background p-6 rounded-lg shadow-lg">
-              <img src="/how-it-works.jpg" alt="Stamp recognition demo" className="rounded-md w-full" />
+              <div className="space-y-6">
+                <div className="text-center">
+                  <h3 className="font-semibold text-lg mb-4">Visual Guide</h3>
+                </div>
+                
+                {/* Step 1 Visual */}
+                <div className="flex items-center justify-center p-4 bg-muted rounded-lg">
+                  <div className="text-center">
+                    <Camera className="h-12 w-12 text-primary mx-auto mb-2" />
+                    <p className="text-sm font-medium">Upload Stamp Image</p>
+                  </div>
+                </div>
+                
+                {/* Arrow */}
+                <div className="flex justify-center">
+                  <ArrowRight className="h-6 w-6 text-muted-foreground" />
+                </div>
+                
+                {/* Step 2 Visual */}
+                <div className="flex items-center justify-center p-4 bg-muted rounded-lg">
+                  <div className="text-center">
+                    <div className="relative">
+                      <BarChart3 className="h-12 w-12 text-primary mx-auto mb-2" />
+                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
+                    </div>
+                    <p className="text-sm font-medium">AI Processing</p>
+                  </div>
+                </div>
+                
+                {/* Arrow */}
+                <div className="flex justify-center">
+                  <ArrowRight className="h-6 w-6 text-muted-foreground" />
+                </div>
+                
+                {/* Step 3 Visual */}
+                <div className="flex items-center justify-center p-4 bg-muted rounded-lg">
+                  <div className="text-center">
+                    <Database className="h-12 w-12 text-primary mx-auto mb-2" />
+                    <p className="text-sm font-medium">Catalog Match Found</p>
+                  </div>
+                </div>
+                
+                {/* Arrow */}
+                <div className="flex justify-center">
+                  <ArrowRight className="h-6 w-6 text-muted-foreground" />
+                </div>
+                
+                {/* Step 4 Visual */}
+                <div className="flex items-center justify-center p-4 bg-primary/10 rounded-lg border-2 border-primary/20">
+                  <div className="text-center">
+                    <Users className="h-12 w-12 text-primary mx-auto mb-2" />
+                    <p className="text-sm font-medium text-primary">Added to Collection</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

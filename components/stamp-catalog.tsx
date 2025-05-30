@@ -16,6 +16,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import { Badge } from "@/components/ui/badge"
 
 // Define stamp data types
 interface Stamp {
@@ -285,15 +286,15 @@ export default function StampCatalog({ catalogId }: StampCatalogProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {stamps.length === 0 ? (
-        <div className="text-center py-12">
+        <div className="text-center py-8 sm:py-12">
           <h3 className="text-lg font-medium">No stamps found for this catalog</h3>
           <p className="text-muted-foreground mt-2">Try selecting a different catalog</p>
         </div>
       ) : (
         <>
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <div className="relative flex-1">
               <Input
                 placeholder="Search stamps..."
@@ -304,7 +305,7 @@ export default function StampCatalog({ catalogId }: StampCatalogProps) {
                 }}
                 className="pr-10"
               />
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
             </div>
             <div className="w-full sm:w-48">
               <Select value={sortBy} onValueChange={(value) => setSortBy(value)}>
@@ -321,11 +322,11 @@ export default function StampCatalog({ catalogId }: StampCatalogProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {paginatedStamps.map((stamp) => (
               <Card key={stamp.id} className="flex flex-col h-full">
-                <CardContent className="p-4 flex-grow">
-                  <div className="aspect-[4/5] relative mb-4 border rounded-md overflow-hidden">
+                <CardContent className="p-3 sm:p-4 flex-grow">
+                  <div className="aspect-[4/5] relative mb-3 sm:mb-4 border rounded-md overflow-hidden">
                     <Image
                       src={`/vintage-postage-stamp.png?height=300&width=240&query=Stamp ${stamp.catalogNumber} ${stamp.title}`}
                       alt={stamp.title}
@@ -335,37 +336,27 @@ export default function StampCatalog({ catalogId }: StampCatalogProps) {
                     />
                   </div>
                   <div className="space-y-2">
-                    <h3 className="font-medium line-clamp-2">{stamp.title}</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="font-medium text-sm sm:text-base line-clamp-2">{stamp.title}</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       {stamp.catalogNumber} ({stamp.year})
                     </p>
-                    <div className="text-sm">
-                      <div className="flex justify-between">
-                        <span className="font-medium">Denomination:</span>
-                        <span>{stamp.denomination}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium">Color:</span>
-                        <span>{stamp.color}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium">Condition:</span>
-                        <span>{stamp.condition}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium">Rarity:</span>
-                        <span>{stamp.rarity}</span>
-                      </div>
-                      <div className="flex justify-between font-semibold mt-2">
-                        <span>Price:</span>
-                        <span>NZ{stamp.price}</span>
-                      </div>
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                      <Badge variant="secondary" className="text-xs">
+                        {stamp.denomination}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {stamp.condition}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {stamp.rarity}
+                      </Badge>
                     </div>
+                    <p className="text-sm sm:text-base font-medium">{stamp.price}</p>
                   </div>
                 </CardContent>
-                <CardFooter className="p-4 pt-0">
-                  <Button asChild className="w-full">
-                    <Link href={`/stamps/${stamp.id}`}>View Details</Link>
+                <CardFooter className="p-3 sm:p-4 pt-0">
+                  <Button asChild className="w-full text-xs sm:text-sm">
+                    <Link href={`/stamp/${stamp.id}`}>View Details</Link>
                   </Button>
                 </CardFooter>
               </Card>
@@ -373,18 +364,22 @@ export default function StampCatalog({ catalogId }: StampCatalogProps) {
           </div>
 
           {totalPages > 1 && (
-            <Pagination className="mt-8">
-              <PaginationContent>
+            <Pagination className="mt-6 sm:mt-8">
+              <PaginationContent className="overflow-x-auto pb-2 sm:pb-0">
                 <PaginationItem>
                   <PaginationPrevious
                     onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                    className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    className={`${currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"} text-xs sm:text-sm`}
                   />
                 </PaginationItem>
 
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                   <PaginationItem key={page}>
-                    <PaginationLink onClick={() => handlePageChange(page)} isActive={page === currentPage}>
+                    <PaginationLink 
+                      onClick={() => handlePageChange(page)} 
+                      isActive={page === currentPage}
+                      className="text-xs sm:text-sm h-8 w-8 sm:h-9 sm:w-9"
+                    >
                       {page}
                     </PaginationLink>
                   </PaginationItem>
@@ -393,7 +388,7 @@ export default function StampCatalog({ catalogId }: StampCatalogProps) {
                 <PaginationItem>
                   <PaginationNext
                     onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    className={`${currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"} text-xs sm:text-sm`}
                   />
                 </PaginationItem>
               </PaginationContent>

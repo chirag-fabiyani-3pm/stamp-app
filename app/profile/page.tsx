@@ -3,11 +3,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import ProfileInfo from "@/components/profile/profile-info"
 import ProfileSettings from "@/components/profile/profile-settings"
 import ProfileCollection from "@/components/profile/profile-collection"
-import AuthCheck from "@/components/auth-check"
+import { AuthGuard } from "@/components/auth/route-guard"
 
 export default function ProfilePage() {
   return (
-    <AuthCheck>
+    <AuthGuard>
       <div className="container py-8 md:py-12">
         <div className="max-w-5xl mx-auto">
           <div className="mb-8">
@@ -36,6 +36,6 @@ export default function ProfilePage() {
           </Tabs>
         </div>
       </div>
-    </AuthCheck>
+    </AuthGuard>
   )
 }

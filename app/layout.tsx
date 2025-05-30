@@ -5,14 +5,14 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
-import { StampExpertBot } from "@/components/stamp-expert-bot"
+import { BotpressProvider } from "@/components/providers/BotpressProvider"
 import { Toaster } from "@/components/ui/toaster"
 import { PWAProvider } from "@/components/pwa/PWAProvider"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Stamp Catalog",
+  title: "Stamps of Approval",
   description: "A comprehensive stamp cataloging application",
   manifest: "/manifest.json",
   themeColor: "#000000",
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Stamp Catalog",
+    title: "Stamps of Approval",
   },
   icons: {
     icon: "/icons/icon-192x192.png",
@@ -56,18 +56,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           disableTransitionOnChange
         >
           <PWAProvider>
-            <div className="flex min-h-screen flex-col">
-              <Header />
-              <main className="flex-1">{children}</main>
-              <Footer />
-              <StampExpertBot />
-              <Toaster />
-            </div>
+            <BotpressProvider>
+              <div className="flex min-h-screen flex-col">
+                <Header />
+                <main className="flex-1">{children}</main>
+                <Footer />
+                <Toaster />
+              </div>
+            </BotpressProvider>
           </PWAProvider>
         </ThemeProvider>
       </body>
     </html>
   )
 }
-
-import "./globals.css"

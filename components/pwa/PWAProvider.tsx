@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, X } from "lucide-react";
 import {
     Tooltip,
     TooltipContent,
@@ -15,6 +15,13 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
     const [isOnline, setIsOnline] = useState(true);
     const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+    const [isDismissed, setIsDismissed] = useState(() => {
+        // Initialize from session storage
+        if (typeof window !== 'undefined') {
+            return sessionStorage.getItem('pwa-install-dismissed') === 'true';
+        }
+        return false;
+    });
 
     useEffect(() => {
         // Check if the app is already installed
@@ -61,7 +68,7 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
             const online = navigator.onLine;
             setIsOnline(online);
         };
-        
+
         window.addEventListener('online', handleOnlineStatus);
         window.addEventListener('offline', handleOnlineStatus);
         handleOnlineStatus();
@@ -88,6 +95,15 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
         setDeferredPrompt(null);
     };
 
+    const handleDismiss = () => {
+        setIsDismissed(true);
+        setShowInstallPrompt(false);
+        // Save to session storage
+        if (typeof window !== 'undefined') {
+            sessionStorage.setItem('pwa-install-dismissed', 'true');
+        }
+    };
+
     // Force show for testing
     useEffect(() => {
         const forceShow = !window.matchMedia('(display-mode: standalone)').matches;
@@ -105,27 +121,43 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
                     You are currently offline. Some features may be limited.
                 </div>
             )}
-            
+
             {/* Install FAB with tooltip */}
-            {isInstallable && showInstallPrompt && (
+            {isInstallable && showInstallPrompt && !isDismissed && (
                 <div className="fixed left-6 bottom-6 z-40">
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    onClick={handleInstallClick}
-                                    size="lg"
-                                    className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out animate-fade-in bg-primary hover:bg-primary/90 hover:scale-105"
+                    <div className="relative group">
+                        {/* Close button */}
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="absolute -top-4 -right-2 h-5 w-5 rounded-full bg-black/20 hover:bg-black/30 transition-all duration-150 z-10 p-0 opacity-0 group-hover:opacity-100"
+                            onClick={handleDismiss}
+                        >
+                            <X className="h-3 w-3 text-white" />
+                            <span className="sr-only">Dismiss install prompt</span>
+                        </Button>
+                        
+                        <TooltipProvider>
+                            <Tooltip delayDuration={200}>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        className="rounded-full h-14 w-14 shadow-lg hover:shadow-xl transition-all duration-300 bg-primary hover:bg-primary/90 hover:scale-105"
+                                        size="icon"
+                                        onClick={handleInstallClick}
+                                    >
+                                        <Download className="h-7 w-7" />
+                                        <span className="sr-only">Install App</span>
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent
+                                    side="left"
+                                    className="bg-gradient-to-r from-primary-foreground to-primary-foreground/90 text-muted-foreground font-medium px-3 py-1.5 rounded-lg shadow-xl"
                                 >
-                                    <Download className="h-6 w-6" />
-                                    <span className="sr-only">Install App</span>
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="right" className="bg-primary text-primary-foreground">
-                                <p>Install Stamp App</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
+                                    <p>Install Stamp for offline use</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                 </div>
             )}
             {children}
@@ -134,10 +166,11 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
 }
 
 // Add this to your globals.css
-// @keyframes fade-in {
-//   from { opacity: 0; transform: translateY(10px); }
-//   to { opacity: 1; transform: translateY(0); }
+// @keyframes float {
+//   0% { transform: translateY(0px); }
+//   50% { transform: translateY(-8px); }
+//   100% { transform: translateY(0px); }
 // }
-// .animate-fade-in {
-//   animation: fade-in 0.5s ease-out;
+// .animate-float {
+//   animation: float 3s ease-in-out infinite;
 // } 

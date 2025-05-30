@@ -32,22 +32,52 @@ const reactFlowStyles = `
   
   .reactflow-wrapper .react-flow__edge path {
     stroke: var(--edge-stroke-color) !important;
-    stroke-width: 3px !important;
+    stroke-width: 1.5px !important;
+    stroke-opacity: 0.6 !important;
+    filter: none !important;
   }
   
   .reactflow-wrapper .react-flow__edge path.react-flow__edge-path {
     stroke: var(--edge-stroke-color) !important;
-    stroke-width: 3px !important;
+    stroke-width: 1.5px !important;
+    stroke-opacity: 0.6 !important;
+    filter: none !important;
   }
   
   .reactflow-wrapper .react-flow__edge-path {
     stroke: var(--edge-stroke-color) !important;
-    stroke-width: 3px !important;
+    stroke-width: 1.5px !important;
+    stroke-opacity: 0.6 !important;
+    filter: none !important;
+  }
+  
+  .reactflow-wrapper .react-flow__edge .react-flow__edge-interaction {
+    stroke-width: 20px !important;
+    stroke: transparent !important;
   }
   
   .reactflow-wrapper .react-flow__edge.animated path {
-    stroke-dasharray: 5,5 !important;
-    animation: dashdraw 0.5s linear infinite !important;
+    stroke-dasharray: 6,3 !important;
+    animation: dashdraw 3s linear infinite !important;
+  }
+  
+  .reactflow-wrapper .react-flow__edge:hover path {
+    stroke-width: 2px !important;
+    stroke-opacity: 0.8 !important;
+    transition: all 0.2s ease-in-out !important;
+  }
+  
+  .reactflow-wrapper .react-flow__edge .react-flow__edge-textwrapper {
+    display: none !important;
+  }
+  
+  .reactflow-wrapper .react-flow__handle {
+    transition: all 0.2s ease-in-out !important;
+  }
+  
+  .reactflow-wrapper .react-flow__handle:hover {
+    transform: scale(1.2) !important;
+    opacity: 1 !important;
   }
   
   .reactflow-wrapper.light .react-flow__background {
@@ -60,7 +90,10 @@ const reactFlowStyles = `
   
   @keyframes dashdraw {
     from {
-      stroke-dashoffset: 10;
+      stroke-dashoffset: 9;
+    }
+    to {
+      stroke-dashoffset: 0;
     }
   }
 `;
@@ -141,11 +174,11 @@ const StampNode = ({ data }: { data: any }) => {
     <div className="relative group" onClick={data.onClick}>
       <div className={`
         overflow-hidden rounded-lg shadow-md border
-        ${data.isRoot ? 'w-32 h-32 border-2' : 'w-20 h-20'} 
+        ${data.isRoot ? 'w-32 h-32 border-[1.5px]' : 'w-20 h-20'} 
         transition-transform duration-200 transform hover:scale-105
         ${isDark 
-          ? `${data.isRoot ? 'border-white' : 'border-slate-600'} bg-slate-700` 
-          : `${data.isRoot ? 'border-slate-800' : 'border-slate-300'} bg-slate-100`
+          ? `${data.isRoot ? 'border-slate-400' : 'border-slate-600'} bg-slate-700` 
+          : `${data.isRoot ? 'border-slate-500' : 'border-slate-300'} bg-slate-100`
         }
       `}>
         {/* Add source handle at bottom */}
@@ -154,11 +187,12 @@ const StampNode = ({ data }: { data: any }) => {
           position={Position.Bottom}
           id={`${data.id}-source`}
           style={{ 
-            bottom: -6, 
-            width: 10, 
-            height: 10, 
-            background: isDark ? '#FFFFFF' : '#1e293b', 
-            border: `2px solid ${isDark ? '#666' : '#cbd5e1'}` 
+            bottom: -3, 
+            width: 6, 
+            height: 6, 
+            background: isDark ? '#94a3b8' : '#64748b', 
+            border: `1px solid ${isDark ? '#64748b' : '#cbd5e1'}`,
+            opacity: 0.6
           }}
           isConnectable={false}
         />
@@ -169,11 +203,12 @@ const StampNode = ({ data }: { data: any }) => {
           position={Position.Top}
           id={`${data.id}-target`}
           style={{ 
-            top: -6, 
-            width: 10, 
-            height: 10, 
-            background: isDark ? '#FFFFFF' : '#1e293b', 
-            border: `2px solid ${isDark ? '#666' : '#cbd5e1'}`  
+            top: -3, 
+            width: 6, 
+            height: 6, 
+            background: isDark ? '#94a3b8' : '#64748b', 
+            border: `1px solid ${isDark ? '#64748b' : '#cbd5e1'}`,
+            opacity: 0.6
           }}
           isConnectable={false}
         />
@@ -186,7 +221,7 @@ const StampNode = ({ data }: { data: any }) => {
         />
       </div>
       
-      <div className={`mt-1 text-xs max-w-20 truncate text-center px-1 py-0.5 backdrop-blur-sm rounded
+      <div className={`mt-1 text-xs ${data.isRoot ? 'max-w-32' : 'max-w-20'} truncate text-center px-1 py-0.5 backdrop-blur-sm rounded
         ${isDark 
           ? 'text-slate-200 bg-slate-800/60' 
           : 'text-slate-800 bg-slate-200/80'
@@ -203,12 +238,12 @@ const nodeTypes = {
   stampNode: StampNode,
 };
 
-const StampDetailModal = ({ stamp, isOpen, onClose, rootStamp }: StampDetailModalProps) => {
+export const StampDetailModal = ({ stamp, isOpen, onClose, rootStamp }: StampDetailModalProps) => {
   if (!stamp) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto overflow-x-hidden p-0 w-[95vw] sm:w-full">
         {/* Enhanced header with background image and overlay */}
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-b from-black/70 to-black/30 z-10" />
@@ -233,19 +268,19 @@ const StampDetailModal = ({ stamp, isOpen, onClose, rootStamp }: StampDetailModa
                 <Badge variant="outline" className="text-xs font-normal px-2 py-0.5 bg-background/70 backdrop-blur-sm">{stamp.year}</Badge>
               )}
             </div>
-            <DialogTitle className="text-2xl font-bold text-white mt-2 flex items-center gap-2">
+            <DialogTitle className="text-xl sm:text-2xl font-bold text-white mt-2 flex items-center gap-2 break-words leading-tight">
               {stamp.name}
-          </DialogTitle>
-            <DialogDescription className="text-base text-slate-200 max-w-2xl">
-            {stamp.description}
-          </DialogDescription>
+            </DialogTitle>
+            <DialogDescription className="text-sm sm:text-base text-slate-200 max-w-2xl break-words leading-relaxed">
+              {stamp.description}
+            </DialogDescription>
         </DialogHeader>
         </div>
         
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="p-4 sm:p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Left column - Image and identification */}
-            <div className="md:col-span-1 space-y-5">
+            <div className="lg:col-span-1 space-y-4 sm:space-y-5">
               <div className="aspect-square relative bg-muted/10 rounded-xl border overflow-hidden shadow-md">
               <Image
                 src={stamp.imagePath}
@@ -323,13 +358,13 @@ const StampDetailModal = ({ stamp, isOpen, onClose, rootStamp }: StampDetailModa
             </div>
             
             {/* Right column - Details */}
-            <div className="md:col-span-2 space-y-5">
+            <div className="lg:col-span-2 space-y-5">
               <div className="bg-muted/5 p-5 rounded-xl border shadow-sm">
                 <h3 className="text-base font-medium mb-4 pb-1 border-b flex items-center">
                   <span className="inline-block w-4 h-4 bg-primary/20 rounded-full mr-2"></span>
                   Basic Information
                 </h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   {stamp.year && (
                     <div className="bg-background/50 p-3 rounded-lg">
                     <div className="text-xs text-muted-foreground">Year of Issue</div>
@@ -378,19 +413,19 @@ const StampDetailModal = ({ stamp, isOpen, onClose, rootStamp }: StampDetailModa
                   {stamp.issueSeries && (
                     <div className="bg-background/50 p-3 rounded-lg">
                       <div className="text-xs text-muted-foreground">Issue Series</div>
-                      <div className="font-medium">{stamp.issueSeries}</div>
+                      <div className="font-medium break-words">{stamp.issueSeries}</div>
                     </div>
                   )}
                   {stamp.code && (
                     <div className="bg-background/50 p-3 rounded-lg">
                       <div className="text-xs text-muted-foreground">Stamp Code</div>
-                      <div className="font-medium">{stamp.code}</div>
+                      <div className="font-medium text-sm break-all">{stamp.code}</div>
                     </div>
                   )}
                   {stamp.itemType && (
                     <div className="bg-background/50 p-3 rounded-lg">
                       <div className="text-xs text-muted-foreground">Item Type</div>
-                      <div className="font-medium">{stamp.itemType}</div>
+                      <div className="font-medium break-words">{stamp.itemType}</div>
                     </div>
                   )}
                 </div>
@@ -435,10 +470,10 @@ const StampDetailModal = ({ stamp, isOpen, onClose, rootStamp }: StampDetailModa
                   <dl className="space-y-3">
                     {Object.entries(stamp.catalogSystems).map(([system, info]) => (
                       <div key={system} className="bg-background/50 p-3 rounded-lg">
-                        <dt className="text-xs text-muted-foreground">{system}:</dt>
+                        <dt className="text-xs text-muted-foreground break-words">{system}:</dt>
                         <dd className="mt-1">
-                          <Badge variant="outline" className="mr-1 bg-background">{info.code}</Badge>
-                          {info.notes && <span className="text-xs text-muted-foreground block mt-1">{info.notes}</span>}
+                          <Badge variant="outline" className="mr-1 bg-background text-xs break-all max-w-full">{info.code}</Badge>
+                          {info.notes && <span className="text-xs text-muted-foreground block mt-1 break-words">{info.notes}</span>}
                         </dd>
                       </div>
                     ))}
@@ -456,13 +491,13 @@ const StampDetailModal = ({ stamp, isOpen, onClose, rootStamp }: StampDetailModa
                   <div className="space-y-3">
                     {stamp.specializedCatalogs.map((catalog, index) => (
                       <div key={index} className="bg-background/50 p-3 rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium text-sm">{catalog.name}</span>
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="font-medium text-sm break-words flex-1">{catalog.name}</span>
                           {catalog.countrySpecific && (
-                            <Badge variant="secondary" className="text-xs">Country Specific</Badge>
+                            <Badge variant="secondary" className="text-xs shrink-0">Country Specific</Badge>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">{catalog.description}</p>
+                        <p className="text-xs text-muted-foreground mt-1 break-words leading-relaxed">{catalog.description}</p>
                       </div>
                     ))}
                   </div>
@@ -498,18 +533,18 @@ const StampDetailModal = ({ stamp, isOpen, onClose, rootStamp }: StampDetailModa
                     {stamp.plating?.flawDescription && (
                       <div className="bg-background/50 p-3 rounded-lg">
                         <div className="text-xs text-muted-foreground">Flaw Description</div>
-                        <div className="text-sm">{stamp.plating.flawDescription}</div>
+                        <div className="text-sm break-words leading-relaxed">{stamp.plating?.flawDescription}</div>
                       </div>
                     )}
                     {stamp.plating?.textOnFace && (
                       <div className="bg-background/50 p-3 rounded-lg">
                         <div className="text-xs text-muted-foreground">Text on Face</div>
-                        <div className="font-medium">{stamp.plating.textOnFace}</div>
-                    </div>
-                  )}
+                        <div className="font-medium break-words">{stamp.plating?.textOnFace}</div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
             
               {/* Add collector information if available */}
               {(stamp.collectorGroup || stamp.rarityRating || stamp.grade || stamp.visualAppeal !== undefined || stamp.certifier) && (
@@ -606,16 +641,16 @@ const StampDetailModal = ({ stamp, isOpen, onClose, rootStamp }: StampDetailModa
                     Known Errors & Varieties
                   </h3>
                   <ul className="space-y-2">
-                  {stamp.errors.map((error, index) => (
+                    {stamp.errors.map((error, index) => (
                       <li key={index} className="bg-background/50 p-3 rounded-lg flex items-start">
                         <span className="inline-block w-5 h-5 bg-muted rounded-full mr-2 flex-shrink-0 flex items-center justify-center text-xs">
                           {index + 1}
                         </span>
-                        <span>{error}</span>
+                        <span className="break-words leading-relaxed">{error}</span>
                       </li>
-                  ))}
-                </ul>
-              </div>
+                    ))}
+                  </ul>
+                </div>
             )}
               
               {stamp.varieties && stamp.varieties.length > 0 && (
@@ -627,9 +662,9 @@ const StampDetailModal = ({ stamp, isOpen, onClose, rootStamp }: StampDetailModa
                   <div className="space-y-3">
                     {stamp.varieties.map((variety, index) => (
                       <div key={index} className="bg-background/50 p-3 rounded-lg">
-                        <div className="font-medium">{variety.title || variety.name}</div>
+                        <div className="font-medium break-words">{variety.title || variety.name}</div>
                         {variety.description && (
-                          <div className="text-xs text-muted-foreground mt-1">{variety.description}</div>
+                          <div className="text-xs text-muted-foreground mt-1 break-words leading-relaxed">{variety.description}</div>
                         )}
                       </div>
                     ))}
@@ -644,14 +679,14 @@ const StampDetailModal = ({ stamp, isOpen, onClose, rootStamp }: StampDetailModa
                     <span className="inline-block w-4 h-4 bg-primary/20 rounded-full mr-2"></span>
                     Notes
                   </h3>
-                  <div className="text-sm whitespace-pre-wrap bg-background/50 p-4 rounded-lg">{stamp.notes}</div>
+                  <div className="text-sm whitespace-pre-wrap break-words bg-background/50 p-4 rounded-lg leading-relaxed">{stamp.notes}</div>
                 </div>
               )}
             </div>
           </div>
         </div>
         
-        <DialogFooter className="flex justify-between items-center p-6 pt-4 border-t bg-muted/5">
+        <DialogFooter className="flex justify-between items-center p-4 sm:p-6 pt-3 sm:pt-4 border-t bg-muted/5">
           <div className="text-xs text-muted-foreground">
             Last updated: {new Date().toLocaleDateString()}
           </div>
@@ -756,23 +791,31 @@ export function StampTree({ title, subtitle, stamps, rootStamp, connections = []
         targetHandle: targetHandleId
       });
       
+      // Edge Type Options - Choose one:
+      // 'smoothstep' - Clean with rounded corners (current)
+      // 'step' - Sharp right angles, very structured
+      // 'straight' - Direct lines, minimal
+      // 'simplebezier' - Gentle curves, less curvy than bezier
+      
       return {
         id: `edge-${index}`,
         source: connection.from,
         target: connection.to,
         sourceHandle: sourceHandleId,
         targetHandle: targetHandleId,
-        type: 'smoothstep',
+        type: 'step', // ← Change this to try different styles
         animated: false,
         style: {
-          stroke: isDark ? '#FFFFFF' : '#1e293b',
-          strokeWidth: 3
+          stroke: isDark ? '#94a3b8' : '#64748b',
+          strokeWidth: 1.5,
+          strokeOpacity: 0.6
         },
         markerEnd: {
           type: MarkerType.ArrowClosed,
-          width: 20,
-          height: 20,
-          color: isDark ? '#FFFFFF' : '#1e293b',
+          width: 8,
+          height: 8,
+          color: isDark ? '#94a3b8' : '#64748b',
+          strokeWidth: 1,
         },
       };
     });
@@ -796,7 +839,7 @@ export function StampTree({ title, subtitle, stamps, rootStamp, connections = []
   useEffect(() => {
     document.documentElement.style.setProperty(
       '--edge-stroke-color', 
-      isDark ? '#FFFFFF' : '#1e293b'
+      isDark ? '#94a3b8' : '#64748b'
     );
   }, [isDark]);
 
@@ -822,16 +865,21 @@ export function StampTree({ title, subtitle, stamps, rootStamp, connections = []
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           nodeTypes={nodeTypes}
-          connectionLineType={ConnectionLineType.SmoothStep}
+          connectionLineType={ConnectionLineType.Step}
           defaultEdgeOptions={{
-            type: 'smoothstep',
-            style: { stroke: isDark ? '#FFFFFF' : '#1e293b', strokeWidth: 3 },
+            type: 'step',
+            style: { 
+              stroke: isDark ? '#94a3b8' : '#64748b', 
+              strokeWidth: 1.5,
+              strokeOpacity: 0.6
+            },
             animated: false,
             markerEnd: {
               type: MarkerType.ArrowClosed,
-              width: 20,
-              height: 20,
-              color: isDark ? '#FFFFFF' : '#1e293b',
+              width: 8,
+              height: 8,
+              color: isDark ? '#94a3b8' : '#64748b',
+              strokeWidth: 1,
             },
           }}
           fitView

@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Loader2, SendHorizontal, X, MessageSquare } from "lucide-react"
+import { Loader2, SendHorizontal, X, MessageSquare, Bot, Sparkles } from "lucide-react"
 import { 
   Sheet, 
   SheetContent, 
@@ -17,6 +17,7 @@ import { Avatar } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useToast } from "@/components/ui/use-toast"
+import { cn } from "@/lib/utils"
 
 interface Message {
   id: string
@@ -39,6 +40,7 @@ export function StampExpertBot() {
   const [isOpen, setIsOpen] = useState(false)
   const { toast } = useToast()
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   
   useEffect(() => {
     // Scroll to bottom whenever messages change
@@ -46,6 +48,13 @@ export function StampExpertBot() {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
     }
   }, [messages])
+
+  // Focus input when sheet opens
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [isOpen])
 
   const handleSendMessage = async () => {
     if (!input.trim()) return
@@ -111,7 +120,8 @@ export function StampExpertBot() {
   }
   
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !isLoading) {
+    if (e.key === 'Enter' && !e.shiftKey && !isLoading) {
+      e.preventDefault()
       handleSendMessage()
     }
   }
@@ -123,92 +133,106 @@ export function StampExpertBot() {
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button
-          className="fixed bottom-6 right-6 rounded-full p-4 shadow-lg" 
+        {/* <Button
+          className="fixed bottom-6 right-6 rounded-full h-14 w-14 shadow-lg hover:shadow-xl transition-all duration-300 bg-primary hover:bg-primary/90 hover:scale-105" 
           size="icon"
           onClick={() => setIsOpen(true)}
         >
-          <MessageSquare className="h-6 w-6" />
+          <Bot className="h-7 w-7" />
           <span className="sr-only">Open stamp expert chat</span>
-        </Button>
+        </Button> */}
       </SheetTrigger>
-      <SheetContent side="right" className="w-full sm:w-[400px] p-0 flex flex-col h-full">
-        <SheetHeader className="px-4 py-3 border-b">
+      <SheetContent side="right" className="w-full sm:max-w-[400px] p-0 flex flex-col h-full">
+        <SheetHeader className="px-6 py-4 border-b bg-primary/5">
           <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <Avatar className="h-10 w-10 bg-primary">
-                <img src="/images/stamp-bot-avatar.png" alt="Stamp Expert" />
+            <div className="flex items-center gap-3">
+              <Avatar className="h-12 w-12 bg-primary/10 border-2 border-primary flex items-center justify-center">
+                <Bot className="h-6 w-6 text-primary" />
               </Avatar>
-              <div>
-                <SheetTitle className="text-lg">Stamp Expert</SheetTitle>
-                <Badge variant="outline" className="text-xs font-normal">AI Assistant</Badge>
+              <div className="space-y-1">
+                <SheetTitle className="text-lg flex items-center gap-2">
+                  Stamp Expert
+                  <Sparkles className="h-4 w-4 text-amber-500" />
+                </SheetTitle>
+                <Badge variant="outline" className="text-xs font-normal bg-primary/10 text-primary border-primary/20">
+                  AI Assistant
+                </Badge>
               </div>
             </div>
-            <SheetClose asChild>
-              <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
-                <X className="h-5 w-5" />
-                <span className="sr-only">Close</span>
-              </Button>
-            </SheetClose>
           </div>
         </SheetHeader>
         
-        <ScrollArea className="flex-1 p-4">
-          <div className="space-y-4">
-            {messages.map((message, index) => (
+        <ScrollArea className="flex-1 px-6 py-4 overflow-y-auto">
+          <div className="space-y-6">
+            {messages.map((message) => (
               <div 
                 key={message.id}
-                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={cn(
+                  "flex gap-3",
+                  message.role === 'user' ? "justify-end" : "justify-start"
+                )}
               >
+                {message.role === 'assistant' && (
+                  <Avatar className="h-8 w-8 mt-1 bg-primary/10 border-2 border-primary flex-shrink-0 flex items-center justify-center">
+                    <Bot className="h-4 w-4 text-primary" />
+                  </Avatar>
+                )}
                 <div 
-                  className={`
-                    max-w-[80%] rounded-lg p-3
-                    ${message.role === 'user' 
-                      ? 'bg-primary text-primary-foreground ml-auto' 
-                      : 'bg-muted border border-border'
-                    }
-                  `}
+                  className={cn(
+                    "relative group max-w-[85%] rounded-2xl px-4 py-3 text-sm",
+                    message.role === 'user' 
+                      ? "bg-primary text-primary-foreground" 
+                      : "bg-muted"
+                  )}
                 >
-                  <div className="text-sm whitespace-pre-wrap">
+                  <div className="whitespace-pre-wrap break-words">
                     {message.content}
                   </div>
                   <div 
-                    className={`
-                      text-xs mt-1 
-                      ${message.role === 'user' 
-                        ? 'text-primary-foreground/70' 
-                        : 'text-muted-foreground'
-                      }
-                    `}
+                    className={cn(
+                      "absolute bottom-1.5 right-3 opacity-0 group-hover:opacity-100 transition-opacity text-[10px]",
+                      message.role === 'user' 
+                        ? "text-primary-foreground/70" 
+                        : "text-muted-foreground"
+                    )}
                   >
                     {formatTime(message.timestamp)}
                   </div>
                 </div>
               </div>
             ))}
-            <div ref={messagesEndRef} />
+            <div ref={messagesEndRef} className="h-px" />
           </div>
         </ScrollArea>
         
-        <SheetFooter className="p-4 border-t">
-          <div className="flex w-full gap-2">
+        <div className="px-6 py-4 border-t bg-background">
+          <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="flex gap-3">
             <Input
+              ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask about stamps..."
               disabled={isLoading}
-              className="flex-1"
+              className="flex-1 h-11"
             />
             <Button 
-              onClick={handleSendMessage} 
-              disabled={isLoading || !input.trim()}
+              type="submit"
               size="icon"
+              disabled={isLoading || !input.trim()}
+              className="h-11 w-11 rounded-full shrink-0"
             >
-              {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <SendHorizontal className="h-5 w-5" />}
+              {isLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <SendHorizontal className="h-5 w-5" />
+              )}
             </Button>
+          </form>
+          <div className="mt-2.5 text-xs text-center text-muted-foreground">
+            Press Enter to send, Shift + Enter for new line
           </div>
-        </SheetFooter>
+        </div>
       </SheetContent>
     </Sheet>
   )

@@ -34,7 +34,7 @@ const catalogCodeExamples = [
   { number: 14, code: "NZ-59-2D-Oprt", description: "1859 2d Blue Overprint" },
 ]
 
-export default function AdminDashboard() {
+function AdminDashboardContent() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -57,7 +57,7 @@ export default function AdminDashboard() {
             <Database className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,247</div>
+            <div className="text-2xl font-bold">12</div>
             <p className="text-xs text-muted-foreground mt-1">Stamp catalog entries</p>
           </CardContent>
         </Card>
@@ -68,7 +68,7 @@ export default function AdminDashboard() {
             <Users className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">214</div>
+            <div className="text-2xl font-bold">21</div>
             <p className="text-xs text-muted-foreground mt-1">Registered users</p>
           </CardContent>
         </Card>
@@ -85,52 +85,6 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      {/* SOA Catalog Code System */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>SOA Catalog Code System</CardTitle>
-            <CardDescription>Unified stamp identification system</CardDescription>
-          </div>
-          <Code className="h-5 w-5 text-primary" />
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <p className="text-sm">
-              The SOA catalog system provides a standardized format for stamp identification: 
-              <span className="font-mono bg-muted px-2 py-0.5 rounded ml-1">Country-Year-Denomination-Feature</span>
-            </p>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left font-medium p-2">Number</th>
-                    <th className="text-left font-medium p-2">SOA Code</th>
-                    <th className="text-left font-medium p-2">Description</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {catalogCodeExamples.map((example, index) => (
-                    <tr key={index} className="border-b">
-                      <td className="p-2">{example.number}</td>
-                      <td className="p-2 font-mono">{example.code}</td>
-                      <td className="p-2">{example.description}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="flex justify-end">
-              <Button variant="outline" size="sm" asChild>
-                <Link href="/admin/catalog-system">View Full Documentation</Link>
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Quick Actions */}
       <Card>
         <CardHeader>
@@ -140,7 +94,7 @@ export default function AdminDashboard() {
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Button className="h-auto py-4 flex flex-col items-center justify-center gap-2" asChild>
-              <Link href="/admin/catalog-ingestion">
+              <Link href="/admin/catalog-management">
                 <Upload className="h-6 w-6 mb-1" />
                 <div className="text-sm font-medium">Ingest Catalog Data</div>
                 <div className="text-xs text-muted-foreground">Upload and process catalog pages</div>
@@ -174,7 +128,7 @@ export default function AdminDashboard() {
             <CardDescription>Latest catalog data processing jobs</CardDescription>
           </div>
           <Button variant="outline" size="sm" asChild>
-            <Link href="/admin/catalog-ingestion">View All</Link>
+            <Link href="/admin/catalog-management">View All</Link>
           </Button>
         </CardHeader>
         <CardContent>
@@ -192,13 +146,6 @@ export default function AdminDashboard() {
                   <Badge variant={job.status === "completed" ? "default" : "outline"} className="self-end">
                     {job.status === "completed" ? "Completed" : "Processing"}
                   </Badge>
-                  
-                  {job.status === "processing" && (
-                    <div className="w-32">
-                      <Progress value={job.progress} className="h-2" />
-                      <div className="text-xs text-right mt-1">{job.progress}% complete</div>
-                    </div>
-                  )}
                 </div>
               </div>
             ))}
@@ -241,4 +188,8 @@ export default function AdminDashboard() {
       </Card>
     </div>
   )
+}
+
+export default function AdminDashboard() {
+  return <AdminDashboardContent />
 }

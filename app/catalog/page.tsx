@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -8,984 +8,823 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { StampCard } from "@/components/catalog/stamp-card"
-import { Search, Filter, ChevronDown, ChevronRight } from "lucide-react"
+import { Search, Filter, ChevronDown, ChevronRight, Loader2, Eye } from "lucide-react"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { SOACode } from "@/components/catalog/soa-code"
-import { StampTree } from '@/components/catalog/stamp-tree'
-import { stampDataById } from './[stampId]/page'
+import { StampTree, StampDetailModal } from '@/components/catalog/stamp-tree'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion'
+import { AuthGuard } from "@/components/auth/route-guard"
 
-// Helper function to get local image path
-const getLocalImagePath = (name: string): string => {
-  if (!name) return '/images/stamps/placeholder.png'; // Default placeholder
-  
-  // Map certain names to specific images for better accuracy
-  const imageMap: Record<string, string> = {
-    // Main series images
-    "Chalon Heads": "chalon-heads",
-    "1d Red": "1d-red",
-    "2d Blue": "2d-blue",
-    "6d Brown": "6d-brown",
-    "Penny Black": "penny-black",
-    "Side Faces": "side-faces",
-    "1s Green": "1s-green",
-    
-    // Specific varieties
-    "Chalon Head Imperforate": "chalon-head-imperforate",
-    "Chalon Head with Watermark": "chalon-head-with-watermark",
-    "Blue with Watermark": "blue-with-watermark",
-    "Blue Imperforate": "blue-imperforate",
-    "Brown Imperforate": "brown-imperforate",
-    "Brown Script Watermark": "brown-script-watermark",
-    "Green Imperforate": "green-imperforate",
-    "Green with Large Star Watermark": "green-with-large-star-watermark",
-    "1d Lilac": "1d-lilac"
-  };
-  
-  // Check if we have a direct mapping for this stamp name
-  if (imageMap[name]) {
-    return `/images/stamps/${imageMap[name]}.png`;
+// API Types based on the provided structure
+interface ApiStamp {
+  id: string
+  catalogId: string
+  name: string
+  publisher: string
+  country: string
+  stampImageUrl: string
+  catalogName: string
+  catalogNumber: string
+  seriesName: string
+  issueDate: string
+  denominationValue: number
+  denominationCurrency: string
+  denominationSymbol: string
+  color: string
+  design: string
+  theme: string
+  artist: string
+  engraver: string
+  printing: string
+  paperType: string
+  perforation: string
+  size: string
+  specialNotes: string
+  historicalContext: string
+  printingQuantity: number
+  usagePeriod: string
+  rarenessLevel: string
+  hasGum: boolean
+  gumCondition: string
+  description: string
+  watermark: string | null
+}
+
+interface ApiHierarchy {
+  key: string
+  stamps: ApiStamp[]
+}
+
+interface ApiSeries {
+  seriesName: string
+  hierarchies: ApiHierarchy[]
+}
+
+// Transformed types for internal use
+interface TransformedStamp {
+  id: string
+  name: string
+  imagePath: string
+  position: string
+  description: string
+  colorNumber?: number
+  colorName: string
+  year: string
+  denomination: string
+            catalogNumbers: {
+    soa?: number
+    sg?: string
+    scott?: string
+    michel?: string
   }
-  
-  // Default fallback - sanitize the name
-  const sanitizedName = name.toLowerCase().replace(/[^a-z0-9]/g, '-');
-  return `/images/stamps/${sanitizedName}.png`;
+  marketValue?: string
+  features: string[]
+  printingMethod: string
+  paper: string
+  country: string
+  issueSeries: string
+  code: string
+  varieties: { name: string; description: string }[]
+  watermarkType?: string
+  cancellation?: string
+  collectorGroup?: string
+  rarityRating: string
+  grade?: string
+  notes: string
+  // Additional properties to match Stamp interface
+  errors?: string[]
+  catalogSystems?: Record<string, { code: string; notes?: string }>
+  specializedCatalogs?: { name: string; description: string; countrySpecific?: boolean }[]
+  certifier?: string
+  itemType?: string
+  perforationType?: string
+  plates?: string
+  plating?: {
+    positionNumber?: string
+    gridReference?: string
+    flawDescription?: string
+    textOnFace?: string
+    plateNumber?: string
+    settingNumber?: string
+    textColor?: string
+    flawImage?: string | null
+  }
+  purchasePrice?: string
+  purchaseDate?: string
+  visualAppeal?: number
+}
+
+interface DenominationHierarchy {
+  key: string
+  denominationValue: number
+  denominationSymbol: string
+  varieties: TransformedStamp[]
+}
+
+interface SeriesGroup {
+  id: string
+  seriesName: string
+  description: string
+  image: string
+  country: string
+  yearRange: string
+  totalStamps: number
+  hierarchies: DenominationHierarchy[]
+}
+
+// Helper function to get JWT from cookies or localStorage
+const getJWT = (): string | null => {
+  // Try to get from localStorage first
+  if (typeof window !== 'undefined') {
+    try {
+      const stampUserData = localStorage.getItem('stamp_user_data');
+      if (stampUserData) {
+        const userData = JSON.parse(stampUserData);
+        if (userData && userData.jwt) {
+          return userData.jwt;
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing stamp_user_data from localStorage:', error);
+    }
+
+    // Try to get from cookies
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+      const [name, value] = cookie.trim().split('=');
+      if (name === 'stamp_jwt') {
+        return value;
+      }
+    }
+  }
+  return null;
 };
 
-// Data structure for stamp groups and varieties
-const stampSeries = [
-  {
-    id: "chalon",
-    title: "Chalon Heads (Full Face Queens)",
-    description: "The iconic first stamps of New Zealand featuring Queen Victoria",
-    image: getLocalImagePath("Chalon Heads"),
-    country: "New Zealand",
-    yearRange: "1855-1873",
-    groups: [
-      {
-        id: "chalon-1d-red",
-        title: "Chalon 1d Red (Color #1)",
-        country: "New Zealand",
-        year: "1855",
-        description: "Full Face Queens - 1d Red Denomination",
-        image: getLocalImagePath("1d Red"),
-        colorNumber: 1,
-        colorName: "Red",
-        denomination: "1D",
+// Helper function to transform API stamp to internal format
+const transformStamp = (apiStamp: ApiStamp, position: string = "variety"): TransformedStamp => {
+  return {
+    id: apiStamp.id,
+    name: apiStamp.name,
+    imagePath: apiStamp.stampImageUrl,
+    position,
+    description: apiStamp.description,
+    colorName: apiStamp.color,
+    year: new Date(apiStamp.issueDate).getFullYear().toString(),
+    denomination: `${apiStamp.denominationValue}${apiStamp.denominationSymbol}`,
+            catalogNumbers: {
+      sg: apiStamp.catalogNumber || undefined,
+    },
+    features: [
+      ...(apiStamp.perforation ? [apiStamp.perforation] : []),
+      ...(apiStamp.watermark ? ['Watermark'] : []),
+      ...(apiStamp.hasGum ? ['Original Gum'] : []),
+    ],
+    printingMethod: apiStamp.printing,
+    paper: apiStamp.paperType,
+    country: apiStamp.country,
+    issueSeries: apiStamp.seriesName,
+    code: apiStamp.catalogId,
         varieties: [
-          {
-            id: "stamp-1",
-            title: "Chalon Head Imperforate",
-            subTitle: "London Print",
-            image: getLocalImagePath("Chalon Head Imperforate"),
-            year: "1855",
-            country: "NZ",
-            denomination: "1D",
-            catalogNumbers: {
-              soa: 1,
-              sg: "1",
-              scott: "1",
-              michel: "1",
-            },
-            description: "1855 1d Red Imperforate (Chalon Head) - London Print",
-            marketValue: "$5,000 - $7,500",
-            features: ["Imp"],
-          },
-          {
-            id: "stamp-1a",
-            title: "Chalon Head with Watermark",
-            subTitle: "London Print",
-            image: getLocalImagePath("Chalon Head with Watermark"),
-            year: "1855",
-            country: "NZ",
-            denomination: "1D",
-            catalogNumbers: {
-              soa: 1,
-              sg: "1a",
-              scott: "1a",
-              michel: "1a",
-            },
-            description: "1855 1d Red with Large Star Watermark - London Print",
-            marketValue: "$8,000 - $12,000",
-            features: ["Wmk"],
-          },
-        ]
-      },
-      {
-        id: "chalon-2d-blue",
-        title: "Chalon 2d Blue (Color #3)",
-        country: "New Zealand",
-        year: "1855",
-        description: "Full Face Queens - 2d Blue Denomination",
-        image: getLocalImagePath("2d Blue"),
-        colorNumber: 3,
-        colorName: "Blue",
-        denomination: "2D",
-        varieties: [
-          {
-            id: "stamp-2",
-            title: "Blue with Watermark",
-            subTitle: "London Print",
-            image: getLocalImagePath("Blue with Watermark"),
-            year: "1855",
-            country: "NZ",
-            denomination: "2D",
-            catalogNumbers: {
-              soa: 2,
-              sg: "2",
-              scott: "2",
-              michel: "2",
-            },
-            description: "1855 2d Blue with Watermark - London Print",
-            marketValue: "$3,500 - $4,200",
-            features: ["Wmk"],
-          },
-          {
-            id: "stamp-2a",
-            title: "Blue Imperforate",
-            subTitle: "London Print",
-            image: getLocalImagePath("Blue Imperforate"),
-            year: "1855",
-            country: "NZ",
-            denomination: "2D",
-            catalogNumbers: {
-              soa: 2,
-              sg: "2a",
-              scott: "2b",
-              michel: "2a",
-            },
-            description: "1855 2d Blue Imperforate - London Print",
-            marketValue: "$4,500 - $6,000",
-            features: ["Imp"],
-          }
-        ]
-      },
-      {
-        id: "chalon-6d-brown",
-        title: "Chalon 6d Brown (Color #8)",
-        country: "New Zealand",
-        year: "1857",
-        description: "Full Face Queens - 6d Brown Denomination",
-        image: getLocalImagePath("6d Brown"),
-        colorNumber: 8,
-        colorName: "Brown",
-        denomination: "6D",
-        varieties: [
-          {
-            id: "stamp-10",
-            title: "Brown Imperforate",
-            subTitle: "London Print",
-            image: getLocalImagePath("Brown Imperforate"),
-            year: "1857",
-            country: "NZ",
-            denomination: "6D",
-            catalogNumbers: {
-              soa: 10,
-              sg: "10",
-              scott: "10",
-              michel: "10",
-            },
-            description: "1857 6d Brown Imperforate (Chalon Head) - London Print",
-            marketValue: "$6,500 - $8,200",
-            features: ["Imp"],
-          },
-          {
-            id: "stamp-10a",
-            title: "Brown Script Watermark",
-            subTitle: "London Print",
-            image: getLocalImagePath("Brown Script Watermark"),
-            year: "1857",
-            country: "NZ",
-            denomination: "6D",
-            catalogNumbers: {
-              soa: 10,
-              sg: "10a",
-              scott: "10var",
-              michel: "10a",
-            },
-            description: "1857 6d Brown with Script Watermark - London Print",
-            marketValue: "$8,500 - $12,000",
-            features: ["Wmk", "scr"],
-          }
-        ]
-      },
-      {
-        id: "chalon-1s-green",
-        title: "Chalon 1s Green (Color #10)",
-        country: "New Zealand",
-        year: "1858",
-        description: "Full Face Queens - 1 Shilling Green Denomination",
-        image: getLocalImagePath("1s Green"),
-        colorNumber: 10,
-        colorName: "Green",
-        denomination: "1S",
-        varieties: [
-          {
-            id: "stamp-15",
-            title: "Green Imperforate",
-            subTitle: "London Print",
-            image: getLocalImagePath("Green Imperforate"),
-            year: "1858",
-            country: "NZ",
-            denomination: "1S",
-            catalogNumbers: {
-              soa: 15,
-              sg: "15",
-              scott: "15",
-              michel: "15",
-            },
-            description: "1858 1s Green Imperforate (Chalon Head) - London Print",
-            marketValue: "$7,500 - $9,000",
-            features: ["Imp"],
-          },
-          {
-            id: "stamp-15a",
-            title: "Green with Large Star Watermark",
-            subTitle: "London Print",
-            image: getLocalImagePath("Green with Large Star Watermark"),
-            year: "1858",
-            country: "NZ",
-            denomination: "1S",
-            catalogNumbers: {
-              soa: 15,
-              sg: "15a",
-              scott: "15a",
-              michel: "15a",
-            },
-            description: "1858 1s Green with Large Star Watermark - London Print",
-            marketValue: "$9,000 - $12,000",
-            features: ["Wmk", "lstar"],
-          }
-        ]
-      }
-    ]
-  },
-  {
-    id: "side-faces",
-    title: "Side Faces",
-    description: "Queen Victoria Side Face Portrait series",
-    image: getLocalImagePath("Side Faces"),
-    country: "New Zealand",
-    yearRange: "1873-1892",
-    groups: [
-      {
-        id: "side-faces-1d-lilac",
-        title: "Side Face 1d Lilac",
-        country: "New Zealand",
-        year: "1873",
-        description: "First Side Face Series - 1d Lilac",
-        image: getLocalImagePath("1d Lilac"),
-        colorNumber: 12,
-        colorName: "Lilac",
-        denomination: "1D",
-        varieties: [
-          {
-            id: "stamp-20",
-            title: "Lilac Perf 12.5",
-            subTitle: "First Side Face",
-            image: getLocalImagePath("Lilac Perf 12.5"),
-            year: "1873",
-            country: "NZ",
-            denomination: "1D",
-            catalogNumbers: {
-              soa: 20,
-              sg: "140",
-              scott: "51",
-              michel: "44",
-            },
-            description: "1873 1d Lilac Queen Victoria Side Face - Perf 12.5",
-            marketValue: "$150 - $200",
-            features: ["Perf.12.5"],
-          },
-          {
-            id: "stamp-20a",
-            title: "Lilac Perf 10",
-            subTitle: "First Side Face",
-            image: getLocalImagePath("Lilac Perf 10"),
-            year: "1874",
-            country: "NZ",
-            denomination: "1D",
-            catalogNumbers: {
-              soa: 20,
-              sg: "156",
-              scott: "51a",
-              michel: "44a",
-            },
-            description: "1874 1d Lilac Queen Victoria Side Face - Perf 10",
-            marketValue: "$190 - $250",
-            features: ["Perf.10"],
-          }
-        ]
-      },
-      {
-        id: "side-faces-2d-rose",
-        title: "Side Face 2d Rose",
-        country: "New Zealand",
-        year: "1873",
-        description: "First Side Face Series - 2d Rose",
-        image: getLocalImagePath("2d Rose"),
-        colorNumber: 13,
-        colorName: "Rose",
-        denomination: "2D",
-        varieties: [
-          {
-            id: "stamp-21",
-            title: "Rose Perf 12.5",
-            subTitle: "First Side Face",
-            image: getLocalImagePath("Rose Perf 12.5"),
-            year: "1873",
-            country: "NZ",
-            denomination: "2D",
-            catalogNumbers: {
-              soa: 21,
-              sg: "141",
-              scott: "52",
-              michel: "45",
-            },
-            description: "1873 2d Rose Queen Victoria Side Face - Perf 12.5",
-            marketValue: "$220 - $300",
-            features: ["Perf.12.5"],
-          }
-        ]
-      }
-    ]
-  },
-  {
-    id: "second-sidefaces",
-    title: "Second Side Faces",
-    description: "Queen Victoria Side Face Portrait second series with updated design",
-    image: getLocalImagePath("Second Side Faces"),
-    country: "New Zealand",
-    yearRange: "1882-1900",
-    groups: [
-      {
-        id: "second-sidefaces-1d-rose",
-        title: "Second Side Face 1d Rose",
-        country: "New Zealand",
-        year: "1882",
-        description: "Second Side Face Series - 1d Rose",
-        image: getLocalImagePath("1d Rose"),
-        colorNumber: 22,
-        colorName: "Rose",
-        denomination: "1D",
-        varieties: [
-          {
-            id: "stamp-30",
-            title: "Rose Die 1",
-            subTitle: "Second Side Face",
-            image: getLocalImagePath("Rose Die 1"),
-            year: "1882",
-            country: "NZ",
-            denomination: "1D",
-            catalogNumbers: {
-              soa: 30,
-              sg: "187",
-              scott: "61",
-              michel: "54",
-            },
-            description: "1882 1d Rose Queen Victoria Second Side Face - Die 1",
-            marketValue: "$45 - $75",
-            features: ["Die.1"],
-          },
-          {
-            id: "stamp-30a",
-            title: "Rose Die 2",
-            subTitle: "Second Side Face",
-            image: getLocalImagePath("Rose Die 2"),
-            year: "1882",
-            country: "NZ",
-            denomination: "1D",
-            catalogNumbers: {
-              soa: 30,
-              sg: "188",
-              scott: "61a",
-              michel: "54a",
-            },
-            description: "1882 1d Rose Queen Victoria Second Side Face - Die 2",
-            marketValue: "$55 - $85",
-            features: ["Die.2"],
-          }
-        ]
-      }
-    ]
-  },
-  {
-    id: "pictorials-1898",
-    title: "1898 Pictorials",
-    description: "First pictorial issue showing scenic landscapes of New Zealand",
-    image: getLocalImagePath("1898 Pictorials"),
-    country: "New Zealand",
-    yearRange: "1898-1908",
-    groups: [
-      {
-        id: "pictorials-1d-lake-taupo",
-        title: "1d Lake Taupo",
-        country: "New Zealand",
-        year: "1898",
-        description: "1898 Pictorials - 1d Lake Taupo",
-        image: getLocalImagePath("1d Lake Taupo"),
-        colorNumber: 40,
-        colorName: "Blue & Brown",
-        denomination: "1D",
-        varieties: [
-          {
-            id: "stamp-40",
-            title: "Lake Taupo Blue & Brown",
-            subTitle: "London Print",
-            image: getLocalImagePath("Lake Taupo Blue & Brown"),
-            year: "1898",
-            country: "NZ",
-            denomination: "1D",
-            catalogNumbers: {
-              soa: 40,
-              sg: "246",
-              scott: "70",
-              michel: "74",
-            },
-            description: "1898 1d Blue & Brown Lake Taupo - London Print",
-            marketValue: "$35 - $50",
-            features: ["Perf.14"],
-          },
-          {
-            id: "stamp-40a",
-            title: "Lake Taupo Blue & Brown",
-            subTitle: "Local Print",
-            image: getLocalImagePath("Lake Taupo Blue & Brown Local Print"),
-            year: "1899",
-            country: "NZ",
-            denomination: "1D",
-            catalogNumbers: {
-              soa: 40,
-              sg: "269",
-              scott: "83",
-              michel: "86",
-            },
-            description: "1899 1d Blue & Brown Lake Taupo - Local Print",
-            marketValue: "$25 - $40",
-            features: ["Perf.11"],
-          }
-        ]
-      },
-      {
-        id: "pictorials-2d-pembroke-peak",
-        title: "2d Pembroke Peak",
-        country: "New Zealand",
-        year: "1898",
-        description: "1898 Pictorials - 2d Pembroke Peak",
-        image: getLocalImagePath("2d Pembroke Peak"),
-        colorNumber: 41,
-        colorName: "Lake Rose",
-        denomination: "2D",
-        varieties: [
-          {
-            id: "stamp-41",
-            title: "Pembroke Peak Lake Rose",
-            subTitle: "London Print",
-            image: getLocalImagePath("Pembroke Peak Lake Rose"),
-            year: "1898",
-            country: "NZ",
-            denomination: "2D",
-            catalogNumbers: {
-              soa: 41,
-              sg: "248",
-              scott: "72",
-              michel: "76",
-            },
-            description: "1898 2d Lake Rose Pembroke Peak - London Print",
-            marketValue: "$45 - $75",
-            features: ["Perf.14"],
-          }
-        ]
-      },
-      {
-        id: "pictorials-9d-terrace-pink",
-        title: "9d Pink Terrace",
-        country: "New Zealand",
-        year: "1898",
-        description: "1898 Pictorials - 9d Pink Terrace",
-        image: getLocalImagePath("9d Pink Terrace"),
-        colorNumber: 43,
-        colorName: "Purple",
-        denomination: "9D",
-        varieties: [
-          {
-            id: "stamp-43",
-            title: "Pink Terrace Purple",
-            subTitle: "London Print",
-            image: getLocalImagePath("Pink Terrace Purple"),
-            year: "1898",
-            country: "NZ",
-            denomination: "9D",
-            catalogNumbers: {
-              soa: 43,
-              sg: "254",
-              scott: "78",
-              michel: "83",
-            },
-            description: "1898 9d Purple Pink Terrace - London Print",
-            marketValue: "$120 - $175",
-            features: ["Perf.14"],
-          },
-          {
-            id: "stamp-43a",
-            title: "Pink Terrace Purple",
-            subTitle: "Local Print",
-            image: getLocalImagePath("Pink Terrace Purple Local Print"),
-            year: "1899",
-            country: "NZ",
-            denomination: "9D",
-            catalogNumbers: {
-              soa: 43,
-              sg: "276",
-              scott: "89",
-              michel: "93",
-            },
-            description: "1899 9d Purple Pink Terrace - Local Print",
-            marketValue: "$95 - $140",
-            features: ["Perf.11", "Wmk"],
-          }
-        ]
-      }
-    ]
-  },
-  {
-    id: "australia-kangaroo",
-    title: "Australia Kangaroo Series",
-    description: "First stamps of unified Australia featuring the kangaroo design",
-    image: getLocalImagePath("Australia Kangaroo Series"),
-    country: "Australia",
-    yearRange: "1913-1946",
-    groups: [
-      {
-        id: "kangaroo-1d-red",
-        title: "1d Red Kangaroo",
-        country: "Australia",
-        year: "1913",
-        description: "First Watermark Series - 1d Red Kangaroo",
-        image: getLocalImagePath("1d Red Kangaroo"),
-        colorNumber: 50,
-        colorName: "Red",
-        denomination: "1D",
-        varieties: [
-          {
-            id: "stamp-50",
-            title: "1d Red Kangaroo",
-            subTitle: "First Watermark",
-            image: getLocalImagePath("1d Red Kangaroo"),
-            year: "1913",
-            country: "AU",
-            denomination: "1D",
-            catalogNumbers: {
-              soa: 50,
-              sg: "2",
-              scott: "2",
-              michel: "2",
-            },
-            description: "1913 1d Red Kangaroo & Map - First Watermark",
-            marketValue: "$25 - $40",
-            features: ["Wmk.1"],
-          }
-        ]
-      },
-      {
-        id: "kangaroo-2d-grey",
-        title: "2d Grey Kangaroo",
-        country: "Australia",
-        year: "1913",
-        description: "First Watermark Series - 2d Grey Kangaroo",
-        image: getLocalImagePath("2d Grey Kangaroo"),
-        colorNumber: 51,
-        colorName: "Grey",
-        denomination: "2D",
-        varieties: [
-          {
-            id: "stamp-51",
-            title: "2d Grey Kangaroo",
-            subTitle: "First Watermark",
-            image: getLocalImagePath("2d Grey Kangaroo"),
-            year: "1913",
-            country: "AU",
-            denomination: "2D",
-            catalogNumbers: {
-              soa: 51,
-              sg: "3",
-              scott: "3",
-              michel: "3",
-            },
-            description: "1913 2d Grey Kangaroo & Map - First Watermark",
-            marketValue: "$35 - $55",
-            features: ["Wmk.1"],
-          }
-        ]
-      }
-    ]
-  },
-  {
-    id: "penny-black",
-    title: "Penny Black & Relatives",
-    description: "The world's first postage stamp and its early successors",
-    image: getLocalImagePath("Penny Black"),
-    country: "Great Britain",
-    yearRange: "1840-1841",
-    groups: [
-      {
-        id: "penny-black-standard",
-        title: "Penny Black",
-        country: "Great Britain",
-        year: "1840",
-        description: "World's First Adhesive Postage Stamp",
-        image: getLocalImagePath("Penny Black"),
-        colorNumber: 60,
-        colorName: "Black",
-        denomination: "1D",
-        varieties: [
-          {
-            id: "stamp-60",
-            title: "Penny Black",
-            subTitle: "Plate 1a",
-            image: getLocalImagePath("Penny Black Plate 1a"),
-            year: "1840",
-            country: "GB",
-            denomination: "1D",
-            catalogNumbers: {
-              soa: 60,
-              sg: "1",
-              scott: "1",
-              michel: "1",
-            },
-            description: "1840 Penny Black - Plate 1a - May 1840",
-            marketValue: "$800 - $2,000",
-            features: ["Plate.1a"],
-          },
-          {
-            id: "stamp-60a",
-            title: "Penny Black",
-            subTitle: "Plate 2",
-            image: getLocalImagePath("Penny Black Plate 2"),
-            year: "1840",
-            country: "GB",
-            denomination: "1D",
-            catalogNumbers: {
-              soa: 60,
-              sg: "2",
-              scott: "1",
-              michel: "1",
-            },
-            description: "1840 Penny Black - Plate 2 - May/June 1840",
-            marketValue: "$750 - $1,800",
-            features: ["Plate.2"],
-          }
-        ]
-      },
-      {
-        id: "penny-red",
-        title: "Penny Red",
-        country: "Great Britain",
-        year: "1841",
-        description: "Successor to the Penny Black",
-        image: getLocalImagePath("Penny Red"),
-        colorNumber: 61,
-        colorName: "Red",
-        denomination: "1D",
-        varieties: [
-          {
-            id: "stamp-61",
-            title: "Penny Red",
-            subTitle: "Imperforate",
-            image: getLocalImagePath("Penny Red Imperforate"),
-            year: "1841",
-            country: "GB",
-            denomination: "1D",
-            catalogNumbers: {
-              soa: 61,
-              sg: "8",
-              scott: "3",
-              michel: "3",
-            },
-            description: "1841 Penny Red - Imperforate - Plate 5",
-            marketValue: "$100 - $250",
-            features: ["Imp", "Plate.5"],
-          }
-        ]
-      }
-    ]
-  }
-]
-
-// Flat list of all groups (for search and filtering)
-const allStampGroups = stampSeries.flatMap(series => series.groups)
-
-// Component for a Stamp Group Card
-function StampGroupCard({ group, onToggle, isExpanded }: { 
-  group: typeof allStampGroups[0], 
-  onToggle: () => void,
-  isExpanded: boolean
-}) {
-  const router = useRouter();
-  
-  return (
-    <Card className="overflow-hidden">
-      <div 
-        className="flex items-center p-4 cursor-pointer" 
-        onClick={onToggle}
-      >
-        <div className="h-12 w-12 relative mr-4 rounded-md overflow-hidden border">
-          <Image 
-            src={group.image || getLocalImagePath(group.title)}
-            alt={group.title}
-            fill
-            className="object-cover"
-          />
-        </div>
-        <div className="flex-1">
-          <h3 className="font-medium">{group.title}</h3>
-          <p className="text-sm text-muted-foreground">{group.description}</p>
-        </div>
-        <div>
-          {isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
-        </div>
-      </div>
-      
-      {isExpanded && (
-        <CardContent className="pt-0 pb-4 px-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {group.varieties.map((stamp) => (
-              <StampCard 
-                key={stamp.id}
-                id={stamp.id}
-                title={stamp.title}
-                image={stamp.image || getLocalImagePath(`${group.title} ${stamp.title}`)}
-                year={stamp.year}
-                country={stamp.country}
-                denomination={stamp.denomination}
-                catalogNumbers={stamp.catalogNumbers}
-                description={stamp.description}
-                marketValue={stamp.marketValue}
-                features={stamp.features}
-              />
-            ))}
-          </div>
-        </CardContent>
-      )}
-    </Card>
-  )
-}
-
-// Component for a Series Card
-function SeriesCard({ series, expandedGroups, toggleGroup }: {
-  series: typeof stampSeries[0],
-  expandedGroups: Record<string, boolean>,
-  toggleGroup: (id: string) => void
-}) {
-  const [isSeriesExpanded, setIsSeriesExpanded] = useState(false);
-  
-  const toggleSeries = () => {
-    setIsSeriesExpanded(!isSeriesExpanded);
+      { name: "Color", description: apiStamp.color },
+      { name: "Design", description: apiStamp.design },
+      { name: "Theme", description: apiStamp.theme },
+    ],
+    watermarkType: apiStamp.watermark || undefined,
+    collectorGroup: apiStamp.theme,
+    rarityRating: apiStamp.rarenessLevel,
+    notes: apiStamp.specialNotes + (apiStamp.historicalContext ? ` | ${apiStamp.historicalContext}` : ''),
   };
+};
+
+// Helper function to create dynamic accordion data
+const createAccordionData = (seriesGroup: SeriesGroup) => {
+  const totalStamps = seriesGroup.hierarchies.reduce((total, hierarchy) => 
+    total + hierarchy.varieties.length, 0);
   
-  return (
-    <Card>
-      <div 
-        className="flex items-center p-6 cursor-pointer" 
-        onClick={toggleSeries}
-      >
-        <div className="h-16 w-16 relative mr-6 rounded-md overflow-hidden border">
-          <Image 
-            src={series.image || getLocalImagePath(series.title)}
-            alt={series.title}
-            fill
-            className="object-cover"
-          />
-        </div>
-        <div className="flex-1">
-          <h3 className="text-xl font-semibold">{series.title}</h3>
-          <p className="text-muted-foreground">{series.description}</p>
-          <div className="flex items-center gap-2 mt-1">
-            <Badge variant="outline" className="text-xs font-normal">{series.country}</Badge>
-            <Badge variant="outline" className="text-xs font-normal">{series.yearRange}</Badge>
-          </div>
-        </div>
-        <div>
-          {isSeriesExpanded ? <ChevronDown className="h-6 w-6" /> : <ChevronRight className="h-6 w-6" />}
-        </div>
-      </div>
+  const allStamps = seriesGroup.hierarchies.flatMap(h => h.varieties);
+  const firstStamp = allStamps[0];
+  
+  return {
+    country: firstStamp?.country || "Unknown",
+    years: seriesGroup.yearRange,
+    description: `${seriesGroup.seriesName} series with ${seriesGroup.hierarchies.length} denominations and ${totalStamps} total stamps`,
+    stampCount: totalStamps,
+    denominationCount: seriesGroup.hierarchies.length,
+    types: `${seriesGroup.hierarchies.length} denominations: ${seriesGroup.hierarchies.map(h => h.key).join(", ")}`,
+    // Additional dynamic data
+    printingMethods: Array.from(new Set(allStamps.map(s => s.printingMethod))),
+    colors: Array.from(new Set(allStamps.map(s => s.colorName))),
+    features: Array.from(new Set(allStamps.flatMap(s => s.features))),
+    themes: Array.from(new Set(allStamps.map(s => s.collectorGroup).filter(Boolean))),
+  };
+};
+
+// Helper function to organize API data into series groups
+const organizeStampsBySeries = (apiData: ApiSeries[]): SeriesGroup[] => {
+  return apiData.map(series => {
+    const hierarchies: DenominationHierarchy[] = series.hierarchies.map(hierarchy => {
+      const stamps = hierarchy.stamps.map(stamp => transformStamp(stamp, "variety"));
       
-      {isSeriesExpanded && (
-        <CardContent className="pt-0 pb-6 px-6">
-          <div className="space-y-4">
-            {series.groups.length > 0 ? (
-              series.groups.map((group) => (
-                <StampGroupCard 
-                  key={group.id}
-                  group={group}
-                  onToggle={() => toggleGroup(group.id)}
-                  isExpanded={!!expandedGroups[group.id]}
-                />
-              ))
-            ) : (
-              <div className="text-center py-8 border rounded-lg">
-                <p className="text-muted-foreground">No stamp groups available in this series yet.</p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      )}
-    </Card>
-  )
+      // All stamps go into varieties array
+      const varieties = stamps;
+      
+      // Extract denomination info from the first stamp
+      const firstStamp = hierarchy.stamps[0];
+      
+      return {
+        key: hierarchy.key,
+        denominationValue: firstStamp.denominationValue,
+        denominationSymbol: firstStamp.denominationSymbol,
+        varieties,
+      };
+    });
+
+    // Get year range from all stamps in the series
+    const allStamps = series.hierarchies.flatMap(h => h.stamps);
+    const years = allStamps.map(s => new Date(s.issueDate).getFullYear());
+    const yearRange = years.length > 1 ? `${Math.min(...years)}-${Math.max(...years)}` : years[0]?.toString() || "Unknown";
+
+    // Get series image from first available stamp
+    const firstStamp = allStamps[0];
+      
+      return {
+      id: series.seriesName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+      seriesName: series.seriesName,
+      description: firstStamp?.description || `${series.seriesName} stamp series`,
+      image: firstStamp?.stampImageUrl || '',
+      country: firstStamp?.country || 'Unknown',
+      yearRange,
+      totalStamps: allStamps.length,
+      hierarchies,
+    };
+  });
+};
+
+// New Hierarchical Tree interfaces and types
+interface TreeNode {
+  id: string
+  catalogNumber: string
+  stamp: TransformedStamp
+  children: TreeNode[]
+  level: number
+  position: { row: number; col: number }
+  isExpanded: boolean
 }
 
-export default function CatalogPage() {
+interface HierarchicalTreeProps {
+  seriesGroup: SeriesGroup
+  onStampClick: (stamp: TransformedStamp) => void
+}
+
+// New Hierarchical Tree Component with improved UI matching current theme
+function HierarchicalTreeView({ seriesGroup, onStampClick }: HierarchicalTreeProps) {
+  const [expandedHierarchies, setExpandedHierarchies] = useState<Set<string>>(new Set());
+  const [selectedStamp, setSelectedStamp] = useState<string | null>(null);
+  const [seriesSearchTerm, setSeriesSearchTerm] = useState("");
+  const [currentDenominationPage, setCurrentDenominationPage] = useState(1);
+  const [denominationsPerPage] = useState(10);
+  const [showAllDenominations, setShowAllDenominations] = useState(false);
+  const [selectedDenominationFilter, setSelectedDenominationFilter] = useState("all");
+  
+  const toggleHierarchyExpansion = (hierarchyKey: string) => {
+    setExpandedHierarchies(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(hierarchyKey)) {
+        newSet.delete(hierarchyKey);
+      } else {
+        newSet.add(hierarchyKey);
+      }
+      return newSet;
+    });
+  };
+
+  const handleStampClick = (stamp: TransformedStamp) => {
+    setSelectedStamp(stamp.id);
+    onStampClick(stamp);
+  };
+
+  // Filter hierarchies based on search and denomination filter
+  const filteredHierarchies = useMemo(() => {
+    return seriesGroup.hierarchies.filter(hierarchy => {
+      const matchesSearch = seriesSearchTerm === "" || 
+        hierarchy.varieties.some(variety => 
+          variety.name.toLowerCase().includes(seriesSearchTerm.toLowerCase()) ||
+          variety.colorName.toLowerCase().includes(seriesSearchTerm.toLowerCase()) ||
+          variety.denomination.toLowerCase().includes(seriesSearchTerm.toLowerCase())
+        );
+      
+      const matchesDenomination = selectedDenominationFilter === "all" || 
+        hierarchy.key === selectedDenominationFilter;
+      
+      return matchesSearch && matchesDenomination;
+    });
+  }, [seriesGroup.hierarchies, seriesSearchTerm, selectedDenominationFilter]);
+
+  // Pagination for denominations
+  const totalDenominations = filteredHierarchies.length;
+  const totalPages = Math.ceil(totalDenominations / denominationsPerPage);
+  const paginatedHierarchies = showAllDenominations ? 
+    filteredHierarchies : 
+    filteredHierarchies.slice(
+      (currentDenominationPage - 1) * denominationsPerPage,
+      currentDenominationPage * denominationsPerPage
+    );
+
+  // Get unique denomination values for quick filter
+  const uniqueDenominations = useMemo(() => {
+    return Array.from(new Set(seriesGroup.hierarchies.map(h => h.key)));
+  }, [seriesGroup.hierarchies]);
+
+  // Expand all hierarchies when searching
+  useEffect(() => {
+    if (seriesSearchTerm) {
+      // Recalculate matching hierarchies within the effect to avoid dependency loop
+      const matchingHierarchies = seriesGroup.hierarchies.filter(hierarchy => {
+        const matchesSearch = hierarchy.varieties.some(variety => 
+          variety.name.toLowerCase().includes(seriesSearchTerm.toLowerCase()) ||
+          variety.colorName.toLowerCase().includes(seriesSearchTerm.toLowerCase()) ||
+          variety.denomination.toLowerCase().includes(seriesSearchTerm.toLowerCase())
+        );
+        
+        const matchesDenomination = selectedDenominationFilter === "all" || 
+          hierarchy.key === selectedDenominationFilter;
+        
+        return matchesSearch && matchesDenomination;
+      });
+      
+      const matchingKeys = matchingHierarchies.map(h => h.key);
+      setExpandedHierarchies(new Set(matchingKeys));
+    }
+  }, [seriesSearchTerm, selectedDenominationFilter, seriesGroup.hierarchies]); // Stable dependencies
+
+  return (
+    <div className="px-3 sm:px-4 lg:px-6 pb-4">
+      <div className="bg-gradient-to-br from-background to-muted/50 rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-6 border shadow-sm">
+        {/* Series Header */}
+        <div className="mb-6 sm:mb-8 text-center">
+          <div className="inline-flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+            <div className="h-1 w-8 sm:w-12 bg-gradient-to-r from-primary to-primary/60 rounded-full"></div>
+            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+              {seriesGroup.seriesName.toUpperCase()}
+            </h3>
+            <div className="h-1 w-8 sm:w-12 bg-gradient-to-r from-primary/60 to-primary rounded-full"></div>
+                </div>
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-primary rounded-full"></div>
+              <span>{seriesGroup.country}</span>
+                </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-primary/70 rounded-full"></div>
+              <span>{seriesGroup.yearRange}</span>
+              </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-primary/50 rounded-full"></div>
+              <span>{totalDenominations} denominations</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Search and Filter Controls */}
+        <div className="mb-4 sm:mb-6 space-y-3 sm:space-y-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            {/* Search within series */}
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search stamps within this series..."
+                  className="pl-8 text-sm"
+                  value={seriesSearchTerm}
+                  onChange={(e) => {
+                    setSeriesSearchTerm(e.target.value);
+                    setCurrentDenominationPage(1);
+                  }}
+                />
+              </div>
+            </div>
+            
+            {/* Quick denomination filter */}
+            <div className="w-full sm:w-48">
+              <Select 
+                value={selectedDenominationFilter} 
+                onValueChange={(value) => {
+                  setSelectedDenominationFilter(value);
+                  setCurrentDenominationPage(1);
+                }}
+              >
+                <SelectTrigger className="text-sm">
+                  <SelectValue placeholder="Filter by denomination" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All denominations</SelectItem>
+                  {uniqueDenominations.map(denom => (
+                    <SelectItem key={denom} value={denom}>{denom}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+                  </div>
+                  
+          {/* Show results info and controls */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <div className="text-xs sm:text-sm text-muted-foreground">
+              Showing {paginatedHierarchies.length} of {totalDenominations} denominations
+              {seriesSearchTerm && ` (filtered by "${seriesSearchTerm}")`}
+                    </div>
+            <div className="flex items-center gap-2">
+              {totalDenominations > denominationsPerPage && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAllDenominations(!showAllDenominations)}
+                  className="text-xs h-7 sm:h-8"
+                >
+                  {showAllDenominations ? 'Show Paginated' : `Show All ${totalDenominations}`}
+                </Button>
+              )}
+              {seriesSearchTerm && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSeriesSearchTerm("");
+                    setSelectedDenominationFilter("all");
+                    setExpandedHierarchies(new Set());
+                  }}
+                  className="text-xs h-7 sm:h-8"
+                >
+                  Clear Filters
+                </Button>
+              )}
+                    </div>
+                  </div>
+                </div>
+
+        {/* Quick Navigation Pills */}
+        {!seriesSearchTerm && uniqueDenominations.length > 10 && (
+          <div className="mb-4 sm:mb-6">
+            <div className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">
+              Quick Jump to Denomination
+            </div>
+            <div className="flex flex-wrap gap-1 max-h-16 sm:max-h-20 overflow-y-auto">
+              {uniqueDenominations.slice(0, 20).map(denom => (
+                <Button
+                  key={denom}
+                  variant={selectedDenominationFilter === denom ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setSelectedDenominationFilter(denom);
+                    setCurrentDenominationPage(1);
+                    // Auto-expand the selected denomination
+                    if (selectedDenominationFilter !== denom) {
+                      setExpandedHierarchies(new Set([denom]));
+                    }
+                  }}
+                  className="text-xs h-6 sm:h-7 px-1.5 sm:px-2"
+                >
+                  {denom}
+                </Button>
+              ))}
+              {uniqueDenominations.length > 20 && (
+                <span className="text-xs text-muted-foreground px-2 py-1">
+                  +{uniqueDenominations.length - 20} more
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+        
+        {/* Hierarchy Grid */}
+        <div className="space-y-4 sm:space-y-6">
+          {paginatedHierarchies.map((hierarchy, hierarchyIndex) => {
+            const isExpanded = expandedHierarchies.has(hierarchy.key);
+            const hasVarieties = hierarchy.varieties.length > 0;
+            const firstStamp = hierarchy.varieties[0];
+            
+            // Filter varieties within hierarchy based on search
+            const filteredVarieties = hierarchy.varieties.filter(variety =>
+              seriesSearchTerm === "" ||
+              variety.name.toLowerCase().includes(seriesSearchTerm.toLowerCase()) ||
+              variety.colorName.toLowerCase().includes(seriesSearchTerm.toLowerCase())
+            );
+            
+            return (
+              <div key={hierarchy.key} className="relative">
+                {/* Denomination Header */}
+                <div className="mb-3 sm:mb-4">
+                  <div className="flex items-center justify-between p-3 sm:p-4 bg-card rounded-lg border-l-4 border-primary shadow-sm">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center text-primary-foreground font-bold text-sm sm:text-base">
+                          {hierarchy.key.toUpperCase()}
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-sm sm:text-base lg:text-lg text-foreground">
+                            {hierarchy.denominationValue}{hierarchy.denominationSymbol} Denomination
+                          </h4>
+                          <p className="text-xs sm:text-sm text-muted-foreground">
+                            {firstStamp?.name || 'No stamps available'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="bg-primary/10 border-primary/20 text-primary text-xs">
+                          {filteredVarieties.length} stamps
+                          {seriesSearchTerm && filteredVarieties.length !== hierarchy.varieties.length && 
+                            <span className="ml-1 text-muted-foreground">of {hierarchy.varieties.length}</span>
+                          }
+              </Badge>
+            </div>
+                      {hasVarieties && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleHierarchyExpansion(hierarchy.key)}
+                          className="h-7 w-7 sm:h-8 sm:w-8 p-0 hover:bg-primary/10"
+                        >
+                          <ChevronDown className={`h-3 w-3 sm:h-4 sm:w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Stamps Grid */}
+                <div className="pl-2 sm:pl-4">
+                  {/* Combined Varieties & Variations Section */}
+                  {hasVarieties && isExpanded && <div className="space-y-3">
+                    <div className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">
+                      Varieties & Variations
+                      {filteredVarieties.length > 20 && (
+                        <span className="ml-2 text-primary">
+                          (Showing first 20 of {filteredVarieties.length})
+                        </span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 gap-2 sm:gap-3 max-h-80 sm:max-h-96 overflow-y-auto">
+                      {/* Show only first 20 varieties for performance */}
+                      {filteredVarieties.slice(0, 20).map((variety, varietyIndex) => (
+                    <div 
+                      key={variety.id} 
+                          className={`
+                            relative group cursor-pointer transition-all duration-200
+                          `}
+                          onClick={() => handleStampClick(variety)}
+                        >
+                          <div className="bg-card rounded-lg p-2 sm:p-3 border border-border hover:border-primary/50 hover:shadow-md transition-all duration-200">
+                            <div className="flex items-center gap-2 sm:gap-3">
+                              {/* Connection Line */}
+                              <div className="flex flex-col items-center">
+                                <div className="w-0.5 h-3 sm:h-4 bg-primary/30"></div>
+                                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary rounded-full"></div>
+                                <div className="w-0.5 h-3 sm:h-4 bg-primary/30"></div>
+                              </div>
+                              
+                              {/* Stamp Image */}
+                              <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-md overflow-hidden border border-border shadow-sm">
+                        <Image
+                                  src={variety.imagePath}
+                          alt={variety.name}
+                          fill
+                                  className="object-cover group-hover:scale-105 transition-transform duration-200"
+                        />
+                                <div className="absolute top-0.5 right-0.5">
+                                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary rounded-full border border-background"></div>
+                                </div>
+                      </div>
+                      
+                              {/* Stamp Details */}
+                      <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1 sm:gap-2 mb-1">
+                                  <h6 className="font-medium text-xs sm:text-sm text-foreground truncate">
+                                    {variety.name}
+                                  </h6>
+                                  <Badge variant="outline" className="bg-primary/10 border-primary/20 text-primary text-xs">
+                                    #{varietyIndex + 1}
+                                  </Badge>
+                        </div>
+                                <div className="text-xs text-muted-foreground">
+                                  <div className="flex items-center gap-2 sm:gap-3 mb-1">
+                                    <span>{variety.year}</span>
+                                    <span>{variety.colorName}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1 sm:gap-2">
+                                    {variety.catalogNumbers.sg && (
+                                      <Badge variant="outline" className="text-xs font-mono">
+                                        SG {variety.catalogNumbers.sg}
+                                      </Badge>
+                                    )}
+                                    <Badge variant="secondary" className="text-xs">
+                                      {variety.printingMethod}
+                                    </Badge>
+                        </div>
+                      </div>
+                    </div>
+
+                              {/* Action Indicator */}
+                              <div className="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                                <Eye className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-primary" />
+                              </div>
+                            </div>
+                </div>
+              </div>
+            ))}
+                    </div>
+                    
+                    {/* Load More Button for varieties */}
+                    {filteredVarieties.length > 20 && (
+                      <div className="text-center pt-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            // This could open a modal or expand to show all varieties
+                            console.log("Load more varieties for", hierarchy.key);
+                          }}
+                          className="text-xs h-7 sm:h-8"
+                        >
+                          View All {filteredVarieties.length} Varieties
+                        </Button>
+          </div>
+        )}
+                  </div>}
+
+                  {/* Connecting Line to Next Denomination */}
+                  {hierarchyIndex < paginatedHierarchies.length - 1 && (
+                    <div className="flex justify-center my-4 sm:my-6">
+                      <div className="w-0.5 h-6 sm:h-8 bg-gradient-to-b from-primary/30 to-primary"></div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+      </div>
+      
+        {/* Denomination Pagination */}
+        {!showAllDenominations && totalPages > 1 && (
+          <div className="mt-6 sm:mt-8 flex justify-center">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentDenominationPage(Math.max(1, currentDenominationPage - 1))}
+                disabled={currentDenominationPage === 1}
+                className="text-xs h-7 sm:h-8"
+              >
+                Previous
+              </Button>
+              
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  const pageNum = Math.max(1, Math.min(totalPages - 4, currentDenominationPage - 2)) + i;
+                  if (pageNum <= totalPages) {
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentDenominationPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentDenominationPage(pageNum)}
+                        className="w-7 h-7 sm:w-8 sm:h-8 text-xs"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  }
+                  return null;
+                })}
+              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentDenominationPage(Math.min(totalPages, currentDenominationPage + 1))}
+                disabled={currentDenominationPage === totalPages}
+                className="text-xs h-7 sm:h-8"
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* No Results Message */}
+        {filteredHierarchies.length === 0 && (
+          <div className="text-center py-8 sm:py-12">
+            <div className="text-muted-foreground mb-4 text-sm sm:text-base">
+              No stamps found matching your search criteria
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setSeriesSearchTerm("");
+                setSelectedDenominationFilter("all");
+              }}
+              className="text-xs sm:text-sm"
+            >
+              Clear Filters
+            </Button>
+          </div>
+        )}
+
+        {/* Legend */}
+        <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-border">
+          <h4 className="text-xs sm:text-sm font-semibold text-foreground mb-2 sm:mb-3 text-center">
+            Navigation Tips
+          </h4>
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs">
+            <div className="flex items-center gap-2">
+              <Search className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Search to filter stamps</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Click to expand denomination</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Eye className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Click stamp to view details</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CatalogPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const [selectedStamp, setSelectedStamp] = useState<TransformedStamp | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState({
     country: "all",
     year: "all",
-    denomination: "",
-    color: "",
-    errors: "",
+    denomination: "all",
+    color: "all",
+    series: "all",
+    printingMethod: "all",
+    theme: "all",
     features: new Set<string>()
   });
   
-  // Add pagination state
+  // API state
+  const [seriesGroups, setSeriesGroups] = useState<SeriesGroup[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   
-  // Simplified catalog structure showing main stamp groups
-  const mainStampGroups = [
-    {
-      id: "chalon",
-      title: "Chalon Heads (Full Face Queens)",
-      country: "New Zealand",
-      years: "1855-1873",
-      image: getLocalImagePath("Chalon Heads"),
-      description: "The iconic first stamps of New Zealand featuring Queen Victoria",
-      stampCount: 10,
-      types: "4 denominations with multiple varieties",
-    },
-    {
-      id: "penny-black",
-      title: "Penny Black",
-      country: "Great Britain",
-      years: "1840",
-      image: getLocalImagePath("Penny Black"),
-      description: "The world's first adhesive postage stamp used in a public postal system",
-      stampCount: 3,
-      types: "Two plate varieties and root stamp",
-    },
-    {
-      id: "side-face",
-      title: "Side Face Queens",
-      country: "New Zealand",
-      years: "1873-1892",
-      image: getLocalImagePath("Side Faces"),
-      description: "Second major issue of New Zealand featuring Queen Victoria in profile",
-      stampCount: 4,
-      types: "Three stamps with different perforations",
-    },
-    {
-      id: "pictorials",
-      title: "First Pictorials",
-      country: "New Zealand",
-      years: "1898-1908",
-      image: "/images/stamps/pictorials.png",
-      description: "Featuring New Zealand landscapes, native birds, and cultural scenes",
-      stampCount: 4,
-      types: "Three scenic views plus root stamp",
-    },
-    // Add more dummy stamp groups
-    {
-      id: "australian-kangaroo",
-      title: "Australian Kangaroo Series",
-      country: "Australia",
-      years: "1913-1935",
-      image: "/images/stamps/kangaroo-map.png", 
-      description: "First national issues of Australia showing a kangaroo on a map of Australia",
-      stampCount: 4,
-      types: "Three denominations plus root stamp",
-    },
-    {
-      id: "kgv-heads",
-      title: "King George V Heads",
-      country: "Australia",
-      years: "1914-1936",
-      image: "/images/stamps/kgv-heads.png",
-      description: "Australia's definitive series featuring King George V in profile",
-      stampCount: 4,
-      types: "Three denominations plus root stamp",
-    },
-    {
-      id: "jubilee",
-      title: "1935 Silver Jubilee Series",
-      country: "Great Britain",
-      years: "1935",
-      image: "/images/stamps/silver-jubilee.png",
-      description: "Commemorative series for King George V's Silver Jubilee",
-      stampCount: 4,
-      types: "Three denominations plus root stamp",
-    },
-    {
-      id: "seahorses",
-      title: "Seahorses High Values",
-      country: "Great Britain",
-      years: "1913-1934",
-      image: "/images/stamps/seahorses.png",
-      description: "High value definitive stamps showing Britannia riding seahorses",
-      stampCount: 4,
-      types: "Three printer varieties plus root stamp",
-    },
-    {
-      id: "usa-prexies",
-      title: "Presidential Series (Prexies)",
-      country: "United States",
-      years: "1938-1954",
-      image: "/images/stamps/prexies.png",
-      description: "Definitive series featuring portraits of US Presidents",
-      stampCount: 4,
-      types: "Three values plus root stamp",
-    },
-    {
-      id: "penny-red",
-      title: "Penny Red",
-      country: "Great Britain",
-      years: "1841-1879",
-      image: "/images/stamps/penny-red.png",
-      description: "Successor to the Penny Black with hundreds of plate varieties",
-      stampCount: 4,
-      types: "Three perforation varieties plus root stamp",
-    },
-    {
-      id: "machin",
-      title: "Machin Definitives",
-      country: "Great Britain",
-      years: "1967-Present",
-      image: "/images/stamps/machin.png",
-      description: "Iconic portrait of Queen Elizabeth II by Arnold Machin",
-      stampCount: 4,
-      types: "Three values plus error variety",
-    },
-    {
-      id: "ross-dependency",
-      title: "Ross Dependency Issues",
-      country: "New Zealand",
-      years: "1957-Present",
-      image: "/images/stamps/ross-dependency.png",
-      description: "Stamps issued for the New Zealand Antarctic Territory",
-      stampCount: 4,
-      types: "Three Antarctic theme stamps plus root stamp",
-    }
-  ];
-  
-  // Handle navigation to stamp tree view
-  const navigateToStampTree = (stampId: string) => {
-    // Navigation handled by the Link component
-    console.log("Navigating to stamp tree for", stampId);
-  };
+  // Fetch data from API
+  useEffect(() => {
+    const fetchCatalogData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const jwt = getJWT();
+        if (!jwt) {
+          throw new Error('No JWT token found. Please login first.');
+        }
+
+        const response = await fetch('https://3pm-stampapp-prod.azurewebsites.net/api/v1/StampCatalog/Hierarchy', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${jwt}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+        }
+
+        const apiData: ApiSeries[] = await response.json();
+        const transformedData = organizeStampsBySeries(apiData);
+        setSeriesGroups(transformedData);
+      } catch (err) {
+        console.error('Error fetching catalog data:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch catalog data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCatalogData();
+  }, []);
   
   // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
-    setCurrentPage(1); // Reset to first page on new search
+    setCurrentPage(1);
   };
   
   // Clear filters function
@@ -994,9 +833,11 @@ export default function CatalogPage() {
     setSelectedFilters({
       country: "all",
       year: "all",
-      denomination: "",
-      color: "",
-      errors: "",
+      denomination: "all",
+      color: "all",
+      series: "all",
+      printingMethod: "all",
+      theme: "all",
       features: new Set<string>()
     });
     setCurrentPage(1);
@@ -1008,14 +849,40 @@ export default function CatalogPage() {
       ...prev,
       [filterType]: value
     }));
-    setCurrentPage(1); // Reset to first page on filter change
+    setCurrentPage(1);
   };
   
+  // Get comprehensive filter data from API
+  const getFilterData = useMemo(() => {
+    const allStamps = seriesGroups.flatMap(group => 
+      group.hierarchies.flatMap(hierarchy => hierarchy.varieties)
+    );
+    
+    return {
+      countries: Array.from(new Set(seriesGroups.map(g => g.country))).sort(),
+      series: Array.from(new Set(seriesGroups.map(g => g.seriesName))).sort(),
+      years: Array.from(new Set(allStamps.map(s => s.year))).sort().reverse(),
+      denominations: Array.from(new Set(allStamps.map(s => s.denomination))).sort(),
+      colors: Array.from(new Set(allStamps.map(s => s.colorName).filter(Boolean))).sort(),
+      printingMethods: Array.from(new Set(allStamps.map(s => s.printingMethod).filter(Boolean))).sort(),
+      themes: Array.from(new Set(allStamps.map(s => s.collectorGroup).filter(Boolean))).sort(),
+      features: Array.from(new Set(allStamps.flatMap(s => s.features))).sort(),
+      // Year ranges for easier filtering
+      yearRanges: [
+        { label: "Pre-1880", value: "pre-1880", years: ["1870", "1871", "1872", "1873", "1874", "1875", "1876", "1877", "1878", "1879"] },
+        { label: "1880s", value: "1880s", years: ["1880", "1881", "1882", "1883", "1884", "1885", "1886", "1887", "1888", "1889"] },
+        { label: "1890s", value: "1890s", years: ["1890", "1891", "1892", "1893", "1894", "1895", "1896", "1897", "1898", "1899"] },
+        { label: "1900s", value: "1900s", years: ["1900", "1901", "1902", "1903", "1904", "1905", "1906", "1907", "1908", "1909"] },
+        { label: "1910s+", value: "1910s", years: ["1910", "1911", "1912", "1913", "1914", "1915", "1916", "1917", "1918", "1919", "1920"] }
+      ]
+    };
+  }, [seriesGroups]);
+  
   // Filter stamps based on search term and filters
-  const filteredStamps = mainStampGroups.filter(group => {
+  const filteredSeriesGroups = seriesGroups.filter(group => {
     // Text search
     const matchesSearch = 
-      group.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      group.seriesName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       group.country.toLowerCase().includes(searchTerm.toLowerCase()) ||
       group.description.toLowerCase().includes(searchTerm.toLowerCase());
     
@@ -1024,17 +891,52 @@ export default function CatalogPage() {
       true : 
       group.country.toLowerCase() === selectedFilters.country.toLowerCase();
     
-    // Year filter (simplified - just checking if year range contains the filter year)
+    // Year filter
     const matchesYear = selectedFilters.year === "" || selectedFilters.year === "all" ? 
       true : 
-      group.years.includes(selectedFilters.year);
+      (() => {
+        const yearRange = getFilterData.yearRanges.find(range => range.value === selectedFilters.year);
+        if (yearRange) {
+          return group.hierarchies.some(hierarchy => 
+            hierarchy.varieties.some(stamp => 
+              yearRange.years.includes(stamp.year)
+            )
+          );
+        }
+        return group.yearRange.includes(selectedFilters.year);
+      })();
+
+    // Series filter
+    const matchesSeries = selectedFilters.series === "" || selectedFilters.series === "all" ?
+      true :
+      group.seriesName.toLowerCase().includes(selectedFilters.series.toLowerCase());
+
+    // Advanced filters - check within stamps
+    const allGroupStamps = group.hierarchies.flatMap(h => h.varieties);
     
-    return matchesSearch && matchesCountry && matchesYear;
+    const matchesDenomination = selectedFilters.denomination === "all" ? 
+      true : 
+      allGroupStamps.some(stamp => stamp.denomination === selectedFilters.denomination);
+    
+    const matchesColor = selectedFilters.color === "all" ? 
+      true : 
+      allGroupStamps.some(stamp => stamp.colorName === selectedFilters.color);
+      
+    const matchesPrintingMethod = selectedFilters.printingMethod === "all" ? 
+      true : 
+      allGroupStamps.some(stamp => stamp.printingMethod === selectedFilters.printingMethod);
+      
+    const matchesTheme = selectedFilters.theme === "all" ? 
+      true : 
+      allGroupStamps.some(stamp => stamp.collectorGroup === selectedFilters.theme);
+
+    return matchesSearch && matchesCountry && matchesYear && matchesSeries && 
+           matchesDenomination && matchesColor && matchesPrintingMethod && matchesTheme;
   });
   
   // Calculate pagination
-  const totalPages = Math.ceil(filteredStamps.length / itemsPerPage);
-  const paginatedStamps = filteredStamps.slice(
+  const totalPages = Math.ceil(filteredSeriesGroups.length / itemsPerPage);
+  const paginatedSeriesGroups = filteredSeriesGroups.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -1042,14 +944,86 @@ export default function CatalogPage() {
   // Page change handler
   const handlePageChange = (pageNumber: number) => {
     setCurrentPage(pageNumber);
-    // Scroll to top of results on page change
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   
+  // Handle stamp click to open modal
+  const handleStampClick = (stamp: TransformedStamp) => {
+    setSelectedStamp(stamp);
+    setIsModalOpen(true);
+  };
+  
+  if (loading) {
+    return (
+      <div className="container mx-auto py-4 sm:py-8 px-2 sm:px-4">
+        <div className="flex items-center justify-center h-64">
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span>Loading catalog data...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto py-4 sm:py-8 px-2 sm:px-4">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center space-y-4">
+            <div className="text-red-500 text-lg font-medium">Error Loading Catalog</div>
+            <div className="text-muted-foreground">{error}</div>
+            <Button onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="flex flex-col md:flex-row gap-4 mb-8 items-start">
-        <div className="w-full md:w-64 space-y-4">
+    <div className="container mx-auto py-2 sm:py-4 lg:py-8 px-2 sm:px-4">
+      {/* Mobile Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
+        <div className="flex items-center gap-4 w-full sm:w-auto">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Stamp Catalog</h1>
+        </div>
+        
+        {/* Mobile Filter Toggle */}
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="flex-1 sm:hidden">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search stamps..."
+                className="pl-8 text-sm"
+                value={searchTerm}
+                onChange={handleSearchChange}
+              />
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
+            className="sm:hidden flex items-center gap-2"
+          >
+            <Filter className="h-4 w-4" />
+            Filters
+          </Button>
+          <div className="hidden sm:block text-sm text-muted-foreground">
+            {filteredSeriesGroups.length} of {seriesGroups.length} series
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
+        {/* Desktop Sidebar & Mobile Collapsible Filters */}
+        <div className={`w-full lg:w-72 xl:w-80 space-y-4 ${mobileFiltersOpen ? 'block' : 'hidden'} lg:block`}>
+          {/* Desktop Search */}
+          <div className="hidden sm:block">
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -1059,221 +1033,357 @@ export default function CatalogPage() {
               value={searchTerm}
               onChange={handleSearchChange}
             />
+            </div>
           </div>
           
-          <div className="p-4 border rounded-lg space-y-4 bg-card">
+          <div className="p-3 sm:p-4 lg:p-5 border rounded-lg space-y-4 bg-card">
             <div className="flex items-center justify-between">
-              <h3 className="font-medium text-sm">Filters</h3>
+              <h3 className="font-medium text-sm sm:text-base">Filters</h3>
               <Button 
                 variant="ghost" 
                 size="sm" 
                 className="h-8 px-2 text-xs"
                 onClick={clearFilters}
               >
-                Clear
+                Clear All
               </Button>
             </div>
             
-            <div className="space-y-3">
+            <div className="space-y-3 sm:space-y-4">
+              {/* Country Filter */}
               <div>
-                <label className="text-sm font-medium mb-1 block">Country</label>
+                <label className="text-xs sm:text-sm font-medium mb-1 sm:mb-2 block">Country</label>
                 <Select 
                   value={selectedFilters.country}
                   onValueChange={(value) => handleFilterChange('country', value)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="text-sm">
                     <SelectValue placeholder="Any country" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Any country</SelectItem>
-                    <SelectItem value="New Zealand">New Zealand</SelectItem>
-                    <SelectItem value="Great Britain">Great Britain</SelectItem>
-                    <SelectItem value="Australia">Australia</SelectItem>
-                    <SelectItem value="United States">United States</SelectItem>
+                    {getFilterData.countries.map(country => (
+                      <SelectItem key={country} value={country}>{country}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               
+              {/* Series Filter */}
               <div>
-                <label className="text-sm font-medium mb-1 block">Year Range</label>
+                <label className="text-xs sm:text-sm font-medium mb-1 sm:mb-2 block">Series</label>
+                <Select
+                  value={selectedFilters.series}
+                  onValueChange={(value) => handleFilterChange('series', value)}
+                >
+                  <SelectTrigger className="text-sm">
+                    <SelectValue placeholder="Any series" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Any series</SelectItem>
+                    {getFilterData.series.map(series => (
+                      <SelectItem key={series} value={series} className="text-xs sm:text-sm">
+                        <span className="truncate">{series}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Year Range Filter */}
+              <div>
+                <label className="text-xs sm:text-sm font-medium mb-1 sm:mb-2 block">Year Period</label>
                 <Select
                   value={selectedFilters.year}
                   onValueChange={(value) => handleFilterChange('year', value)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="text-sm">
                     <SelectValue placeholder="Any period" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Any period</SelectItem>
-                    <SelectItem value="1840">1840s</SelectItem>
-                    <SelectItem value="185">1850s</SelectItem>
-                    <SelectItem value="187">1870s</SelectItem>
-                    <SelectItem value="189">1890s</SelectItem>
-                    <SelectItem value="19">1900s</SelectItem>
-                    <SelectItem value="193">1930s</SelectItem>
+                    {getFilterData.yearRanges.map(range => (
+                      <SelectItem key={range.value} value={range.value}>{range.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               
+              {/* Denomination Filter */}
               <div>
-                <label className="text-sm font-medium mb-1 block">Features</label>
-                <div className="space-y-1">
-                  <div className="flex items-center">
-                    <input type="checkbox" id="feature-wmk" className="mr-2" />
-                    <label htmlFor="feature-wmk" className="text-sm">Watermark Varieties</label>
+                <label className="text-xs sm:text-sm font-medium mb-1 sm:mb-2 block">Denomination</label>
+                <Select
+                  value={selectedFilters.denomination}
+                  onValueChange={(value) => handleFilterChange('denomination', value)}
+                >
+                  <SelectTrigger className="text-sm">
+                    <SelectValue placeholder="Any denomination" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Any denomination</SelectItem>
+                    {getFilterData.denominations.slice(0, 20).map(denom => (
+                      <SelectItem key={denom} value={denom}>{denom}</SelectItem>
+                    ))}
+                    {getFilterData.denominations.length > 20 && (
+                      <div className="px-2 py-1 text-xs text-muted-foreground">
+                        +{getFilterData.denominations.length - 20} more available
+                    </div>
+                    )}
+                  </SelectContent>
+                </Select>
                   </div>
-                  <div className="flex items-center">
-                    <input type="checkbox" id="feature-imp" className="mr-2" />
-                    <label htmlFor="feature-imp" className="text-sm">Imperforate</label>
+
+                {/* Color Filter */}
+                <div>
+                  <label className="text-xs sm:text-sm font-medium mb-1 sm:mb-2 block">Color</label>
+                  <Select
+                    value={selectedFilters.color}
+                    onValueChange={(value) => handleFilterChange('color', value)}
+                  >
+                    <SelectTrigger className="text-sm">
+                      <SelectValue placeholder="Any color" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Any color</SelectItem>
+                      {getFilterData.colors.map(color => (
+                        <SelectItem key={color} value={color}>{color}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                    </div>
+
+                {/* Printing Method Filter */}
+                <div>
+                  <label className="text-xs sm:text-sm font-medium mb-1 sm:mb-2 block">Printing Method</label>
+                  <Select
+                    value={selectedFilters.printingMethod}
+                    onValueChange={(value) => handleFilterChange('printingMethod', value)}
+                  >
+                    <SelectTrigger className="text-sm">
+                      <SelectValue placeholder="Any method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Any method</SelectItem>
+                      {getFilterData.printingMethods.map(method => (
+                        <SelectItem key={method} value={method}>{method}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   </div>
-                  <div className="flex items-center">
-                    <input type="checkbox" id="feature-err" className="mr-2" />
-                    <label htmlFor="feature-err" className="text-sm">Errors & Varieties</label>
-                  </div>
+
+                {/* Theme Filter */}
+                <div>
+                  <label className="text-xs sm:text-sm font-medium mb-1 sm:mb-2 block">Theme</label>
+                  <Select
+                    value={selectedFilters.theme}
+                    onValueChange={(value) => handleFilterChange('theme', value)}
+                  >
+                    <SelectTrigger className="text-sm">
+                      <SelectValue placeholder="Any theme" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Any theme</SelectItem>
+                      {getFilterData.themes.filter((theme): theme is string => Boolean(theme && theme.trim() !== '')).map(theme => (
+                        <SelectItem key={theme} value={theme}>{theme}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
+
+              {/* Active Filters Summary */}
+              {Object.values(selectedFilters).some(filter => 
+                (typeof filter === 'string' && filter !== "" && filter !== "all") ||
+                (filter instanceof Set && filter.size > 0)
+              ) && (
+                <div className="pt-3 border-t">
+                  <div className="text-xs sm:text-sm font-medium mb-2">Active Filters:</div>
+                  <div className="flex flex-wrap gap-1">
+                    {Object.entries(selectedFilters).map(([key, value]) => {
+                      if (typeof value === 'string' && value !== "" && value !== "all") {
+                        return (
+                          <Badge key={key} variant="secondary" className="text-xs">
+                            {key}: {value}
+                          </Badge>
+                        );
+                      }
+                      return null;
+                    })}
             </div>
           </div>
+              )}
+              </div>
         </div>
         
-        <div className="flex-1">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold">Stamp Catalog</h1>
+        {/* Main Content */}
+        <div className="flex-1 min-w-0">
+          {/* Mobile Results Summary */}
+          <div className="sm:hidden mb-4">
             <div className="text-sm text-muted-foreground">
-              Showing {paginatedStamps.length} of {filteredStamps.length} items
+              Showing {paginatedSeriesGroups.length} of {filteredSeriesGroups.length} series
             </div>
           </div>
           
-          <Accordion type="single" collapsible className="w-full col-span-full space-y-4">
-            {paginatedStamps.map(stamp => (
+          <Accordion type="single" collapsible className="w-full space-y-3 sm:space-y-4">
+            {paginatedSeriesGroups.map(seriesGroup => {
+              const accordionData = createAccordionData(seriesGroup);
+              
+              return (
               <AccordionItem 
-                value={stamp.id} 
-                key={stamp.id} 
+                  value={seriesGroup.id} 
+                  key={seriesGroup.id} 
                 className="border rounded-lg w-full overflow-hidden transition-all duration-300 hover:border-primary/20 data-[state=open]:shadow-lg bg-gradient-to-r from-card to-background"
               >
-                <AccordionTrigger className="w-full px-6 py-4 hover:bg-muted/20 transition-colors">
-                  <div className="flex items-center w-full gap-6">
-                    <div className="h-16 w-16 relative rounded-md overflow-hidden border">
+                  <AccordionTrigger className="w-full px-3 sm:px-4 lg:px-6 py-3 sm:py-4 hover:bg-muted/20 transition-colors">
+                    <div className="flex items-center w-full gap-3 sm:gap-4 lg:gap-6">
+                      <div className="h-10 w-10 sm:h-12 sm:w-12 lg:h-16 lg:w-16 relative rounded-md overflow-hidden border shrink-0">
                       <Image 
-                        src={stamp.image} 
-                        alt={stamp.title}
+                          src={seriesGroup.image} 
+                          alt={seriesGroup.seriesName}
                         fill
                         className="object-cover transition-transform duration-300 group-hover:scale-105"
                       />
                     </div>
-                    <div className="flex-1 text-left space-y-1.5">
-                      <div className="font-semibold text-lg tracking-tight">{stamp.title}</div>
-                      <div className="text-muted-foreground text-sm font-medium">{stamp.country}, {stamp.years}</div>
-                      <div className="text-muted-foreground text-sm mt-1 line-clamp-2">{stamp.description}</div>
-                      <div className="flex gap-2 mt-3">
-                        <Badge variant="outline" className="bg-background/50">{stamp.stampCount} stamps</Badge>
-                        <Badge variant="secondary" className="bg-secondary/80">{stamp.types}</Badge>
+                      <div className="flex-1 text-left space-y-1 min-w-0">
+                        <div className="font-semibold text-sm sm:text-base lg:text-lg tracking-tight truncate">
+                          {seriesGroup.seriesName}
                       </div>
-                    </div>
+                        <div className="text-muted-foreground text-xs sm:text-sm font-medium">
+                          {accordionData.country}, {accordionData.years}
+                        </div>
+                        <div className="text-muted-foreground text-xs sm:text-sm line-clamp-2 lg:line-clamp-none">
+                          {accordionData.description}
+                        </div>
+                        <div className="flex flex-wrap gap-1 sm:gap-2 mt-2">
+                          <Badge variant="outline" className="bg-background/50 text-xs">
+                            {accordionData.stampCount} stamps
+                          </Badge>
+                          <Badge variant="secondary" className="bg-secondary/80 text-xs">
+                            {accordionData.denominationCount} denominations
+                          </Badge>
+                      </div>
                   </div>
-                </AccordionTrigger>
-                <AccordionContent className="bg-muted/5 px-0 pb-8 border-t">
-                  {stampDataById[stamp.id] ? (
-                    <div className="w-full px-6 pt-4">
-                      <h3 className="text-lg font-medium mb-4 text-center">{stamp.title} - Hierarchy Tree</h3>
-                      <StampTree
-                        title={`STAMP HIERARCHY TREE`}
-                        subtitle={stampDataById[stamp.id].subtitle}
-                        stamps={stampDataById[stamp.id].stamps}
-                        rootStamp={stampDataById[stamp.id].rootStamp}
-                        connections={stampDataById[stamp.id].connections}
-                      />
+                </div>
+              </AccordionTrigger>
+                <AccordionContent className="bg-muted/5 px-0 pb-4 sm:pb-6 lg:pb-8 border-t">
+                  <div className="w-full">
+                    <div className="px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4 pb-2">
+                      <h3 className="text-base sm:text-lg font-medium">
+                        {seriesGroup.seriesName} - Series Tree
+                      </h3>
                     </div>
-                  ) : (
-                    <div className="text-center text-muted-foreground p-4">No tree data available for this stamp.</div>
-                  )}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-          
-          {filteredStamps.length === 0 && (
-            <div className="text-center p-12 border rounded-lg">
-              <div className="text-3xl mb-2">😕</div>
-              <h3 className="text-lg font-medium mb-1">No stamps found</h3>
-              <p className="text-muted-foreground">Try adjusting your search or filters</p>
-              <Button variant="outline" className="mt-4" onClick={clearFilters}>
-                Clear all filters
+                    
+                    <HierarchicalTreeView
+                      seriesGroup={seriesGroup}
+                        onStampClick={handleStampClick}
+                      />
+                  </div>
+              </AccordionContent>
+            </AccordionItem>
+            );
+          })}
+        </Accordion>
+        
+        {filteredSeriesGroups.length === 0 && !loading && (
+          <div className="text-center p-8 sm:p-12 border rounded-lg">
+            <div className="text-2xl sm:text-3xl mb-2">😕</div>
+            <h3 className="text-base sm:text-lg font-medium mb-1">No stamps found</h3>
+            <p className="text-sm sm:text-base text-muted-foreground mb-4">
+              Try adjusting your search or filters
+            </p>
+            <Button variant="outline" onClick={clearFilters}>
+              Clear all filters
+            </Button>
+          </div>
+        )}
+        
+        {filteredSeriesGroups.length > 0 && totalPages > 1 && (
+          <div className="mt-6 sm:mt-8 flex justify-center">
+            <div className="flex items-center gap-1 overflow-x-auto pb-2 sm:pb-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(1)}
+                disabled={currentPage === 1}
+                className="hidden sm:inline-flex text-xs sm:text-sm"
+              >
+                First
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="text-xs sm:text-sm"
+              >
+                Previous
+              </Button>
+              
+              <div className="flex items-center gap-1 mx-2">
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(page => 
+                    page === 1 || 
+                    page === totalPages || 
+                    (page >= currentPage - 1 && page <= currentPage + 1)
+                  )
+                  .map((page, index, array) => (
+                    <React.Fragment key={page}>
+                      {index > 0 && array[index - 1] !== page - 1 && (
+                        <span className="px-1 sm:px-2 text-muted-foreground text-xs sm:text-sm">...</span>
+                      )}
+                      <Button
+                        variant={currentPage === page ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handlePageChange(page)}
+                        className="w-7 h-7 sm:w-9 sm:h-9 text-xs sm:text-sm"
+                      >
+                        {page}
+                      </Button>
+                    </React.Fragment>
+                  ))
+                }
+              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="text-xs sm:text-sm"
+              >
+                Next
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(totalPages)}
+                disabled={currentPage === totalPages}
+                className="hidden sm:inline-flex text-xs sm:text-sm"
+              >
+                Last
               </Button>
             </div>
-          )}
-          
-          {/* Pagination */}
-          {filteredStamps.length > 0 && (
-            <div className="mt-8 flex justify-center">
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(1)}
-                  disabled={currentPage === 1}
-                >
-                  First
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                >
-                  Previous
-                </Button>
-                
-                <div className="flex items-center gap-1 mx-2">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1)
-                    .filter(page => 
-                      page === 1 || 
-                      page === totalPages || 
-                      (page >= currentPage - 1 && page <= currentPage + 1)
-                    )
-                    .map((page, index, array) => (
-                      <React.Fragment key={page}>
-                        {index > 0 && array[index - 1] !== page - 1 && (
-                          <span className="px-2 text-muted-foreground">...</span>
-                        )}
-                        <Button
-                          variant={currentPage === page ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => handlePageChange(page)}
-                          className="w-9 h-9"
-                        >
-                          {page}
-                        </Button>
-                      </React.Fragment>
-                    ))
-                  }
-                </div>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(totalPages)}
-                  disabled={currentPage === totalPages}
-                >
-                  Last
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
-  );
+    
+    {/* Stamp Detail Modal */}
+    <StampDetailModal
+      stamp={selectedStamp as any}
+      isOpen={isModalOpen}
+      onClose={() => setIsModalOpen(false)}
+      rootStamp={selectedStamp as any}
+    />
+  </div>
+);
 }
 
-// Import for the Heart, Eye, and Folder icons
-import { Heart, Eye, Folder } from "lucide-react"
+export default function ProtectedCatalogPage() {
+  return (
+    <AuthGuard>
+      <CatalogPage />
+    </AuthGuard>
+  )
+}
 

@@ -8,29 +8,38 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 
-const sidebarLinks = [
+interface SubMenuItem {
+  title: string;
+  href: string;
+}
+
+interface SidebarLinkWithSubmenu {
+  title: string;
+  icon: React.ReactElement;
+  submenu: SubMenuItem[];
+  hidden?: boolean;
+}
+
+interface SidebarLinkDirect {
+  title: string;
+  href: string;
+  icon: React.ReactElement;
+  hidden?: boolean;
+}
+
+type SidebarLink = SidebarLinkWithSubmenu | SidebarLinkDirect;
+
+const allSidebarLinks: SidebarLink[] = [
   {
     title: "Dashboard",
     href: "/admin",
     icon: <LayoutDashboard className="h-5 w-5" />,
+    hidden: true, // Hide Dashboard tab
   },
   {
     title: "Catalog Management",
+    href: "/admin/catalog-management",
     icon: <Stamp className="h-5 w-5" />,
-    submenu: [
-      {
-        title: "Catalog Browser",
-        href: "/admin/catalog",
-      },
-      {
-        title: "Catalog Ingestion",
-        href: "/admin/catalog-ingestion",
-      },
-      {
-        title: "Catalog Code System",
-        href: "/admin/catalog-system",
-      }
-    ],
   },
   {
     title: "User Management",
@@ -41,13 +50,18 @@ const sidebarLinks = [
     title: "Analytics",
     href: "/admin/analytics",
     icon: <BarChart3 className="h-5 w-5" />,
+    hidden: true, // Hide Analytics tab
   },
   {
     title: "Settings",
     href: "/admin/settings",
     icon: <Settings className="h-5 w-5" />,
+    hidden: true, // Hide Settings tab
   },
 ]
+
+// Filter out hidden tabs
+const sidebarLinks = allSidebarLinks.filter(link => !link.hidden)
 
 export default function AdminSidebar() {
   const pathname = usePathname()
@@ -71,106 +85,104 @@ export default function AdminSidebar() {
     return pathname.startsWith(`${href}/`)
   }
 
+  const hasSubmenu = (link: SidebarLink): link is SidebarLinkWithSubmenu => {
+    return 'submenu' in link;
+  }
+
   return (
     <div className="w-64 border-r h-screen overflow-auto bg-background">
-      <div className="p-6 border-b">
-        <Link href="/admin" className="flex items-center gap-2 font-semibold text-lg">
-          <Stamp className="h-6 w-6 text-primary" />
-          <span>SOA Admin</span>
-        </Link>
-      </div>
-      <div className="py-4">
-        <nav className="space-y-1 px-2">
-          <Link
-            href="/"
-            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-          >
-            <Home className="h-5 w-5" />
-            <span>Back to Site</span>
-          </Link>
-        </nav>
+      <div className="py-4 flex flex-col justify-between h-full">
+        <div>
+          <nav className="space-y-1 px-2">
+            <Link
+              href="/"
+              className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            >
+              <Home className="h-5 w-5" />
+              <span>Back to Site</span>
+            </Link>
+          </nav>
 
-        <div className="mt-6 px-3">
-          <h3 className="px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Administration</h3>
-          <nav className="mt-2 space-y-1">
-            {sidebarLinks.map((link, index) => {
-              if (link.submenu) {
-                const isOpen = openSections[link.title] || false
-                const hasActiveChild = link.submenu.some((sublink) => isActive(sublink.href))
+          <div className="mt-6 px-3">
+            <h3 className="px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Administration</h3>
+            <nav className="mt-2 space-y-1">
+              {sidebarLinks.map((link, index) => {
+                if (hasSubmenu(link)) {
+                  const isOpen = openSections[link.title] || false
+                  const hasActiveChild = link.submenu.some((sublink) => isActive(sublink.href))
+
+                  return (
+                    <Collapsible
+                      key={index}
+                      open={isOpen || hasActiveChild}
+                      onOpenChange={() => toggleSection(link.title)}
+                      className="space-y-1"
+                    >
+                      <CollapsibleTrigger className="w-full">
+                        <div
+                          className={cn(
+                            "flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium cursor-pointer hover:bg-muted transition-colors",
+                            hasActiveChild ? "text-primary" : "text-muted-foreground",
+                          )}
+                        >
+                          <div className="flex items-center gap-3">
+                            {link.icon}
+                            <span>{link.title}</span>
+                          </div>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")}
+                          >
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                          </svg>
+                        </div>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="pl-10 space-y-1">
+                        {link.submenu.map((sublink, subindex) => {
+                          const isSubmenuActive = isActive(sublink.href)
+
+                          return (
+                            <Link
+                              key={subindex}
+                              href={sublink.href}
+                              className={`block rounded-md px-3 py-2 text-sm font-medium transition-colors ${isSubmenuActive
+                                  ? "bg-primary/10 text-primary"
+                                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                }`}
+                            >
+                              {sublink.title}
+                            </Link>
+                          )
+                        })}
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )
+                }
 
                 return (
-                  <Collapsible
+                  <Link
                     key={index}
-                    open={isOpen || hasActiveChild}
-                    onOpenChange={() => toggleSection(link.title)}
-                    className="space-y-1"
+                    href={link.href}
+                    className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${isActive(link.href)
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      }`}
                   >
-                    <CollapsibleTrigger className="w-full">
-                      <div
-                        className={cn(
-                          "flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium cursor-pointer hover:bg-muted transition-colors",
-                          hasActiveChild ? "text-primary" : "text-muted-foreground",
-                        )}
-                      >
-                        <div className="flex items-center gap-3">
-                          {link.icon}
-                          <span>{link.title}</span>
-                        </div>
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")}
-                        >
-                          <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                      </div>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="pl-10 space-y-1">
-                      {link.submenu.map((sublink, subindex) => {
-                        const isSubmenuActive = isActive(sublink.href)
-
-                        return (
-                          <Link
-                            key={subindex}
-                            href={sublink.href}
-                            className={`block rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                              isSubmenuActive
-                                ? "bg-primary/10 text-primary"
-                                : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                            }`}
-                          >
-                            {sublink.title}
-                          </Link>
-                        )
-                      })}
-                    </CollapsibleContent>
-                  </Collapsible>
+                    {link.icon}
+                    <span>{link.title}</span>
+                  </Link>
                 )
-              }
-
-              return (
-                <Link
-                  key={index}
-                  href={link.href}
-                  className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                    isActive(link.href)
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  }`}
-                >
-                  {link.icon}
-                  <span>{link.title}</span>
-                </Link>
-              )
-            })}
-          </nav>
+              })}
+            </nav>
+          </div>
         </div>
 
         <div className="mt-6 px-4 py-2">
@@ -191,7 +203,7 @@ export default function AdminSidebar() {
               className="text-xs text-blue-700 dark:text-blue-300 px-0 py-1 h-auto font-medium"
               asChild
             >
-              <Link href="/admin/catalog-ingestion">Get Started →</Link>
+              <Link href="/admin/catalog-management">Get Started →</Link>
             </Button>
           </div>
         </div>
