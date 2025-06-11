@@ -17,6 +17,11 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Only cache GET requests
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
@@ -29,6 +34,13 @@ self.addEventListener('fetch', (event) => {
           (response) => {
             // Check if we received a valid response
             if (!response || response.status !== 200 || response.type !== 'basic') {
+              return response;
+            }
+
+            // Don't cache API responses or dynamic content
+            if (event.request.url.includes('/api/') || 
+                event.request.url.includes('localhost:3000') ||
+                event.request.url.includes('azurewebsites.net')) {
               return response;
             }
 

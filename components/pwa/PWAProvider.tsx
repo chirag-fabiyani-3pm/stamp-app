@@ -104,15 +104,6 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
-    // Force show for testing
-    useEffect(() => {
-        const forceShow = !window.matchMedia('(display-mode: standalone)').matches;
-        if (forceShow) {
-            setIsInstallable(true);
-            setTimeout(() => setShowInstallPrompt(true), 2000);
-        }
-    }, []);
-
     return (
         <>
             {/* Offline status banner */}

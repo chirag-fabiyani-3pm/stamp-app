@@ -1,0 +1,1038 @@
+import React, { useState, useRef, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { ChevronRight, ChevronLeft, Home, Edit, Eye, PlusCircle, ZoomIn, ZoomOut, RotateCcw, Loader2, Info } from "lucide-react";
+import Image from "next/image";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { getUserData } from "@/lib/api/auth";
+
+interface CategoryField {
+    id: string;
+    label: string;
+    type?: "text" | "textarea" | "select" | "date" | "color";
+    description?: string;
+    options?: string[];
+    defaultValue?: string;
+    showWhen?: {
+        field: string;
+        value: string;
+    };
+}
+
+interface Category extends CategoryField {
+    children?: Category[];
+}
+
+interface NavigationPathItem {
+    id: string;
+    label: string;
+    category: Category;
+}
+
+interface StampObservationManagerProps {
+    selectedStamp: {
+        id: string;
+        image: string;
+        scannedImage?: string;
+        // Additional API data for comprehensive mapping
+        apiData?: {
+            id: string;
+            catalogId: string;
+            name: string;
+            publisher: string;
+            country: string;
+            stampImageUrl: string;
+            catalogName: string;
+            catalogNumber: string;
+            seriesName: string;
+            issueDate: string;
+            denominationValue: number;
+            denominationCurrency: string;
+            denominationSymbol: string;
+            color: string;
+            design: string;
+            theme: string;
+            artist: string;
+            engraver: string;
+            printing: string;
+            paperType: string;
+            perforation: string;
+            size: string;
+            specialNotes: string;
+            historicalContext: string;
+            printingQuantity: number;
+            usagePeriod: string;
+            rarenessLevel: string;
+            hasGum: boolean;
+            gumCondition: string;
+            description: string;
+            watermark: string | null;
+            actualPrice?: number;
+            estimatedPrice?: number;
+        } | null;
+        // Complete stamp data for reference
+        stampData?: any;
+    };
+    onCancel?: () => void;
+    onSuccess?: (message: string, stampData?: any) => void;
+}
+
+// Define the category structure based on comprehensive philatelic attributes
+const categories: Category[] = [
+    {
+        id: 'PrimaryDetails',
+        label: 'Primary Details',
+        description: 'Required core information for every stamp (Country, Issue Date, Denomination, Ownership Status, Purchase Price, Purchase Date and Notes)',
+        children: [
+            {
+                id: 'Country',
+                label: 'Country',
+                description: 'Country that issued the stamp (ISO-3166 code or full name).',
+                type: 'select',
+                options: [
+                    'Afghanistan', 'Albania', 'Algeria', 'Argentina', 'Armenia', 'Australia', 'Austria', 'Azerbaijan',
+                    'Bahamas', 'Bahrain', 'Bangladesh', 'Barbados', 'Belarus', 'Belgium', 'Belize', 'Bolivia',
+                    'Brazil', 'Bulgaria', 'Cambodia', 'Cameroon', 'Canada', 'Chad', 'Chile', 'China', 'Colombia',
+                    'Costa Rica', 'Croatia', 'Cuba', 'Cyprus', 'Czech Republic', 'Denmark', 'Ecuador', 'Egypt',
+                    'Estonia', 'Ethiopia', 'Fiji', 'Finland', 'France', 'Germany', 'Ghana', 'Greece', 'Guatemala',
+                    'Hungary', 'Iceland', 'India', 'Indonesia', 'Ireland', 'Israel', 'Italy', 'Jamaica', 'Japan',
+                    'Jordan', 'Kazakhstan', 'Kenya', 'Kuwait', 'Latvia', 'Lebanon', 'Libya', 'Lithuania', 'Luxembourg',
+                    'Malaysia', 'Malta', 'Mexico', 'Monaco', 'Mongolia', 'Morocco', 'Myanmar', 'Nepal', 'Netherlands',
+                    'New Zealand', 'Nicaragua', 'Nigeria', 'Norway', 'Pakistan', 'Panama', 'Peru', 'Philippines',
+                    'Poland', 'Portugal', 'Qatar', 'Romania', 'Russia', 'Saudi Arabia', 'Serbia', 'Singapore',
+                    'Slovakia', 'Slovenia', 'South Africa', 'Spain', 'Sri Lanka', 'Sudan', 'Sweden', 'Switzerland',
+                    'Thailand', 'Turkey', 'Ukraine', 'United Arab Emirates', 'United Kingdom', 'United States',
+                    'Uruguay', 'Venezuela', 'Vietnam', 'Other'
+                ]
+            },
+            {
+                id: 'IssueDate',
+                label: 'Issue Date',
+                description: 'Official date when this stamp was issued (DD/MM/YYYY).',
+                type: 'date'
+            },
+            {
+                id: 'Denomination',
+                label: 'Denomination',
+                description: 'Face value of the stamp, split into components.',
+                children: [
+                    {
+                        id: 'DenominationCurrency',
+                        label: 'Denomination Currency',
+                        description: 'Currency name (e.g., Dollar, Rupee, Franc)',
+                        type: 'select',
+                        options: ['Dollar', 'Cent', 'Rupee', 'Paise', 'Pound', 'Shilling', 'Penny', 'Pence', 'Euro', 'Franc', 'Mark', 'Kopek', 'Yen', 'Won', 'Lira', 'Other']
+                    },
+                    {
+                        id: 'DenominationValue',
+                        label: 'Denomination Value',
+                        description: 'Numerical denomination value (e.g., 1, 2.50, 10)',
+                        type: 'text'
+                    },
+                    {
+                        id: 'DenominationSymbol',
+                        label: 'Denomination Symbol',
+                        description: 'Symbol representing the denomination (e.g., $, ₹, £, ¢, €)',
+                        type: 'select',
+                        options: ['$', '¢', '₹', '₨', '£', 's', 'd', 'p', '€', 'Fr', 'Kč', '₩', '¥', '₺', 'Other']
+                    }
+                ]
+            },
+            {
+                id: 'OwnershipStatus',
+                label: 'Ownership Status',
+                description: 'Is this stamp owned, on loan, or for sale?',
+                type: 'select',
+                options: ['Owned', 'On Loan', 'For Sale', 'Unknown']
+            },
+            {
+                id: 'PurchasePrice',
+                label: 'Purchase Price',
+                description: 'Purchase price and currency',
+                type: 'text'
+            },
+            {
+                id: 'PurchaseDate',
+                label: 'Purchase Date',
+                description: 'When the stamp was purchased',
+                type: 'date'
+            },
+            {
+                id: 'Notes',
+                label: 'Additional Notes',
+                description: 'Any additional observations or notes',
+                type: 'textarea'
+            }
+        ]
+    },
+    {
+        id: 'Colors',
+        label: 'Colors',
+        description: 'Pivotal attribute in philately, influencing value and identification',
+        children: [
+            {
+                id: 'ColorType',
+                label: 'Color Type',
+                description: 'Primary color classification',
+                type: 'select',
+                options: ['red', 'Red Carmine', 'Orange', 'Purple', 'Violet', 'Mauve', 'Blue', 'Black', 'Green', 'Brown', 'Yellow', 'Multiple Colours', 'Pictorial / pictures etc.']
+            }
+        ]
+    },
+    {
+        id: 'ItTyp',
+        label: 'Item Type',
+        description: 'The fundamental classification for any philatelic object',
+        children: [
+            {
+                id: 'ItTypSel',
+                label: 'Item Type Selection',
+                description: 'Type of collectible item',
+                type: 'select',
+                options: ['Stamp', 'On Piece (OnP)', 'On Card (OnCrd)', 'On Envelope (OnEnv)', 'On Newspaper (OnNew)', 'Add Another Type'],
+                defaultValue: 'Stamp'
+            }
+        ]
+    },
+    {
+        id: 'PaperChar',
+        label: 'Paper Characteristics',
+        description: 'Define the material composition, texture, and orientation of the paper',
+        children: [
+            {
+                id: 'PaperTypes',
+                label: 'Paper Types',
+                description: 'Different types of paper used in stamp production',
+                children: [
+                    {
+                        id: 'PaperType',
+                        label: 'Paper Type',
+                        description: 'Type of paper used',
+                        type: 'select',
+                        options: ['White Paper (P.wh)', 'Toned Paper (P.ton)', 'Chalk-Surfaced Paper (P.clk)', 'Prelure Paper (P.prel)', 'Fluorescent Paper (P.flo)', 'Self-Adhesive Paper (P.slf)', 'Phosphorised Paper (P.phs)', 'Gum Arabic Paper (P.arb.gmd)', 'PVA Gum Paper (P.alch)']
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        id: 'PrintChar',
+        label: 'Printing Characteristics',
+        description: 'Methods and processes employed to apply the design onto the stamp paper',
+        children: [
+            {
+                id: 'PrintMethods',
+                label: 'Printing Types/Methods',
+                description: 'Primary printing techniques',
+                children: [
+                    {
+                        id: 'PrintMethod',
+                        label: 'Printing Method',
+                        description: 'Primary printing technique used',
+                        type: 'select',
+                        options: ['Recess Printing (Prnt.rec)', 'Intaglio (Prnt.rec.int)', 'Line-Engraved (Prnt.rec.len)', 'Typography/Letterpress (Prnt.typ)', 'Lithography/Offset (Prnt.lth)', 'Gravure/Photogravure (Prnt.grv)', 'Flexography (Prnt.flx)', 'Screen Printing (Prnt.scr)', 'Héliogravure (Prnt.hel)']
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        id: 'WmkChar',
+        label: 'Watermark Characteristics',
+        description: 'Deliberate, semi-translucent patterns embedded in paper',
+        children: [
+            {
+                id: 'WatermarkPresence',
+                label: 'Watermark Presence',
+                description: 'Does the stamp have a watermark?',
+                type: 'select',
+                options: ['Yes - Watermark Present', 'No - No Watermark', 'Unknown/Uncertain'],
+                defaultValue: 'Unknown/Uncertain'
+            }
+        ]
+    },
+    {
+        id: 'PerfSep',
+        label: 'Perforation and Separation',
+        description: 'Methods by which individual stamps are detached from a larger sheet',
+        children: [
+            {
+                id: 'PerfTypes',
+                label: 'Perforation/Separation Types',
+                description: 'Main perforation and separation methods',
+                children: [
+                    {
+                        id: 'PerfType',
+                        label: 'Perforation Type',
+                        description: 'Type of perforation or separation',
+                        type: 'select',
+                        options: ['Line Perforation (Per.l)', 'Comb Perforation (Per.cmb)', 'Harrow Perforation (Per.h)', 'Rouletting (Per.rlt)', 'Elliptical Perforation (Per,el.)', 'Part-Perforated (Per.rlt,srp.)', 'Syncopated Perforation (Per.rlt,syn.)', 'Imperforate (Per.imp)', 'Self-Adhesive Die-Cut (Per.di.ct)']
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        id: 'Overprints',
+        label: 'Overprints',
+        description: 'Printed visual expressions stamped onto the front face of a stamp after its original production',
+        children: [
+            {
+                id: 'OverprintPresence',
+                label: 'Overprint Presence',
+                description: 'Does this stamp have any overprints?',
+                type: 'select',
+                options: ['No Overprints', 'Yes - Has Overprints', 'Uncertain'],
+                defaultValue: 'No Overprints'
+            }
+        ]
+    },
+    {
+        id: 'ErrorsVar',
+        label: 'Errors and Varieties',
+        description: 'Deviations from the intended design or production process',
+        children: [
+            {
+                id: 'ErrorPresence',
+                label: 'Error Presence',
+                description: 'Does this stamp have any errors or varieties?',
+                type: 'select',
+                options: ['No Errors - Normal Stamp', 'Yes - Has Errors/Varieties', 'Uncertain/Needs Expert Review'],
+                defaultValue: 'No Errors - Normal Stamp'
+            }
+        ]
+    },
+    {
+        id: 'KnownRarity',
+        label: 'Known Rarity Ratings',
+        description: 'Select a known rarity rating (as per standard philatelic scales)',
+        children: [
+            {
+                id: 'RarityRating',
+                label: 'Rarity Rating',
+                description: 'Known rarity rating for this item',
+                type: 'select',
+                options: ['Superb', 'Very Fine', 'Fine', 'Good', 'Average', 'Poor']
+            }
+        ]
+    }
+];
+
+// Helper functions
+function formatFieldId(id: string): string {
+    const camelCaseSplit = id.replace(/([A-Z])/g, ' $1');
+    const words = camelCaseSplit.split(/[\s_-]+/);
+    return words
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ')
+        .trim();
+}
+
+function findCategoryInTree(id: string, categories: Category[]): Category | null {
+    for (const category of categories) {
+        if (category.id.toLowerCase() === id.toLowerCase()) {
+            return category;
+        }
+        if (category.children && category.children.length > 0) {
+            const foundInChildren = findCategoryInTree(id, category.children);
+            if (foundInChildren) {
+                return foundInChildren;
+            }
+        }
+    }
+    return null;
+}
+
+function findCategoryLabel(id: string, categories: Category[]): string {
+    const foundCategory = findCategoryInTree(id, categories);
+    if (foundCategory?.label) return foundCategory?.label;
+    return formatFieldId(id);
+}
+
+function initializeFormDataFromCategories(categories: Category[]): Record<string, any> {
+    return categories.reduce((acc, category) => {
+        if (category.type) {
+            acc[category.id.toLowerCase()] = category.defaultValue || '';
+        } else {
+            const childData = category.children ? initializeFormDataFromCategories(category.children) : {};
+            if (Object.keys(childData).length > 0) {
+                acc[category.id.toLowerCase()] = childData;
+            }
+        }
+        return acc;
+    }, {} as Record<string, any>);
+}
+
+// Comprehensive mapping function from API data to nested category structure
+function mapApiDataToFormStructure(apiData: any): Record<string, any> {
+    if (!apiData) return {};
+
+    const formData: Record<string, any> = {
+        ittyp: {
+            ittypsel: 'Stamp'
+        }
+    };
+
+    const primaryDetails: any = {};
+    
+    if (apiData.country) {
+        primaryDetails.country = apiData.country;
+    }
+    
+    if (apiData.issueDate) {
+        primaryDetails.issuedate = new Date(apiData.issueDate).toISOString().split('T')[0];
+    }
+    
+    if (apiData.denominationValue !== undefined || apiData.denominationCurrency || apiData.denominationSymbol) {
+        primaryDetails.denomination = {
+            denominationvalue: apiData.denominationValue?.toString() || '',
+            denominationcurrency: apiData.denominationCurrency || '',
+            denominationsymbol: apiData.denominationSymbol || ''
+        };
+    }
+    
+    primaryDetails.ownershipstatus = 'Owned';
+    if (apiData.actualPrice) primaryDetails.purchaseprice = apiData.actualPrice.toString();
+    primaryDetails.purchasedate = new Date().toISOString().split('T')[0];
+    
+    const notes = [
+        apiData.specialNotes,
+        apiData.historicalContext,
+        apiData.description
+    ].filter(Boolean);
+    if (notes.length > 0) {
+        primaryDetails.notes = notes.join(' | ');
+    }
+    
+    if (Object.keys(primaryDetails).length > 0) {
+        formData.primarydetails = primaryDetails;
+    }
+
+    if (apiData.color) {
+        formData.colors = {
+            colortype: apiData.color
+        };
+    }
+
+    if (apiData.paperType) {
+        formData.paperchar = {
+            papertypes: {
+                papertype: apiData.paperType
+            }
+        };
+    }
+
+    if (apiData.printing) {
+        formData.printchar = {
+            printmethods: {
+                printmethod: apiData.printing
+            }
+        };
+    }
+
+    formData.wmkchar = {
+        watermarkpresence: apiData.watermark ? 'Yes - Watermark Present' : 'No - No Watermark'
+    };
+
+    if (apiData.perforation) {
+        formData.perfsep = {
+            perftypes: {
+                perftype: apiData.perforation
+            }
+        };
+    }
+
+    return formData;
+}
+
+export default function StampObservationManager({
+    selectedStamp,
+    onCancel,
+    onSuccess
+}: StampObservationManagerProps) {
+    const [navigationPath, setNavigationPath] = useState<NavigationPathItem[]>([]);
+    const [activeTab, setActiveTab] = useState("preview");
+    
+    // Initialize form data with API mapping if available
+    const [formData, setFormData] = useState<Record<string, any>>(() => {
+        const defaultData = initializeFormDataFromCategories(categories);
+        
+        if (selectedStamp.apiData) {
+            const apiMappedData = mapApiDataToFormStructure(selectedStamp.apiData);
+            const mergedData = { ...defaultData, ...apiMappedData };
+            console.log('Initial form data with API mapping:', mergedData);
+            return mergedData;
+        }
+        
+        console.log('Initial form data (no API):', defaultData);
+        return defaultData;
+    });
+    
+    const [allCategories, setAllCategories] = useState<Category[]>(() => {
+        return categories.map(cat => ({
+            id: cat.id,
+            label: cat.label,
+            description: cat.description,
+            type: cat.type,
+            options: cat.options,
+            showWhen: cat.showWhen,
+            children: cat.children ? cat.children.map(child => ({
+                ...child
+            })) : undefined
+        }));
+    });
+
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveError, setSaveError] = useState<string | null>(null);
+
+    // Zoom and pan states
+    const [catalogueZoom, setCatalogueZoom] = useState(1);
+    const [scannedZoom, setScannedZoom] = useState(1);
+    const [cataloguePan, setCataloguePan] = useState({ x: 0, y: 0 });
+    const [scannedPan, setScannedPan] = useState({ x: 0, y: 0 });
+    const [isDragging, setIsDragging] = useState<'catalogue' | 'scanned' | null>(null);
+    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+    const [dragStartPan, setDragStartPan] = useState({ x: 0, y: 0 });
+
+    const catalogueContainerRef = useRef<HTMLDivElement>(null);
+    const scannedContainerRef = useRef<HTMLDivElement>(null);
+
+    // Simple and robust field handling
+    const handleFieldChange = (path: NavigationPathItem[], value: string) => {
+        const fieldId = path[path.length - 1]?.id;
+        if (!fieldId) return;
+
+        setFormData(prev => {
+            const newFormData = { ...prev };
+            
+            // Handle Primary Details
+            if (path[0]?.id === 'PrimaryDetails') {
+                if (!newFormData.primarydetails) newFormData.primarydetails = {};
+                
+                if (path.length === 2) {
+                    // Direct fields under Primary Details
+                    switch (fieldId) {
+                        case 'Country':
+                            newFormData.primarydetails.country = value;
+                            break;
+                        case 'IssueDate':
+                            newFormData.primarydetails.issuedate = value;
+                            break;
+                        case 'OwnershipStatus':
+                            newFormData.primarydetails.ownershipstatus = value;
+                            break;
+                        case 'PurchasePrice':
+                            newFormData.primarydetails.purchaseprice = value;
+                            break;
+                        case 'PurchaseDate':
+                            newFormData.primarydetails.purchasedate = value;
+                            break;
+                        case 'Notes':
+                            newFormData.primarydetails.notes = value;
+                            break;
+                        default:
+                            newFormData.primarydetails[fieldId.toLowerCase()] = value;
+                    }
+                } else if (path.length === 3 && path[1]?.id === 'Denomination') {
+                    // Denomination fields
+                    if (!newFormData.primarydetails.denomination) newFormData.primarydetails.denomination = {};
+                    switch (fieldId) {
+                        case 'DenominationValue':
+                            newFormData.primarydetails.denomination.denominationvalue = value;
+                            break;
+                        case 'DenominationCurrency':
+                            newFormData.primarydetails.denomination.denominationcurrency = value;
+                            break;
+                        case 'DenominationSymbol':
+                            newFormData.primarydetails.denomination.denominationsymbol = value;
+                            break;
+                        default:
+                            newFormData.primarydetails.denomination[fieldId.toLowerCase()] = value;
+                    }
+                }
+            }
+            // Handle Item Type
+            else if (path[0]?.id === 'ItTyp') {
+                if (!newFormData.ittyp) newFormData.ittyp = {};
+                if (fieldId === 'ItTypSel') {
+                    newFormData.ittyp.ittypsel = value;
+                } else {
+                    newFormData.ittyp[fieldId.toLowerCase()] = value;
+                }
+            }
+            // Handle Colors
+            else if (path[0]?.id === 'Colors') {
+                if (!newFormData.colors) newFormData.colors = {};
+                if (fieldId === 'ColorType') {
+                    newFormData.colors.colortype = value;
+                } else {
+                    newFormData.colors[fieldId.toLowerCase()] = value;
+                }
+            }
+            // Handle Paper Characteristics
+            else if (path[0]?.id === 'PaperChar' && path[1]?.id === 'PaperTypes') {
+                if (!newFormData.paperchar) newFormData.paperchar = {};
+                if (!newFormData.paperchar.papertypes) newFormData.paperchar.papertypes = {};
+                if (fieldId === 'PaperType') {
+                    newFormData.paperchar.papertypes.papertype = value;
+                } else {
+                    newFormData.paperchar.papertypes[fieldId.toLowerCase()] = value;
+                }
+            }
+            // Handle Printing Characteristics
+            else if (path[0]?.id === 'PrintChar' && path[1]?.id === 'PrintMethods') {
+                if (!newFormData.printchar) newFormData.printchar = {};
+                if (!newFormData.printchar.printmethods) newFormData.printchar.printmethods = {};
+                if (fieldId === 'PrintMethod') {
+                    newFormData.printchar.printmethods.printmethod = value;
+                } else {
+                    newFormData.printchar.printmethods[fieldId.toLowerCase()] = value;
+                }
+            }
+            // Handle Watermark
+            else if (path[0]?.id === 'WmkChar') {
+                if (!newFormData.wmkchar) newFormData.wmkchar = {};
+                if (fieldId === 'WatermarkPresence') {
+                    newFormData.wmkchar.watermarkpresence = value;
+                } else {
+                    newFormData.wmkchar[fieldId.toLowerCase()] = value;
+                }
+            }
+            // Handle Perforation
+            else if (path[0]?.id === 'PerfSep' && path[1]?.id === 'PerfTypes') {
+                if (!newFormData.perfsep) newFormData.perfsep = {};
+                if (!newFormData.perfsep.perftypes) newFormData.perfsep.perftypes = {};
+                if (fieldId === 'PerfType') {
+                    newFormData.perfsep.perftypes.perftype = value;
+                } else {
+                    newFormData.perfsep.perftypes[fieldId.toLowerCase()] = value;
+                }
+            }
+            // Handle other categories
+            else {
+                console.warn('Unhandled path:', path.map(p => p.id), 'field:', fieldId);
+            }
+
+            console.log('Updated form data:', newFormData);
+            return newFormData;
+        });
+    };
+
+    // Simple field value getter
+    const getNestedFormValue = (path: NavigationPathItem[], fieldId: string): string => {
+        try {
+            // Handle Primary Details
+            if (path.length === 1 && path[0].id === 'PrimaryDetails') {
+                const primaryDetails = formData.primarydetails || {};
+                switch (fieldId) {
+                    case 'Country':
+                        return primaryDetails.country || '';
+                    case 'IssueDate':
+                        return primaryDetails.issuedate || '';
+                    case 'OwnershipStatus':
+                        return primaryDetails.ownershipstatus || '';
+                    case 'PurchasePrice':
+                        return primaryDetails.purchaseprice || '';
+                    case 'PurchaseDate':
+                        return primaryDetails.purchasedate || '';
+                    case 'Notes':
+                        return primaryDetails.notes || '';
+                    default:
+                        return primaryDetails[fieldId.toLowerCase()] || '';
+                }
+            }
+            // Handle Denomination fields
+            else if (path.length === 2 && path[0].id === 'PrimaryDetails' && path[1].id === 'Denomination') {
+                const denomination = formData.primarydetails?.denomination || {};
+                switch (fieldId) {
+                    case 'DenominationValue':
+                        return denomination.denominationvalue || '';
+                    case 'DenominationCurrency':
+                        return denomination.denominationcurrency || '';
+                    case 'DenominationSymbol':
+                        return denomination.denominationsymbol || '';
+                    default:
+                        return denomination[fieldId.toLowerCase()] || '';
+                }
+            }
+            // Handle Item Type
+            else if (path.length === 1 && path[0].id === 'ItTyp') {
+                const ittyp = formData.ittyp || {};
+                if (fieldId === 'ItTypSel') {
+                    return ittyp.ittypsel || '';
+                }
+                return ittyp[fieldId.toLowerCase()] || '';
+            }
+            // Handle Colors
+            else if (path.length === 1 && path[0].id === 'Colors') {
+                const colors = formData.colors || {};
+                if (fieldId === 'ColorType') {
+                    return colors.colortype || '';
+                }
+                return colors[fieldId.toLowerCase()] || '';
+            }
+            // Handle Paper Types
+            else if (path.length === 2 && path[0].id === 'PaperChar' && path[1].id === 'PaperTypes') {
+                const paperType = formData.paperchar?.papertypes || {};
+                if (fieldId === 'PaperType') {
+                    return paperType.papertype || '';
+                }
+                return paperType[fieldId.toLowerCase()] || '';
+            }
+            // Handle Print Methods
+            else if (path.length === 2 && path[0].id === 'PrintChar' && path[1].id === 'PrintMethods') {
+                const printMethod = formData.printchar?.printmethods || {};
+                if (fieldId === 'PrintMethod') {
+                    return printMethod.printmethod || '';
+                }
+                return printMethod[fieldId.toLowerCase()] || '';
+            }
+            // Handle Watermark
+            else if (path.length === 1 && path[0].id === 'WmkChar') {
+                const wmkchar = formData.wmkchar || {};
+                if (fieldId === 'WatermarkPresence') {
+                    return wmkchar.watermarkpresence || '';
+                }
+                return wmkchar[fieldId.toLowerCase()] || '';
+            }
+            // Handle Perforation Types
+            else if (path.length === 2 && path[0].id === 'PerfSep' && path[1].id === 'PerfTypes') {
+                const perfType = formData.perfsep?.perftypes || {};
+                if (fieldId === 'PerfType') {
+                    return perfType.perftype || '';
+                }
+                return perfType[fieldId.toLowerCase()] || '';
+            }
+
+            return '';
+        } catch (error) {
+            console.error('Error in getNestedFormValue:', error);
+            return '';
+        }
+    };
+
+    // Simplified shouldShow function
+    const shouldShow = (item: Category): boolean => {
+        return true; // Simplified for now
+    };
+
+    // Save functionality
+    const handleSave = async () => {
+        setIsSaving(true);
+        setSaveError(null);
+        
+        try {
+            // For now, just simulate saving
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            if (onSuccess) {
+                onSuccess('Stamp details saved successfully!');
+            }
+            
+            if (onCancel) {
+                onCancel();
+            }
+        } catch (error) {
+            console.error('Failed to save stamp:', error);
+            setSaveError(error instanceof Error ? error.message : 'Failed to save stamp details');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    // Navigation functions
+    const findCategoryByPath = (path: NavigationPathItem[]): Category | undefined => {
+        if (path.length === 0) return undefined;
+
+        let categories = allCategories;
+        let current: Category | undefined = undefined;
+
+        for (const item of path) {
+            current = categories.find(c => c.id === item.id);
+            if (!current?.children) break;
+            categories = current.children;
+        }
+
+        return current;
+    };
+
+    const handleCategoryClick = (category: Category) => {
+        setNavigationPath([{ id: category.id, label: category.label, category }]);
+    };
+
+    const handleNestedCategoryClick = (category: Category) => {
+        setNavigationPath([...navigationPath, { id: category.id, label: category.label, category }]);
+    };
+
+    // Render field based on type
+    const renderField = (field: Category) => {
+        const currentValue = getNestedFormValue(navigationPath, field.id);
+        const fieldPath = [...navigationPath, { id: field.id, label: field.label, category: field }];
+
+        switch (field.type) {
+            case 'select':
+                return (
+                    <Select
+                        value={currentValue}
+                        onValueChange={(value) => handleFieldChange(fieldPath, value)}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {field.options?.map((option) => (
+                                <SelectItem key={option} value={option}>
+                                    {option}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                );
+            case 'textarea':
+                return (
+                    <textarea
+                        className="w-full min-h-[100px] p-2 border rounded"
+                        value={currentValue}
+                        onChange={(e) => handleFieldChange(fieldPath, e.target.value)}
+                        placeholder={field.description}
+                    />
+                );
+            case 'date':
+                return (
+                    <Input
+                        type="date"
+                        value={currentValue}
+                        onChange={(e) => handleFieldChange(fieldPath, e.target.value)}
+                    />
+                );
+            default:
+                return (
+                    <Input
+                        type="text"
+                        value={currentValue}
+                        onChange={(e) => handleFieldChange(fieldPath, e.target.value)}
+                        placeholder={field.description}
+                    />
+                );
+        }
+    };
+
+    // Render content based on navigation
+    const renderContent = () => {
+        const currentCategory = findCategoryByPath(navigationPath);
+
+        if (!currentCategory && navigationPath.length === 0) {
+            return (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {allCategories.map((category) => (
+                        <Button
+                            key={category.id}
+                            variant="outline"
+                            className="h-auto w-full py-4 px-4 sm:px-6 text-left flex flex-col items-start overflow-hidden"
+                            onClick={() => handleCategoryClick(category)}
+                        >
+                            <span className="font-medium truncate w-full">{category.label}</span>
+                            {category.description && (
+                                <span className="text-sm text-muted-foreground mt-1 line-clamp-2 w-full">
+                                    {category.description}
+                                </span>
+                            )}
+                        </Button>
+                    ))}
+                </div>
+            );
+        }
+
+        if (currentCategory?.type) {
+            return (
+                <div className="space-y-4">
+                    <h3 className="text-lg font-medium">{currentCategory.label}</h3>
+                    <p className="text-sm text-muted-foreground">{currentCategory.description}</p>
+                    {renderField(currentCategory)}
+                </div>
+            );
+        }
+
+        const children = currentCategory?.children || [];
+        const visibleChildren = children.filter(shouldShow);
+
+        return (
+            <div className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {visibleChildren.map((child) => (
+                        <Button
+                            key={child.id}
+                            variant="outline"
+                            className="h-auto w-full py-4 px-4 sm:px-6 text-left flex flex-col items-start overflow-hidden"
+                            onClick={() => handleNestedCategoryClick(child)}
+                        >
+                            <span className="font-medium truncate w-full">{child.label}</span>
+                            {child.description && (
+                                <span className="text-sm text-muted-foreground mt-1 line-clamp-2 w-full">
+                                    {child.description}
+                                </span>
+                            )}
+                        </Button>
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
+    // Simple preview component
+    const FormPreview = () => {
+        if (Object.keys(formData).length === 0) {
+            return (
+                <div className="text-center py-12">
+                    <p className="text-muted-foreground">No data to preview</p>
+                </div>
+            );
+        }
+
+        return (
+            <div className="space-y-4">
+                <pre className="text-sm bg-muted p-4 rounded overflow-auto">
+                    {JSON.stringify(formData, null, 2)}
+                </pre>
+            </div>
+        );
+    };
+
+    return (
+        <div className="flex flex-col min-h-screen max-w-[1200px] mx-auto">
+            <div className="px-3 sm:px-4 py-4 sm:py-6">
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+                    <h2 className="text-lg font-semibold">Stamp Details</h2>
+                    
+                    {saveError && (
+                        <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-md text-sm">
+                            <strong>Error:</strong> {saveError}
+                        </div>
+                    )}
+                    
+                    <div className="flex gap-3">
+                        <Button 
+                            variant="outline" 
+                            onClick={onCancel} 
+                            className="flex-1 sm:flex-none"
+                            disabled={isSaving}
+                        >
+                            Cancel
+                        </Button>
+                        <Button 
+                            onClick={handleSave} 
+                            className="flex-1 sm:flex-none gap-2"
+                            disabled={isSaving}
+                        >
+                            {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+                            {isSaving ? 'Saving...' : 'Save Changes'}
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Stamp Images */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+                    <div className="border rounded-lg p-3 sm:p-4">
+                        <div className="text-sm font-medium mb-2">Catalogue Image</div>
+                        <div className="aspect-square relative border rounded-lg overflow-hidden bg-gray-50">
+                            <Image
+                                src={selectedStamp.image}
+                                alt="Catalogue stamp"
+                                fill
+                                className="object-contain"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="border rounded-lg p-3 sm:p-4">
+                        <div className="text-sm font-medium mb-2">Scanned Image</div>
+                        <div className="aspect-square relative border rounded-lg overflow-hidden bg-gray-50">
+                            {selectedStamp.scannedImage ? (
+                                <Image
+                                    src={selectedStamp.scannedImage}
+                                    alt="Scanned stamp"
+                                    fill
+                                    className="object-contain"
+                                />
+                            ) : (
+                                <div className="absolute inset-0 flex items-center justify-center text-gray-500">
+                                    <div className="text-center">
+                                        <div className="text-sm">No scanned image</div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Tabs */}
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                    <TabsList className="w-full">
+                        <TabsTrigger value="details" className="flex items-center gap-2 w-1/2">
+                            <Edit className="h-4 w-4" />
+                            <span className="hidden sm:inline">Edit</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="preview" className="flex items-center gap-2 w-1/2">
+                            <Eye className="h-4 w-4" />
+                            <span className="hidden sm:inline">Preview</span>
+                        </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="details">
+                        {/* Navigation */}
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-4 bg-white border-b mb-6">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 flex-shrink-0"
+                                    onClick={() => setNavigationPath([])}
+                                >
+                                    <Home className="h-4 w-4" />
+                                </Button>
+                                {navigationPath.map((item, index) => (
+                                    <React.Fragment key={item.id}>
+                                        <ChevronRight className="h-4 w-4 flex-shrink-0" />
+                                        <span className="truncate max-w-[120px] sm:max-w-none">{item.label}</span>
+                                    </React.Fragment>
+                                ))}
+                            </div>
+
+                            {!!navigationPath.length && (
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setNavigationPath(prev => prev.slice(0, -1))}
+                                    className="gap-2 flex-shrink-0"
+                                >
+                                    <ChevronLeft className="h-4 w-4" />
+                                    <span className="hidden sm:inline">Back</span>
+                                </Button>
+                            )}
+                        </div>
+
+                        <Card className="p-3 sm:p-6 mb-6">
+                            {renderContent()}
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="preview">
+                        <Card className="border-2 mt-4">
+                            <div className="p-3 sm:p-4 border-b bg-muted/50">
+                                <h3 className="font-semibold">Details Preview</h3>
+                            </div>
+                            <div className="p-4 sm:p-8">
+                                <FormPreview />
+                            </div>
+                        </Card>
+                    </TabsContent>
+                </Tabs>
+            </div>
+        </div>
+    );
+}

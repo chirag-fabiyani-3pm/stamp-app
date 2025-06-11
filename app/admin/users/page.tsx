@@ -15,9 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Search, MoreHorizontal, UserPlus, Download, Filter, ChevronLeft, ChevronRight, Award } from "lucide-react"
+import { Search, MoreHorizontal, UserPlus, ChevronLeft, ChevronRight, Award } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 // Sample user data
 const users = [
@@ -147,12 +146,10 @@ export default function UsersPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [roleFilter, setRoleFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
-  const [reviewerFilter, setReviewerFilter] = useState("all")
   const [currentPage, setCurrentPage] = useState(1)
-  const [activeTab, setActiveTab] = useState("all")
   const itemsPerPage = 8
 
-  // Filter users based on search, filters, and active tab
+  // Filter users based on search and filters only
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -160,14 +157,8 @@ export default function UsersPage() {
 
     const matchesRole = roleFilter === "all" || user.role === roleFilter
     const matchesStatus = statusFilter === "all" || user.status === statusFilter
-    const matchesReviewer = reviewerFilter === "all" || user.reviewerLevel === reviewerFilter
 
-    // Filter based on active tab
-    if (activeTab === "reviewers" && !user.reviewerLevel) {
-      return false
-    }
-
-    return matchesSearch && matchesRole && matchesStatus && matchesReviewer
+    return matchesSearch && matchesRole && matchesStatus
   })
 
   // Paginate users
@@ -201,27 +192,6 @@ export default function UsersPage() {
     }
   }
 
-  // Get badge for reviewer level
-  const getReviewerBadge = (level: string | null) => {
-    if (!level) return null
-
-    const variants = {
-      apprentice: { bg: "bg-blue-100", text: "text-blue-800" },
-      certified: { bg: "bg-green-100", text: "text-green-800" },
-      master: { bg: "bg-purple-100", text: "text-purple-800" },
-    }
-
-    const variant =
-      level in variants ? variants[level as keyof typeof variants] : { bg: "bg-gray-100", text: "text-gray-800" }
-
-    return (
-      <Badge variant="outline" className={`${variant.bg} ${variant.text} hover:${variant.bg}`}>
-        <Award className="h-3 w-3 mr-1" />
-        {level.charAt(0).toUpperCase() + level.slice(1)}
-      </Badge>
-    )
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -241,14 +211,6 @@ export default function UsersPage() {
           <CardDescription>Manage user accounts and permissions</CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="mb-6">
-            <TabsList>
-              <TabsTrigger value="all">All Users</TabsTrigger>
-              <TabsTrigger value="reviewers">Authenticators</TabsTrigger>
-              <TabsTrigger value="admins">Administrators</TabsTrigger>
-            </TabsList>
-          </Tabs>
-
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -283,28 +245,6 @@ export default function UsersPage() {
                   <SelectItem value="inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
-
-              {activeTab === "reviewers" && (
-                <Select value={reviewerFilter} onValueChange={setReviewerFilter}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Reviewer Level" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Levels</SelectItem>
-                    <SelectItem value="apprentice">Apprentice</SelectItem>
-                    <SelectItem value="certified">Certified</SelectItem>
-                    <SelectItem value="master">Master</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-
-              <Button variant="outline" size="icon">
-                <Filter className="h-4 w-4" />
-              </Button>
-
-              <Button variant="outline" size="icon">
-                <Download className="h-4 w-4" />
-              </Button>
             </div>
           </div>
 
@@ -315,10 +255,7 @@ export default function UsersPage() {
                   <TableHead>User</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
-                  {activeTab === "reviewers" && <TableHead>Reviewer Level</TableHead>}
-                  {activeTab === "reviewers" && <TableHead>Reviews</TableHead>}
                   <TableHead>Join Date</TableHead>
-                  <TableHead>Last Active</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -344,12 +281,7 @@ export default function UsersPage() {
                       <TableCell>
                         <Badge variant={getStatusBadgeVariant(user.status)}>{user.status}</Badge>
                       </TableCell>
-                      {activeTab === "reviewers" && (
-                        <TableCell>{user.reviewerLevel ? getReviewerBadge(user.reviewerLevel) : "—"}</TableCell>
-                      )}
-                      {activeTab === "reviewers" && <TableCell>{user.reviewCount}</TableCell>}
                       <TableCell>{user.joinDate}</TableCell>
-                      <TableCell>{user.lastActive}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -364,13 +296,7 @@ export default function UsersPage() {
                             <DropdownMenuItem>Edit user</DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem>Change role</DropdownMenuItem>
-                            {user.reviewerLevel ? (
-                              <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>Manage reviewer status</DropdownMenuItem>
-                                <DropdownMenuItem>View authentication history</DropdownMenuItem>
-                              </>
-                            ) : (
+                            {!user.reviewerLevel && (
                               <DropdownMenuItem>Make reviewer</DropdownMenuItem>
                             )}
                             <DropdownMenuSeparator />
@@ -387,7 +313,7 @@ export default function UsersPage() {
                 ) : (
                   <TableRow>
                     <TableCell
-                      colSpan={activeTab === "reviewers" ? 8 : 6}
+                      colSpan={5}
                       className="text-center py-6 text-muted-foreground"
                     >
                       No users found matching your criteria.

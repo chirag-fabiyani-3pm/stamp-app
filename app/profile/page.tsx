@@ -6,6 +6,7 @@ import ProfileCollection from "@/components/profile/profile-collection"
 import { AuthGuard } from "@/components/auth/route-guard"
 
 export default function ProfilePage() {
+  
   return (
     <AuthGuard>
       <div className="container py-8 md:py-12">

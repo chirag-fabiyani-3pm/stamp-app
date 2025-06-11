@@ -1,0 +1,1875 @@
+[
+    {
+      "id": "PrimaryDetails",
+      "label": "Primary Details",
+      "description": "Required core information for every stamp (Country, Issue Date, Denomination, Ownership Status, Purchase Price, Purchase Date and Notes)",
+      "children": [
+        {
+          "id": "Country",
+          "label": "Country",
+          "description": "Country that issued the stamp (ISO-3166 code or full name).",
+          "type": "select",
+          "options": [
+            "Afghanistan",
+            "Aland Islands",
+            "Albania",
+            "Algeria",
+            "Andorra",
+            "Angola",
+            "Anguilla",
+            "Antigua",
+            "Argentina",
+            "Armenia",
+            "Aruba",
+            "Australia",
+            "Austria",
+            "Azerbaijan",
+            "Bahamas",
+            "Bahrain",
+            "Bangladesh",
+            "Barbados",
+            "Belarus",
+            "Belgium",
+            "Belize",
+            "Benin",
+            "Bermuda",
+            "Bhutan",
+            "Bolivia",
+            "Bosnia and Herzegovina",
+            "Botswana",
+            "Brazil",
+            "Brunei",
+            "Bulgaria",
+            "Burkina Faso",
+            "Burundi",
+            "Cambodia",
+            "Cameroon",
+            "Canada",
+            "Cape Verde",
+            "Cayman Islands",
+            "Central African Republic",
+            "Chad",
+            "Chile",
+            "China",
+            "Colombia",
+            "Comoros",
+            "Congo (Brazzaville)",
+            "Congo (Kinshasa)",
+            "Costa Rica",
+            "Croatia",
+            "Cuba",
+            "Cyprus",
+            "Czech Republic",
+            "Denmark",
+            "Djibouti",
+            "Dominica",
+            "Dominican Republic",
+            "Ecuador",
+            "Egypt",
+            "El Salvador",
+            "Equatorial Guinea",
+            "Eritrea",
+            "Estonia",
+            "Ethiopia",
+            "Fiji",
+            "Finland",
+            "France",
+            "French Guiana",
+            "Gabon",
+            "Gambia",
+            "Georgia",
+            "Germany",
+            "Ghana",
+            "Gibraltar",
+            "Greece",
+            "Greenland",
+            "Grenada",
+            "Guadeloupe",
+            "Guam",
+            "Guatemala",
+            "Guernsey",
+            "Guinea",
+            "Guinea-Bissau",
+            "Guyana",
+            "Haiti",
+            "Honduras",
+            "Hong Kong",
+            "Hungary",
+            "Iceland",
+            "India",
+            "Indonesia",
+            "Ireland",
+            "Isle of Man",
+            "Israel",
+            "Italy",
+            "Ivory Coast",
+            "Jamaica",
+            "Japan",
+            "Jersey",
+            "Jordan",
+            "Kazakhstan",
+            "Kenya",
+            "Kiribati",
+            "Korea (North)",
+            "Korea (South)",
+            "Kosovo",
+            "Kuwait",
+            "Kyrgyzstan",
+            "Laos",
+            "Latvia",
+            "Lebanon",
+            "Lesotho",
+            "Liberia",
+            "Libya",
+            "Liechtenstein",
+            "Lithuania",
+            "Luxembourg",
+            "Macau",
+            "Macedonia",
+            "Madagascar",
+            "Malawi",
+            "Malaysia",
+            "Maldives",
+            "Mali",
+            "Malta",
+            "Marshall Islands",
+            "Martinique",
+            "Mauritania",
+            "Mauritius",
+            "Mayotte",
+            "Mexico",
+            "Micronesia",
+            "Moldova",
+            "Monaco",
+            "Mongolia",
+            "Montenegro",
+            "Montserrat",
+            "Morocco",
+            "Mozambique",
+            "Myanmar",
+            "Namibia",
+            "Nauru",
+            "Nepal",
+            "Netherlands",
+            "New Caledonia",
+            "New Zealand",
+            "Nicaragua",
+            "Niger",
+            "Nigeria",
+            "Niue",
+            "Norfolk Island",
+            "Norway",
+            "Oman",
+            "Pakistan",
+            "Palau",
+            "Panama",
+            "Papua New Guinea",
+            "Paraguay",
+            "Peru",
+            "Philippines",
+            "Pitcairn Islands",
+            "Poland",
+            "Portugal",
+            "Puerto Rico",
+            "Qatar",
+            "Réunion",
+            "Romania",
+            "Russia",
+            "Rwanda",
+            "Saint Kitts and Nevis",
+            "Saint Lucia",
+            "Saint Vincent and the Grenadines",
+            "Samoa",
+            "San Marino",
+            "São Tomé and Príncipe",
+            "Saudi Arabia",
+            "Senegal",
+            "Serbia",
+            "Seychelles",
+            "Sierra Leone",
+            "Singapore",
+            "Slovakia",
+            "Slovenia",
+            "Solomon Islands",
+            "Somalia",
+            "South Africa",
+            "South Sudan",
+            "Spain",
+            "Sri Lanka",
+            "Sudan",
+            "Suriname",
+            "Swaziland",
+            "Sweden",
+            "Switzerland",
+            "Syria",
+            "Taiwan",
+            "Tajikistan",
+            "Tanzania",
+            "Thailand",
+            "Togo",
+            "Tonga",
+            "Trinidad and Tobago",
+            "Tunisia",
+            "Turkey",
+            "Turkmenistan",
+            "Tuvalu",
+            "Uganda",
+            "Ukraine",
+            "United Arab Emirates",
+            "United Kingdom",
+            "United States",
+            "Uruguay",
+            "Uzbekistan",
+            "Vanuatu",
+            "Vatican City",
+            "Venezuela",
+            "Vietnam",
+            "Yemen",
+            "Zambia",
+            "Zimbabwe",
+            "Other"
+          ]
+        },
+        {
+          "id": "IssueDate",
+          "label": "Issue Date",
+          "description": "Official date when this stamp was issued (DD/MM/YYYY).",
+          "type": "date"
+        },
+        {
+          "id": "Denomination",
+          "label": "Denomination",
+          "description": "Face value of the stamp, split into components.",
+          "children": [
+            {
+              "id": "DenominationCurrency",
+              "label": "Denomination Currency",
+              "description": "Currency name (e.g., Dollar, Rupee, Franc)",
+              "type": "select",
+              "options": [
+                "Dollar",
+                "Cent",
+                "Rupee",
+                "Paise",
+                "Pound",
+                "Shilling",
+                "Penny",
+                "Pence",
+                "Euro",
+                "Franc",
+                "Mark",
+                "Kopek",
+                "Yen",
+                "Won",
+                "Lira",
+                "Other"
+              ]
+            },
+            {
+              "id": "DenominationValue",
+              "label": "Denomination Value",
+              "description": "Numerical denomination value (e.g., 1, 2.50, 10)",
+              "type": "text"
+            },
+            {
+              "id": "DenominationSymbol",
+              "label": "Denomination Symbol",
+              "description": "Symbol representing the denomination (e.g., $, ₹, £, ¢, €)",
+              "type": "select",
+              "options": [
+                "$",
+                "¢",
+                "₹",
+                "₨",
+                "£",
+                "s",
+                "d",
+                "p",
+                "€",
+                "Fr",
+                "Kč",
+                "₩",
+                "¥",
+                "₺",
+                "Other"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "OwnershipStatus",
+          "label": "Ownership Status",
+          "description": "Is this stamp owned, on loan, or for sale?",
+          "type": "select",
+          "options": ["Owned", "On Loan", "For Sale", "Unknown"]
+        },
+        {
+          "id": "PurchasePrice",
+          "label": "Purchase Price",
+          "description": "Purchase price and currency",
+          "type": "text"
+        },
+        {
+          "id": "PurchaseDate",
+          "label": "Purchase Date",
+          "description": "When the stamp was purchased",
+          "type": "date"
+        },
+        {
+          "id": "Notes",
+          "label": "Additional Notes",
+          "description": "Any additional observations or notes",
+          "type": "textarea"
+        }
+      ]
+    },
+    {
+      "id": "ItTyp",
+      "label": "Item Type",
+      "description": "The fundamental classification for any philatelic object",
+      "children": [
+        {
+          "id": "ItTypSel",
+          "label": "Item Type Selection",
+          "description": "Type of collectible item",
+          "type": "select",
+          "options": [
+            "Stamp",
+            "On Piece (OnP)",
+            "On Card (OnCrd)",
+            "On Envelope (OnEnv)",
+            "On Newspaper (OnNew)",
+            "Add Another Type"
+          ],
+          "defaultValue": "Stamp"
+        },
+        {
+          "id": "ItTypOth",
+          "label": "Other Type",
+          "description": "Specify the custom item type",
+          "type": "text",
+          "showWhen": {
+            "field": "ItTyp2",
+            "value": "Add Another Type"
+          }
+        }
+      ]
+    },
+    {
+      "id": "Colors",
+      "label": "Colors",
+      "description": "Pivotal attribute in philately, influencing value and identification",
+      "children": [
+        {
+          "id": "ColorType",
+          "label": "Color Type",
+          "description": "Primary color classification",
+          "type": "select",
+          "options": [
+            "red",
+            "Red Carmine",
+            "Orange",
+            "Purple",
+            "Violet",
+            "Mauve",
+            "Blue",
+            "Black",
+            "Green",
+            "Brown",
+            "Yellow",
+            "Multiple Colours",
+            "Pictorial / pictures etc."
+          ]
+        },
+        {
+          "id": "SingleColor",
+          "label": "Single Color",
+          "description": "Single‐color stamps",
+          "showWhen": {
+            "field": "ColorType",
+            "value": "red"
+          },
+          "children": [
+            {
+              "id": "Purple",
+              "label": "Purple",
+              "description": "Purple color group and shades",
+              "children": [
+                {
+                  "id": "PurpleShade",
+                  "label": "Purple Shade",
+                  "description": "Specific purple shade",
+                  "type": "select",
+                  "options": [
+                    "Reddish Purple",
+                    "Slate Purple (Pur,slt)",
+                    "Lilac (Pur,li)",
+                    "Brown Lilac (Pur,li.br)",
+                    "Deep Lilac (Pur,li.dp)",
+                    "Reddish Lilac (Pur,li.r)",
+                    "Pale Lilac (Pur,li.pal)",
+                    "Mauve Lilac (Pur,li.mve)",
+                    "Blueish Lilac (Pur,li.blu)",
+                    "Slate Lilac (Pur,li.slt)",
+                    "Violet (Pur,vi)",
+                    "Reddish Violet (Pur,vi.r)",
+                    "Slate Violet (Pur,vi.slt)",
+                    "Bright Violet (Pur,vi.bht)",
+                    "Dull Violet (Pur,vi.dul)",
+                    "Mauve (Pur,mve)",
+                    "Pale Mauve (Pur,mve.pal)",
+                    "Deep Mauve (Pur,mve.dp)",
+                    "Reddish Mauve (Pur,mve.r)"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "Brown",
+              "label": "Brown",
+              "description": "Brown color group and shades",
+              "children": [
+                {
+                  "id": "BrownShade",
+                  "label": "Brown Shade",
+                  "description": "Specific brown shade",
+                  "type": "select",
+                  "options": [
+                    "Purple Brown (Br.pur)",
+                    "Sepia Brown (Br.sep)",
+                    "Pale Brown (Br.pal)",
+                    "Bistre Brown (Br.bis)",
+                    "Tan Brown (Br.tan)",
+                    "Red Brown (Br.r)",
+                    "Deep Red Brown (Br.r.dp)",
+                    "Chestnut (Br.ch)",
+                    "Deep Brown (Br.dp)",
+                    "Chocolate Brown (Br.cho)",
+                    "Deep Chocolate Brown (Br.cho.dp)",
+                    "Black Brown (Br.blk)",
+                    "Deep Slate Brown (Br.slt.dp)",
+                    "Greyish Brown (Br.gry)"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "Red",
+              "label": "Red",
+              "description": "Red color group and shades",
+              "children": [
+                {
+                  "id": "RedShade",
+                  "label": "Red Shade",
+                  "description": "Specific red shade",
+                  "type": "select",
+                  "options": [
+                    "Deep Red (R.dp)",
+                    "Bright Red (R.bgt)",
+                    "Dull Red (R.dul)",
+                    "Brown Red (R.br)",
+                    "Orange (R.or)",
+                    "Pale Orange (R.or.pal)",
+                    "Orange Red (R.or.r)",
+                    "Orange Vermillion (R.or.ver)",
+                    "Rose (R.rs)",
+                    "Rose Red (R.rs.r)",
+                    "Pale Rose Red (R.rs.r.pal)",
+                    "Rosine (Bright Rose) (R.rs.bgt)",
+                    "Deep Rose Red (R.rs.r.dp)",
+                    "Dull Rose (R.rs.dul)",
+                    "Salmon (R.sal)",
+                    "Scarlet (R.scar)",
+                    "Vermillion (R.ver)",
+                    "Carmine (R.car)",
+                    "Carmine Vermillion (R.car.ver)",
+                    "Pink (R.pnk)",
+                    "Claret (R.clt)",
+                    "Maroon (R.mar)"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "Blue",
+              "label": "Blue",
+              "description": "Blue color group and shades",
+              "children": [
+                {
+                  "id": "BlueShade",
+                  "label": "Blue Shade",
+                  "description": "Specific blue shade",
+                  "type": "select",
+                  "options": [
+                    "Indigo (Blu.in)",
+                    "Greenish Blue (Blu.gr)",
+                    "Royal Blue (Blu.roy)",
+                    "Slate Blue (Blu.slt)",
+                    "Steel Blue (Blu.stl)",
+                    "Pale Blue (Blu.pal)",
+                    "Bright Blue (Blu.bgt)",
+                    "Chalky Blue (Blu.clk)",
+                    "Milky Blue (Blu.mlk)",
+                    "Light Blue (Blu.lgt)",
+                    "Ultramarine (Blu.ult)",
+                    "Deep Turquoise (Blu.tur.dp)",
+                    "Pale Turquoise (Blu.tur.pal)",
+                    "Intense Blue (Blu.int)",
+                    "Dull Violet Blue (Blu.vi.dul)"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "Green",
+              "label": "Green",
+              "description": "Green color group and shades",
+              "children": [
+                {
+                  "id": "GreenShade",
+                  "label": "Green Shade",
+                  "description": "Specific green shade",
+                  "type": "select",
+                  "options": [
+                    "Sage (Gr.sag)",
+                    "Emerald (Gr.em)",
+                    "Slate Green (Gr.slt)",
+                    "Yellow Green (Gr.yel)",
+                    "Deep Yellow Green (Gr.yel.dp)",
+                    "Bluish Green (Gr.blu)",
+                    "Deep Bluish Green (Gr.blu.dp)",
+                    "Myrtle (Gr.myt)",
+                    "Olive (Gr.ol)",
+                    "Light Olive (Gr.ol.lgt)",
+                    "Dark Olive (Gr.ol.drk)",
+                    "Deep Green (Gr.dp)",
+                    "Sap Green (Gr.sap)"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "Black",
+              "label": "Black",
+              "description": "Black color group and shades",
+              "children": [
+                {
+                  "id": "BlackShade",
+                  "label": "Black Shade",
+                  "description": "Specific black shade",
+                  "type": "select",
+                  "options": [
+                    "Grey Black (Blk.gry)",
+                    "Slate (Blk.slt)",
+                    "Brownish Black (Blk.br)"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "Grey",
+              "label": "Grey",
+              "description": "Grey color group and shades",
+              "children": [
+                {
+                  "id": "GreyShade",
+                  "label": "Grey Shade",
+                  "description": "Specific grey shade",
+                  "type": "select",
+                  "options": [
+                    "Brownish Grey (Gry.br)",
+                    "Violet Grey (Gry.vi)",
+                    "Slate Grey (Gry.slt)"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "Yellow",
+              "label": "Yellow",
+              "description": "Yellow color group and shades",
+              "children": [
+                {
+                  "id": "YellowShade",
+                  "label": "Yellow Shade",
+                  "description": "Specific yellow shade",
+                  "type": "select",
+                  "options": [
+                    "Pale Yellow (Yel.pal)",
+                    "Bright Yellow (Yel.bgt)",
+                    "Ochre Yellow (Yel.och)",
+                    "Orange Yellow (Yel.or)",
+                    "Deep Orange Yellow (Yel.or.dp)",
+                    "Mustard Yellow (Yel.mus)",
+                    "Olive Yellow (Yel.ol)"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "MultipleColors",
+          "label": "Multiple Colors",
+          "description": "Multiple colors as part of the design",
+          "showWhen": {
+            "field": "ColorType",
+            "value": "Multiple Colours"
+          },
+          "children": [
+            {
+              "id": "PrimaryColor",
+              "label": "Most Prevalent Color",
+              "description": "The most dominant color in the design",
+              "type": "select",
+              "options": [
+                "red",
+                "Red Carmine",
+                "Orange",
+                "Purple",
+                "Violet",
+                "Mauve",
+                "Blue",
+                "Black",
+                "Green",
+                "Brown",
+                "Yellow",
+                "Multiple Colours",
+                "Pictorial / pictures etc."
+              ]
+            },
+            {
+              "id": "SecondaryColors",
+              "label": "Other Colors Present",
+              "description": "Additional colors in the design (comma‐separated)",
+              "type": "text"
+            },
+            {
+              "id": "ColorCount",
+              "label": "Number of Colors",
+              "description": "Total number of distinct colors",
+              "type": "select",
+              "options": ["2 colors", "3 colors", "4 colors", "5+ colors"]
+            }
+          ]
+        },
+        {
+          "id": "Pictorial",
+          "label": "Pictorial",
+          "description": "A photograph or picture for the design",
+          "showWhen": {
+            "field": "ColorType",
+            "value": "Pictorial / pictures etc."
+          },
+          "children": [
+            {
+              "id": "PictorialType",
+              "label": "Pictorial Type",
+              "description": "Type of pictorial design",
+              "type": "select",
+              "options": [
+                "Photograph",
+                "Artwork/Painting",
+                "Drawing/Illustration",
+                "Mixed Media"
+              ]
+            },
+            {
+              "id": "DominantColors",
+              "label": "Dominant Colors",
+              "description": "Main colors visible in the pictorial design",
+              "type": "text"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "PaperChar",
+      "label": "Paper Characteristics",
+      "description": "Define the material composition, texture, and orientation of the paper",
+      "children": [
+        {
+          "id": "PaperTypes",
+          "label": "Paper Types",
+          "description": "Different types of paper used in stamp production",
+          "children": [
+            {
+              "id": "PaperType",
+              "label": "Paper Type",
+              "description": "Type of paper used",
+              "type": "select",
+              "options": [
+                "White Paper",
+                "Toned Paper",
+                "Chalk-Surfaced Paper",
+                "Prelure Paper",
+                "Ordinary Paper",
+                "Glazed Fluorescent Paper",
+                "Fluorescent Paper",
+                "White Fluorescent Paper",
+                "Non-Fluorescent Paper",
+                "Experimental Paper",
+                "Self-Adhesive Paper",
+                "Two-Sided Fluorescent Paper",
+                "Single-Sided Fluorescent Paper",
+                "Embossed Paper",
+                "Synthetic Gum-Based Paper",
+                "Phosphorised Paper",
+                "Litho-Phosphorised Paper",
+                "Uncoated Paper",
+                "Gum Arabic Paper",
+                "PVA (Polyvinyl Alcohol) Gum Paper"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "PaperVariations",
+          "label": "Paper Variations",
+          "description": "Paper grain orientation and variations",
+          "children": [
+            {
+              "id": "PaperVariation",
+              "label": "Paper Variation",
+              "description": "Paper grain orientation",
+              "type": "select",
+              "options": ["Horizontal laid", "Vertical laid"]
+            }
+          ]
+        },
+        {
+          "id": "PaperProdChar",
+          "label": "Paper Production Characteristics",
+          "description": "Production method characteristics",
+          "children": [
+            {
+              "id": "ProductionMethod",
+              "label": "Production Method",
+              "description": "How the paper was processed",
+              "type": "select",
+              "options": [
+                "Gummed Before Printing (Dry Printings)",
+                "Printed on the Gummed Side",
+                "Wet Printings",
+                "Paper fold or crease (P.fol or P.crs)"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "PrintChar",
+      "label": "Printing Characteristics",
+      "description": "Methods and processes employed to apply the design onto the stamp paper",
+      "children": [
+        {
+          "id": "PrintMethods",
+          "label": "Printing Types/Methods",
+          "description": "Primary printing techniques",
+          "children": [
+            {
+              "id": "PrintMethod",
+              "label": "Printing Method",
+              "description": "Primary printing technique used",
+              "type": "select",
+              "options": [
+                "Recess Printing (Intaglio or Line-Engraved)",
+                "Typography (Letterpress)",
+                "Lithography (Offset Printing)",
+                "Gravure (Photogravure)",
+                "Flexography",
+                "Screen Printing (Serigraphy)",
+                "Héliogravure"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "PrintVariants",
+          "label": "Printing Process Variants & Effects",
+          "description": "Special printing effects and variants",
+          "children": [
+            {
+              "id": "PrintVariant",
+              "label": "Printing Process Variant",
+              "description": "Special printing effects or variants",
+              "type": "select",
+              "options": ["Embossed", "Perkins Bacon Method", "Hybrid Printing"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "WmkChar",
+      "label": "Watermark Characteristics",
+      "description": "Deliberate, semi-translucent patterns embedded in paper",
+      "children": [
+        {
+          "id": "WatermarkPresence",
+          "label": "Watermark Presence",
+          "description": "Does the stamp have a watermark?",
+          "type": "select",
+          "options": [
+            "Yes - Watermark Present",
+            "No - No Watermark",
+            "Unknown/Uncertain"
+          ],
+          "defaultValue": "Unknown/Uncertain"
+        },
+        {
+          "id": "WatermarkDetails",
+          "label": "Watermark Details",
+          "description": "Watermark characteristics and types",
+          "showWhen": {
+            "field": "WatermarkPresence",
+            "value": "Yes - Watermark Present"
+          },
+          "children": [
+            {
+              "id": "GeneralTypes",
+              "label": "General Types",
+              "description": "General watermark classifications",
+              "children": [
+                {
+                  "id": "WmkType",
+                  "label": "Watermark Type",
+                  "description": "General watermark classification",
+                  "type": "select",
+                  "options": [
+                    "Single Watermark",
+                    "Multiple Watermark",
+                    "All-over Watermark",
+                    "Papermaker’s Watermark"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "WmkOrientation",
+              "label": "Watermark Orientation",
+              "description": "Orientation of the watermark",
+              "children": [
+                {
+                  "id": "Orientation",
+                  "label": "Orientation",
+                  "description": "Watermark orientation",
+                  "type": "select",
+                  "options": [
+                    "Normal",
+                    "Reversed",
+                    "Inverted",
+                    "Inverted and Reversed",
+                    "Sideways",
+                    "Sideways Inverted",
+                    "Sideways Reversed",
+                    "Sideways Inverted and Reversed"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "SpecificTypes",
+              "label": "Specific Watermark Design",
+              "description": "Specific watermark designs",
+              "children": [
+                {
+                  "id": "WmkSpecific",
+                  "label": "Specific Watermark",
+                  "description": "Specific watermark design",
+                  "type": "select",
+                  "options": [
+                    "Large Star",
+                    "Small Star",
+                    "Broad (Pointed) Star",
+                    "Crown Over CC",
+                    "Crown Over CA",
+                    "Multiple Crown CA",
+                    "Multiple Crown Script CA",
+                    "V Over Crown",
+                    "Crown Over A",
+                    "St. Edward’s Crown",
+                    "Multiple St. Edward’s Crown Block CA",
+                    "Multiple POST OFFICE",
+                    "Multiple Crown Script CA Diagonal",
+                    "Other/Custom"
+                  ]
+                },
+                {
+                  "id": "CustomWatermark",
+                  "label": "Custom Watermark Description",
+                  "description": "Describe the watermark if not listed above",
+                  "type": "text",
+                  "showWhen": {
+                    "field": "WmkSpecific",
+                    "value": "Other/Custom"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "WmkErrors",
+          "label": "Watermark Errors",
+          "description": "Watermark error types (if any)",
+          "showWhen": {
+            "field": "WatermarkPresence",
+            "value": "Yes - Watermark Present"
+          },
+          "children": [
+            {
+              "id": "WmkError",
+              "label": "Watermark Error",
+              "description": "Type of watermark error",
+              "type": "select",
+              "options": [
+                "Missing Watermark (E.Wmk.mss)",
+                "Inverted Watermark (E.Wmk.inv)",
+                "Reversed Watermark (E.Wmk.rev)",
+                "Sideways Watermark (E.Wmk.swy)",
+                "Inverted and Reversed Watermark (E.Wmk.inv.rev)"
+              ],
+              "defaultValue": "Missing Watermark (E.Wmk.mss)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "PerfSep",
+      "label": "Perforation and Separation",
+      "description": "Methods by which individual stamps are detached from a larger sheet",
+      "children": [
+        {
+          "id": "PerfTypes",
+          "label": "Perforation/Separation Types",
+          "description": "Main perforation and separation methods",
+          "children": [
+            {
+              "id": "PerfType",
+              "label": "Perforation Type",
+              "description": "Type of perforation or separation",
+              "type": "select",
+              "options": [
+                "Line Perforation",
+                "Comb Perforation",
+                "Harrow Perforation",
+                "Rouletting",
+                "Elliptical Perforation",
+                "Imperforate",
+                "Self-Adhesive and Die-Cut Separations"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "PerfSize",
+          "label": "Perforation Size (Gauge)",
+          "description": "Number of perforations per 2 cm (gauge) or measurement (e.g., 14, 11½×12)",
+          "type": "text"
+        },
+        {
+          "id": "PerfOrientation",
+          "label": "Perforation Orientation",
+          "description": "Orientation of the perforations (if paper may have been fed sideways, etc.)",
+          "type": "select",
+          "options": ["Horizontal", "Vertical", "Diagonal", "Unknown"]
+        },
+        {
+          "id": "RouletteTypes",
+          "label": "Rouletting Types",
+          "description": "Specific rouletting methods (i.e., no paper removal)",
+          "children": [
+            {
+              "id": "RouletteType",
+              "label": "Rouletting Type",
+              "description": "Specific type of rouletting",
+              "type": "select",
+              "options": [
+                "Pin Roulette about 10",
+                "H roulette 16",
+                "Y Roulette 18",
+                "Oblique Roulette 13",
+                "Square Roulette 14",
+                "Roulette 7",
+                "Serrate Roulette 13",
+                "Serrate 16–18",
+                "Serpentine Roulette"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Overprints",
+      "label": "Overprints",
+      "description": "Printed visual expressions stamped onto the front face of a stamp after its original production",
+      "children": [
+        {
+          "id": "OverprintPresence",
+          "label": "Overprint Presence",
+          "description": "Does this stamp have any overprints?",
+          "type": "select",
+          "options": ["No Overprints", "Yes ‒ Has Overprints", "Uncertain"],
+          "defaultValue": "No Overprints"
+        },
+        {
+          "id": "OverprintDetails",
+          "label": "Overprint Details",
+          "description": "Details about the overprints",
+          "showWhen": {
+            "field": "OverprintPresence",
+            "value": "Yes ‒ Has Overprints"
+          },
+          "children": [
+            {
+              "id": "OverprintType",
+              "label": "Overprint Type",
+              "description": "Classification of overprint (by purpose)",
+              "type": "select",
+              "options": [
+                "Official Overprints",
+                "Provisional Overprints",
+                "Commemorative Overprints",
+                "Currency Adjustment Overprints",
+                "Security Overprints",
+                "Philatelic Overprints",
+                "Constitutional or Political Overprints",
+                "Local Overprints",
+                "Cross Country Overprints"
+              ]
+            },
+            {
+              "id": "OverprintText",
+              "label": "Overprint Text",
+              "description": "Exact text or marking used in the overprint",
+              "type": "text"
+            },
+            {
+              "id": "OverprintColor",
+              "label": "Overprint Color",
+              "description": "Color of the overprint ink",
+              "type": "select",
+              "options": [
+                "red",
+                "Red Carmine",
+                "Orange",
+                "Purple",
+                "Violet",
+                "Mauve",
+                "Blue",
+                "Black",
+                "Green",
+                "Brown",
+                "Yellow",
+                "Multiple Colours",
+                "Pictorial / pictures etc."
+              ]
+            },
+            {
+              "id": "OverprintPosition",
+              "label": "Overprint Position",
+              "description": "Position of overprint on stamp",
+              "type": "select",
+              "options": [
+                "Center",
+                "Top",
+                "Bottom",
+                "Left",
+                "Right",
+                "Diagonal",
+                "Multiple Positions"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "OverprintErrors",
+          "label": "Overprint Errors",
+          "description": "Errors in overprint application",
+          "showWhen": {
+            "field": "OverprintPresence",
+            "value": "Yes ‒ Has Overprints"
+          },
+          "children": [
+            {
+              "id": "OverprintErrorType",
+              "label": "Overprint Error Type",
+              "description": "Type of overprint error (if present)",
+              "type": "select",
+              "options": [
+                "Overprint Omitted (E.Pr.Ovpr.om)",
+                "Overprint Inverted (E.Pr.Ovpr.inv)",
+                "Double Overprint (E.Pr.Ovpr.dbl)",
+                "Overprint in Wrong Colour (E.Pr.Ovpr.C.E)"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ErrorsVar",
+      "label": "Errors and Varieties",
+      "description": "Deviations from the intended design or production process",
+      "children": [
+        {
+          "id": "ErrorPresence",
+          "label": "Error Presence",
+          "description": "Does this stamp have any errors or varieties?",
+          "type": "select",
+          "options": [
+            "No Errors ‒ Normal Stamp",
+            "Yes ‒ Has Errors/Varieties",
+            "Uncertain/Needs Expert Review"
+          ],
+          "defaultValue": "No Errors ‒ Normal Stamp"
+        },
+        {
+          "id": "ErrorCategories",
+          "label": "Error Categories",
+          "description": "Types of errors present (select all that apply)",
+          "showWhen": {
+            "field": "ErrorPresence",
+            "value": "Yes ‒ Has Errors/Varieties"
+          },
+          "children": [
+            {
+              "id": "PrintingErrors",
+              "label": "Printing Errors",
+              "description": "Errors related to the printing process",
+              "children": [
+                {
+                  "id": "MissingColour",
+                  "label": "Missing Colour",
+                  "description": "Colour omission errors",
+                  "children": [
+                    {
+                      "id": "MissingColourType",
+                      "label": "Missing Colour Type",
+                      "description": "Which colour(s) are missing",
+                      "type": "select",
+                      "options": [
+                        "Red Omitted (E.Pr.C.om.r)",
+                        "Blue Omitted (E.Pr.C.om.blu)",
+                        "Green Omitted (E.Pr.C.om.gr)",
+                        "Yellow Omitted (E.Pr.C.om.yel)",
+                        "Orange Omitted (E.Pr.C.om.or)",
+                        "Black Omitted (E.Pr.C.om.blk)",
+                        "Brown Omitted (E.Pr.C.om.br)",
+                        "Grey Omitted (E.Pr.C.om.gry)",
+                        "Mauve Omitted (E.Pr.C.om.m)",
+                        "Multiple Colours Omitted (E.Pr.C.om.mul)"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "ColourShift",
+                  "label": "Colour Shift",
+                  "description": "Colour registration/misalignment errors",
+                  "children": [
+                    {
+                      "id": "ShiftDirection",
+                      "label": "Shift Direction",
+                      "description": "Direction of colour shift",
+                      "type": "select",
+                      "options": [
+                        "Colour Shift Up (E.Pr.C.shf.C.up)",
+                        "Colour Shift Down (E.Pr.C.shf.C.dn)",
+                        "Colour Shift Left (E.Pr.C.shf.C.lft)",
+                        "Colour Shift Right (E.Pr.C.shf.C.rht)",
+                        "Colour Shift by x mm (E.Pr.C.shf.C.xmm)"
+                      ]
+                    },
+                    {
+                      "id": "ShiftSeverity",
+                      "label": "Shift Severity",
+                      "description": "How severe is the shift",
+                      "type": "select",
+                      "options": [
+                        "Slight Shift",
+                        "Moderate Shift",
+                        "Major Shift",
+                        "Extreme Shift"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "OtherPrintErrors",
+                  "label": "Other Printing Errors",
+                  "description": "Various printing defects (select all that apply)",
+                  "children": [
+                    {
+                      "id": "PrintErrorType",
+                      "label": "Print Error Type",
+                      "description": "Type of printing error",
+                      "type": "select",
+                      "options": [
+                        "Inverted Centre (E.Pr.cntr.inv)",
+                        "Double Impression (E.Pr.C.impr.dbl)",
+                        "Tête-Bêche (E.Pr.tbch)",
+                        "Albino Print (E.Pr.al)",
+                        "Printed on the Gummed Side (E.Pr.gmsd)",
+                        "Plate Position Flaws (E.Pr.pl.flw)",
+                        "Doctor Blade Vertical (E.Pr.DB.C.ver)",
+                        "Doctor Blade Horizontal (E.Pr.DB.C.hor)",
+                        "Ink Blobs (E.Pr.IB.C)",
+                        "White Spots (E.Pr.ws)",
+                        "Offset in Colour (E.Pr.os.C)",
+                        "Print Process Crease (E.Pr.crs)",
+                        "Partial Image (E.Pr.Im.par)",
+                        "Dry Print Error (E.Pr.dry)",
+                        "Double Print (E.Pr.dbl)",
+                        "Re-entries (E.Pr.ent)"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "PerforationErrors",
+              "label": "Perforation Errors",
+              "description": "Errors in perforation/separation process",
+              "children": [
+                {
+                  "id": "PerfErrorType",
+                  "label": "Perforation Error Type",
+                  "description": "Type of perforation error",
+                  "type": "select",
+                  "options": [
+                    "Imperforate Stamp (E.Per.imp)",
+                    "Part-Perforated Stamp (E.Per.prt)",
+                    "Misplaced Perforations (E.Per.mis)",
+                    "Double Perfs Vertical (E.Per.dbl.ver)",
+                    "Double Perfs Horizontal (E.Per.dbl.hor)",
+                    "Treble Perfs Vertical (E.Per.tbl.ver)",
+                    "Treble Perfs Horizontal (E.Per.tbl.hor)",
+                    "Perforation Shift Vertical (E.Per.shft.ver)",
+                    "Perforation Shift Horizontal (E.Per.shft.hor)",
+                    "Imperforated Top (E.Per.imp.tp)",
+                    "Imperforated Right Side (E.Per.imp.rgt)",
+                    "Imperforated Bottom (E.Per.imp.btm)",
+                    "Imperforated Left Side (E.Per.imp.lft)",
+                    "Imperforated Two Sides (E.Per.imp.sd.2)",
+                    "Imperforated Three Sides (E.Per.imp.sd.3)"
+                  ]
+                },
+                {
+                  "id": "ImperforateSides",
+                  "label": "Imperforate Sides",
+                  "description": "Which sides are imperforate (if part-perf)",
+                  "type": "select",
+                  "options": [
+                    "Top (E.Per.imp.tp)",
+                    "Right (E.Per.imp.rgt)",
+                    "Bottom (E.Per.imp.btm)",
+                    "Left (E.Per.imp.lft)",
+                    "Two Sides (E.Per.imp.sd.2)",
+                    "Three Sides (E.Per.imp.sd.3)",
+                    "All Sides (E.Per.imp.all)"
+                  ],
+                  "showWhen": {
+                    "field": "PerfErrorType",
+                    "value": "Part-Perforated Stamp (E.Per.prt)"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "WatermarkErrors",
+              "label": "Watermark Errors",
+              "description": "Errors in watermark application",
+              "children": [
+                {
+                  "id": "WmkErrorType",
+                  "label": "Watermark Error Type",
+                  "description": "Type of watermark error",
+                  "type": "select",
+                  "options": [
+                    "Missing Watermark (E.Wmk.mss)",
+                    "Inverted Watermark (E.Wmk.inv)",
+                    "Reversed Watermark (E.Wmk.rev)",
+                    "Sideways Watermark (E.Wmk.swy)",
+                    "Inverted and Reversed Watermark (E.Wmk.inv.rev)"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "OverprintErrors",
+              "label": "Overprint Errors",
+              "description": "Errors in overprint application",
+              "children": [
+                {
+                  "id": "OverprintErrorType",
+                  "label": "Overprint Error Type",
+                  "description": "Type of overprint error",
+                  "type": "select",
+                  "options": [
+                    "Overprint Omitted (E.Pr.Ovpr.om)",
+                    "Overprint Inverted (E.Pr.Ovpr.inv)",
+                    "Double Overprint (E.Pr.Ovpr.dbl)",
+                    "Overprint in Wrong Colour (E.Pr.Ovpr.C.E)"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "PaperErrors",
+              "label": "Paper Errors",
+              "description": "Errors in paper quality or type",
+              "children": [
+                {
+                  "id": "PaperErrorType",
+                  "label": "Paper Error Type",
+                  "description": "Type of paper error",
+                  "type": "select",
+                  "options": [
+                    "Wrong Paper Type (E.Pa.wrg)",
+                    "Thin or Thick Paper Variations (E.Pa.thk)"
+                  ]
+                },
+                {
+                  "id": "GumErrorType",
+                  "label": "Gum/Adhesive Errors",
+                  "description": "Errors in gum or adhesive application",
+                  "type": "select",
+                  "options": [
+                    "Missing Gum (E.Pa.gm.mss)",
+                    "Gum Variation (E.Pa.gm.var)",
+                    "Incorrect Gum Type (E.Pa.gm.wrg)"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "DesignErrors",
+              "label": "Design Errors",
+              "description": "Errors in stamp artwork or inscription",
+              "children": [
+                {
+                  "id": "DesignErrorType",
+                  "label": "Design Error Type",
+                  "description": "Type of design error",
+                  "type": "select",
+                  "options": [
+                    "Spelling Mistakes (E.Desn.splg)",
+                    "Wrong Portraits (E.Desn.wng)",
+                    "Date Errors (E.Desn.dat)"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ErrorDescription",
+          "label": "Detailed Error Description",
+          "description": "Detailed description of the error(s)",
+          "type": "textarea",
+          "showWhen": {
+            "field": "ErrorPresence",
+            "value": "Yes ‒ Has Errors/Varieties"
+          }
+        },
+        {
+          "id": "ErrorSignificance",
+          "label": "Error Significance",
+          "description": "How significant is this error?",
+          "type": "select",
+          "options": [
+            "Minor Variety",
+            "Notable Error",
+            "Major Error",
+            "Extremely Rare Error"
+          ],
+          "showWhen": {
+            "field": "ErrorPresence",
+            "value": "Yes ‒ Has Errors/Varieties"
+          }
+        }
+      ]
+    },
+    {
+      "id": "Underprints",
+      "label": "Underprints (On-Back)",
+      "description": "Security features or distinguishing marks applied beneath the stamp’s main design",
+      "children": [
+        {
+          "id": "UnderprintType",
+          "label": "Underprint Type",
+          "description": "Classification of underprint",
+          "type": "select",
+          "options": [
+            "Advertisement Underprints",
+            "Specimen Underprints",
+            "Bank and Company Underprints",
+            "Government or Official Underprints",
+            "Security Underprints",
+            "Control Underprints",
+            "Revenue and Fiscal Underprints",
+            "Experimental and Special Underprints"
+          ]
+        },
+        {
+          "id": "UnderprintDescription",
+          "label": "Underprint Description",
+          "description": "Describe the underprint (e.g. text, pattern, or security feature)",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "id": "PlateNum",
+      "label": "Plate Numbers and Characteristics",
+      "description": "Numerical or alphanumerical markings found on stamp sheets",
+      "children": [
+        {
+          "id": "PlateNumChar",
+          "label": "Plate Number Characteristics",
+          "description": "Type and characteristics of plate numbers",
+          "children": [
+            {
+              "id": "PlateNumType",
+              "label": "Plate Number Type",
+              "description": "Type of plate number marking",
+              "type": "select",
+              "options": [
+                "Visible Plate Numbers",
+                "Marginal Plate Numbers",
+                "Embossed Plate Numbers",
+                "Watermarked Plate Numbers",
+                "Overprinted Plate Numbers",
+                "Multi-Plate Numbers"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "PlatingDetails",
+          "label": "Plating Details",
+          "description": "Specific plating information, including flaws or retouches",
+          "children": [
+            {
+              "id": "PlateNumber",
+              "label": "Plate Number",
+              "description": "Exact plate number (text or digits)",
+              "type": "text"
+            },
+            {
+              "id": "SheetPosition",
+              "label": "Sheet Position",
+              "description": "Position on the printing sheet (Row × Column)",
+              "type": "text"
+            },
+            {
+              "id": "PlateFlawDescription",
+              "label": "Plate Flaw Description",
+              "description": "Describe any repetitive flaw, retouch or wear on the plate",
+              "type": "textarea"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "MultStamp",
+      "label": "Multiple Stamp Combinations",
+      "description": "Instances where more than one stamp is joined together",
+      "children": [
+        {
+          "id": "CommonMultiples",
+          "label": "Common Multiple Stamp Formats",
+          "description": "Standard multiple stamp configurations",
+          "children": [
+            {
+              "id": "MultFormat",
+              "label": "Multiple Format",
+              "description": "Configuration of multiple stamps",
+              "type": "select",
+              "options": [
+                "Horizontal pairs (Pr.hor)",
+                "Vertical pairs (Pr.ver)",
+                "1 × 6 strip",
+                "2 × 3 block",
+                "3 × 2 block",
+                "6 × 1 strip",
+                "Block of four (Bl.4)",
+                "Block of six (2 × 3 or 3 × 2) (Bl.6)",
+                "Multiple stamp blocks (more than 6) (Bl.mul)",
+                "Full sheet (Bl.sht)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "BlockTypes",
+          "label": "Block Types & Shapes",
+          "description": "Specific block configurations",
+          "children": [
+            {
+              "id": "BlockConfig",
+              "label": "Block Configuration",
+              "description": "Specific block arrangement (e.g., 2×3, Tête-Bêche pairs, Se-tenant)",
+              "type": "text"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Attachments",
+      "label": "Attachments to Stamps",
+      "description": "Elements that are part of the larger sheet or additional features",
+      "children": [
+        {
+          "id": "BordersSelvedge",
+          "label": "Stamp Borders & Selvedge",
+          "description": "Border and margin elements around stamps",
+          "children": [
+            {
+              "id": "BorderType",
+              "label": "Border/Selvedge Type",
+              "description": "Type of border or selvedge element",
+              "type": "select",
+              "options": [
+                "Selvedge (sel)",
+                "Decorative Borders (bdr.dec)",
+                "Marginal Markings (mar.mks)",
+                "Imperforate Margins (E.Mar.imp)",
+                "Folded Selvedge (Selv.fld)"
+              ]
+            },
+            {
+              "id": "PrinterImprint",
+              "label": "Printer’s Imprint",
+              "description": "Printer’s name or imprint in the margin (if present)",
+              "type": "text"
+            },
+            {
+              "id": "PlateNumbersInSelvedge",
+              "label": "Plate Numbers in Selvedge",
+              "description": "Plate numbers printed in the selvedge",
+              "type": "text"
+            },
+            {
+              "id": "PerforationGuide",
+              "label": "Perforation Guides",
+              "description": "Marks or dotted lines in the selvedge to aid manual separation",
+              "type": "text"
+            }
+          ]
+        },
+        {
+          "id": "TabsLabels",
+          "label": "Tabs and Labels",
+          "description": "Attached tabs, labels, or interleaving materials",
+          "children": [
+            {
+              "id": "TabType",
+              "label": "Tab/Label Type",
+              "description": "Type of attached tab or label",
+              "type": "select",
+              "options": [
+                "Attached Tabs (Tabs)",
+                "Advertisement Labels (Lbl.adver)",
+                "Informational Tabs (Tabs.info)",
+                "Slotted Tabs (Tabs.slot)",
+                "Interleaving Paper (Pa.int)"
+              ]
+            },
+            {
+              "id": "TabDescription",
+              "label": "Tab/Label Description",
+              "description": "Describe the tab or label (e.g. text, design, reference)",
+              "type": "text"
+            }
+          ]
+        },
+        {
+          "id": "Gutters",
+          "label": "Gutter Attachments",
+          "description": "Blank or printed gutters between stamps",
+          "children": [
+            {
+              "id": "GutterType",
+              "label": "Gutter Type",
+              "description": "Type of gutter between stamps",
+              "type": "select",
+              "options": [
+                "Gutter Pairs (Prs.gut)",
+                "Gutter Strips (Str.gut)",
+                "Gutter with Printed Text or Images (gut.txt)"
+              ]
+            },
+            {
+              "id": "GutterDescription",
+              "label": "Gutter Description",
+              "description": "Describe any special illustration or text in the gutter",
+              "type": "text"
+            }
+          ]
+        },
+        {
+          "id": "BookletPanes",
+          "label": "Booklet Panes & Attachments",
+          "description": "Information about booklet panes, perforations, and interleaving",
+          "children": [
+            {
+              "id": "BookletPaneType",
+              "label": "Booklet Pane Type",
+              "description": "Type of booklet pane or pane configuration",
+              "type": "select",
+              "options": [
+                "Booklet Pane (Pns.blt)",
+                "Interleaving Paper (Pa.int)",
+                "Die-cut Simulated Perforation",
+                "Die-cut to Shape",
+                "Coil Pair"
+              ]
+            },
+            {
+              "id": "BookletDetails",
+              "label": "Booklet Pane Details",
+              "description": "Further details (e.g., number of stamps, protective paper)",
+              "type": "text"
+            }
+          ]
+        },
+        {
+          "id": "AttachmentDescription",
+          "label": "Attachment Description",
+          "description": "Any other attachment information not captured above",
+          "type": "textarea"
+        }
+      ]
+    },
+    {
+      "id": "Postmarks",
+      "label": "Postmarks and Cancellations",
+      "description": "Markings applied by postal authorities to invalidate stamps",
+      "children": [
+        {
+          "id": "PostmarkTypes",
+          "label": "Types of Postmarks",
+          "description": "Different postmark classifications",
+          "children": [
+            {
+              "id": "PostmarkType",
+              "label": "Postmark Type",
+              "description": "Type of postmark or cancellation",
+              "type": "select",
+              "options": [
+                "Circular Date Stamps (Cn.cds)",
+                "Duplex Postmarks (Cn.dupl)",
+                "Squared Circle (Cn.sq)",
+                "Machine Cancels (Cn.mch)",
+                "Numeral Cancellations (Cn.num)",
+                "Barred Ovals (Cn.ovl.bar)",
+                "Precancelled (Cn.pre)",
+                "Slogan Cancels (Cn.slg)",
+                "Registered Mail Cancels (Cn.reg)",
+                "Railway Post Office Cancels (Cn.rpo)",
+                "Airmail Postmarks (Cn.air)",
+                "Military Postmarks (Cn.mil)",
+                "Paquebot Marks (Cn.pqt)",
+                "Travelling Post Office Marks (Cn.tpo)",
+                "Foreign Post Office Cancellations (Cn.fro)",
+                "Tax/Postage Due Marks (Cn.tax)",
+                "First Day of Issue Postmarks (Cn.fdi)",
+                "Fancy Cancels (Cn.fc)",
+                "Straight-Line Postmarks (Cn.stln)",
+                "Mute Cancels (Cn.mut)",
+                "Occupation Postmarks (Cn.occ)",
+                "Censored Markings (Cn.sen)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "CancellationType",
+          "label": "Specific Cancellation Type",
+          "description": "Specific cancellation classification (e.g. H Class, F Class, Manuscript)",
+          "type": "select",
+          "options": [
+            "H Class",
+            "F Class",
+            "Manuscript (M)",
+            "Pictorial/Commemorative (P)",
+            "Bullseye Cancel (Cn.bul)",
+            "Corner Cancel (Cn.cnr)",
+            "Multiple Strikes (Cn.mul)",
+            "Fake Cancels (Cn.fk)",
+            "Falsified Dates (Cn.fal)",
+            "Postal Fraud Cancels (Cn.frd)"
+          ]
+        },
+        {
+          "id": "PostmarkLocation",
+          "label": "Postmark Location",
+          "description": "City, postal office or country where cancellation was applied",
+          "type": "text"
+        },
+        {
+          "id": "PostmarkQuality",
+          "label": "Postmark Quality",
+          "description": "Quality and clarity assessment",
+          "children": [
+            {
+              "id": "Quality",
+              "label": "Quality",
+              "description": "Quality and clarity of the postmark",
+              "type": "select",
+              "options": [
+                "Clear and Complete (Cn.cl)",
+                "Partial but Readable",
+                "Unclear/Incomplete",
+                "Bullseye Cancel (Cn.bul)",
+                "Corner Cancel (Cn.cnr)"
+              ]
+            },
+            {
+              "id": "DateVisibility",
+              "label": "Date Visibility",
+              "description": "Is the date legible?",
+              "type": "select",
+              "options": [
+                "Date Clear and Readable",
+                "Date Partially Obscured",
+                "Date Not Readable"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "PostmarkDate",
+          "label": "Postmark Date",
+          "description": "Date visible on postmark",
+          "type": "date"
+        },
+        {
+          "id": "PostmarkSignificance",
+          "label": "Postmark Significance",
+          "description": "Is this postmark particularly rare or collectible?",
+          "type": "select",
+          "options": [
+            "Common",
+            "Uncommon",
+            "Rare (Cn.RR)",
+            "First-Day Cover (Cn.fdc)",
+            "Experimental Postmark (Cn.exp)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CollectorGroup",
+      "label": "Stamp Collector Groups",
+      "description": "Specialized areas of philatelic interest",
+      "children": [
+        {
+          "id": "DirectCollectorGroups",
+          "label": "Direct Collector Groups",
+          "description": "Primary collector interest areas",
+          "children": [
+            {
+              "id": "CollectorCategory",
+              "label": "Collector Category",
+              "description": "Primary collector interest area",
+              "type": "select",
+              "options": [
+                "Forgeries (For)",
+                "Proofs (Prf)",
+                "Errors (E)",
+                "Plating (Plt)",
+                "Cinderellas (Cind)",
+                "Postal History (PH)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "PostalProducts",
+          "label": "Virtual Collection Sectional Code",
+          "description": "Postal product classifications",
+          "children": [
+            {
+              "id": "PostalProductType",
+              "label": "Postal Product Type",
+              "description": "Type of postal product",
+              "type": "select",
+              "options": [
+                "Alternative Carriers (AC)",
+                "Aerophilately (AR)",
+                "Express Mail (EX)",
+                "Postmarks (PK)",
+                "Revenues (RV)",
+                "Postage Stamps (St)"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "KnownRarity",
+      "label": "Known Rarity Ratings",
+      "description": "Select a known rarity rating (as per standard philatelic scales)",
+      "children": [
+        {
+          "id": "RarityRating",
+          "label": "Rarity Rating",
+          "description": "Known rarity rating for this item",
+          "type": "select",
+          "options": ["Superb", "Very Fine", "Fine", "Good", "Average", "Poor"]
+        }
+      ]
+    },
+    {
+      "id": "AdditionalVariantCodes",
+      "label": "Additional Variant Codes",
+      "description": "Select any applicable variant codes (as per “Catalogue Code – The Variants”)",
+      "children": [
+        {
+          "id": "VariantCodes",
+          "label": "Variant Codes",
+          "description": "Applicable variant codes for this stamp (multiple selection allowed)",
+          "type": "select",
+          "multiple": true,
+          "options": [
+            "Bisected (Bi)",
+            "Bisect Approved (BiApp)",
+            "Cancellations – specific rare cancellations (Can)",
+            "Colour/Colour Shifts (Csh)",
+            "Corner & Block Margins (CrM)",
+            "General Gum Varieties (G)",
+            "Horizontally Tête-Bêche (TeteH)",
+            "Inverted Centre (Invc)",
+            "Misplaced Colours (MisC)",
+            "One Sided Gum (OSG)",
+            "Paper Variations (PV)",
+            "Rare Postmark (RP)",
+            "Self-Adhesive (SA)",
+            "Semi-Postal (SP)",
+            "Stamp Duty (SD)",
+            "Sugar Cane Industry (SCI)",
+            "Surcharged (Sur)",
+            "Specimen (Spec)",
+            "Tab Varieties (Tab)",
+            "Tagging (Tag)",
+            "Vertical & Horizontal Tête-Bêche (TeteV)",
+            "Watermarks (W)",
+            "Watermark Status (WSts)",
+            "Selvage (Sel)"
+          ]
+        }
+      ]
+    }
+  ]

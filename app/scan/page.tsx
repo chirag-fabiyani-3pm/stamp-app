@@ -14,7 +14,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { Progress } from "@/components/ui/progress"
-import { Check, Camera, Upload, RotateCcw, AlertCircle, Loader2, X } from "lucide-react"
+import { Check, Camera, Upload, RotateCcw, AlertCircle, Loader2, X, CheckCircle } from "lucide-react"
 import Image from "next/image"
 import StampViewer from "@/components/scan/stamp-viewer"
 import ReferenceInfo from "@/components/scan/reference-info"
@@ -27,6 +27,8 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import { AuthGuard } from "@/components/auth/route-guard"
+import { useToast } from "@/hooks/use-toast"
+import { Toaster } from "@/components/ui/toaster"
 
 // API Response interfaces
 interface ApiStampResponse {
@@ -525,6 +527,9 @@ const simulatedStampDatabase = [
 ];
 
 function ScanPage() {
+  // Toast hook for notifications
+  const { toast } = useToast();
+
   // State for the scan interface
   const [currentView, setCurrentView] = useState<"scan" | "reference" | "observation">("scan");
   const [scanID, setScanID] = useState<string>("");
@@ -964,7 +969,10 @@ function ScanPage() {
       setRecognitionStatus("error");
       
       // Show error to user
-      alert(`Image identification failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      handleError(
+        "Image Identification Failed",
+        error instanceof Error ? error.message : 'Unknown error occurred while identifying the stamp'
+      );
     }
   };
 
@@ -1144,6 +1152,38 @@ function ScanPage() {
     setDetailModalOpen(true);
   };
 
+  // Handle successful stamp save
+  const handleSaveSuccess = (message: string, stampData?: any) => {
+    // Show success toast
+    toast({
+      title: "Success!",
+      description: (
+        <div className="flex items-center gap-2">
+          <CheckCircle className="h-4 w-4" />
+          {message}
+        </div>
+      ),
+      variant: "success",
+    });
+
+    // Reset the entire scan state to allow for a new scan
+    resetScan();
+  };
+
+  // Handle errors with toast
+  const handleError = (title: string, message: string) => {
+    toast({
+      title: title,
+      description: (
+        <div className="flex items-center gap-2">
+          <AlertCircle className="h-4 w-4" />
+          {message}
+        </div>
+      ),
+      variant: "destructive",
+    });
+  };
+
   // Updates for mobile responsiveness
   return (
     <div className="container mx-auto py-4 md:py-6 px-4 md:px-6 max-w-4xl">
@@ -1313,34 +1353,12 @@ function ScanPage() {
                       </Button>
                     </div>
                   )}
-
-                  {recognitionStatus === "error" && (
-                    <Alert variant="destructive" className="mt-4">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertTitle>Error</AlertTitle>
-                      <AlertDescription>
-                        Could not identify the stamp. Please try again with a clearer image.
-                      </AlertDescription>
-                    </Alert>
-                  )}
                 </div>
               )}
 
               <canvas ref={canvasRef} className="hidden"></canvas>
             </div>
           </CardContent>
-
-          {recognitionStatus === "success" && !capturedImage && (
-            <CardFooter className="bg-muted/30 p-4">
-              <Alert className="w-full bg-green-50 border-green-400">
-                <Check className="h-4 w-4 text-green-600" />
-                <AlertTitle>Success</AlertTitle>
-                <AlertDescription>
-                  Stamp details saved successfully to your collection.
-                </AlertDescription>
-              </Alert>
-            </CardFooter>
-          )}
         </Card>
       )}
 
@@ -1532,7 +1550,7 @@ function ScanPage() {
                                         </Badge>
                                       )}
                                       {match.seriesName && (
-                                        <Badge variant="outline" className="text-xs bg-muted/30 px-2 py-1 max-w-[120px] truncate">
+                                        <Badge variant="outline" className="text-xs bg-muted/30 px-2 py-1 truncate">
                                           {match.seriesName}
                                         </Badge>
                                       )}
@@ -1678,6 +1696,7 @@ function ScanPage() {
               stampData: selectedStamp
             }}
             onCancel={() => setCurrentView("scan")}
+            onSuccess={handleSaveSuccess}
           />
         </div>
       )}
@@ -1954,6 +1973,7 @@ export default function ProtectedScanPage() {
   return (
     <AuthGuard>
       <ScanPage />
+      <Toaster />
     </AuthGuard>
   )
 }

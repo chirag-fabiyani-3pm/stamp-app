@@ -1,13 +1,66 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, Loader2 } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { getUserData } from "@/lib/api/auth"
+
+// Helper function to get JWT token
+const getJWT = (): string | null => {
+  if (typeof window !== 'undefined') {
+    try {
+      const stampUserData = localStorage.getItem('stamp_user_data');
+      if (stampUserData) {
+        const userData = JSON.parse(stampUserData);
+        if (userData && userData.jwt) {
+          return userData.jwt;
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing stamp_user_data from localStorage:', error);
+    }
+
+    // Try to get from cookies
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+      const [name, value] = cookie.trim().split('=');
+      if (name === 'stamp_jwt') {
+        return value;
+      }
+    }
+  }
+  return null;
+};
+
+// Helper function to get user ID
+const getUserId = (): string | null => {
+  if (typeof window !== 'undefined') {
+    try {
+      const userData = getUserData();
+      return userData?.userId || null;
+    } catch (error) {
+      console.error('Error getting user data:', error);
+      return null;
+    }
+  }
+  return null;
+};
 
 export default function ProfileSettings() {
   const [settings, setSettings] = useState({
@@ -20,6 +73,26 @@ export default function ProfileSettings() {
     theme: "system",
     language: "en",
   })
+  
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+
+  // Load theme from localStorage on component mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedTheme = localStorage.getItem('stamp_app_theme');
+        if (savedTheme && ['light', 'dark', 'system'].includes(savedTheme)) {
+          setSettings(prev => ({
+            ...prev,
+            theme: savedTheme
+          }));
+        }
+      } catch (error) {
+        console.error('Error loading theme from localStorage:', error);
+      }
+    }
+  }, []);
 
   const handleToggle = (setting: string, value: boolean) => {
     setSettings({
@@ -33,148 +106,67 @@ export default function ProfileSettings() {
       ...settings,
       [setting]: value,
     })
+    
+    // Save theme to localStorage when it changes
+    if (setting === 'theme' && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('stamp_app_theme', value);
+      } catch (error) {
+        console.error('Error saving theme to localStorage:', error);
+      }
+    }
   }
+
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    try {
+      const jwt = getJWT();
+      const userId = getUserId();
+      
+      if (!jwt) {
+        throw new Error('No JWT token found. Please login first.');
+      }
+      
+      if (!userId) {
+        throw new Error('No user ID found. Please login first.');
+      }
+
+      // Make DELETE request to the API
+      const response = await fetch(`https://3pm-stampapp-prod.azurewebsites.net/api/v1/User/${userId}?id=${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${jwt}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Delete request failed: ${response.status} ${response.statusText}. ${errorText}`);
+      }
+
+      // Clear user data from localStorage and cookies
+      localStorage.removeItem('stamp_user_data');
+      localStorage.removeItem('stamp_app_theme');
+      
+      // Clear JWT cookie
+      document.cookie = 'stamp_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      
+      // Redirect to login or home page
+      alert('Account deleted successfully. You will be redirected to the login page.');
+      window.location.href = '/login'; // or wherever your login page is
+      
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      alert(`Error deleting account: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Account Settings</CardTitle>
-          <CardDescription>Manage your account preferences</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email Address</Label>
-            <Input id="email" type="email" defaultValue="collector123@example.com" />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="current-password">Current Password</Label>
-            <Input id="current-password" type="password" />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="new-password">New Password</Label>
-              <Input id="new-password" type="password" />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirm-password">Confirm New Password</Label>
-              <Input id="confirm-password" type="password" />
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter>
-          <Button>Update Account</Button>
-        </CardFooter>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Notification Preferences</CardTitle>
-          <CardDescription>Control how you receive notifications</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label htmlFor="email-notifications" className="font-medium">
-                Email Notifications
-              </Label>
-              <p className="text-sm text-muted-foreground">Receive email notifications</p>
-            </div>
-            <Switch
-              id="email-notifications"
-              checked={settings.emailNotifications}
-              onCheckedChange={(checked) => handleToggle("emailNotifications", checked)}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <Label htmlFor="marketplace-alerts" className="font-medium">
-                Marketplace Alerts
-              </Label>
-              <p className="text-sm text-muted-foreground">Bids, offers, and listing updates</p>
-            </div>
-            <Switch
-              id="marketplace-alerts"
-              checked={settings.marketplaceAlerts}
-              onCheckedChange={(checked) => handleToggle("marketplaceAlerts", checked)}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <Label htmlFor="community-notifications" className="font-medium">
-                Community Notifications
-              </Label>
-              <p className="text-sm text-muted-foreground">Replies to your posts and mentions</p>
-            </div>
-            <Switch
-              id="community-notifications"
-              checked={settings.communityNotifications}
-              onCheckedChange={(checked) => handleToggle("communityNotifications", checked)}
-            />
-          </div>
-        </CardContent>
-        <CardFooter>
-          <Button>Save Preferences</Button>
-        </CardFooter>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Privacy Settings</CardTitle>
-          <CardDescription>Control your profile visibility and interactions</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label htmlFor="public-profile" className="font-medium">
-                Public Profile
-              </Label>
-              <p className="text-sm text-muted-foreground">Make your profile visible to other users</p>
-            </div>
-            <Switch
-              id="public-profile"
-              checked={settings.publicProfile}
-              onCheckedChange={(checked) => handleToggle("publicProfile", checked)}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <Label htmlFor="online-status" className="font-medium">
-                Show Online Status
-              </Label>
-              <p className="text-sm text-muted-foreground">Display when you're active on the platform</p>
-            </div>
-            <Switch
-              id="online-status"
-              checked={settings.showOnlineStatus}
-              onCheckedChange={(checked) => handleToggle("showOnlineStatus", checked)}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <Label htmlFor="allow-messages" className="font-medium">
-                Allow Direct Messages
-              </Label>
-              <p className="text-sm text-muted-foreground">Let other users send you messages</p>
-            </div>
-            <Switch
-              id="allow-messages"
-              checked={settings.allowMessages}
-              onCheckedChange={(checked) => handleToggle("allowMessages", checked)}
-            />
-          </div>
-        </CardContent>
-        <CardFooter>
-          <Button>Save Privacy Settings</Button>
-        </CardFooter>
-      </Card>
 
       <Card>
         <CardHeader>
@@ -195,21 +187,7 @@ export default function ProfileSettings() {
               </SelectContent>
             </Select>
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="language">Language</Label>
-            <Select value={settings.language} onValueChange={(value) => handleChange("language", value)}>
-              <SelectTrigger id="language">
-                <SelectValue placeholder="Select language" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="en">English</SelectItem>
-                <SelectItem value="es">Español</SelectItem>
-                <SelectItem value="fr">Français</SelectItem>
-                <SelectItem value="de">Deutsch</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          
         </CardContent>
         <CardFooter>
           <Button>Save Preferences</Button>
@@ -229,7 +207,44 @@ export default function ProfileSettings() {
             <p className="text-sm text-muted-foreground mb-4">
               Permanently delete your account and all associated data. This action cannot be undone.
             </p>
-            <Button variant="destructive">Delete Account</Button>
+            
+            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" disabled={isDeleting}>
+                  {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isDeleting ? 'Deleting...' : 'Delete Account'}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-destructive flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5" />
+                    Are you absolutely sure?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="space-y-2">
+                    <p>This action cannot be undone. This will permanently delete your account and remove all your data from our servers.</p>
+                    <p className="font-medium">All of the following will be permanently deleted:</p>
+                    <ul className="list-disc list-inside space-y-1 text-sm">
+                      <li>Your profile and personal information</li>
+                      <li>All your stamp collections and observations</li>
+                      <li>Your transaction history</li>
+                      <li>Any saved preferences and settings</li>
+                    </ul>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteAccount}
+                    disabled={isDeleting}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {isDeleting ? 'Deleting...' : 'Yes, delete my account'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </CardContent>
       </Card>
