@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 declare global {
   interface Window {
@@ -15,11 +15,20 @@ interface BotpressProviderProps {
 }
 
 export function BotpressProvider({ children }: BotpressProviderProps) {
+  const [jwt, setJwt] = useState("");
+
   useEffect(() => {
+    // Remove existing script if it exists
+    const existingScript = document.getElementById("botpress-script");
+    if (existingScript) {
+      existingScript.remove();
+    }
+
     // Create and append the script
     const script = document.createElement("script");
     script.src = "https://cdn.botpress.cloud/webchat/v2.2/inject.js";
     script.async = true;
+    script.id = "botpress-script";
     document.body.appendChild(script);
 
     // Initialize Botpress after script loads
@@ -43,6 +52,11 @@ export function BotpressProvider({ children }: BotpressProviderProps) {
           "radius": 2,
           "containerWidth": "800px",
         },
+        user: {
+          data: {
+            "authorization": `Bearer ${jwt}`
+          }
+        },
         "clientId": "8c56712b-5a68-4273-9899-e9ff47bd98ce"
       });
     };
@@ -54,7 +68,21 @@ export function BotpressProvider({ children }: BotpressProviderProps) {
         document.body.removeChild(script);
       }
     };
-  }, []);
+  }, [jwt]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const userData = localStorage.getItem("stamp_user_data");
+      if (userData) {
+        const userDataObj = JSON.parse(userData);
+        if (userDataObj.jwt && jwt !== userDataObj.jwt) {
+          setJwt(userDataObj.jwt);
+        }
+      }
+    }, 30 * 1000);
+
+    return () => clearInterval(timer);
+  },[])
 
   return <>{children}</>;
 } 
