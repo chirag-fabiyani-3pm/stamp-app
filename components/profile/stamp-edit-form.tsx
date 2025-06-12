@@ -8,6 +8,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getUserData } from "@/lib/api/auth"
+// Import categories from JSON file
+import categoriesData from "@/categories.json"
 
 // Define types locally since they're not properly exported from stamp-observation-manager
 interface CategoryField {
@@ -33,406 +35,21 @@ interface NavigationPathItem {
     category: Category;
 }
 
-// Updated comprehensive categories structure that matches StampDetailsJson, ordered by Stamp Code formula
-const categories: Category[] = [
-    {
-        id: 'primarydetails',
-        label: 'Primary Details',
-        description: 'Required core information for every stamp (Country, Issue Date, Denomination, Ownership Status, Purchase Price, Purchase Date and Notes)',
-        children: [
-            {
-                id: 'country',
-                label: 'Country',
-                description: 'Country that issued the stamp (ISO-3166 code or full name).',
-                type: 'select',
-                options: [
-                    'Afghanistan', 'Albania', 'Algeria', 'Argentina', 'Armenia', 'Australia', 'Austria', 'Azerbaijan',
-                    'Bahamas', 'Bahrain', 'Bangladesh', 'Barbados', 'Belarus', 'Belgium', 'Belize', 'Bolivia',
-                    'Brazil', 'Bulgaria', 'Cambodia', 'Cameroon', 'Canada', 'Chad', 'Chile', 'China', 'Colombia',
-                    'Costa Rica', 'Croatia', 'Cuba', 'Cyprus', 'Czech Republic', 'Denmark', 'Ecuador', 'Egypt',
-                    'Estonia', 'Ethiopia', 'Fiji', 'Finland', 'France', 'Germany', 'Ghana', 'Greece', 'Guatemala',
-                    'Hungary', 'Iceland', 'India', 'Indonesia', 'Ireland', 'Israel', 'Italy', 'Jamaica', 'Japan',
-                    'Jordan', 'Kazakhstan', 'Kenya', 'Kuwait', 'Latvia', 'Lebanon', 'Libya', 'Lithuania', 'Luxembourg',
-                    'Malaysia', 'Malta', 'Mexico', 'Monaco', 'Mongolia', 'Morocco', 'Myanmar', 'Nepal', 'Netherlands',
-                    'New Zealand', 'Nicaragua', 'Nigeria', 'Norway', 'Pakistan', 'Panama', 'Peru', 'Philippines',
-                    'Poland', 'Portugal', 'Qatar', 'Romania', 'Russia', 'Saudi Arabia', 'Serbia', 'Singapore',
-                    'Slovakia', 'Slovenia', 'South Africa', 'Spain', 'Sri Lanka', 'Sudan', 'Sweden', 'Switzerland',
-                    'Thailand', 'Turkey', 'Ukraine', 'United Arab Emirates', 'United Kingdom', 'United States',
-                    'Uruguay', 'Venezuela', 'Vietnam', 'Other'
-                ],
-                defaultValue: 'New Zealand'
-            },
-            {
-                id: 'issuedate',
-                label: 'Issue Date',
-                description: 'Official date when this stamp was issued (DD/MM/YYYY).',
-                type: 'date',
-                defaultValue: new Date().toISOString().split('T')[0]
-            },
-            {
-                id: 'denomination',
-                label: 'Denomination',
-                description: 'Face value of the stamp, split into components.',
-                children: [
-                    {
-                        id: 'denominationcurrency',
-                        label: 'Denomination Currency',
-                        description: 'Currency name (e.g., Dollar, Rupee, Franc)',
-                        type: 'select',
-                        options: ['Dollar', 'Cent', 'Rupee', 'Paise', 'Pound', 'Shilling', 'Penny', 'Pence', 'Euro', 'Franc', 'Mark', 'Kopek', 'Yen', 'Won', 'Lira', 'Other']
-                    },
-                    {
-                        id: 'denominationvalue',
-                        label: 'Denomination Value',
-                        description: 'Numerical denomination value (e.g., 1, 2.50, 10)',
-                        type: 'text'
-                    },
-                    {
-                        id: 'denominationsymbol',
-                        label: 'Denomination Symbol',
-                        description: 'Symbol representing the denomination (e.g., $, ₹, £, ¢, €)',
-                        type: 'select',
-                        options: ['$', '¢', '₹', '₨', '£', 's', 'd', 'p', '€', 'Fr', 'Kč', '₩', '¥', '₺', 'Other']
-                    }
-                ]
-            },
-            {
-                id: 'ownershipstatus',
-                label: 'Ownership Status',
-                description: 'Is this stamp owned, on loan, or for sale?',
-                type: 'select',
-                options: ['Owned', 'On Loan', 'For Sale', 'Unknown']
-            },
-            {
-                id: 'purchaseprice',
-                label: 'Purchase Price',
-                description: 'Purchase price and currency',
-                type: 'text'
-            },
-            {
-                id: 'purchasedate',
-                label: 'Purchase Date',
-                description: 'When the stamp was purchased',
-                type: 'date'
-            },
-            {
-                id: 'notes',
-                label: 'Additional Notes',
-                description: 'Any additional observations or notes',
-                type: 'textarea'
-            }
-        ]
-    },
-    {
-        id: 'colors',
-        label: 'Colors',
-        description: 'Pivotal attribute in philately, influencing value and identification',
-        children: [
-            {
-                id: 'colortype',
-                label: 'Color Type',
-                description: 'Primary color classification',
-                type: 'select',
-                options: ['red', 'Red Carmine', 'Orange', 'Purple', 'Violet', 'Mauve', 'Blue', 'Black', 'Green', 'Brown', 'Yellow', 'Multiple Colours', 'Pictorial / pictures etc.'],
-                defaultValue: 'red'
-            },
-            {
-                id: 'singlecolor',
-                label: 'Single Color',
-                description: 'Single‐color stamps',
-                children: [
-                    {
-                        id: 'purple',
-                        label: 'Purple',
-                        children: [
-                            {
-                                id: 'purpleshade',
-                                label: 'Purple Shade',
-                                description: 'Specific purple shade',
-                                type: 'select',
-                                options: ['Reddish Purple (R.Pur)', 'Slate Purple (Pur,slt)', 'Lilac (Pur,li)', 'Violet (Pur,vi)', 'Mauve (Pur,mve)']
-                            }
-                        ]
-                    },
-                    {
-                        id: 'brown',
-                        label: 'Brown',
-                        children: [
-                            {
-                                id: 'brownshade',
-                                label: 'Brown Shade',
-                                description: 'Specific brown shade',
-                                type: 'select',
-                                options: ['Purple Brown (Br.pur)', 'Sepia Brown (Br.sep)', 'Red Brown (Br.r)', 'Chocolate Brown (Br.cho)']
-                            }
-                        ]
-                    },
-                    {
-                        id: 'red',
-                        label: 'Red',
-                        children: [
-                            {
-                                id: 'redshade',
-                                label: 'Red Shade',
-                                description: 'Specific red shade',
-                                type: 'select',
-                                options: ['Deep Red (R.dp)', 'Bright Red (R.bgt)', 'Orange (R.or)', 'Rose (R.rs)', 'Carmine (R.car)']
-                            }
-                        ]
-                    },
-                    {
-                        id: 'blue',
-                        label: 'Blue',
-                        children: [
-                            {
-                                id: 'blueshade',
-                                label: 'Blue Shade',
-                                description: 'Specific blue shade',
-                                type: 'select',
-                                options: ['Indigo (Blu.in)', 'Royal Blue (Blu.roy)', 'Ultramarine (Blu.ult)', 'Deep Turquoise (Blu.tur.dp)']
-                            }
-                        ]
-                    },
-                    {
-                        id: 'green',
-                        label: 'Green',
-                        children: [
-                            {
-                                id: 'greenshade',
-                                label: 'Green Shade',
-                                description: 'Specific green shade',
-                                type: 'select',
-                                options: ['Sage (Gr.sag)', 'Emerald (Gr.em)', 'Olive (Gr.ol)']
-                            }
-                        ]
-                    },
-                    {
-                        id: 'black',
-                        label: 'Black',
-                        children: [
-                            {
-                                id: 'blackshade',
-                                label: 'Black Shade',
-                                description: 'Specific black shade',
-                                type: 'select',
-                                options: ['Grey Black (Blk.gry)', 'Pure Black (Bla)']
-                            }
-                        ]
-                    },
-                    {
-                        id: 'grey',
-                        label: 'Grey',
-                        children: [
-                            {
-                                id: 'greyshade',
-                                label: 'Grey Shade',
-                                description: 'Specific grey shade',
-                                type: 'select',
-                                options: ['Brownish Grey (Gry.br)', 'Light Grey (Gry.lt)', 'Dark Grey (Gry.dk)']
-                            }
-                        ]
-                    },
-                    {
-                        id: 'yellow',
-                        label: 'Yellow',
-                        children: [
-                            {
-                                id: 'yellowshade',
-                                label: 'Yellow Shade',
-                                description: 'Specific yellow shade',
-                                type: 'select',
-                                options: ['Pale Yellow (Yel.pal)', 'Bright Yellow (Yel.bgt)', 'Golden Yellow (Yel.gld)']
-                            }
-                        ]
-                    }
-                ]
-            },
-            {
-                id: 'multiplecolors',
-                label: 'Multiple Colors',
-                description: 'Multiple colors as part of the design',
-                showWhen: { field: 'colortype', value: 'Multiple Colours' },
-                children: [
-                    {
-                        id: 'primarycolor',
-                        label: 'Most Prevalent Color',
-                        description: 'The most dominant color in the design',
-                        type: 'select',
-                        options: ['Purple', 'Brown', 'Red', 'Blue', 'Green', 'Black', 'Grey', 'Yellow']
-                    },
-                    {
-                        id: 'secondarycolors',
-                        label: 'Other Colors Present',
-                        description: 'Additional colors in the design (comma-separated)',
-                        type: 'text'
-                    },
-                    {
-                        id: 'colorcount',
-                        label: 'Number of Colors',
-                        description: 'Total number of distinct colors',
-                        type: 'select',
-                        options: ['2 colors', '3 colors', '4 colors', '5+ colors']
-                    }
-                ]
-            },
-            {
-                id: 'pictorial',
-                label: 'Pictorial',
-                description: 'A photograph or picture for the design',
-                showWhen: { field: 'colortype', value: 'Pictorial / pictures etc.' },
-                children: [
-                    {
-                        id: 'pictorialtype',
-                        label: 'Pictorial Type',
-                        description: 'Type of pictorial design',
-                        type: 'select',
-                        options: ['Photograph', 'Artwork/Painting', 'Drawing/Illustration', 'Mixed Media']
-                    },
-                    {
-                        id: 'dominantcolors',
-                        label: 'Dominant Colors',
-                        description: 'Main colors visible in the pictorial design',
-                        type: 'text'
-                    }
-                ]
-            }
-        ]
-    },
-    {
-        id: 'ittyp',
-        label: 'Item Type',
-        description: 'The fundamental classification for any philatelic object',
-        children: [
-            {
-                id: 'ittypsel',
-                label: 'Item Type Selection',
-                description: 'Type of collectible item',
-                type: 'select',
-                options: ['Stamp', 'On Piece (OnP)', 'On Card (OnCrd)', 'On Envelope (OnEnv)', 'On Newspaper (OnNew)', 'Add Another Type'],
-                defaultValue: 'Stamp'
-            }
-        ]
-    },
-    {
-        id: 'paperchar',
-        label: 'Paper Characteristics',
-        description: 'Define the material composition, texture, and orientation of the paper',
-        children: [
-            {
-                id: 'papertypes',
-                label: 'Paper Types',
-                children: [
-                    {
-                        id: 'papertype',
-                        label: 'Paper Type',
-                        description: 'Type of paper used',
-                        type: 'select',
-                        options: ['White Paper (P.wh)', 'Toned Paper (P.ton)', 'Chalk-Surfaced Paper (P.clk)', 'Prelure Paper (P.prel)', 'Fluorescent Paper (P.flo)', 'Self-Adhesive Paper (P.slf)', 'Phosphorised Paper (P.phs)', 'Gum Arabic Paper (P.arb.gmd)', 'PVA Gum Paper (P.alch)']
-                    }
-                ]
-            }
-        ]
-    },
-    {
-        id: 'printchar',
-        label: 'Printing Characteristics',
-        description: 'Methods and processes employed to apply the design onto the stamp paper',
-        children: [
-            {
-                id: 'printmethods',
-                label: 'Printing Types/Methods',
-                children: [
-                    {
-                        id: 'printmethod',
-                        label: 'Printing Method',
-                        description: 'Primary printing technique used',
-                        type: 'select',
-                        options: ['Recess Printing (Prnt.rec)', 'Intaglio (Prnt.rec.int)', 'Line-Engraved (Prnt.rec.len)', 'Typography/Letterpress (Prnt.typ)', 'Lithography/Offset (Prnt.lth)', 'Gravure/Photogravure (Prnt.grv)', 'Flexography (Prnt.flx)', 'Screen Printing (Prnt.scr)', 'Héliogravure (Prnt.hel)']
-                    }
-                ]
-            }
-        ]
-    },
-    {
-        id: 'wmkchar',
-        label: 'Watermark Characteristics',
-        description: 'Deliberate, semi-translucent patterns embedded in paper',
-        children: [
-            {
-                id: 'watermarkpresence',
-                label: 'Watermark Presence',
-                description: 'Does the stamp have a watermark?',
-                type: 'select',
-                options: ['Yes - Watermark Present', 'No - No Watermark', 'Unknown/Uncertain'],
-                defaultValue: 'No - No Watermark'
-            }
-        ]
-    },
-    {
-        id: 'perfsep',
-        label: 'Perforation and Separation',
-        description: 'Methods by which individual stamps are detached from a larger sheet',
-        children: [
-            {
-                id: 'perftypes',
-                label: 'Perforation/Separation Types',
-                children: [
-                    {
-                        id: 'perftype',
-                        label: 'Perforation Type',
-                        description: 'Type of perforation or separation',
-                        type: 'select',
-                        options: ['Line Perforation (Per.l)', 'Comb Perforation (Per.cmb)', 'Harrow Perforation (Per.h)', 'Rouletting (Per.rlt)', 'Elliptical Perforation (Per,el.)', 'Part-Perforated (Per.rlt,srp.)', 'Syncopated Perforation (Per.rlt,syn.)', 'Imperforate (Per.imp)', 'Self-Adhesive Die-Cut (Per.di.ct)']
-                    }
-                ]
-            }
-        ]
-    },
-    {
-        id: 'overprints',
-        label: 'Overprints',
-        description: 'Printed visual expressions stamped onto the front face of a stamp after its original production',
-        children: [
-            {
-                id: 'overprintpresence',
-                label: 'Overprint Presence',
-                description: 'Does this stamp have any overprints?',
-                type: 'select',
-                options: ['No Overprints', 'Yes - Has Overprints', 'Uncertain'],
-                defaultValue: 'No Overprints'
-            }
-        ]
-    },
-    {
-        id: 'errorsvar',
-        label: 'Errors and Varieties',
-        description: 'Deviations from the intended design or production process',
-        children: [
-            {
-                id: 'errorpresence',
-                label: 'Error Presence',
-                description: 'Does this stamp have any errors or varieties?',
-                type: 'select',
-                options: ['No Errors - Normal Stamp', 'Yes - Has Errors/Varieties', 'Uncertain/Needs Expert Review'],
-                defaultValue: 'No Errors - Normal Stamp'
-            }
-        ]
-    },
-    {
-        id: 'knownrarity',
-        label: 'Known Rarity Ratings',
-        description: 'Select a known rarity rating (as per standard philatelic scales)',
-        children: [
-            {
-                id: 'rarityrating',
-                label: 'Rarity Rating',
-                description: 'Known rarity rating for this item',
-                type: 'select',
-                options: ['Superb', 'Very Fine', 'Fine', 'Good', 'Average', 'Poor']
-            }
-        ]
-    }
-];
+// Use imported categories data and normalize the structure
+const categories: Category[] = categoriesData.map(category => ({
+    ...category,
+    id: category.id.toLowerCase(), // Normalize to lowercase for consistency
+    children: category.children ? normalizeCategories(category.children) : undefined
+}))
+
+// Helper function to normalize nested categories
+function normalizeCategories(cats: any[]): Category[] {
+    return cats.map(cat => ({
+        ...cat,
+        id: cat.id.toLowerCase(),
+        children: cat.children ? normalizeCategories(cat.children) : undefined
+    }))
+}
 
 export interface StampEditFormProps {
     stamp: {
@@ -498,9 +115,11 @@ function findCategoryLabel(id: string, categories: Category[]): string {
 function initializeFormDataFromCategories(categories: Category[]): Record<string, any> {
     return categories.reduce((acc, category) => {
         if (category.type) {
-            acc[category.id.toLowerCase()] = category.defaultValue || ''
-        } else {
-            const childData = category.children ? initializeFormDataFromCategories(category.children) : {}
+            // For direct field categories, just set empty values
+            acc[category.id.toLowerCase()] = ''
+        } else if (category.children && category.children.length > 0) {
+            // For category containers, recursively initialize children
+            const childData = initializeFormDataFromCategories(category.children)
             if (Object.keys(childData).length > 0) {
                 acc[category.id.toLowerCase()] = childData
             }
@@ -959,56 +578,72 @@ export default function StampEditForm({ stamp, onClose, onSave }: StampEditFormP
     const [formData, setFormData] = useState<Record<string, any>>(() => {
         const defaultData = initializeFormDataFromCategories(categories)
         
-        // Parse existing stampDetails JSON if available
+        // First, populate from root-level fields in the stamp object
+        let result = { ...defaultData }
+        
+        // Helper function to set value at a nested path
+        const setNestedValue = (obj: any, path: string[], value: any) => {
+            let current = obj
+            for (let i = 0; i < path.length - 1; i++) {
+                const key = path[i].toLowerCase()
+                if (!current[key] || typeof current[key] !== 'object') {
+                    current[key] = {}
+                }
+                current = current[key]
+            }
+            const finalKey = path[path.length - 1].toLowerCase()
+            current[finalKey] = value
+        }
+        
+        // Map root-level stamp fields to form structure dynamically
+        const rootFieldMappings = [
+            { source: 'country', path: ['primarydetails', 'country'] },
+            { source: 'issueDate', path: ['primarydetails', 'issuedate'] },
+            { source: 'denominationValue', path: ['primarydetails', 'denomination', 'denominationvalue'] },
+            { source: 'denominationCurrency', path: ['primarydetails', 'denomination', 'denominationcurrency'] },
+            { source: 'denominationSymbol', path: ['primarydetails', 'denomination', 'denominationsymbol'] },
+            { source: 'color', path: ['colors', 'colortype'] },
+            { source: 'paperType', path: ['paperchar', 'papertypes', 'papertype'] }
+        ]
+        
+        rootFieldMappings.forEach(mapping => {
+            const value = stamp[mapping.source as keyof typeof stamp]
+            if (value !== null && value !== undefined && value.toString().trim() !== '') {
+                setNestedValue(result, mapping.path, value.toString())
+            }
+        })
+        
+        // Parse existing stampDetails JSON if available and merge dynamically
         if (stamp.stampDetailsJson) {
             try {
                 const existingDetails = JSON.parse(stamp.stampDetailsJson)
-                // Convert the existing API format back to form structure
-                // This is a simplified conversion - you might need to enhance this
-                const parsedData = { ...defaultData }
                 
-                const extractValueFromDetails = (details: any, targetKey: string): string => {
-                    if (Array.isArray(details)) {
-                        for (const item of details) {
-                            const result = extractValueFromDetails(item, targetKey)
-                            if (result) return result
+                // Function to recursively parse API structure and set values dynamically
+                const parseApiDataDynamically = (apiData: any[], currentPath: string[] = []) => {
+                    apiData.forEach(item => {
+                        const itemPath = [...currentPath, item.key]
+                        
+                        if (item.type === 'Category' && item.children && Array.isArray(item.children)) {
+                            // This is a category with children, recursively parse children
+                            parseApiDataDynamically(item.children, itemPath)
+                        } else if (item.value && item.value.trim() !== '') {
+                            // This is a field with a non-empty value, set it at the correct path
+                            setNestedValue(result, itemPath, item.value)
                         }
-                    } else if (typeof details === 'object' && details !== null) {
-                        if (details.key === targetKey && details.value) {
-                            return details.value
-                        }
-                        if (details.children) {
-                            const result = extractValueFromDetails(details.children, targetKey)
-                            if (result) return result
-                        }
-                        for (const value of Object.values(details)) {
-                            const result = extractValueFromDetails(value, targetKey)
-                            if (result) return result
-                        }
-                    }
-                    return ""
+                        // Skip fields with empty values - they'll remain as initialized
+                    })
                 }
-
-                // Extract common fields
-                if (parsedData.primarydetails) {
-                    parsedData.primarydetails.country = extractValueFromDetails(existingDetails, "country") || parsedData.primarydetails.country
-                    parsedData.primarydetails.issuedate = extractValueFromDetails(existingDetails, "issuedate") || parsedData.primarydetails.issuedate
-                    parsedData.primarydetails.denomination.denominationvalue = extractValueFromDetails(existingDetails, "denominationvalue") || parsedData.primarydetails.denomination.denominationvalue
-                    parsedData.primarydetails.denomination.denominationsymbol = extractValueFromDetails(existingDetails, "denominationsymbol") || parsedData.primarydetails.denomination.denominationsymbol
-                    parsedData.primarydetails.ownershipstatus = extractValueFromDetails(existingDetails, "ownershipstatus") || parsedData.primarydetails.ownershipstatus
-                    parsedData.primarydetails.purchaseprice = extractValueFromDetails(existingDetails, "purchaseprice") || parsedData.primarydetails.purchaseprice
-                    parsedData.primarydetails.purchasedate = extractValueFromDetails(existingDetails, "purchasedate") || parsedData.primarydetails.purchasedate
-                    parsedData.primarydetails.notes = extractValueFromDetails(existingDetails, "notes") || parsedData.primarydetails.notes
-                }
-
-                return parsedData
+                
+                // Parse the API data starting from root level
+                parseApiDataDynamically(existingDetails)
+                
             } catch (error) {
                 console.error('Error parsing stamp details:', error)
-                return defaultData
+                // If parsing fails, we still have the root-level data populated
             }
         }
         
-        return defaultData
+        return result
     })
 
     // Zoom handlers

@@ -782,8 +782,8 @@ export default function StampObservationManager({
 }: StampObservationManagerProps) {
     const [navigationPath, setNavigationPath] = useState<NavigationPathItem[]>([]);
     
-    // Add active tab state - Default to Edit tab for advanced users
-    const [activeTab, setActiveTab] = useState("details");
+    // Add active tab state - Default to Preview tab for better user experience
+    const [activeTab, setActiveTab] = useState("preview");
     
     // Add debug mode state for development
     const [debugMode, setDebugMode] = useState(false);
@@ -1181,19 +1181,187 @@ export default function StampObservationManager({
     const createFieldPath = (navigationPath: NavigationPathItem[], fieldId: string): string[] => {
         const pathSegments: string[] = [];
         
-        // Debug logging for item type specifically
-        if (fieldId === 'ItTypSel') {
-            console.log('createFieldPath - Creating path for ItTypSel');
+        // Debug logging for field path creation
+        console.log('createFieldPath - Creating path for field:', fieldId);
             console.log('createFieldPath - navigationPath:', navigationPath.map(p => p.id));
-            console.log('createFieldPath - fieldId:', fieldId);
-        }
         
+        // Check if we're editing a field directly (last navigation item matches fieldId)
+        const isDirectFieldEdit = navigationPath.length > 0 && 
+            navigationPath[navigationPath.length - 1].id === fieldId;
+        
+        console.log('createFieldPath - isDirectFieldEdit:', isDirectFieldEdit);
+        
+        if (isDirectFieldEdit) {
+            // We're editing the field directly, so navigation path includes the field
+            // Map only the parent categories, not the field itself
+            for (let i = 0; i < navigationPath.length - 1; i++) {
+                const pathItem = navigationPath[i];
+                const categoryId = pathItem.id;
+                
+                // Map specific categories to their form data keys
+                switch (categoryId) {
+                    case 'PrimaryDetails':
+                        pathSegments.push('primarydetails');
+                        break;
+                    case 'Colors':
+                        pathSegments.push('colors');
+                        break;
+                    case 'ItTyp':
+                        pathSegments.push('ittyp');
+                        break;
+                    case 'PaperChar':
+                        pathSegments.push('paperchar');
+                        break;
+                    case 'PrintChar':
+                        pathSegments.push('printchar');
+                        break;
+                    case 'WmkChar':
+                        pathSegments.push('wmkchar');
+                        break;
+                    case 'PerfSep':
+                        pathSegments.push('perfsep');
+                        break;
+                    case 'Overprints':
+                        pathSegments.push('overprints');
+                        break;
+                    case 'ErrorsVar':
+                        pathSegments.push('errorsvar');
+                        break;
+                    case 'KnownRarity':
+                        pathSegments.push('knownrarity');
+                        break;
+                    case 'Denomination':
+                        pathSegments.push('denomination');
+                        break;
+                    case 'SingleColor':
+                        pathSegments.push('singlecolor');
+                        break;
+                    case 'PaperTypes':
+                        pathSegments.push('papertypes');
+                        break;
+                    case 'PrintMethods':
+                        pathSegments.push('printmethods');
+                        break;
+                    case 'PerfTypes':
+                        pathSegments.push('perftypes');
+                        break;
+                    case 'WatermarkDetails':
+                        pathSegments.push('watermarkdetails');
+                        break;
+                    case 'SpecificTypes':
+                        pathSegments.push('specifictypes');
+                        break;
+                    case 'WmkOrientation':
+                        pathSegments.push('wmkorientation');
+                        break;
+                    case 'GeneralTypes':
+                        pathSegments.push('generaltypes');
+                        break;
+                    default:
+                        // For nested categories, use lowercase
+                        pathSegments.push(categoryId.toLowerCase());
+                        break;
+                }
+            }
+            
+            // Now add the final field mapping
+            switch (fieldId) {
+                case 'Country':
+                    pathSegments.push('country');
+                    break;
+                case 'IssueDate':
+                    pathSegments.push('issuedate');
+                    break;
+                case 'DenominationValue':
+                    pathSegments.push('denominationvalue');
+                    break;
+                case 'DenominationCurrency':
+                    pathSegments.push('denominationcurrency');
+                    break;
+                case 'DenominationSymbol':
+                    pathSegments.push('denominationsymbol');
+                    break;
+                case 'OwnershipStatus':
+                    pathSegments.push('ownershipstatus');
+                    break;
+                case 'PurchasePrice':
+                    pathSegments.push('purchaseprice');
+                    break;
+                case 'PurchaseDate':
+                    pathSegments.push('purchasedate');
+                    break;
+                case 'Notes':
+                    pathSegments.push('notes');
+                    break;
+                case 'ColorType':
+                    pathSegments.push('colortype');
+                    break;
+                case 'ItTypSel':
+                    pathSegments.push('ittypsel');
+                    break;
+                case 'WatermarkPresence':
+                    pathSegments.push('watermarkpresence');
+                    break;
+                case 'WmkSpecific':
+                    pathSegments.push('wmkspecific');
+                    break;
+                case 'CustomWatermark':
+                    pathSegments.push('customwatermark');
+                    break;
+                case 'Orientation':
+                    pathSegments.push('orientation');
+                    break;
+                case 'WmkType':
+                    pathSegments.push('wmktype');
+                    break;
+                case 'WmkError':
+                    pathSegments.push('wmkerror');
+                    break;
+                case 'PaperType':
+                    pathSegments.push('papertype');
+                    break;
+                case 'PrintMethod':
+                    pathSegments.push('printmethod');
+                    break;
+                case 'PerfType':
+                    pathSegments.push('perftype');
+                    break;
+                case 'OverprintPresence':
+                    pathSegments.push('overprintpresence');
+                    break;
+                case 'ErrorPresence':
+                    pathSegments.push('errorpresence');
+                    break;
+                case 'RarityRating':
+                    pathSegments.push('rarityrating');
+                    break;
+                case 'PurpleShade':
+                    pathSegments.push('purpleshade');
+                    break;
+                case 'BrownShade':
+                    pathSegments.push('brownshade');
+                    break;
+                case 'RedShade':
+                    pathSegments.push('redshade');
+                    break;
+                case 'BlueShade':
+                    pathSegments.push('blueshade');
+                    break;
+                case 'GreenShade':
+                    pathSegments.push('greenshade');
+                    break;
+                default:
+                    pathSegments.push(fieldId.toLowerCase());
+                    break;
+            }
+        } else {
+            // Original logic for non-direct field edits (legacy path)
         // Map navigation path to form data structure
         for (let i = 0; i < navigationPath.length; i++) {
             const pathItem = navigationPath[i];
             const categoryId = pathItem.id;
             
-            // Map specific categories to their form data keys
+                // Map specific categories to their form data keys (same as above)
             switch (categoryId) {
                 case 'PrimaryDetails':
                     pathSegments.push('primarydetails');
@@ -1247,14 +1415,11 @@ export default function StampObservationManager({
             }
         }
         
-        // Add the field ID with proper mapping
+            // Add the field ID with proper mapping (same as above)
         // Special handling to prevent double nesting for item type
         if (pathSegments[pathSegments.length - 1] === 'ittyp' && fieldId === 'ItTypSel') {
             // For ItTypSel directly under ittyp, add 'ittypsel' only once
             pathSegments.push('ittypsel');
-            if (fieldId === 'ItTypSel') {
-                console.log('createFieldPath - Special handling for ItTypSel, final path:', pathSegments);
-            }
         } else {
             switch (fieldId) {
                 case 'Country':
@@ -1290,13 +1455,22 @@ export default function StampObservationManager({
                 case 'ItTypSel':
                     // This should never be reached due to special handling above
                     pathSegments.push('ittypsel');
-                    if (fieldId === 'ItTypSel') {
-                        console.log('createFieldPath - WARNING: Standard handling for ItTypSel should not happen, final path:', pathSegments);
-                    }
                     break;
                 case 'WatermarkPresence':
                     pathSegments.push('watermarkpresence');
                     break;
+                    case 'WmkSpecific':
+                        pathSegments.push('wmkspecific');
+                        break;
+                    case 'CustomWatermark':
+                        pathSegments.push('customwatermark');
+                        break;
+                    case 'Orientation':
+                        pathSegments.push('orientation');
+                        break;
+                    case 'WmkError':
+                        pathSegments.push('wmkerror');
+                        break;
                 case 'PaperType':
                     pathSegments.push('papertype');
                     break;
@@ -1333,9 +1507,11 @@ export default function StampObservationManager({
                 default:
                     pathSegments.push(fieldId.toLowerCase());
                     break;
+                }
             }
         }
         
+        console.log('createFieldPath - Final path segments:', pathSegments);
         return pathSegments;
     };
 
@@ -1355,11 +1531,12 @@ export default function StampObservationManager({
     const setNestedValue = (obj: any, path: string[], value: any): any => {
         if (path.length === 0) return obj;
         
-        // Debug logging for item type specifically
-        if (path.includes('ittypsel')) {
-            console.log('setNestedValue - Setting ittypsel');
+        // Debug logging for watermark fields specifically
+        if (path.some(p => p.includes('wmk'))) {
+            console.log('setNestedValue - WATERMARK FIELD DETECTED:');
             console.log('setNestedValue - path:', path);
             console.log('setNestedValue - value:', value);
+            console.log('setNestedValue - value type:', typeof value);
             console.log('setNestedValue - original obj structure:', JSON.stringify(obj, null, 2));
         }
         
@@ -1377,14 +1554,16 @@ export default function StampObservationManager({
             current = current[key];
         }
         
-        // Set the final value
+        // Set the final value DIRECTLY - this prevents double nesting
         const finalKey = path[path.length - 1];
-        current[finalKey] = value;
+        current[finalKey] = value; // Always set the value directly, never wrap in an object
         
-        // Debug logging for item type specifically
-        if (path.includes('ittypsel')) {
-            console.log('setNestedValue - After setting, new obj structure:', JSON.stringify(newObj, null, 2));
-            console.log('setNestedValue - Final value at path:', current[finalKey]);
+        // Debug logging for watermark fields specifically
+        if (path.some(p => p.includes('wmk'))) {
+            console.log('setNestedValue - AFTER SETTING WATERMARK VALUE:');
+            console.log('setNestedValue - final key:', finalKey);
+            console.log('setNestedValue - value set to:', current[finalKey]);
+            console.log('setNestedValue - new obj structure:', JSON.stringify(newObj, null, 2));
         }
         
         return newObj;
@@ -1398,6 +1577,16 @@ export default function StampObservationManager({
                 fieldId,
                 value
             });
+            
+            // Special debugging for watermark fields
+            if (fieldId.toLowerCase().includes('watermark') || navigationPath.some(p => p.id.toLowerCase().includes('wmk'))) {
+                console.log('handleEditTabFieldChange - WATERMARK FIELD UPDATE detected!');
+                console.log('handleEditTabFieldChange - Watermark field ID:', fieldId);
+                console.log('handleEditTabFieldChange - Navigation path IDs:', navigationPath.map(p => p.id));
+                console.log('handleEditTabFieldChange - New value:', value);
+                console.log('handleEditTabFieldChange - Value type:', typeof value);
+                console.log('handleEditTabFieldChange - Current wmkchar before update:', formData.wmkchar);
+            }
             
             // TEMPORARY DEBUG: Direct handling for ItTypSel
             if (fieldId === 'ItTypSel') {
@@ -1419,10 +1608,49 @@ export default function StampObservationManager({
             
             console.log('handleEditTabFieldChange - Computed form path:', formPath);
             
+            // Special debugging for watermark fields - show path details
+            if (fieldId.toLowerCase().includes('watermark') || navigationPath.some(p => p.id.toLowerCase().includes('wmk'))) {
+                console.log('handleEditTabFieldChange - WATERMARK PATH DETAILS:');
+                console.log('handleEditTabFieldChange - Navigation path IDs:', navigationPath.map(p => p.id));
+                console.log('handleEditTabFieldChange - Field ID:', fieldId);
+                console.log('handleEditTabFieldChange - Computed form path:', formPath);
+                console.log('handleEditTabFieldChange - Will set value at path:', formPath.join('.'));
+            }
+            
             // Update the form data using the robust setter
-            const newFormData = setNestedValue(formData, formPath, value);
+            let newFormData = setNestedValue(formData, formPath, value);
+            
+            // AUTO-SET WATERMARK PRESENCE: If any watermark detail is filled, set presence to "Yes"
+            const isWatermarkDetailField = (
+                fieldId.toLowerCase().includes('wmk') || 
+                fieldId.toLowerCase().includes('watermark') || 
+                navigationPath.some(p => p.id.toLowerCase().includes('wmk'))
+            ) && fieldId !== 'WatermarkPresence'; // Don't trigger on the presence field itself
+            
+            if (isWatermarkDetailField && value && value.trim() !== '') {
+                console.log('handleEditTabFieldChange - AUTO-SETTING watermark presence due to detail field update');
+                
+                // Ensure wmkchar structure exists
+                if (!newFormData.wmkchar) {
+                    newFormData.wmkchar = {};
+                }
+                
+                // Set watermark presence to "Yes - Watermark Present"
+                newFormData.wmkchar.watermarkpresence = 'Yes - Watermark Present';
+                
+                console.log('handleEditTabFieldChange - Auto-set watermark presence to:', newFormData.wmkchar.watermarkpresence);
+            }
+            
             console.log('handleEditTabFieldChange - About to set new form data');
             setFormData(newFormData);
+            
+            // Special debugging for watermark fields - log after update
+            if (fieldId.toLowerCase().includes('watermark') || navigationPath.some(p => p.id.toLowerCase().includes('wmk'))) {
+                console.log('handleEditTabFieldChange - Watermark field updated, new formData will be:', newFormData);
+                console.log('handleEditTabFieldChange - New wmkchar after update:', newFormData.wmkchar);
+                console.log('handleEditTabFieldChange - Value at computed path:', getNestedValue(newFormData, formPath));
+            }
+            
             console.log('handleEditTabFieldChange - Form data updated');
             
         } catch (error) {
@@ -1519,6 +1747,38 @@ export default function StampObservationManager({
             // For complex objects, try to extract meaningful values
             if (typeof value === 'object' && !Array.isArray(value)) {
                 console.log('getEditTabFormValue - Processing object value:', value);
+                
+                // SPECIAL HANDLING FOR DOUBLE-NESTED STRUCTURES
+                // Check if this is a double-nested object where the field name is repeated
+                const fieldIdLower = fieldId.toLowerCase();
+                if (value[fieldIdLower] && typeof value[fieldIdLower] === 'string') {
+                    const result = String(value[fieldIdLower]);
+                    console.log('getEditTabFormValue - Extracted from double-nested fieldId:', result);
+                    return result;
+                }
+                
+                // Check for watermark-specific patterns
+                if (fieldId === 'WmkSpecific' && value.wmkspecific) {
+                    const result = String(value.wmkspecific);
+                    console.log('getEditTabFormValue - Extracted wmkspecific:', result);
+                    return result;
+                }
+                if (fieldId === 'WatermarkPresence' && value.watermarkpresence) {
+                    const result = String(value.watermarkpresence);
+                    console.log('getEditTabFormValue - Extracted watermarkpresence:', result);
+                    return result;
+                }
+                if (fieldId === 'Orientation' && value.orientation) {
+                    const result = String(value.orientation);
+                    console.log('getEditTabFormValue - Extracted orientation:', result);
+                    return result;
+                }
+                if (fieldId === 'WmkType' && value.wmktype) {
+                    const result = String(value.wmktype);
+                    console.log('getEditTabFormValue - Extracted wmktype:', result);
+                    return result;
+                }
+                
                 // Look for common field patterns
             if (value.perftype) {
                 const result = String(value.perftype);
@@ -2157,129 +2417,33 @@ export default function StampObservationManager({
         return result;
     };
 
-    // Function to save stamp data to API
-    const saveStampToAPI = async (
-        formData: Record<string, any>, 
-        categories: Category[], 
-        selectedStamp: any,
-        scannedImageDataUrl?: string
-    ): Promise<boolean> => {
-        try {
-            // Get required data
-            const jwt = getJWT();
-            const userId = getUserId();
-            
-            if (!jwt) {
-                throw new Error('No JWT token found. Please login first.');
-            }
-            
-            if (!userId) {
-                throw new Error('No user ID found. Please login first.');
-            }
-
-            // Transform form data to API format (this becomes StampDetailsJson)
-            const stampDetailsJson = transformFormDataToApiFormat(formData, categories);
-            
-            // Get stamp catalog ID from selected stamp API data
-            const stampCatalogId = selectedStamp?.apiData?.id || selectedStamp?.id || '';
-            
-            console.log('stampCatalogId', selectedStamp);
-            
-            if (!stampCatalogId) {
-                throw new Error('No stamp catalog ID found.');
-            }
-
-            // Get merged stamp data for extracting field values
-            const mergedData = getMergedStampData();
-            
-            // Generate stamp code
-            const stampCode = generateStampCode(mergedData);
-
-            // Create FormData for multipart/form-data
-            const apiFormData = new FormData();
-            
-            // Add all required fields according to new API specification
-            apiFormData.append('UserId', userId);
-            apiFormData.append('StampCatalogId', stampCatalogId);
-            apiFormData.append('StampCode', stampCode || '');
-            apiFormData.append('Name', mergedData.name || selectedStamp?.apiData?.name || '');
-            apiFormData.append('Publisher', mergedData.publisher || selectedStamp?.apiData?.publisher || '');
-            apiFormData.append('Country', mergedData.country || '');
-            apiFormData.append('CatalogName', mergedData.catalogName || selectedStamp?.apiData?.catalogName || '');
-            apiFormData.append('CatalogNumber', mergedData.catalogNumber || '');
-            apiFormData.append('SeriesName', mergedData.seriesName || selectedStamp?.apiData?.seriesName || '');
-            apiFormData.append('IssueDate', mergedData.issueDate || '');
-            
-            // Extract year from issue date
-            const issueYear = mergedData.issueDate ? new Date(mergedData.issueDate).getFullYear().toString() : '';
-            apiFormData.append('IssueYear', issueYear);
-            
-            apiFormData.append('DenominationValue', (mergedData.denominationValue || 0).toString());
-            apiFormData.append('DenominationCurrency', mergedData.denominationCurrency || selectedStamp?.apiData?.denominationCurrency || '');
-            apiFormData.append('DenominationSymbol', mergedData.denominationSymbol || selectedStamp?.apiData?.denominationSymbol || '');
-            apiFormData.append('Color', mergedData.color || '');
-            apiFormData.append('PaperType', mergedData.paperType || '');
-            
-            // StampDetailsJson is the transformed form data (formerly StampDetails)
-            apiFormData.append('StampDetailsJson', JSON.stringify(stampDetailsJson));
-            
-            // Add pricing information
-            apiFormData.append('EstimatedMarketValue', (selectedStamp?.apiData?.estimatedPrice || 0).toString());
-            apiFormData.append('ActualPrice', (selectedStamp?.apiData?.actualPrice || 0).toString());
-            
-            // Add scanned image file if available (StampFileAttachment)
-            if (scannedImageDataUrl) {
-                try {
-                    // Convert data URL to blob
-                    const response = await fetch(scannedImageDataUrl);
-                    const blob = await response.blob();
-                    apiFormData.append('StampFileAttachment', blob, 'scanned-stamp.jpg');
-                } catch (error) {
-                    console.warn('Could not add scanned image to form data:', error);
-                    // Continue without the image
-                }
-            }
-
-            // Make API call
-            const apiResponse = await fetch('https://3pm-stampapp-prod.azurewebsites.net/api/v1/Stamp', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${jwt}`
-                    // Don't set Content-Type header - let browser set it with boundary for multipart/form-data
-                },
-                body: apiFormData
-            });
-
-            if (!apiResponse.ok) {
-                const errorText = await apiResponse.text();
-                throw new Error(`API request failed: ${apiResponse.status} ${apiResponse.statusText}. ${errorText}`);
-            }
-
-            const result = await apiResponse.json();
-            console.log('Stamp saved successfully:', result);
-            
-            return true;
-        } catch (error) {
-            console.error('Error saving stamp to API:', error);
-            throw error;
-        }
-    };
-
     const getMergedStampData = (): any => {
         if (!selectedStamp.apiData) return {};
 
         const mergedData = { ...selectedStamp.apiData };
+        
+        console.log('DEBUG - getMergedStampData starting with:', {
+            originalApiData: selectedStamp.apiData,
+            formDataKeys: Object.keys(formData),
+            primaryDetails: formData.primarydetails,
+            paperChar: formData.paperchar
+        });
 
         // Extract data from primarydetails (not primaryinfo)
         if (formData.primarydetails) {
+            console.log('DEBUG - Processing primarydetails:', formData.primarydetails);
+            
             if (formData.primarydetails.country) {
                 mergedData.country = formData.primarydetails.country;
+                console.log('DEBUG - Set country from form:', formData.primarydetails.country);
             }
             if (formData.primarydetails.issuedate) {
                 mergedData.issueDate = formData.primarydetails.issuedate;
+                console.log('DEBUG - Set issueDate from form:', formData.primarydetails.issuedate);
             }
             if (formData.primarydetails.cataloguenumber) {
                 mergedData.catalogNumber = formData.primarydetails.cataloguenumber;
+                console.log('DEBUG - Set catalogNumber from form:', formData.primarydetails.cataloguenumber);
             }
             
             // Handle denomination structure
@@ -2345,26 +2509,53 @@ export default function StampObservationManager({
             const paperType = formData.paperchar.papertypes.papertype;
             // Extract the descriptive part before the parentheses
             mergedData.paperType = typeof paperType === 'string' ? paperType.split('(')[0].trim() : paperType;
+            console.log('DEBUG - Set paperType from form:', {
+                originalPaperType: paperType,
+                extractedPaperType: mergedData.paperType
+            });
         }
 
         // Extract watermark info
         if (formData.wmkchar) {
-            if (formData.wmkchar.watermarkpresence === 'No - No Watermark') {
-                mergedData.watermark = 'none';
-            } else if (formData.wmkchar.watermarkpresence === 'Yes - Watermark Present') {
-                mergedData.watermark = 'present';
-                // Try to get specific watermark info
-                if (formData.wmkchar.watermarkdetails?.specifictypes?.wmkspecific) {
-                    const wmk = formData.wmkchar.watermarkdetails.specifictypes.wmkspecific;
-                    if (wmk === 'Other/Custom' && formData.wmkchar.watermarkdetails.specifictypes.customwatermark) {
-                        mergedData.watermark = formData.wmkchar.watermarkdetails.specifictypes.customwatermark;
-                    } else {
-                        mergedData.watermark = typeof wmk === 'string' ? wmk.split('(')[0].trim() : wmk;
+            // Helper function to safely extract watermark presence
+            const getWatermarkPresence = () => {
+                if (formData.wmkchar.watermarkpresence) {
+                    // Handle both direct string and nested object
+                    if (typeof formData.wmkchar.watermarkpresence === 'string') {
+                        return formData.wmkchar.watermarkpresence;
+                    } else if (typeof formData.wmkchar.watermarkpresence === 'object' && formData.wmkchar.watermarkpresence.watermarkpresence) {
+                        return formData.wmkchar.watermarkpresence.watermarkpresence;
                     }
                 }
-            } else if (typeof formData.wmkchar.watermarkpresence === 'string') {
+                return null;
+            };
+            
+            const watermarkPresence = getWatermarkPresence();
+            
+            if (watermarkPresence === 'No - No Watermark') {
+                mergedData.watermark = 'none';
+            } else if (watermarkPresence === 'Yes - Watermark Present') {
+                mergedData.watermark = 'present';
+                // Try to get specific watermark info
+                if (formData.wmkchar.watermarkdetails?.specifictypes) {
+                    let wmkSpecific = formData.wmkchar.watermarkdetails.specifictypes.wmkspecific;
+                    
+                    // Handle double-nested wmkspecific
+                    if (typeof wmkSpecific === 'object' && wmkSpecific.wmkspecific) {
+                        wmkSpecific = wmkSpecific.wmkspecific;
+                    }
+                    
+                    if (wmkSpecific) {
+                        if (wmkSpecific === 'Other/Custom' && formData.wmkchar.watermarkdetails.specifictypes.customwatermark) {
+                        mergedData.watermark = formData.wmkchar.watermarkdetails.specifictypes.customwatermark;
+                    } else {
+                            mergedData.watermark = typeof wmkSpecific === 'string' ? wmkSpecific.split('(')[0].trim() : wmkSpecific;
+                    }
+                }
+                }
+            } else if (typeof watermarkPresence === 'string') {
                 // Direct watermark presence value
-                mergedData.watermark = formData.wmkchar.watermarkpresence;
+                mergedData.watermark = watermarkPresence;
             }
         }
 
@@ -2620,44 +2811,111 @@ export default function StampObservationManager({
         
         if (paperCode) parts.push(paperCode);
 
-        // Watermark (W) - USE FORM DATA FIRST
+        // Watermark (W) - USE FORM DATA FIRST - Updated to use variation and orientation
         let watermarkCode = '';
         console.log('generateStampCode - Watermark formData:', formData.wmkchar);
         
+        // Helper function to safely extract watermark presence
+        const getWatermarkPresence = () => {
         if (formData.wmkchar?.watermarkpresence) {
-            const watermarkPresence = formData.wmkchar.watermarkpresence;
-            console.log('generateStampCode - Watermark presence:', watermarkPresence);
+                // Handle both direct string and nested object
+                if (typeof formData.wmkchar.watermarkpresence === 'string') {
+                    return formData.wmkchar.watermarkpresence;
+                } else if (typeof formData.wmkchar.watermarkpresence === 'object' && formData.wmkchar.watermarkpresence.watermarkpresence) {
+                    return formData.wmkchar.watermarkpresence.watermarkpresence;
+                }
+            }
+            return null;
+        };
+        
+        const watermarkPresence = getWatermarkPresence();
+        console.log('generateStampCode - Extracted watermark presence:', watermarkPresence);
             
             if (watermarkPresence === 'Yes - Watermark Present') {
-                // Try to get specific watermark info
-                if (formData.wmkchar.watermarkdetails?.specifictypes?.wmkspecific) {
-                    const wmkSpecific = formData.wmkchar.watermarkdetails.specifictypes.wmkspecific;
+            console.log('generateStampCode - Watermark is present, building code...');
+            
+            // Build watermark code from variation and orientation
+            let wmkCode = 'Wmk';
+            
+            // Get specific watermark type
+            if (formData.wmkchar.watermarkdetails?.specifictypes) {
+                let wmkSpecific = formData.wmkchar.watermarkdetails.specifictypes.wmkspecific;
+                
+                // Handle double-nested wmkspecific
+                if (typeof wmkSpecific === 'object' && wmkSpecific.wmkspecific) {
+                    wmkSpecific = wmkSpecific.wmkspecific;
+                }
+                
+                console.log('generateStampCode - Extracted watermark specific type:', wmkSpecific);
+                
                     if (wmkSpecific === 'Other/Custom' && formData.wmkchar.watermarkdetails.specifictypes.customwatermark) {
                         // Use custom watermark description
                         const customWmk = formData.wmkchar.watermarkdetails.specifictypes.customwatermark;
-                        watermarkCode = typeof customWmk === 'string' ? customWmk.substring(0, 3).toUpperCase() : 'Wmk';
-                    } else if (typeof wmkSpecific === 'string' && wmkSpecific.includes('(') && wmkSpecific.includes(')')) {
-                        // Extract code from parentheses
-                        const match = wmkSpecific.match(/\(([^)]+)\)/);
-                        watermarkCode = match ? match[1] : wmkSpecific.substring(0, 3).toUpperCase();
+                    // Remove spaces and special characters, keep alphanumeric
+                    wmkCode += typeof customWmk === 'string' ? customWmk.replace(/[^a-zA-Z0-9]/g, '') : '';
+                } else if (typeof wmkSpecific === 'string') {
+                    // Parse specific watermark types
+                    if (wmkSpecific.includes('NZ and Star 6mm')) {
+                        wmkCode += 'NZStr6mm';
+                    } else if (wmkSpecific.includes('Large Star')) {
+                        wmkCode += 'LgStr';
+                    } else if (wmkSpecific.includes('Crown Over CC')) {
+                        wmkCode += 'CrownCC';
+                    } else if (wmkSpecific.includes('Crown Over A')) {
+                        wmkCode += 'CrownA';
+                    } else if (wmkSpecific.includes('Double Line "USPS"')) {
+                        wmkCode += 'USPS';
+                    } else if (wmkSpecific.includes('SANDS & McDOUGALL MELBOURNE')) {
+                        wmkCode += 'SandsMc';
                     } else {
-                        // Use first 3 characters of watermark specific type
-                        watermarkCode = typeof wmkSpecific === 'string' ? wmkSpecific.substring(0, 3).toUpperCase() : 'Wmk';
+                        // Extract code from parentheses if present
+                        if (wmkSpecific.includes('(') && wmkSpecific.includes(')')) {
+                        const match = wmkSpecific.match(/\(([^)]+)\)/);
+                            wmkCode += match ? match[1].replace(/[^a-zA-Z0-9]/g, '') : wmkSpecific.substring(0, 6).replace(/[^a-zA-Z0-9]/g, '');
+                    } else {
+                            // Use first part of the description, cleaned
+                            wmkCode += wmkSpecific.split('(')[0].trim().replace(/[^a-zA-Z0-9]/g, '').substring(0, 6);
+                        }
                     }
-                } else {
-                    // Generic watermark present code
-                    watermarkCode = 'Wmk';
                 }
-                console.log('generateStampCode - Watermark code generated:', watermarkCode);
             }
-            // If watermark presence is "No - No Watermark" or "Unknown/Uncertain", don't add watermark code
+            
+            // Get orientation
+            if (formData.wmkchar.watermarkdetails?.wmkorientation) {
+                let orientation = formData.wmkchar.watermarkdetails.wmkorientation.orientation;
+                
+                // Handle double-nested orientation
+                if (typeof orientation === 'object' && orientation.orientation) {
+                    orientation = orientation.orientation;
+                }
+                
+                console.log('generateStampCode - Extracted watermark orientation:', orientation);
+                
+                if (orientation === 'Inverted') {
+                    wmkCode += 'In';
+                } else if (orientation === 'Reversed') {
+                    wmkCode += 'Rev';
+                } else if (orientation === 'Inverted and Reversed') {
+                    wmkCode += 'InRev';
+                } else if (orientation === 'Sideways') {
+                    wmkCode += 'Side';
+                } else if (orientation === 'Sideways Inverted') {
+                    wmkCode += 'SideIn';
+                }
+                // Normal orientation doesn't add suffix
+            }
+            
+            watermarkCode = wmkCode;
+            console.log('generateStampCode - Generated watermark code:', watermarkCode);
         } else if (apiData.watermark && (typeof apiData.watermark === 'string' ? apiData.watermark.toLowerCase() !== 'none' : true)) {
-            // Fallback to API data
+            // Fallback to API data - try to build basic code
             const watermark = typeof apiData.watermark === 'string' 
                 ? apiData.watermark.toLowerCase() 
                 : String(apiData.watermark).toLowerCase();
                 
-            watermarkCode = watermark.substring(0, 3).toUpperCase();
+            if (watermark !== 'none' && watermark !== '') {
+                watermarkCode = 'Wmk' + watermark.replace(/[^a-zA-Z0-9]/g, '').substring(0, 6);
+            }
             console.log('generateStampCode - Watermark from API data:', watermarkCode);
         }
         
@@ -2745,11 +3003,18 @@ export default function StampObservationManager({
     };
 
     const currentStampCode = React.useMemo(() => {
-        return generateStampCode(getMergedStampData());
+        console.log('currentStampCode useMemo - Regenerating stamp code');
+        console.log('currentStampCode useMemo - Current formData.wmkchar:', formData.wmkchar);
+        const code = generateStampCode(getMergedStampData());
+        console.log('currentStampCode useMemo - Generated code:', code);
+        return code;
     }, [formData, selectedStamp.apiData]);
 
     // Enhanced stamp code analysis to identify missing parts
     const stampCodeAnalysis = React.useMemo(() => {
+        console.log('stampCodeAnalysis useMemo - Regenerating analysis');
+        console.log('stampCodeAnalysis useMemo - Current formData.wmkchar:', formData.wmkchar);
+        
         const mergedData = getMergedStampData();
         const parts = [];
         
@@ -2934,47 +3199,116 @@ export default function StampObservationManager({
             description: 'Paper type used'
         });
 
-        // Watermark (W) - Check form data first
+        // Watermark (W) - Check form data first - Updated to use variation and orientation
         let hasWatermark = false;
         let watermarkCode = '';
+        
+        // Helper function to safely extract watermark presence
+        const getWatermarkPresence = () => {
         if (formData.wmkchar?.watermarkpresence) {
-            const watermarkPresence = formData.wmkchar.watermarkpresence;
+                // Handle both direct string and nested object
+                if (typeof formData.wmkchar.watermarkpresence === 'string') {
+                    return formData.wmkchar.watermarkpresence;
+                } else if (typeof formData.wmkchar.watermarkpresence === 'object' && formData.wmkchar.watermarkpresence.watermarkpresence) {
+                    return formData.wmkchar.watermarkpresence.watermarkpresence;
+                }
+            }
+            return null;
+        };
+        
+        const watermarkPresence = getWatermarkPresence();
             
             if (watermarkPresence === 'Yes - Watermark Present') {
                 hasWatermark = true;
-                // Try to get specific watermark info
-                if (formData.wmkchar.watermarkdetails?.specifictypes?.wmkspecific) {
-                    const wmkSpecific = formData.wmkchar.watermarkdetails.specifictypes.wmkspecific;
+            
+            // Build watermark code from variation and orientation (same logic as generateStampCode)
+            let wmkCode = 'Wmk';
+            
+            // Get specific watermark type
+            if (formData.wmkchar.watermarkdetails?.specifictypes) {
+                let wmkSpecific = formData.wmkchar.watermarkdetails.specifictypes.wmkspecific;
+                
+                // Handle double-nested wmkspecific
+                if (typeof wmkSpecific === 'object' && wmkSpecific.wmkspecific) {
+                    wmkSpecific = wmkSpecific.wmkspecific;
+                }
+                
                     if (wmkSpecific === 'Other/Custom' && formData.wmkchar.watermarkdetails.specifictypes.customwatermark) {
+                    // Use custom watermark description
                         const customWmk = formData.wmkchar.watermarkdetails.specifictypes.customwatermark;
-                        watermarkCode = typeof customWmk === 'string' ? customWmk.substring(0, 3).toUpperCase() : 'Wmk';
-                    } else if (typeof wmkSpecific === 'string' && wmkSpecific.includes('(') && wmkSpecific.includes(')')) {
-                        const match = wmkSpecific.match(/\(([^)]+)\)/);
-                        watermarkCode = match ? match[1] : wmkSpecific.substring(0, 3).toUpperCase();
+                    // Remove spaces and special characters, keep alphanumeric
+                    wmkCode += typeof customWmk === 'string' ? customWmk.replace(/[^a-zA-Z0-9]/g, '') : '';
+                } else if (typeof wmkSpecific === 'string') {
+                    // Parse specific watermark types
+                    if (wmkSpecific.includes('NZ and Star 6mm')) {
+                        wmkCode += 'NZStr6mm';
+                    } else if (wmkSpecific.includes('Large Star')) {
+                        wmkCode += 'LgStr';
+                    } else if (wmkSpecific.includes('Crown Over CC')) {
+                        wmkCode += 'CrownCC';
+                    } else if (wmkSpecific.includes('Crown Over A')) {
+                        wmkCode += 'CrownA';
+                    } else if (wmkSpecific.includes('Double Line "USPS"')) {
+                        wmkCode += 'USPS';
+                    } else if (wmkSpecific.includes('SANDS & McDOUGALL MELBOURNE')) {
+                        wmkCode += 'SandsMc';
                     } else {
-                        watermarkCode = typeof wmkSpecific === 'string' ? wmkSpecific.substring(0, 3).toUpperCase() : 'Wmk';
+                        // Extract code from parentheses if present
+                        if (wmkSpecific.includes('(') && wmkSpecific.includes(')')) {
+                        const match = wmkSpecific.match(/\(([^)]+)\)/);
+                            wmkCode += match ? match[1].replace(/[^a-zA-Z0-9]/g, '') : wmkSpecific.substring(0, 6).replace(/[^a-zA-Z0-9]/g, '');
+                    } else {
+                            // Use first part of the description, cleaned
+                            wmkCode += wmkSpecific.split('(')[0].trim().replace(/[^a-zA-Z0-9]/g, '').substring(0, 6);
+                        }
                     }
-                } else {
-                    watermarkCode = 'Wmk';
                 }
             }
-            // For "No - No Watermark" or "Unknown/Uncertain", hasWatermark remains false
+            
+            // Get orientation
+            if (formData.wmkchar.watermarkdetails?.wmkorientation) {
+                let orientation = formData.wmkchar.watermarkdetails.wmkorientation.orientation;
+                
+                // Handle double-nested orientation
+                if (typeof orientation === 'object' && orientation.orientation) {
+                    orientation = orientation.orientation;
+                }
+                
+                console.log('generateStampCode - Extracted watermark orientation:', orientation);
+                
+                if (orientation === 'Inverted') {
+                    wmkCode += 'In';
+                } else if (orientation === 'Reversed') {
+                    wmkCode += 'Rev';
+                } else if (orientation === 'Inverted and Reversed') {
+                    wmkCode += 'InRev';
+                } else if (orientation === 'Sideways') {
+                    wmkCode += 'Side';
+                } else if (orientation === 'Sideways Inverted') {
+                    wmkCode += 'SideIn';
+                }
+                // Normal orientation doesn't add suffix
+            }
+            
+            watermarkCode = wmkCode;
         } else if (mergedData.watermark) {
-            // Fallback to merged data
+            // Fallback to merged data - try to build basic code
             const watermarkStr = getStringValue(mergedData.watermark);
             hasWatermark = !!watermarkStr && 
                 watermarkStr.toLowerCase() !== 'none' && 
                 watermarkStr.toLowerCase() !== 'no - no watermark' &&
                 watermarkStr.toLowerCase() !== '';
-            watermarkCode = hasWatermark ? (watermarkStr.length > 3 ? watermarkStr.substring(0, 3).toUpperCase() : watermarkStr.toUpperCase()) : '';
+            if (hasWatermark) {
+                watermarkCode = 'Wmk' + watermarkStr.replace(/[^a-zA-Z0-9]/g, '').substring(0, 6);
+            }
         }
         
         parts.push({
             code: watermarkCode || 'W',
-            label: 'Watermark',
+            label: 'Watermark Variation & Orientation',
             isComplete: hasWatermark,
-            categoryPath: ['WmkChar', 'WatermarkPresence'],
-            description: 'Watermark present'
+            categoryPath: ['WmkChar', 'WatermarkDetails'],
+            description: 'Watermark variation and orientation details'
         });
 
         // Perforation (P)
@@ -3085,100 +3419,330 @@ export default function StampObservationManager({
         }
     };
 
+    // Add state for sticky behavior
+    const [isSticky, setIsSticky] = useState(false);
+    const stampCodeRef = useRef<HTMLDivElement>(null);
+    const [scrollY, setScrollY] = useState(0);
+
+    // Add scroll listener for sticky behavior
+    useEffect(() => {
+        let originalOffsetTop = 0;
+        
+        const handleScroll = () => {
+            const currentScrollY = window.pageYOffset;
+            setScrollY(currentScrollY);
+            
+            if (stampCodeRef.current) {
+                // Measure original position on first scroll
+                if (originalOffsetTop === 0) {
+                    originalOffsetTop = stampCodeRef.current.offsetTop;
+                }
+                
+                const shouldBeSticky = currentScrollY >= originalOffsetTop;
+                setIsSticky(shouldBeSticky);
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        handleScroll(); // Call once to set initial state
+        
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
     // Interactive Stamp Code Component
     const InteractiveStampCode = () => (
-        <div className="mb-6">
-            <Card className="border border-gray-200 bg-gray-50/50">
-                <div className="p-3">
-                    <div className="flex flex-col items-center gap-3">
-                        <div className="text-xs font-medium text-gray-600">
-                            Stamp Code
-                        </div>
-                        
-                        {/* Interactive stamp code parts */}
-                        <div className="flex flex-wrap items-center justify-center gap-1 text-sm font-mono">
-                            {stampCodeAnalysis.map((part, index) => (
-                                <React.Fragment key={part.label}>
-                                    <button
-                                        onClick={() => scrollToCategory(part.categoryPath)}
-                                        className={`px-2 py-1 rounded border transition-all duration-200 cursor-pointer hover:scale-105 ${
-                                            part.isComplete
-                                                ? 'bg-green-100 border-green-300 text-green-800 hover:bg-green-200'
-                                                : 'bg-red-100 border-red-300 text-red-800 hover:bg-red-200 animate-pulse'
-                                        }`}
-                                        title={`${part.description}${part.isComplete ? ' (Complete)' : ' (Missing - Click to edit)'}`}
-                                    >
-                                        {part.code}
-                                    </button>
-                                    {index < stampCodeAnalysis.length - 1 && (
-                                        <span className="text-gray-400">.</span>
-                                    )}
-                                </React.Fragment>
-                            ))}
-                        </div>
-                        
-                        {/* Legend */}
-                        <div className="flex items-center gap-4 text-xs">
-                            <div className="flex items-center gap-1">
-                                <div className="w-3 h-3 bg-green-100 border border-green-300 rounded"></div>
-                                <span className="text-gray-600">Complete</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                                <div className="w-3 h-3 bg-red-100 border border-red-300 rounded"></div>
-                                <span className="text-gray-600">Missing (click to edit)</span>
-                            </div>
-                        </div>
-                        
-                        {/* Info dialog */}
-                        <Dialog>
-                            <DialogTrigger className="h-6 w-6 p-0 opacity-60 hover:opacity-90 inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground">
-                                <Info className="h-3 w-3 text-gray-600" />
-                            </DialogTrigger>
-                            <DialogContent className="max-w-lg py-2 gap-1">
-                                <DialogHeader className="pt-2 pb-0">
-                                    <DialogTitle>Stamp Code Details</DialogTitle>
-                                </DialogHeader>
-                                <div className="space-y-3 pt-2 max-h-[400px] overflow-y-auto">
-                                    <p className="text-sm text-muted-foreground">
-                                        Generated from stamp characteristics. Click on red (missing) parts to edit them.
-                                    </p>
-                                    
-                                    <div className="border rounded-lg p-3 space-y-3">
-                                        <div className="text-xs font-medium">Code Breakdown:</div>
-                                        {stampCodeAnalysis.map((part) => (
-                                            <div key={part.label} className="flex items-center justify-between p-2 bg-muted/30 rounded">
-                                                <div className="flex items-center gap-2">
-                                                    <span className={`px-2 py-1 text-xs font-mono rounded border ${
-                                                        part.isComplete
-                                                            ? 'bg-green-100 border-green-300 text-green-800'
-                                                            : 'bg-red-100 border-red-300 text-red-800'
-                                                    }`}>
-                                                        {part.code}
-                                                    </span>
-                                                    <span className="text-sm font-medium">{part.label}</span>
-                                                </div>
-                                                <span className={`text-xs px-2 py-1 rounded ${
+        <>
+            <div 
+                ref={stampCodeRef}
+                className={`mb-6 transition-all duration-200 ${
+                    isSticky 
+                        ? 'fixed top-0 left-0 right-0 z-50 px-3 sm:px-4' 
+                        : 'relative'
+                }`}
+            >
+                <div className={isSticky ? 'max-w-[1200px] mx-auto' : ''}>
+                    <Card className={`border border-gray-200 ${
+                        isSticky 
+                            ? 'bg-white/95 backdrop-blur-sm shadow-md' 
+                            : 'bg-gray-50/50'
+                    }`}>
+                        <div className="p-3">
+                            <div className="flex flex-col items-center gap-3">
+                                <div className="text-xs font-medium text-gray-600">
+                                    Stamp Code
+                                </div>
+                                
+                                {/* Interactive stamp code parts */}
+                                <div className="flex flex-wrap items-center justify-center gap-1 text-sm font-mono">
+                                    {stampCodeAnalysis.map((part, index) => (
+                                        <React.Fragment key={part.label}>
+                                            <button
+                                                onClick={() => scrollToCategory(part.categoryPath)}
+                                                className={`px-2 py-1 rounded border transition-all duration-200 cursor-pointer hover:scale-105 ${
                                                     part.isComplete
-                                                        ? 'bg-green-50 text-green-700'
-                                                        : 'bg-red-50 text-red-700'
-                                                }`}>
-                                                    {part.isComplete ? 'Complete' : 'Missing'}
-                                                </span>
-                                            </div>
-                                        ))}
-                                        
-                                        <p className="text-xs text-muted-foreground mt-3">
-                                            Format: Ctry.StGp.Yr.Cur.Dmn.C.Pa.W.P.ItNo
-                                        </p>
+                                                        ? 'bg-green-100 border-green-300 text-green-800 hover:bg-green-200'
+                                                        : 'bg-red-100 border-red-300 text-red-800 hover:bg-red-200 animate-pulse'
+                                                }`}
+                                                title={`${part.description}${part.isComplete ? ' (Complete)' : ' (Missing - Click to edit)'}`}
+                                            >
+                                                {part.code}
+                                            </button>
+                                            {index < stampCodeAnalysis.length - 1 && (
+                                                <span className="text-gray-400">.</span>
+                                            )}
+                                        </React.Fragment>
+                                    ))}
+                                </div>
+                                
+                                {/* Legend */}
+                                <div className="flex items-center gap-4 text-xs">
+                                    <div className="flex items-center gap-1">
+                                        <div className="w-3 h-3 bg-green-100 border border-green-300 rounded"></div>
+                                        <span className="text-gray-600">Complete</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <div className="w-3 h-3 bg-red-100 border border-red-300 rounded"></div>
+                                        <span className="text-gray-600">Missing (click to edit)</span>
                                     </div>
                                 </div>
-                            </DialogContent>
-                        </Dialog>
-                    </div>
+                                
+                                {/* Info dialog */}
+                                <Dialog>
+                                    <DialogTrigger className="h-6 w-6 p-0 opacity-60 hover:opacity-90 inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground">
+                                        <Info className="h-3 w-3 text-gray-600" />
+                                    </DialogTrigger>
+                                    <DialogContent className="max-w-lg py-2 gap-1">
+                                        <DialogHeader className="pt-2 pb-0">
+                                            <DialogTitle>Stamp Code Details</DialogTitle>
+                                        </DialogHeader>
+                                        <div className="space-y-3 pt-2 max-h-[400px] overflow-y-auto">
+                                            <p className="text-sm text-muted-foreground">
+                                                Generated from stamp characteristics. Click on red (missing) parts to edit them.
+                                            </p>
+                                            
+                                            <div className="border rounded-lg p-3 space-y-3">
+                                                <div className="text-xs font-medium">Code Breakdown:</div>
+                                                {stampCodeAnalysis.map((part) => (
+                                                    <div key={part.label} className="flex items-center justify-between p-2 bg-muted/30 rounded">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className={`px-2 py-1 text-xs font-mono rounded border ${
+                                                                part.isComplete
+                                                                    ? 'bg-green-100 border-green-300 text-green-800'
+                                                                    : 'bg-red-100 border-red-300 text-red-800'
+                                                            }`}>
+                                                                {part.code}
+                                                            </span>
+                                                            <span className="text-sm font-medium">{part.label}</span>
+                                                        </div>
+                                                        <span className={`text-xs px-2 py-1 rounded ${
+                                                            part.isComplete
+                                                                ? 'bg-green-50 text-green-700'
+                                                                : 'bg-red-50 text-red-700'
+                                                        }`}>
+                                                            {part.isComplete ? 'Complete' : 'Missing'}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                                
+                                                <p className="text-xs text-muted-foreground mt-3">
+                                                    Format: Ctry.StGp.Yr.Cur.Dmn.C.Pa.W.P.ItNo
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
+                        </div>
+                    </Card>
                 </div>
-            </Card>
-        </div>
+            </div>
+            {/* Placeholder to maintain layout when sticky */}
+            {isSticky && (
+                <div className="mb-6">
+                    <Card className="border border-gray-200 bg-gray-50/50 opacity-0">
+                        <div className="p-3">
+                            <div className="flex flex-col items-center gap-3">
+                                <div className="text-xs font-medium text-gray-600">Stamp Code</div>
+                                <div className="flex flex-wrap items-center justify-center gap-1 text-sm font-mono">
+                                    <div className="px-2 py-1 rounded border">Placeholder</div>
+                                </div>
+                                <div className="flex items-center gap-4 text-xs">
+                                    <div className="flex items-center gap-1">
+                                        <div className="w-3 h-3 rounded"></div>
+                                        <span>Placeholder</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
+                </div>
+            )}
+        </>
     );
+
+    // Function to save stamp data to API
+    const saveStampToAPI = async (
+        formData: Record<string, any>, 
+        categories: Category[], 
+        selectedStamp: any,
+        scannedImageDataUrl?: string
+    ): Promise<boolean> => {
+        try {
+            // Get required data
+            const jwt = getJWT();
+            const userId = getUserId();
+            
+            if (!jwt) {
+                throw new Error('No JWT token found. Please login first.');
+            }
+            
+            if (!userId) {
+                throw new Error('No user ID found. Please login first.');
+            }
+
+            // Transform form data to API format (this becomes StampDetailsJson)
+            const stampDetailsJson = transformFormDataToApiFormat(formData, categories);
+            
+            // Get stamp catalog ID from selected stamp API data
+            const stampCatalogId = selectedStamp?.apiData?.id || selectedStamp?.id || '';
+            
+            if (!stampCatalogId) {
+                throw new Error('No stamp catalog ID found.');
+            }
+
+            // Get merged stamp data for extracting field values
+            const mergedData = getMergedStampData();
+            
+            // Generate stamp code
+            const stampCode = generateStampCode(mergedData);
+
+            // Create FormData for multipart/form-data
+            const apiFormData = new FormData();
+            
+            // Add all required fields according to new API specification - Enhanced to extract more from formData
+            apiFormData.append('UserId', userId);
+            apiFormData.append('StampCatalogId', stampCatalogId);
+            apiFormData.append('StampCode', stampCode || '');
+            apiFormData.append('Name', mergedData.name || selectedStamp?.apiData?.name || '');
+            
+            // Extract Publisher from formData if available
+            let publisher = selectedStamp?.apiData?.publisher || '';
+            // Note: Publisher, Printer, and Designer fields don't exist in current form structure
+            // We'll use API data or leave empty
+            apiFormData.append('Publisher', publisher);
+            
+            apiFormData.append('Country', mergedData.country || '');
+            apiFormData.append('CatalogName', mergedData.catalogName || selectedStamp?.apiData?.catalogName || '');
+            apiFormData.append('CatalogNumber', mergedData.catalogNumber || '');
+            apiFormData.append('SeriesName', mergedData.seriesName || selectedStamp?.apiData?.seriesName || '');
+            apiFormData.append('IssueDate', mergedData.issueDate || '');
+            
+            // Extract year from issue date - Enhanced to handle formData directly
+            let issueYear = '';
+            if (mergedData.issueDate) {
+                issueYear = new Date(mergedData.issueDate).getFullYear().toString();
+            } else if (formData.primarydetails?.issuedate) {
+                issueYear = new Date(formData.primarydetails.issuedate).getFullYear().toString();
+            }
+            apiFormData.append('IssueYear', issueYear);
+            
+            apiFormData.append('DenominationValue', (mergedData.denominationValue || 0).toString());
+            apiFormData.append('DenominationCurrency', mergedData.denominationCurrency || selectedStamp?.apiData?.denominationCurrency || '');
+            apiFormData.append('DenominationSymbol', mergedData.denominationSymbol || selectedStamp?.apiData?.denominationSymbol || '');
+            apiFormData.append('Color', mergedData.color || '');
+            
+            // Extract PaperType from formData - Enhanced extraction
+            let paperType = mergedData.paperType || '';
+            if (!paperType && formData.paperchar?.papertypes?.papertype) {
+                // Extract descriptive part before parentheses
+                const paperTypeValue = formData.paperchar.papertypes.papertype;
+                paperType = typeof paperTypeValue === 'string' ? paperTypeValue.split('(')[0].trim() : paperTypeValue;
+            }
+            apiFormData.append('PaperType', paperType);
+            
+            // Extract additional fields that can be mapped from formData
+            
+            // Printing method
+            let printing = selectedStamp?.apiData?.printing || '';
+            if (formData.printchar?.printmethods?.printmethod) {
+                const printMethod = formData.printchar.printmethods.printmethod;
+                printing = typeof printMethod === 'string' ? printMethod.split('(')[0].trim() : printMethod;
+            }
+            
+            // Perforation
+            let perforation = selectedStamp?.apiData?.perforation || '';
+            if (formData.perfsep?.perftypes?.perftype) {
+                const perfType = formData.perfsep.perftypes.perftype;
+                perforation = typeof perfType === 'string' ? perfType.split('(')[0].trim() : perfType;
+            }
+            
+            // Watermark description
+            let watermark = mergedData.watermark || selectedStamp?.apiData?.watermark || '';
+            
+            // Designer/Artist
+            let artist = selectedStamp?.apiData?.artist || '';
+            // Note: Designer field doesn't exist in current form structure
+            
+            // Theme/Subject
+            let theme = selectedStamp?.apiData?.theme || '';
+            // Note: Theme field doesn't exist in current form structure
+            
+            // Size
+            let size = selectedStamp?.apiData?.size || '';
+            // Note: Size field doesn't exist in current form structure
+            
+            // Add the extracted fields to FormData (these may be optional but included for completeness)
+            if (printing) apiFormData.append('Printing', printing);
+            if (perforation) apiFormData.append('Perforation', perforation);
+            if (watermark) apiFormData.append('Watermark', watermark);
+            if (artist) apiFormData.append('Artist', artist);
+            if (theme) apiFormData.append('Theme', theme);
+            if (size) apiFormData.append('Size', size);
+            
+            // StampDetailsJson is the transformed form data (formerly StampDetails)
+            apiFormData.append('StampDetailsJson', JSON.stringify(stampDetailsJson));
+            
+            // Add pricing information
+            apiFormData.append('EstimatedMarketValue', (selectedStamp?.apiData?.estimatedPrice || 0).toString());
+            apiFormData.append('ActualPrice', (selectedStamp?.apiData?.actualPrice || 0).toString());
+            
+            // Add scanned image file if available (StampFileAttachment)
+            if (scannedImageDataUrl) {
+                try {
+                    // Convert data URL to blob
+                    const response = await fetch(scannedImageDataUrl);
+                    const blob = await response.blob();
+                    apiFormData.append('StampFileAttachment', blob, 'scanned-stamp.jpg');
+                } catch (error) {
+                    console.warn('Could not add scanned image to form data:', error);
+                    // Continue without the image
+                }
+            }
+
+            // Make API call
+            const apiResponse = await fetch('https://3pm-stampapp-prod.azurewebsites.net/api/v1/Stamp', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${jwt}`
+                    // Don't set Content-Type header - let browser set it with boundary for multipart/form-data
+                },
+                body: apiFormData
+            });
+
+            if (!apiResponse.ok) {
+                const errorText = await apiResponse.text();
+                throw new Error(`API request failed: ${apiResponse.status} ${apiResponse.statusText}. ${errorText}`);
+            }
+
+            const result = await apiResponse.json();
+            console.log('Stamp saved successfully:', result);
+            
+            return true;
+        } catch (error) {
+            console.error('Error saving stamp to API:', error);
+            throw error;
+        }
+    };
 
     return (
         <div className="flex flex-col min-h-screen max-w-[1200px] mx-auto">
@@ -3214,9 +3778,6 @@ export default function StampObservationManager({
                     </div>
                 </div>
 
-                {/* Interactive Stamp Code */}
-                {formData && <InteractiveStampCode />}
-
                 {/* Stamp Images Section */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
                     {/* Left Side - Cropped Stamp */}
@@ -3235,13 +3796,13 @@ export default function StampObservationManager({
                                 onMouseDown={(e) => handleMouseDown(e, 'catalogue')}
                                 onTouchStart={(e) => handleTouchStart(e, 'catalogue')}
                             >
-                            <Image
-                                src={selectedStamp.image}
+                                <Image
+                                    src={selectedStamp.image}
                                     alt="Catalogue stamp"
-                                fill
+                                    fill
                                     className="object-contain pointer-events-none"
                                     draggable={false}
-                            />
+                                />
                             </div>
                         </div>
                         <div className="flex gap-2">
@@ -3309,11 +3870,11 @@ export default function StampObservationManager({
                                     />
                                 </div>
                             ) : (
-                            <div className="absolute inset-0 flex items-center justify-center text-gray-500">
+                                <div className="absolute inset-0 flex items-center justify-center text-gray-500">
                                     <div className="text-center">
                                         <div className="text-sm">No scanned image</div>
                                         <div className="text-xs mt-1">Upload or capture an image</div>
-                            </div>
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -3377,6 +3938,9 @@ export default function StampObservationManager({
                         )}
                     </div>
                 </div>
+
+                {/* Interactive Stamp Code - Better positioned after images, before form */}
+                {formData && <InteractiveStampCode />}
 
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
                     <TabsList className="w-full">
@@ -3490,8 +4054,8 @@ export default function StampObservationManager({
                 {/* Temporary Debug Controls for Watermark Testing */}
                 {process.env.NODE_ENV === 'development' && (
                     <div className="mt-4 p-4 border rounded-lg bg-yellow-50">
-                        <h4 className="text-sm font-medium mb-2">Debug: Test Watermark ShowWhen</h4>
-                        <div className="flex gap-2">
+                        <h4 className="text-sm font-medium mb-2">Debug: Test Watermark ShowWhen & Stamp Code</h4>
+                        <div className="flex gap-2 flex-wrap">
                             <Button 
                                 variant="outline" 
                                 size="sm"
@@ -3500,14 +4064,47 @@ export default function StampObservationManager({
                                         ...prev,
                                         wmkchar: {
                                             ...prev.wmkchar,
-                                            watermarkpresence: "Yes - Watermark Present"
+                                            watermarkpresence: "Yes - Watermark Present",
+                                            watermarkdetails: {
+                                                specifictypes: {
+                                                    wmkspecific: "NZ and Star 6mm (W7)"
+                                                },
+                                                wmkorientation: {
+                                                    orientation: "Inverted"
+                                                }
+                                            }
                                         }
                                     }));
-                                    console.log('Debug: Set watermarkpresence to "Yes - Watermark Present"');
+                                    console.log('Debug: Set NZ Star watermark with Inverted orientation');
                                 }}
                                 className="text-xs"
                             >
-                                Set Watermark Present
+                                Set NZ Star Inverted
+                            </Button>
+                            <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        wmkchar: {
+                                            ...prev.wmkchar,
+                                            watermarkpresence: "Yes - Watermark Present",
+                                            watermarkdetails: {
+                                                specifictypes: {
+                                                    wmkspecific: "Large Star (Wmk.ls)"
+                                                },
+                                                wmkorientation: {
+                                                    orientation: "Inverted and Reversed"
+                                                }
+                                            }
+                                        }
+                                    }));
+                                    console.log('Debug: Set Large Star watermark with Inverted and Reversed orientation');
+                                }}
+                                className="text-xs"
+                            >
+                                Set Large Star InvRev
                             </Button>
                             <Button 
                                 variant="outline" 
@@ -3531,6 +4128,11 @@ export default function StampObservationManager({
                                 size="sm"
                                 onClick={() => {
                                     console.log('Debug: Current formData.wmkchar:', formData.wmkchar);
+                                    console.log('Debug: Current stamp code:', currentStampCode);
+                                    const mergedData = getMergedStampData();
+                                    console.log('Debug: Merged data:', mergedData);
+                                    const testCode = generateStampCode(mergedData);
+                                    console.log('Debug: Generated test code:', testCode);
                                 }}
                                 className="text-xs"
                             >
@@ -3538,9 +4140,16 @@ export default function StampObservationManager({
                             </Button>
                         </div>
                         <div className="text-xs mt-2 text-gray-600">
-                            Current: {typeof formData.wmkchar?.watermarkpresence === 'object' 
-                                ? JSON.stringify(formData.wmkchar.watermarkpresence) 
-                                : (formData.wmkchar?.watermarkpresence || 'Not set')}
+                            Current watermark presence: {(() => {
+                                const wmkPresence = formData.wmkchar?.watermarkpresence;
+                                if (typeof wmkPresence === 'object') {
+                                    return JSON.stringify(wmkPresence);
+                                }
+                                return wmkPresence || 'Not set';
+                            })()}
+                        </div>
+                        <div className="text-xs mt-1 text-gray-600">
+                            Current stamp code: {currentStampCode}
                         </div>
                     </div>
                 )}
