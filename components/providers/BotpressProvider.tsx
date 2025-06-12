@@ -52,11 +52,13 @@ export function BotpressProvider({ children }: BotpressProviderProps) {
           "radius": 2,
           "containerWidth": "800px",
         },
-        user: {
-          data: {
-            "authorization": `Bearer ${jwt}`
+        ...(jwt ? {
+          user: {
+            data: {
+              "authorization": `Bearer ${jwt}`
+            }
           }
-        },
+        } : {}),
         "clientId": "8c56712b-5a68-4273-9899-e9ff47bd98ce"
       });
     };
@@ -77,12 +79,14 @@ export function BotpressProvider({ children }: BotpressProviderProps) {
         const userDataObj = JSON.parse(userData);
         if (userDataObj.jwt && jwt !== userDataObj.jwt) {
           setJwt(userDataObj.jwt);
+        } else if (jwt && !userDataObj.jwt) {
+          setJwt("");
         }
       }
     }, 30 * 1000);
 
     return () => clearInterval(timer);
-  },[])
+  }, [])
 
   return <>{children}</>;
 } 
