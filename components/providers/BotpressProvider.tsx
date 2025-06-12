@@ -18,12 +18,6 @@ export function BotpressProvider({ children }: BotpressProviderProps) {
   const [jwt, setJwt] = useState("");
 
   useEffect(() => {
-    // Remove existing script if it exists
-    const existingScript = document.getElementById("botpress-script");
-    if (existingScript) {
-      existingScript.remove();
-    }
-
     // Create and append the script
     const script = document.createElement("script");
     script.src = "https://cdn.botpress.cloud/webchat/v2.2/inject.js";
@@ -70,7 +64,7 @@ export function BotpressProvider({ children }: BotpressProviderProps) {
         document.body.removeChild(script);
       }
     };
-  }, [jwt]);
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -79,11 +73,16 @@ export function BotpressProvider({ children }: BotpressProviderProps) {
         const userDataObj = JSON.parse(userData);
         if (userDataObj.jwt && jwt !== userDataObj.jwt) {
           setJwt(userDataObj.jwt);
+          (window.botpress as any)?.updateUser?.({
+            data: {
+              "authorization": `Bearer ${userDataObj.jwt}`
+            }
+          });
         } else if (jwt && !userDataObj.jwt) {
           setJwt("");
         }
       }
-    }, 30 * 1000);
+    }, 5 * 1000);
 
     return () => clearInterval(timer);
   }, [])
