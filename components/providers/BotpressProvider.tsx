@@ -80,6 +80,11 @@ export function BotpressProvider({ children }: BotpressProviderProps) {
           });
         } else if (jwt && !userDataObj.jwt) {
           setJwt("");
+          (window.botpress as any)?.updateUser?.({
+            data: {
+              "authorization": ``
+            }
+          });
         }
       }
     }, 5 * 1000);

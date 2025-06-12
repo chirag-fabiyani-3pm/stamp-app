@@ -64,6 +64,8 @@ interface ApiStampResponse {
   gumCondition: string
   description: string
   watermark: string | null
+  actualPrice: string
+  estimatedMarketValue: string
 }
 
 interface ImageSearchResponse {
@@ -996,7 +998,11 @@ function ScanPage() {
         const transformedStamp = transformApiStampToInternal(similarStamp, undefined);
         similarMatches.push({
           ...transformedStamp,
-          apiData: similarStamp
+          apiData: {
+            ...similarStamp,
+            actualPrice: searchResult.aiResponse.actualPrice,
+            estimatedMarketValue: searchResult.aiResponse.estimatedMarketValue,
+          },
         });
       });
     }
@@ -1686,7 +1692,7 @@ function ScanPage() {
       )}
 
       {currentView === "observation" && selectedStamp && (
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1">
           <StampObservationManager
             selectedStamp={{
               id: selectedStamp.finalSelection ? selectedStamp.id : selectedStamp.refId,
