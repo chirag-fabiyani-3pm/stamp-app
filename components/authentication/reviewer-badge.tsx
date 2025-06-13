@@ -71,7 +71,7 @@ export function ReviewerBadge({
         return {
           icon: <Star className={sizeClasses[size]} />,
           label: "Reviewer",
-          color: "bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300 border-gray-300 dark:border-gray-700",
+          color: "bg-muted text-muted-foreground border-border",
           tooltip: "Reviewer",
         }
     }

@@ -107,7 +107,7 @@ export default function ReviewDetailPage() {
     }
 
     const variant =
-      level in variants ? variants[level as keyof typeof variants] : { bg: "bg-gray-100", text: "text-gray-800" }
+                  level in variants ? variants[level as keyof typeof variants] : { bg: "bg-muted", text: "text-muted-foreground" }
 
     return (
       <Badge variant="outline" className={`${variant.bg} ${variant.text} hover:${variant.bg}`}>
@@ -183,7 +183,7 @@ export default function ReviewDetailPage() {
             <p className="text-muted-foreground ml-4">Type:</p>
             {getReviewTypeBadge(reviewData.reviewType)}
             <p className="text-muted-foreground ml-4">Submitted:</p>
-            <Badge variant="outline" className="bg-gray-100">
+                            <Badge variant="outline" className="bg-muted">
               <Calendar className="h-3 w-3 mr-1" />
               {reviewData.submittedAt}
             </Badge>

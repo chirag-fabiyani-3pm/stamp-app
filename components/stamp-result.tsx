@@ -59,7 +59,7 @@ export default function StampResult({ data }: StampResultProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div className="col-span-1">
-            <div className="bg-white border rounded-md p-2 mb-3">
+            <div className="bg-card border rounded-md p-2 mb-3">
               <img 
                 src="/placeholder.svg?height=300&width=300&query=Stamp Silver Jubilee" 
                 alt="Identified Stamp" 
@@ -156,7 +156,7 @@ export default function StampResult({ data }: StampResultProps) {
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3">
               {data.possibleVarieties.map((variety) => (
-                <div key={variety.id} className="border bg-white rounded p-2 text-sm">
+                <div key={variety.id} className="border bg-card rounded p-2 text-sm">
                   <div className="font-medium">{variety.name}</div>
                   <div className="flex justify-between items-center mt-1">
                     <Badge variant="outline" className="text-xs">

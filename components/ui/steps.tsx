@@ -29,7 +29,7 @@ const Steps = React.forwardRef<
     >
       {/* Background connector for horizontal orientation */}
       {orientation === "horizontal" && (
-        <div className="absolute h-1 bg-gray-300 top-5 left-6 right-5 -translate-y-1/2 z-0 w-[90%]"></div>
+        <div className="absolute h-1 bg-border top-5 left-6 right-5 -translate-y-1/2 z-0 w-[90%]"></div>
       )}
       
       {/* Progress connector for horizontal orientation */}
@@ -63,7 +63,7 @@ const Steps = React.forwardRef<
                   "w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-200",
                   status === "complete" && "bg-green-600 text-white",
                   status === "current" && "bg-primary text-white",
-                  status === "pending" && "bg-white text-gray-500 border-2 border-gray-300",
+                  status === "pending" && "bg-background text-muted-foreground border-2 border-border",
                   onChange && "cursor-pointer",
                   !onChange && "cursor-default"
                 )}
@@ -84,7 +84,7 @@ const Steps = React.forwardRef<
                   orientation === "vertical" && "mt-0 text-sm",
                   status === "complete" && "text-green-600",
                   status === "current" && "text-primary",
-                  status === "pending" && "text-gray-500"
+                  status === "pending" && "text-muted-foreground"
                 )}
               >
                 {step}
@@ -92,7 +92,7 @@ const Steps = React.forwardRef<
               
               {/* Vertical connector */}
               {orientation === "vertical" && index < steps.length - 1 && (
-                <div className="absolute left-5 top-10 h-full w-0.5 bg-gray-300">
+                <div className="absolute left-5 top-10 h-full w-0.5 bg-border">
                   <div 
                     className={cn(
                       "absolute left-0 top-0 w-full bg-green-600 transition-all duration-300",

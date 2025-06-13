@@ -57,8 +57,23 @@ interface ApiHierarchy {
 }
 
 interface ApiSeries {
-  seriesName: string
-  hierarchies: ApiHierarchy[]
+  items: {
+    seriesName: string
+    hierarchies: ApiHierarchy[]
+  }[]
+}
+
+interface ApiPaginatedResponse {
+  items: {
+    seriesName: string
+    hierarchies: ApiHierarchy[]
+  }[]
+  hasNextPage: boolean
+  hasPreviousPage: boolean
+  pageNumber: number
+  pageSize: number
+  totalCount: number
+  totalPages: number
 }
 
 // Transformed types for internal use
@@ -221,8 +236,8 @@ const createAccordionData = (seriesGroup: SeriesGroup) => {
 };
 
 // Helper function to organize API data into series groups
-const organizeStampsBySeries = (apiData: ApiSeries[]): SeriesGroup[] => {
-  return apiData.map(series => {
+const organizeStampsBySeries = (apiData: ApiSeries): SeriesGroup[] => {
+  return apiData.items.map(series => {
     const hierarchies: DenominationHierarchy[] = series.hierarchies.map(hierarchy => {
       const stamps = hierarchy.stamps.map(stamp => transformStamp(stamp, "variety"));
       
@@ -778,59 +793,110 @@ function CatalogPage() {
   const [seriesGroups, setSeriesGroups] = useState<SeriesGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [hasPreviousPage, setHasPreviousPage] = useState(false);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const pageSize = 10;
   
-  // Fetch data from API
-  useEffect(() => {
-    const fetchCatalogData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  // Fetch data from API with filters
+  const fetchCatalogData = async (page: number = currentPage, filters = selectedFilters, search = searchTerm) => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        const jwt = getJWT();
-        if (!jwt) {
-          throw new Error('No JWT token found. Please login first.');
-        }
-
-        const response = await fetch('https://3pm-stampapp-prod.azurewebsites.net/api/v1/StampCatalog/Hierarchy', {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${jwt}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-        }
-
-        const apiData: ApiSeries[] = await response.json();
-        const transformedData = organizeStampsBySeries(apiData);
-        setSeriesGroups(transformedData);
-      } catch (err) {
-        console.error('Error fetching catalog data:', err);
-        setError(err instanceof Error ? err.message : 'Failed to fetch catalog data');
-      } finally {
-        setLoading(false);
+      const jwt = getJWT();
+      if (!jwt) {
+        throw new Error('No JWT token found. Please login first.');
       }
-    };
 
-    fetchCatalogData();
+      const url = new URL('https://3pm-stampapp-prod.azurewebsites.net/api/v1/StampCatalog/Hierarchy');
+      url.searchParams.append('pageNumber', page.toString());
+      url.searchParams.append('pageSize', pageSize.toString());
+      
+      // Add search parameter if provided
+      if (search && search.trim() !== '') {
+        url.searchParams.append('search', search.trim());
+      }
+      
+      // Add filter parameters if they're not "all"
+      if (filters.country && filters.country !== 'all') {
+        url.searchParams.append('country', filters.country);
+      }
+      if (filters.series && filters.series !== 'all') {
+        url.searchParams.append('series', filters.series);
+      }
+      if (filters.year && filters.year !== 'all') {
+        url.searchParams.append('year', filters.year);
+      }
+      if (filters.denomination && filters.denomination !== 'all') {
+        url.searchParams.append('denomination', filters.denomination);
+      }
+      if (filters.color && filters.color !== 'all') {
+        url.searchParams.append('color', filters.color);
+      }
+      if (filters.printingMethod && filters.printingMethod !== 'all') {
+        url.searchParams.append('printingMethod', filters.printingMethod);
+      }
+      if (filters.theme && filters.theme !== 'all') {
+        url.searchParams.append('theme', filters.theme);
+      }
+
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${jwt}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      }
+
+      const apiData: ApiPaginatedResponse = await response.json();
+      const transformedData = organizeStampsBySeries({ items: apiData.items });
+      setSeriesGroups(transformedData);
+      
+      // Use actual pagination data from API response
+      setTotalCount(apiData.totalCount);
+      setHasNextPage(apiData.hasNextPage);
+      setHasPreviousPage(apiData.hasPreviousPage);
+      
+      console.log('Fetched paginated data:', {
+        page: apiData.pageNumber,
+        pageSize: apiData.pageSize,
+        totalCount: apiData.totalCount,
+        totalPages: apiData.totalPages,
+        hasNextPage: apiData.hasNextPage,
+        hasPreviousPage: apiData.hasPreviousPage,
+        resultCount: transformedData.length
+      });
+    } catch (err) {
+      console.error('Error fetching catalog data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch catalog data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCatalogData(1);
   }, []);
   
   // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+    const newSearchTerm = e.target.value;
+    setSearchTerm(newSearchTerm);
     setCurrentPage(1);
+    fetchCatalogData(1, selectedFilters, newSearchTerm);
   };
   
   // Clear filters function
   const clearFilters = () => {
-    setSearchTerm("");
-    setSelectedFilters({
+    const clearedFilters = {
       country: "all",
       year: "all",
       denomination: "all",
@@ -839,34 +905,36 @@ function CatalogPage() {
       printingMethod: "all",
       theme: "all",
       features: new Set<string>()
-    });
+    };
+    setSearchTerm("");
+    setSelectedFilters(clearedFilters);
     setCurrentPage(1);
+    fetchCatalogData(1, clearedFilters, "");
   };
   
   // Handle filter changes
   const handleFilterChange = (filterType: keyof typeof selectedFilters, value: string) => {
-    setSelectedFilters(prev => ({
-      ...prev,
+    const newFilters = {
+      ...selectedFilters,
       [filterType]: value
-    }));
+    };
+    setSelectedFilters(newFilters);
     setCurrentPage(1);
+    fetchCatalogData(1, newFilters, searchTerm);
   };
   
-  // Get comprehensive filter data from API
+  // Static filter data - since filtering is server-side, we don't need to derive from current data
   const getFilterData = useMemo(() => {
-    const allStamps = seriesGroups.flatMap(group => 
-      group.hierarchies.flatMap(hierarchy => hierarchy.varieties)
-    );
-    
+    // For now, use static filter options. In a real app, you might want to fetch these from an API endpoint
     return {
-      countries: Array.from(new Set(seriesGroups.map(g => g.country))).sort(),
-      series: Array.from(new Set(seriesGroups.map(g => g.seriesName))).sort(),
-      years: Array.from(new Set(allStamps.map(s => s.year))).sort().reverse(),
-      denominations: Array.from(new Set(allStamps.map(s => s.denomination))).sort(),
-      colors: Array.from(new Set(allStamps.map(s => s.colorName).filter(Boolean))).sort(),
-      printingMethods: Array.from(new Set(allStamps.map(s => s.printingMethod).filter(Boolean))).sort(),
-      themes: Array.from(new Set(allStamps.map(s => s.collectorGroup).filter(Boolean))).sort(),
-      features: Array.from(new Set(allStamps.flatMap(s => s.features))).sort(),
+      countries: ["British Guiana", "United Kingdom", "United States", "Germany", "France", "Canada", "Australia"], // Static list
+      series: [], // Will be populated from current page data for reference only
+      years: Array.from({length: 50}, (_, i) => (new Date().getFullYear() - i).toString()), // Last 50 years
+      denominations: ["1¢", "2¢", "3¢", "4¢", "5¢", "6¢", "8¢", "10¢", "12¢", "15¢", "20¢", "24¢", "25¢", "30¢", "50¢", "96¢"], // Common denominations
+      colors: ["Red", "Blue", "Green", "Yellow", "Black", "Brown", "Purple", "Orange", "Pink", "Gray"],
+      printingMethods: ["Typographed", "Lithographed", "Engraved", "Offset", "Rotary"],
+      themes: ["Historical", "Nature", "People", "Architecture", "Art", "Sports", "Transportation"],
+      features: ["Watermark", "Perforation", "Original Gum", "Overprint"],
       // Year ranges for easier filtering
       yearRanges: [
         { label: "Pre-1880", value: "pre-1880", years: ["1870", "1871", "1872", "1873", "1874", "1875", "1876", "1877", "1878", "1879"] },
@@ -876,74 +944,17 @@ function CatalogPage() {
         { label: "1910s+", value: "1910s", years: ["1910", "1911", "1912", "1913", "1914", "1915", "1916", "1917", "1918", "1919", "1920"] }
       ]
     };
-  }, [seriesGroups]);
+  }, []); // No dependencies since it's static
   
-  // Filter stamps based on search term and filters
-  const filteredSeriesGroups = seriesGroups.filter(group => {
-    // Text search
-    const matchesSearch = 
-      group.seriesName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      group.country.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      group.description.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    // Country filter
-    const matchesCountry = selectedFilters.country === "" || selectedFilters.country === "all" ? 
-      true : 
-      group.country.toLowerCase() === selectedFilters.country.toLowerCase();
-    
-    // Year filter
-    const matchesYear = selectedFilters.year === "" || selectedFilters.year === "all" ? 
-      true : 
-      (() => {
-        const yearRange = getFilterData.yearRanges.find(range => range.value === selectedFilters.year);
-        if (yearRange) {
-          return group.hierarchies.some(hierarchy => 
-            hierarchy.varieties.some(stamp => 
-              yearRange.years.includes(stamp.year)
-            )
-          );
-        }
-        return group.yearRange.includes(selectedFilters.year);
-      })();
-
-    // Series filter
-    const matchesSeries = selectedFilters.series === "" || selectedFilters.series === "all" ?
-      true :
-      group.seriesName.toLowerCase().includes(selectedFilters.series.toLowerCase());
-
-    // Advanced filters - check within stamps
-    const allGroupStamps = group.hierarchies.flatMap(h => h.varieties);
-    
-    const matchesDenomination = selectedFilters.denomination === "all" ? 
-      true : 
-      allGroupStamps.some(stamp => stamp.denomination === selectedFilters.denomination);
-    
-    const matchesColor = selectedFilters.color === "all" ? 
-      true : 
-      allGroupStamps.some(stamp => stamp.colorName === selectedFilters.color);
-      
-    const matchesPrintingMethod = selectedFilters.printingMethod === "all" ? 
-      true : 
-      allGroupStamps.some(stamp => stamp.printingMethod === selectedFilters.printingMethod);
-      
-    const matchesTheme = selectedFilters.theme === "all" ? 
-      true : 
-      allGroupStamps.some(stamp => stamp.collectorGroup === selectedFilters.theme);
-
-    return matchesSearch && matchesCountry && matchesYear && matchesSeries && 
-           matchesDenomination && matchesColor && matchesPrintingMethod && matchesTheme;
-  });
-  
-  // Calculate pagination
-  const totalPages = Math.ceil(filteredSeriesGroups.length / itemsPerPage);
-  const paginatedSeriesGroups = filteredSeriesGroups.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // Remove frontend filtering - all filtering is now done server-side
+  // Use server data directly since API handles filtering and pagination
+  const totalPages = Math.ceil(totalCount / pageSize);
+  const paginatedSeriesGroups = seriesGroups; // Server already returns filtered and paginated data
   
   // Page change handler
   const handlePageChange = (pageNumber: number) => {
     setCurrentPage(pageNumber);
+    fetchCatalogData(pageNumber);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   
@@ -1014,7 +1025,7 @@ function CatalogPage() {
             Filters
           </Button>
           <div className="hidden sm:block text-sm text-muted-foreground">
-            {filteredSeriesGroups.length} of {seriesGroups.length} series
+            Page {currentPage} of {totalPages} ({seriesGroups.length} series on this page)
           </div>
         </div>
       </div>
@@ -1220,7 +1231,7 @@ function CatalogPage() {
           {/* Mobile Results Summary */}
           <div className="sm:hidden mb-4">
             <div className="text-sm text-muted-foreground">
-              Showing {paginatedSeriesGroups.length} of {filteredSeriesGroups.length} series
+              Page {currentPage} of {totalPages} ({paginatedSeriesGroups.length} series on this page)
             </div>
           </div>
           
@@ -1284,27 +1295,33 @@ function CatalogPage() {
           })}
         </Accordion>
         
-        {filteredSeriesGroups.length === 0 && !loading && (
+        {paginatedSeriesGroups.length === 0 && !loading && (
           <div className="text-center p-8 sm:p-12 border rounded-lg">
             <div className="text-2xl sm:text-3xl mb-2">😕</div>
             <h3 className="text-base sm:text-lg font-medium mb-1">No stamps found</h3>
             <p className="text-sm sm:text-base text-muted-foreground mb-4">
-              Try adjusting your search or filters
+              {currentPage > 1 ? 'No more results on this page. Try going back to earlier pages.' : 'Try adjusting your search or filters'}
             </p>
-            <Button variant="outline" onClick={clearFilters}>
-              Clear all filters
-            </Button>
+            {currentPage > 1 ? (
+              <Button variant="outline" onClick={() => handlePageChange(1)}>
+                Go to first page
+              </Button>
+            ) : (
+              <Button variant="outline" onClick={clearFilters}>
+                Clear all filters
+              </Button>
+            )}
           </div>
         )}
         
-        {filteredSeriesGroups.length > 0 && totalPages > 1 && (
+        {totalPages > 1 && (
           <div className="mt-6 sm:mt-8 flex justify-center">
             <div className="flex items-center gap-1 overflow-x-auto pb-2 sm:pb-0">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => handlePageChange(1)}
-                disabled={currentPage === 1}
+                disabled={!hasPreviousPage}
                 className="hidden sm:inline-flex text-xs sm:text-sm"
               >
                 First
@@ -1313,7 +1330,7 @@ function CatalogPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
+                disabled={!hasPreviousPage}
                 className="text-xs sm:text-sm"
               >
                 Previous
@@ -1348,7 +1365,7 @@ function CatalogPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
+                disabled={!hasNextPage}
                 className="text-xs sm:text-sm"
               >
                 Next
@@ -1357,7 +1374,7 @@ function CatalogPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => handlePageChange(totalPages)}
-                disabled={currentPage === totalPages}
+                disabled={!hasNextPage}
                 className="hidden sm:inline-flex text-xs sm:text-sm"
               >
                 Last

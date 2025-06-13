@@ -1313,7 +1313,7 @@ function ScanPage() {
 
               {capturedImage && (
                 <div className="space-y-4">
-                  <div className="border-2 rounded-lg mx-auto overflow-hidden bg-white max-w-md">
+                  <div className="border-2 rounded-lg mx-auto overflow-hidden bg-card max-w-md">
                     <img
                       src={capturedImage}
                       alt="Captured stamp"
@@ -1400,7 +1400,7 @@ function ScanPage() {
                       : 'border-border'
                     }`}>
                       <CardContent className="space-y-4 flex-1 flex flex-col px-4 py-4">
-                        <div className="aspect-square relative bg-white rounded border overflow-hidden">
+                        <div className="aspect-square relative bg-card rounded border overflow-hidden">
                           <Image
                             src={selectedStamp.primaryMatch.imagePath}
                             alt={selectedStamp.primaryMatch.name}
@@ -1522,7 +1522,7 @@ function ScanPage() {
                             }}
                           >
                             <CardContent className="space-y-4 flex-1 flex flex-col px-4 py-4">
-                              <div className="aspect-square relative bg-white rounded border overflow-hidden">
+                              <div className="aspect-square relative bg-card rounded border overflow-hidden">
                                 <Image
                                   src={match.imagePath}
                                   alt={match.name}
@@ -1717,7 +1717,7 @@ function ScanPage() {
           {detailModalStamp && (
             <div className="space-y-4">
               {/* Image */}
-              <div className="w-full aspect-square relative bg-white rounded-lg border overflow-hidden">
+              <div className="w-full aspect-square relative bg-card rounded-lg border overflow-hidden">
                 <Image
                   src={detailModalStamp.imagePath}
                   alt={detailModalStamp.name}

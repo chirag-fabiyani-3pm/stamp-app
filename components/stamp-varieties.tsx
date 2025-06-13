@@ -34,7 +34,7 @@ export default function StampVarieties({ varieties, stampId }: StampVarietiesPro
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-md pr-10"
         />
-        <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
       </div>
 
       {filteredVarieties.length === 0 ? (

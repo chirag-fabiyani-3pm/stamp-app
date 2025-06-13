@@ -112,7 +112,7 @@ export default function ContactPage() {
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  <input type="checkbox" id="privacy" className="rounded border-gray-300" />
+                  <input type="checkbox" id="privacy" className="rounded border-input bg-background" />
                   <Label htmlFor="privacy" className="text-sm cursor-pointer">
                     I agree to the{" "}
                     <a href="/privacy" className="text-primary hover:underline">

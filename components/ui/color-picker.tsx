@@ -113,7 +113,7 @@ export function ColorPicker({
                 <button
                   key={color}
                   className={`w-8 h-8 rounded border-2 hover:scale-110 transition-transform ${
-                    value === color ? 'border-blue-500' : 'border-gray-300'
+                    value === color ? 'border-primary' : 'border-border'
                   }`}
                   style={{ backgroundColor: color }}
                   onClick={() => handlePredefinedColorSelect(color)}

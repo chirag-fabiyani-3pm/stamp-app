@@ -378,7 +378,7 @@ export default function StampScanner() {
                           <Button 
                             variant="outline" 
                             size="icon" 
-                            className="bg-white/80 hover:bg-white"
+                            className="bg-background/80 hover:bg-background"
                             onClick={() => setZoomLevel(prev => Math.max(1, prev - 0.25))}
                             disabled={zoomLevel <= 1}
                           >
@@ -395,7 +395,7 @@ export default function StampScanner() {
                           <Button 
                             variant="outline" 
                             size="icon" 
-                            className="bg-white/80 hover:bg-white"
+                            className="bg-background/80 hover:bg-background"
                             onClick={() => setZoomLevel(prev => Math.min(3, prev + 0.25))}
                             disabled={zoomLevel >= 3}
                           >

@@ -347,6 +347,28 @@
             "On Newspaper (OnNew)",
             "Add Another Type"
           ],
+          "preview": {
+            "Stamp": {
+              "image": "/images/stamps/stamp.png",
+              "description": "A postage stamp is a small piece of paper issued by a post office, postal administration, or other authorized vendors to customers who pay postage (the cost involved in moving, insuring, or registering mail)."
+            },
+            "On Piece (OnP)": {
+              "image": "/images/stamps/stamp-on-piece.png",
+              "description": "A postage stamp is a small, adhesive piece of paper issued by a postal authority, used to pre-pay for postal services. It's typically affixed to an envelope or parcel to indicate the amount of postage paid. Beyond their practical use, postage stamps also serve as a collectible item, representing a nation's heritage and history."
+            },
+            "On Card (OnCrd)": {
+              "image": "/images/stamps/stamp-on-card.png",
+              "description": "A postage stamp on a card, whether a postcard or a greeting card, is a common method for paying for postal service when sending mail. The stamp is affixed to the address side of the card or envelope, ensuring that the mail can be processed and delivered through the postal system."
+            },
+            "On Envelope (OnEnv)": {
+              "image": "/images/stamps/stamp-on-envelope.png",
+              "description": "A postage stamp on an envelope is a small, adhesive piece of paper affixed to the envelope as proof that the required postage has been paid for the mail to be delivered. It's a kind of postal currency, indicating the value of postage prepaid for the item of mail."
+            },
+            "On Newspaper (OnNew)": {
+              "image": "/images/stamps/stamp-on-newspaper.png",
+              "description": "A newspaper stamp is a type of postage stamp specifically used to pay for mailing newspapers and periodicals, often at a reduced rate compared to regular mail. These stamps were common in the 19th century but gradually fell out of use as postal services began to handle bulk mailing directly with publishers."
+            }
+          },
           "defaultValue": "Stamp"
         },
         {
@@ -416,7 +438,28 @@
                     "Pale Mauve (Pur,mve.pal)",
                     "Deep Mauve (Pur,mve.dp)",
                     "Reddish Mauve (Pur,mve.r)"
-                  ]
+                  ],
+                  "shadesToHexMap": {
+                    "Reddish Purple": "#822E81",
+                    "Slate Purple (Pur,slt)": "#5B507A",
+                    "Lilac (Pur,li)": "#C8A2C8",
+                    "Brown Lilac (Pur,li.br)": "#836953",
+                    "Deep Lilac (Pur,li.dp)": "#9678B6",
+                    "Reddish Lilac (Pur,li.r)": "#AE5D9D",
+                    "Pale Lilac (Pur,li.pal)": "#DCD0FF",
+                    "Mauve Lilac (Pur,li.mve)": "#915F6D",
+                    "Blueish Lilac (Pur,li.blu)": "#8673A1",
+                    "Slate Lilac (Pur,li.slt)": "#6B5876",
+                    "Violet (Pur,vi)": "#8F00FF",
+                    "Reddish Violet (Pur,vi.r)": "#C71585",
+                    "Slate Violet (Pur,vi.slt)": "#5F4B8B",
+                    "Bright Violet (Pur,vi.bht)": "#7D26CD",
+                    "Dull Violet (Pur,vi.dul)": "#704170",
+                    "Mauve (Pur,mve)": "#E0B0FF",
+                    "Pale Mauve (Pur,mve.pal)": "#F4D8FF",
+                    "Deep Mauve (Pur,mve.dp)": "#D473D4",
+                    "Reddish Mauve (Pur,mve.r)": "#B784A7"
+                  }
                 },
                 {
                   "id": "PurpleColorPicker",
@@ -451,7 +494,23 @@
                     "Black Brown (Br.blk)",
                     "Deep Slate Brown (Br.slt.dp)",
                     "Greyish Brown (Br.gry)"
-                  ]
+                  ],
+                  "shadesToHexMap": {
+                    "Purple Brown (Br.pur)": "#5D3B3A",
+                    "Sepia Brown (Br.sep)": "#704214",
+                    "Pale Brown (Br.pal)": "#987654",
+                    "Bistre Brown (Br.bis)": "#3D2B1F",
+                    "Tan Brown (Br.tan)": "#D2B48C",
+                    "Red Brown (Br.r)": "#A52A2A",
+                    "Deep Red Brown (Br.r.dp)": "#8B4513",
+                    "Chestnut (Br.ch)": "#954535",
+                    "Deep Brown (Br.dp)": "#5C4033",
+                    "Chocolate Brown (Br.cho)": "#7B3F00",
+                    "Deep Chocolate Brown (Br.cho.dp)": "#4F2F2F",
+                    "Black Brown (Br.blk)": "#3B2F2F",
+                    "Deep Slate Brown (Br.slt.dp)": "#5A4E45",
+                    "Greyish Brown (Br.gry)": "#A49A79"
+                  }
                 },
                 {
                   "id": "BrownColorPicker",
@@ -494,7 +553,31 @@
                     "Pink (R.pnk)",
                     "Claret (R.clt)",
                     "Maroon (R.mar)"
-                  ]
+                  ],
+                  "shadesToHexMap": {
+                    "Deep Red (R.dp)": "#8B0000",
+                    "Bright Red (R.bgt)": "#FF0000",
+                    "Dull Red (R.dul)": "#B22222",
+                    "Brown Red (R.br)": "#A52A2A",
+                    "Orange (R.or)": "#FFA500",
+                    "Pale Orange (R.or.pal)": "#FFDAB9",
+                    "Orange Red (R.or.r)": "#FF4500",
+                    "Orange Vermillion (R.or.ver)": "#E34234",
+                    "Rose (R.rs)": "#FF007F",
+                    "Rose Red (R.rs.r)": "#C21E56",
+                    "Pale Rose Red (R.rs.r.pal)": "#FFB6C1",
+                    "Rosine (Bright Rose) (R.rs.bgt)": "#FF66CC",
+                    "Deep Rose Red (R.rs.r.dp)": "#C71585",
+                    "Dull Rose (R.rs.dul)": "#BC8F8F",
+                    "Salmon (R.sal)": "#FA8072",
+                    "Scarlet (R.scar)": "#FF2400",
+                    "Vermillion (R.ver)": "#E34234",
+                    "Carmine (R.car)": "#960018",
+                    "Carmine Vermillion (R.car.ver)": "#D70040",
+                    "Pink (R.pnk)": "#FFC0CB",
+                    "Claret (R.clt)": "#7F1734",
+                    "Maroon (R.mar)": "#800000"
+                  }
                 },
                 {
                   "id": "RedColorPicker",
@@ -530,7 +613,24 @@
                     "Pale Turquoise (Blu.tur.pal)",
                     "Intense Blue (Blu.int)",
                     "Dull Violet Blue (Blu.vi.dul)"
-                  ]
+                  ],
+                  "shadesToHexMap": {
+                    "Indigo (Blu.in)": "#4B0082",
+                    "Greenish Blue (Blu.gr)": "#0D98BA",
+                    "Royal Blue (Blu.roy)": "#4169E1",
+                    "Slate Blue (Blu.slt)": "#6A5ACD",
+                    "Steel Blue (Blu.stl)": "#4682B4",
+                    "Pale Blue (Blu.pal)": "#AFEEEE",
+                    "Bright Blue (Blu.bgt)": "#0096FF",
+                    "Chalky Blue (Blu.clk)": "#B0E0E6",
+                    "Milky Blue (Blu.mlk)": "#CAE1FF",
+                    "Light Blue (Blu.lgt)": "#ADD8E6",
+                    "Ultramarine (Blu.ult)": "#120A8F",
+                    "Deep Turquoise (Blu.tur.dp)": "#00CED1",
+                    "Pale Turquoise (Blu.tur.pal)": "#AFEEEE",
+                    "Intense Blue (Blu.int)": "#0033CC",
+                    "Dull Violet Blue (Blu.vi.dul)": "#6F00FF"
+                  }
                 },
                 {
                   "id": "BlueColorPicker",
@@ -564,7 +664,22 @@
                     "Dark Olive (Gr.ol.drk)",
                     "Deep Green (Gr.dp)",
                     "Sap Green (Gr.sap)"
-                  ]
+                  ],
+                  "shadesToHexMap": {
+                    "Sage (Gr.sag)": "#BCB88A",
+                    "Emerald (Gr.em)": "#50C878",
+                    "Slate Green (Gr.slt)": "#5A6953",
+                    "Yellow Green (Gr.yel)": "#9ACD32",
+                    "Deep Yellow Green (Gr.yel.dp)": "#556B2F",
+                    "Bluish Green (Gr.blu)": "#0D98BA",
+                    "Deep Bluish Green (Gr.blu.dp)": "#01796F",
+                    "Myrtle (Gr.myt)": "#21421E",
+                    "Olive (Gr.ol)": "#808000",
+                    "Light Olive (Gr.ol.lgt)": "#B5B35C",
+                    "Dark Olive (Gr.ol.drk)": "#556B2F",
+                    "Deep Green (Gr.dp)": "#006400",
+                    "Sap Green (Gr.sap)": "#507D2A"
+                  }
                 },
                 {
                   "id": "GreenColorPicker",
@@ -588,7 +703,12 @@
                     "Grey Black (Blk.gry)",
                     "Slate (Blk.slt)",
                     "Brownish Black (Blk.br)"
-                  ]
+                  ],
+                  "shadesToHexMap": {
+                    "Grey Black (Blk.gry)": "#2F2F2F",
+                    "Slate (Blk.slt)": "#708090",
+                    "Brownish Black (Blk.br)": "#2C1608"
+                  }
                 },
                 {
                   "id": "BlackColorPicker",
@@ -612,7 +732,12 @@
                     "Brownish Grey (Gry.br)",
                     "Violet Grey (Gry.vi)",
                     "Slate Grey (Gry.slt)"
-                  ]
+                  ],
+                  "shadesToHexMap": {
+                    "Brownish Grey (Gry.br)": "#756D5D",
+                    "Violet Grey (Gry.vi)": "#7D7098",
+                    "Slate Grey (Gry.slt)": "#708090"
+                  }
                 },
                 {
                   "id": "GreyColorPicker",
@@ -640,7 +765,16 @@
                     "Deep Orange Yellow (Yel.or.dp)",
                     "Mustard Yellow (Yel.mus)",
                     "Olive Yellow (Yel.ol)"
-                  ]
+                  ],
+                  "shadesToHexMap": {
+                    "Pale Yellow (Yel.pal)": "#FFFFE0",
+                    "Bright Yellow (Yel.bgt)": "#FFFF00",
+                    "Ochre Yellow (Yel.och)": "#CC7722",
+                    "Orange Yellow (Yel.or)": "#FFAE42",
+                    "Deep Orange Yellow (Yel.or.dp)": "#E67700",
+                    "Mustard Yellow (Yel.mus)": "#FFDB58",
+                    "Olive Yellow (Yel.ol)": "#BAB86C"
+                  }
                 },
                 {
                   "id": "YellowColorPicker",
@@ -747,7 +881,7 @@
                 "White Paper",
                 "Toned Paper",
                 "Chalk-Surfaced Paper",
-                "Prelure Paper",
+                "Pelure Paper",
                 "Ordinary Paper",
                 "Glazed Fluorescent Paper",
                 "Fluorescent Paper",
@@ -764,7 +898,73 @@
                 "Uncoated Paper",
                 "Gum Arabic Paper",
                 "PVA (Polyvinyl Alcohol) Gum Paper"
-              ]
+              ],
+              "preview": {
+                "White Paper": {
+                  "image": "/images/stamps/white-paper.png",
+                  "description": "White stamp paper is typically made from a special type of paper called bond paper. This paper is often used for legal documents and agreements. It's distinct from regular printing paper due to its characteristics."
+                },
+                "Toned Paper": {
+                  "image": "/images/stamps/toned-paper.png",
+                  "description": "Toned stamp paper typically refers to stamp paper that has a subtle color or tone to it, often a shade of white, beige, or cream. It's not a distinct paper type in itself but rather a characteristic of the paper used for creating stamp papers."
+                },
+                "Chalk-Surfaced Paper": {
+                  "image": "/images/stamps/chalk-surfaced-paper.png",
+                  "description": "Chalk-surfaced paper, sometimes called 'chalky paper' in stamp collecting circles, is characterized by a smooth, slightly rough surface created by coating the paper with chalk or china clay. This coating is often used to make it more difficult to remove stamps from envelopes or other paper backings without damaging the stamp design."
+                },
+                "Pelure Paper": {
+                  "image": "/images/stamps/pelure-paper.png",
+                  "description": "Thin, often brittle, semi-transparent paper and can be either woven or laid and is rendered semi-transparent by the resins used in the manufacturing of the paper. Stamps printed on pelure paper sometimes do not survive wholly intact because of their brittle nature. Pelure is easily identified because of its transparency. Pelure is a French word meaning skin or peel, like that of a banana, which is why sometimes this paper is compared to onionskin paper."
+                },
+                "Ordinary Paper": {
+                  "image": "/images/stamps/no-image-available.png",
+                  "description": "Sometimes the paper is described as ordinary, which simply means that the common paper of the period was used."
+                },
+                "Glazed Fluorescent Paper": {
+                  "image": "/images/stamps/glazed-fluorescent-paper.png",
+                  "description": "Glazed paper is given a glossy finish by glazing with friction of applied heat versus a glossy finish created by a coating. It is synonymous with surfaced-paper."
+                },
+                "Fluorescent Paper": {
+                  "image": "/images/stamps/no-image-available.png",
+                  "description": "Fluorescent stamp paper can refer to different types of paper with varying degrees of fluorescence. Some common examples include fluorescent cardstock, fluorescent label paper, and fluorescent bond paper. These papers are often used for visual impact and highlighting text or images."
+                },
+                "White Fluorescent Paper": {
+                  "image": "/images/stamps/no-image-available.png",
+                  "description": "White Fluorescent Stamp Paper is a specialized paper type, often used for security features or specific printing applications. It's characterized by its white color and ability to fluoresce, or glow, under ultraviolet (UV) light. This fluorescence is often achieved through the addition of fluorescent pigments or dyes. The paper is frequently used in security applications like stamps, certificates, and other documents where authentication and tamper-resistance are important."
+                },
+                "Non-Fluorescent Paper": {
+                  "image": "/images/stamps/no-image-available.png",
+                  "description": "Non-Fluorescent Stamp Paper, commonly referred to as 'dead paper' or 'NF paper' is typically a paper that does not glow or reflect light under ultraviolet (UV) light. It absorbs UV light rather than emitting it, resulting in a dark or dull appearance when examined with a UV lamp."
+                },
+                "Experimental Paper": {
+                  "image": "/images/stamps/no-image-available.png",
+                  "description": "Experimental stamp paper can take various forms. One example is double paper, where two layers of paper are joined, often a thick and a thin sheet, to discourage reuse of stamps by destroying the design upon attempted removal of the stamp. Another example is China Paper, which is a thin, opaque paper used for plate and die proofs. Additionally, bluish paper was used in an experiment to combat paper shrinkage in printing, resulting in stamps with a slightly bluish hue."
+                },
+                "Self-Adhesive Paper": {
+                  "image": "/images/stamps/self-adhesive-paper.png",
+                  "description": "Self-adhesive stamp paper used for modern stamps typically employs a woven paper base, which is then coated with a pressure-sensitive adhesive. Woven paper provides a relatively smooth surface for printing and adheres well to the pressure-sensitive adhesive. The back of the stamp paper is covered with a peelable backing sheet, making it easy to release the stamp from the backing and apply it to envelopes or other surfaces without the need for separate gum application."
+                },
+                "Two-Sided Fluorescent Paper": {
+                  "image": "/images/stamps/two-sided-fluorescent-paper.png",
+                  "description": "Two-sided fluorescent stamp paper is a specialized paper designed for security applications, particularly in the production of postage stamps, revenue stamps, or other official documents. Its key characteristic is that it incorporates fluorescent fibers or chemicals that are visible under ultraviolet (UV) light on both sides of the paper."
+                },
+                "Single-Sided Fluorescent Paper": {
+                  "image": "/images/stamps/single-sided-fluorescent-paper.png",
+                  "description": "Single-Sided Fluorescent Stamp Paper is a specialized security paper where a fluorescent substance is incorporated into or coated onto only one side of the paper. This means that when exposed to ultraviolet (UV) light, only the treated side will glow, typically in a specific color like blue, green, or yellow. This one-sided luminescence serves as a security feature, allowing for quick authentication of documents like postage stamps, as the absence of fluorescence on the reverse side helps prevent counterfeiting."
+                },
+                "Embossed Paper": {
+                  "image": "/images/stamps/embossed-paper.png",
+                  "description": "A square piece of embossed paper with perforated edges, featuring an intricate raised pattern and a soft off-white tone, commonly used in dry printing processes."
+                },
+                "Synthetic Gum-Based Paper": {
+                  "image": "/images/stamps/synthetic-gum-based-paper.png",
+                  "description": "A synthetic gum-based stamp paper with a smooth, glossy surface and perforated edges, reflecting light distinctly—commonly used in philately and may vary in sheen by batch."
+                },
+                "Phosphorised Paper": {
+                  "image": "/images/stamps/no-image-available.png",
+                  "description": "Phosphorised Stamp Paper (P.phs) is a type of security paper used for stamps and other official documents that incorporates phosphor tags or lines directly into the paper during manufacturing. These phosphors are usually invisible under normal light but glow under ultraviolet (UV) light, making them detectable by automated sorting machines in postal services. This allows for the proper orientation and cancellation of stamps, preventing their reuse. The presence and pattern of the phosphor can also serve as an anti-counterfeiting measure."
+                }
+              }
             }
           ]
         },
@@ -780,7 +980,17 @@
               "type": "select",
               "options": ["Horizontal laid", "Vertical laid"]
             }
-          ]
+          ],
+          "preview": {
+            "Horizontal laid": {
+              "image": "/images/stamps/horizontal-laid-paper.png",
+              "description": "Horizontal laid paper is a type of paper that has a horizontal grain. This grain is created by the way the paper is made, and it can be used to create a variety of effects in the stamp design."
+            },
+            "Vertical laid": {
+              "image": "/images/stamps/vertical-laid-paper.png",
+              "description": "Vertical laid paper is a type of paper that has a vertical grain. This grain is created by the way the paper is made, and it can be used to create a variety of effects in the stamp design."
+            }
+          }
         },
         {
           "id": "PaperProdChar",

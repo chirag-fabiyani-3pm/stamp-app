@@ -166,7 +166,7 @@ export default function PendingAuthenticationPage() {
     }
 
     const variant =
-      level in variants ? variants[level as keyof typeof variants] : { bg: "bg-gray-100", text: "text-gray-800" }
+                  level in variants ? variants[level as keyof typeof variants] : { bg: "bg-muted", text: "text-muted-foreground" }
 
     return (
       <Badge variant="outline" className={`${variant.bg} ${variant.text} hover:${variant.bg}`}>
@@ -314,7 +314,7 @@ export default function PendingAuthenticationPage() {
                       </TableCell>
                       <TableCell>{review.submittedAt}</TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="bg-gray-100 text-gray-800">
+                        <Badge variant="outline" className="bg-muted text-muted-foreground">
                           {review.endorsements}
                         </Badge>
                       </TableCell>

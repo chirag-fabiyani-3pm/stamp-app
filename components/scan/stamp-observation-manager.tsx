@@ -23,6 +23,15 @@ export interface CategoryField {
         field: string;
         value: string;
     };
+    preview?: {
+        [key: string]: {
+            image: string;
+            description: string;
+        };
+    };
+    shadesToHexMap?: {
+        [key: string]: string;
+    };
 }
 
 export interface Category extends CategoryField {
@@ -104,7 +113,7 @@ function formatFieldId(id: string): string {
 // Helper function to recursively search for a category label
 function findCategoryInTree(id: string, categories: Category[]): Category | null {
     for (const category of categories) {
-        // Check current category
+        // Check current category - case insensitive
         if (category.id.toLowerCase() === id.toLowerCase()) {
             return category;
         }
@@ -220,7 +229,13 @@ function mapApiDataToFormStructure(apiData: any): Record<string, any> {
             return null;
         }
 
-        return {
+        // Get hex value for the selected shade
+        const shadeFieldId = `${colorCategory.charAt(0).toUpperCase() + colorCategory.slice(1)}Shade`;
+        const colorPickerFieldId = getColorPickerFieldId(shadeFieldId);
+        const shadeField = findCategoryInTree(shadeFieldId, categories);
+        const hexValue = shadeField ? getHexFromShade(colorShade, shadeField) : null;
+
+        const colorData: any = {
             colortype: colorType,
             singlecolor: {
                 [colorCategory]: {
@@ -228,6 +243,13 @@ function mapApiDataToFormStructure(apiData: any): Record<string, any> {
                 }
             }
         };
+
+        // Add hex value to color picker field if available
+        if (colorPickerFieldId && hexValue) {
+            colorData.singlecolor[colorCategory][`${colorCategory}colorpicker`] = hexValue;
+        }
+
+        return colorData;
     };
 
     // Helper function to map paper type
@@ -492,6 +514,48 @@ function mapApiDataToFormStructure(apiData: any): Record<string, any> {
     return formData;
 }
 
+    // Helper function to get preview data from categories
+    const getPreviewData = (option: string, field?: Category) => {
+        if (!field?.preview || !field.preview[option]) {
+            return null;
+        }
+        return field.preview[option];
+    };
+
+    // Helper function to get hex value from shadesToHexMap
+    const getHexFromShade = (option: string, field?: Category | null) => {
+        if (!field?.shadesToHexMap || !field.shadesToHexMap[option]) {
+            return null;
+        }
+        return field.shadesToHexMap[option];
+    };
+
+    // Helper function to find the corresponding color picker field for a shade field
+    const getColorPickerFieldId = (shadeFieldId: string): string | null => {
+        // Create a case-insensitive mapping
+        const colorPickerMap: Record<string, string> = {
+            'purpleshade': 'PurpleColorPicker',
+            'brownshade': 'BrownColorPicker',
+            'redshade': 'RedColorPicker',
+            'blueshade': 'BlueColorPicker',
+            'greenshade': 'GreenColorPicker',
+            'blackshade': 'BlackColorPicker',
+            'greyshade': 'GreyColorPicker',
+            'yellowshade': 'YellowColorPicker',
+            // Also support PascalCase for Edit tab compatibility
+            'PurpleShade': 'PurpleColorPicker',
+            'BrownShade': 'BrownColorPicker',
+            'RedShade': 'RedColorPicker',
+            'BlueShade': 'BlueColorPicker',
+            'GreenShade': 'GreenColorPicker',
+            'BlackShade': 'BlackColorPicker',
+            'GreyShade': 'GreyColorPicker',
+            'YellowShade': 'YellowColorPicker'
+        };
+        const result = colorPickerMap[shadeFieldId] || null;
+        return result;
+    };
+
 // Update the EditablePreviewItem interface to match the expected signature
 function EditablePreviewItem({
     label,
@@ -510,6 +574,14 @@ function EditablePreviewItem({
 }) {
     const [isEditing, setIsEditing] = useState(false);
     const [editingValue, setEditingValue] = useState(String(value || ''));
+    const [showPreview, setShowPreview] = useState(false);
+
+    // Sync internal editing value with external value prop when it changes
+    useEffect(() => {
+        if (!isEditing) {
+            setEditingValue(String(value || ''));
+        }
+    }, [value, isEditing]);
 
     const handleEdit = () => {
         setIsEditing(true);
@@ -534,11 +606,50 @@ function EditablePreviewItem({
         }
     };
 
+    // Check if this is a select field with a value and has preview data
+    const previewData = field?.type === 'select' && value && value.trim() !== '' ? getPreviewData(value, field) : null;
+    const shouldShowInfoIcon = !!previewData;
+
     if (!field?.type) return null;
 
     return (
         <div className="group p-3 sm:p-4 rounded-lg border transition-colors relative">
-            <div className="absolute right-2 top-2 transition-opacity">
+            <div className="absolute right-2 top-2 transition-opacity flex gap-1">
+                {/* Info icon for select fields with values and preview data */}
+                {shouldShowInfoIcon && previewData && (
+                    <Dialog open={showPreview} onOpenChange={setShowPreview}>
+                        <DialogTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-primary hover:text-primary/80 hover:bg-primary/10"
+                                title="View example preview"
+                            >
+                                <Info className="h-4 w-4" />
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-md">
+                            <DialogHeader>
+                                <DialogTitle>Example Preview: {value}</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                                <div className="relative aspect-video rounded-lg overflow-hidden border">
+                                    <Image
+                                        src={previewData.image}
+                                        alt={`Example preview for ${value}`}
+                                        fill
+                                        className="object-contain"
+                                    />
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                    {previewData.description}
+                                </div>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                )}
+                
+                {/* Edit icon */}
                 <Button
                     variant="ghost"
                     size="sm"
@@ -656,6 +767,7 @@ function PreviewItem({
                         <div key={key} className="space-y-2">
                             {onUpdate ? (
                                 <EditablePreviewItem
+                                    key={`${key}-${String(value)}`}
                                     label={key}
                                     value={value}
                                     path={[...path, key]}
@@ -695,6 +807,7 @@ function PreviewItem({
     // For primitive values at root level
     return onUpdate ? (
         <EditablePreviewItem
+            key={`${label}-${String(value)}`}
             label={label}
             value={value}
             path={path}
@@ -1324,19 +1437,116 @@ export default function StampObservationManager({
                     pathSegments.push('rarityrating');
                     break;
                 case 'PurpleShade':
+                    // Check if 'purple' is already in the path from navigation
+                    if (!pathSegments.includes('purple')) {
+                        pathSegments.push('purple');
+                    }
                     pathSegments.push('purpleshade');
                     break;
+                case 'PurpleColorPicker':
+                    // Check if 'purple' is already in the path from navigation
+                    if (!pathSegments.includes('purple')) {
+                        pathSegments.push('purple');
+                    }
+                    pathSegments.push('purplecolorpicker');
+                    break;
                 case 'BrownShade':
+                    // Check if 'brown' is already in the path from navigation
+                    if (!pathSegments.includes('brown')) {
+                        pathSegments.push('brown');
+                    }
                     pathSegments.push('brownshade');
                     break;
+                case 'BrownColorPicker':
+                    // Check if 'brown' is already in the path from navigation
+                    if (!pathSegments.includes('brown')) {
+                        pathSegments.push('brown');
+                    }
+                    pathSegments.push('browncolorpicker');
+                    break;
                 case 'RedShade':
+                    // Check if 'red' is already in the path from navigation
+                    if (!pathSegments.includes('red')) {
+                        pathSegments.push('red');
+                    }
                     pathSegments.push('redshade');
                     break;
+                case 'RedColorPicker':
+                    // Check if 'red' is already in the path from navigation
+                    if (!pathSegments.includes('red')) {
+                        pathSegments.push('red');
+                    }
+                    pathSegments.push('redcolorpicker');
+                    break;
                 case 'BlueShade':
+                    // Check if 'blue' is already in the path from navigation
+                    if (!pathSegments.includes('blue')) {
+                        pathSegments.push('blue');
+                    }
                     pathSegments.push('blueshade');
                     break;
+                case 'BlueColorPicker':
+                    // Check if 'blue' is already in the path from navigation
+                    if (!pathSegments.includes('blue')) {
+                        pathSegments.push('blue');
+                    }
+                    pathSegments.push('bluecolorpicker');
+                    break;
                 case 'GreenShade':
+                    // Check if 'green' is already in the path from navigation
+                    if (!pathSegments.includes('green')) {
+                        pathSegments.push('green');
+                    }
                     pathSegments.push('greenshade');
+                    break;
+                case 'GreenColorPicker':
+                    // Check if 'green' is already in the path from navigation
+                    if (!pathSegments.includes('green')) {
+                        pathSegments.push('green');
+                    }
+                    pathSegments.push('greencolorpicker');
+                    break;
+                case 'BlackShade':
+                    // Check if 'black' is already in the path from navigation
+                    if (!pathSegments.includes('black')) {
+                        pathSegments.push('black');
+                    }
+                    pathSegments.push('blackshade');
+                    break;
+                case 'BlackColorPicker':
+                    // Check if 'black' is already in the path from navigation
+                    if (!pathSegments.includes('black')) {
+                        pathSegments.push('black');
+                    }
+                    pathSegments.push('blackcolorpicker');
+                    break;
+                case 'GreyShade':
+                    // Check if 'grey' is already in the path from navigation
+                    if (!pathSegments.includes('grey')) {
+                        pathSegments.push('grey');
+                    }
+                    pathSegments.push('greyshade');
+                    break;
+                case 'GreyColorPicker':
+                    // Check if 'grey' is already in the path from navigation
+                    if (!pathSegments.includes('grey')) {
+                        pathSegments.push('grey');
+                    }
+                    pathSegments.push('greycolorpicker');
+                    break;
+                case 'YellowShade':
+                    // Check if 'yellow' is already in the path from navigation
+                    if (!pathSegments.includes('yellow')) {
+                        pathSegments.push('yellow');
+                    }
+                    pathSegments.push('yellowshade');
+                    break;
+                case 'YellowColorPicker':
+                    // Check if 'yellow' is already in the path from navigation
+                    if (!pathSegments.includes('yellow')) {
+                        pathSegments.push('yellow');
+                    }
+                    pathSegments.push('yellowcolorpicker');
                     break;
                 default:
                     pathSegments.push(fieldId.toLowerCase());
@@ -1478,19 +1688,116 @@ export default function StampObservationManager({
                         pathSegments.push('rarityrating');
                         break;
                     case 'PurpleShade':
+                        // Check if 'purple' is already in the path from navigation
+                        if (!pathSegments.includes('purple')) {
+                            pathSegments.push('purple');
+                        }
                         pathSegments.push('purpleshade');
                         break;
+                    case 'PurpleColorPicker':
+                        // Check if 'purple' is already in the path from navigation
+                        if (!pathSegments.includes('purple')) {
+                            pathSegments.push('purple');
+                        }
+                        pathSegments.push('purplecolorpicker');
+                        break;
                     case 'BrownShade':
+                        // Check if 'brown' is already in the path from navigation
+                        if (!pathSegments.includes('brown')) {
+                            pathSegments.push('brown');
+                        }
                         pathSegments.push('brownshade');
                         break;
+                    case 'BrownColorPicker':
+                        // Check if 'brown' is already in the path from navigation
+                        if (!pathSegments.includes('brown')) {
+                            pathSegments.push('brown');
+                        }
+                        pathSegments.push('browncolorpicker');
+                        break;
                     case 'RedShade':
+                        // Check if 'red' is already in the path from navigation
+                        if (!pathSegments.includes('red')) {
+                            pathSegments.push('red');
+                        }
                         pathSegments.push('redshade');
                         break;
+                    case 'RedColorPicker':
+                        // Check if 'red' is already in the path from navigation
+                        if (!pathSegments.includes('red')) {
+                            pathSegments.push('red');
+                        }
+                        pathSegments.push('redcolorpicker');
+                        break;
                     case 'BlueShade':
+                        // Check if 'blue' is already in the path from navigation
+                        if (!pathSegments.includes('blue')) {
+                            pathSegments.push('blue');
+                        }
                         pathSegments.push('blueshade');
                         break;
+                    case 'BlueColorPicker':
+                        // Check if 'blue' is already in the path from navigation
+                        if (!pathSegments.includes('blue')) {
+                            pathSegments.push('blue');
+                        }
+                        pathSegments.push('bluecolorpicker');
+                        break;
                     case 'GreenShade':
+                        // Check if 'green' is already in the path from navigation
+                        if (!pathSegments.includes('green')) {
+                            pathSegments.push('green');
+                        }
                         pathSegments.push('greenshade');
+                        break;
+                    case 'GreenColorPicker':
+                        // Check if 'green' is already in the path from navigation
+                        if (!pathSegments.includes('green')) {
+                            pathSegments.push('green');
+                        }
+                        pathSegments.push('greencolorpicker');
+                        break;
+                    case 'BlackShade':
+                        // Check if 'black' is already in the path from navigation
+                        if (!pathSegments.includes('black')) {
+                            pathSegments.push('black');
+                        }
+                        pathSegments.push('blackshade');
+                        break;
+                    case 'BlackColorPicker':
+                        // Check if 'black' is already in the path from navigation
+                        if (!pathSegments.includes('black')) {
+                            pathSegments.push('black');
+                        }
+                        pathSegments.push('blackcolorpicker');
+                        break;
+                    case 'GreyShade':
+                        // Check if 'grey' is already in the path from navigation
+                        if (!pathSegments.includes('grey')) {
+                            pathSegments.push('grey');
+                        }
+                        pathSegments.push('greyshade');
+                        break;
+                    case 'GreyColorPicker':
+                        // Check if 'grey' is already in the path from navigation
+                        if (!pathSegments.includes('grey')) {
+                            pathSegments.push('grey');
+                        }
+                        pathSegments.push('greycolorpicker');
+                        break;
+                    case 'YellowShade':
+                        // Check if 'yellow' is already in the path from navigation
+                        if (!pathSegments.includes('yellow')) {
+                            pathSegments.push('yellow');
+                        }
+                        pathSegments.push('yellowshade');
+                        break;
+                    case 'YellowColorPicker':
+                        // Check if 'yellow' is already in the path from navigation
+                        if (!pathSegments.includes('yellow')) {
+                            pathSegments.push('yellow');
+                        }
+                        pathSegments.push('yellowcolorpicker');
                         break;
                     default:
                         pathSegments.push(fieldId.toLowerCase());
@@ -1561,6 +1868,45 @@ export default function StampObservationManager({
             // Update the form data using the robust setter
             let newFormData = setNestedValue(formData, formPath, value);
 
+
+            // AUTO-SET COLOR PICKER: If a shade is selected, automatically set the corresponding color picker
+            const colorPickerFieldId = getColorPickerFieldId(fieldId);
+            if (colorPickerFieldId && value && value.trim() !== '') {
+                // Find the current field to get shadesToHexMap
+                const currentField = findCategoryInTree(fieldId, allCategories);
+                const hexValue = currentField ? getHexFromShade(value, currentField) : null;
+                
+                if (hexValue) {
+                    // Create path for the color picker field by modifying the shade field path
+                    const shadeFieldPath = createFieldPath(navigationPath, fieldId);
+                    
+                    // Replace the last segment (shade field) with the color picker field
+                    const colorPickerPath = [...shadeFieldPath];
+                    const lastSegment = colorPickerPath[colorPickerPath.length - 1];
+                    
+                    // Map shade field names to color picker field names
+                    if (lastSegment === 'purpleshade') {
+                        colorPickerPath[colorPickerPath.length - 1] = 'purplecolorpicker';
+                    } else if (lastSegment === 'brownshade') {
+                        colorPickerPath[colorPickerPath.length - 1] = 'browncolorpicker';
+                    } else if (lastSegment === 'redshade') {
+                        colorPickerPath[colorPickerPath.length - 1] = 'redcolorpicker';
+                    } else if (lastSegment === 'blueshade') {
+                        colorPickerPath[colorPickerPath.length - 1] = 'bluecolorpicker';
+                    } else if (lastSegment === 'greenshade') {
+                        colorPickerPath[colorPickerPath.length - 1] = 'greencolorpicker';
+                    } else if (lastSegment === 'blackshade') {
+                        colorPickerPath[colorPickerPath.length - 1] = 'blackcolorpicker';
+                    } else if (lastSegment === 'greyshade') {
+                        colorPickerPath[colorPickerPath.length - 1] = 'greycolorpicker';
+                    } else if (lastSegment === 'yellowshade') {
+                        colorPickerPath[colorPickerPath.length - 1] = 'yellowcolorpicker';
+                    }
+                    
+                    newFormData = setNestedValue(newFormData, colorPickerPath, hexValue);
+                }
+            }
+
             // AUTO-SET WATERMARK PRESENCE: If any watermark detail is filled, set presence to "Yes"
             const isWatermarkDetailField = (
                 fieldId.toLowerCase().includes('wmk') ||
@@ -1599,7 +1945,58 @@ export default function StampObservationManager({
             const formPath = createFieldPath(path.slice(0, -1), fieldId);
 
             // Update the form data using the robust setter
-            const newFormData = setNestedValue(formData, formPath, value);
+            let newFormData = setNestedValue(formData, formPath, value);
+
+            // AUTO-SET COLOR PICKER: If a shade is selected, automatically set the corresponding color picker
+            const colorPickerFieldId = getColorPickerFieldId(fieldId);
+            
+            if (colorPickerFieldId && value && value.trim() !== '') {
+                // Find the current field to get shadesToHexMap
+                // Try to map lowercase field ID to proper case if needed
+                let searchFieldId = fieldId;
+                if (fieldId.toLowerCase() === 'brownshade') searchFieldId = 'BrownShade';
+                else if (fieldId.toLowerCase() === 'purpleshade') searchFieldId = 'PurpleShade';
+                else if (fieldId.toLowerCase() === 'redshade') searchFieldId = 'RedShade';
+                else if (fieldId.toLowerCase() === 'blueshade') searchFieldId = 'BlueShade';
+                else if (fieldId.toLowerCase() === 'greenshade') searchFieldId = 'GreenShade';
+                else if (fieldId.toLowerCase() === 'blackshade') searchFieldId = 'BlackShade';
+                else if (fieldId.toLowerCase() === 'greyshade') searchFieldId = 'GreyShade';
+                else if (fieldId.toLowerCase() === 'yellowshade') searchFieldId = 'YellowShade';
+                
+                const currentField = findCategoryInTree(searchFieldId, allCategories);
+                const hexValue = currentField ? getHexFromShade(value, currentField) : null;
+                
+                if (hexValue) {
+                    // Create path for the color picker field by modifying the shade field path
+                    const shadeFieldPath = createFieldPath(path.slice(0, -1), fieldId);
+                    
+                    // Replace the last segment (shade field) with the color picker field
+                    const colorPickerPath = [...shadeFieldPath];
+                    const lastSegment = colorPickerPath[colorPickerPath.length - 1];
+                    
+                    // Map shade field names to color picker field names
+                    if (lastSegment === 'purpleshade') {
+                        colorPickerPath[colorPickerPath.length - 1] = 'purplecolorpicker';
+                    } else if (lastSegment === 'brownshade') {
+                        colorPickerPath[colorPickerPath.length - 1] = 'browncolorpicker';
+                    } else if (lastSegment === 'redshade') {
+                        colorPickerPath[colorPickerPath.length - 1] = 'redcolorpicker';
+                    } else if (lastSegment === 'blueshade') {
+                        colorPickerPath[colorPickerPath.length - 1] = 'bluecolorpicker';
+                    } else if (lastSegment === 'greenshade') {
+                        colorPickerPath[colorPickerPath.length - 1] = 'greencolorpicker';
+                    } else if (lastSegment === 'blackshade') {
+                        colorPickerPath[colorPickerPath.length - 1] = 'blackcolorpicker';
+                    } else if (lastSegment === 'greyshade') {
+                        colorPickerPath[colorPickerPath.length - 1] = 'greycolorpicker';
+                    } else if (lastSegment === 'yellowshade') {
+                        colorPickerPath[colorPickerPath.length - 1] = 'yellowcolorpicker';
+                    }
+                    
+                    newFormData = setNestedValue(newFormData, colorPickerPath, hexValue);
+                }
+            }
+
             setFormData(newFormData);
 
         } catch (error) {
@@ -1887,25 +2284,67 @@ export default function StampObservationManager({
     // Update renderField to use the correct Edit Tab functions
     const renderField = (field: Category) => {
         const currentValue = getEditTabFormValue(navigationPath, field.id);
+        // Check if preview data exists for the current value
+        const previewData = field.type === 'select' && currentValue && currentValue.trim() !== '' ? getPreviewData(currentValue, field) : null;
+        const shouldShowInfoIcon = !!previewData;
 
         switch (field.type) {
             case 'select':
                 return (
-                    <Select
-                        value={currentValue}
-                        onValueChange={(value) => handleEditTabFieldChange(navigationPath, field.id, value)}
-                    >
-                        <SelectTrigger>
-                            <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {field.options?.map((option) => (
-                                <SelectItem key={option} value={option}>
-                                    {option}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                            <Select
+                                value={currentValue}
+                                onValueChange={(value) => handleEditTabFieldChange(navigationPath, field.id, value)}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {field.options?.map((option) => (
+                                        <SelectItem key={option} value={option}>
+                                            {option}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            
+                            {/* Info icon for select fields with preview data */}
+                            {shouldShowInfoIcon && previewData && (
+                                <Dialog>
+                                    <DialogTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="px-3 text-blue-600 hover:text-blue-800 hover:bg-blue-50 border-blue-200"
+                                            title="View example preview"
+                                        >
+                                            <Info className="h-4 w-4" />
+                                            <span className="ml-1 hidden sm:inline">Preview</span>
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="max-w-md">
+                                        <DialogHeader>
+                                            <DialogTitle>Example Preview: {currentValue}</DialogTitle>
+                                        </DialogHeader>
+                                        <div className="space-y-4">
+                                            <div className="relative aspect-video rounded-lg overflow-hidden border">
+                                                <Image
+                                                    src={previewData.image}
+                                                    alt={`Example preview for ${currentValue}`}
+                                                    fill
+                                                    className="object-cover"
+                                                />
+                                            </div>
+                                            <div className="text-sm text-muted-foreground">
+                                                {previewData.description}
+                                            </div>
+                                        </div>
+                                    </DialogContent>
+                                </Dialog>
+                            )}
+                        </div>
+                    </div>
                 );
             case 'textarea':
                 return (
@@ -3282,7 +3721,7 @@ export default function StampObservationManager({
 
     // Interactive Stamp Code Component
     const InteractiveStampCode = () => (
-        <div className="sticky top-16 z-50 mb-6">
+        <div className="sticky top-16 z-50 mb-6" data-form-content>
             <Card className="border border-gray-200 bg-white/95 backdrop-blur-sm shadow-sm">
                 <div className="p-3">
                     <div className="flex flex-col items-center gap-3">
@@ -3718,12 +4157,12 @@ export default function StampObservationManager({
                             <div className="text-xs flex flex-row justify-center gap-5  text-muted-foreground mt-3 text-center w-full items-center">
                                 {selectedStamp.apiData && (
                                     <div className="text-sm">
-                                        Actual Price: {selectedStamp.apiData?.actualPrice}
+                                        Actual Price: {selectedStamp.apiData?.actualPrice || 'N/A'}
                                     </div>
                                 )}
                                 {selectedStamp.apiData && (
                                     <div className="text-sm">
-                                        Estimated Price: {selectedStamp.apiData?.estimatedMarketValue}
+                                        Estimated Price: {selectedStamp.apiData?.estimatedMarketValue || 'N/A'}
                                     </div>
                                 )}
                             </div>
@@ -3768,7 +4207,7 @@ export default function StampObservationManager({
                         </div>
 
                         {/* Form Content */}
-                        <Card className="p-3 sm:p-6 mb-6" data-form-content>
+                        <Card className="p-3 sm:p-6 mb-6">
                             {renderContent()}
                         </Card>
                     </TabsContent>

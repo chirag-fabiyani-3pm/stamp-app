@@ -103,7 +103,7 @@ export default function StampMagnifier({ imageSrc, imageAlt }: StampMagnifierPro
         {/* Main image container */}
         <div
           ref={containerRef}
-          className="relative border rounded-lg overflow-hidden bg-white"
+          className="relative border rounded-lg overflow-hidden bg-card"
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
           onTouchMove={handleTouchMove}
@@ -147,7 +147,7 @@ export default function StampMagnifier({ imageSrc, imageAlt }: StampMagnifierPro
         </div>
 
         {/* Magnified view container - outside the main image */}
-        <div className="border rounded-lg overflow-hidden bg-white">
+        <div className="border rounded-lg overflow-hidden bg-card">
           <div className="aspect-square relative">
             {showMagnifier ? (
               <div
@@ -159,7 +159,7 @@ export default function StampMagnifier({ imageSrc, imageAlt }: StampMagnifierPro
                 }}
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gray-50">
+              <div className="w-full h-full flex items-center justify-center bg-muted">
                 <p className="text-muted-foreground text-center p-4">
                   {touchUsed ? "Tap and drag" : "Hover"} over the stamp image to see magnified details here
                 </p>
