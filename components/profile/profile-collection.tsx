@@ -185,15 +185,30 @@ export default function ProfileCollection() {
       }
 
       const responseText = await response.text()
-      if (!responseText.trim()) {
-        throw new Error('Received empty response from server. Please try again.')
-      }
-
+      
       let data: StampsResponse
       try {
-        data = JSON.parse(responseText)
+        // Handle empty response as valid (might indicate no stamps)
+        if (!responseText.trim()) {
+          data = {
+            items: [],
+            pageNumber: 1,
+            pageSize: itemsPerPage,
+            totalCount: 0,
+            totalPages: 0,
+            hasPreviousPage: false,
+            hasNextPage: false
+          }
+        } else {
+          data = JSON.parse(responseText)
+        }
       } catch (parseError) {
         throw new Error('Unable to process server response. Please try again.')
+      }
+      
+      // Validate response structure
+      if (!data || typeof data !== 'object' || !Array.isArray(data.items)) {
+        throw new Error('Received invalid response format from server. Please try again.')
       }
       
       setStamps(data.items)
@@ -376,7 +391,7 @@ export default function ProfileCollection() {
     return (
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full flex-col md:flex-row">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 text-muted-foreground" />
               <Input
@@ -881,21 +896,56 @@ export default function ProfileCollection() {
 
   function renderStampsList(stamps: StampData[]) {
     if (stamps.length === 0) {
-      return (
-        <div className="text-center py-12 bg-muted rounded-lg">
-          <p className="text-muted-foreground mb-4">No stamps found matching your criteria.</p>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setSearchTerm("")
-              setCountryFilter("all")
-              fetchStamps(1, "", "all", itemsPerPage)
-            }}
-          >
-            Clear Filters
-          </Button>
-        </div>
-      )
+      // Check if this is due to filters or genuinely no stamps in collection
+      const hasActiveFilters = searchTerm !== "" || countryFilter !== "all"
+      const isEmptyCollection = totalCount === 0 && !hasActiveFilters
+      
+      if (isEmptyCollection) {
+        return (
+          <div className="text-center py-16 bg-gradient-to-br from-muted/30 to-muted/60 rounded-lg">
+            <div className="max-w-md mx-auto">
+              <div className="mb-6">
+                <div className="w-24 h-24 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
+                  <Plus className="h-12 w-12 text-primary/60" />
+                </div>
+                <h3 className="text-xl font-semibold text-foreground mb-2">Start Your Collection</h3>
+                <p className="text-muted-foreground mb-6">
+                  You haven't added any stamps to your collection yet. Start by scanning or adding your first stamp!
+                </p>
+              </div>
+              <Link href="/scan">
+                <Button className="gap-2" size="lg">
+                  <Plus className="h-4 w-4" /> Add Your First Stamp
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )
+      } else {
+        return (
+          <div className="text-center py-12 bg-muted/50 rounded-lg">
+            <div className="max-w-md mx-auto">
+              <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-full flex items-center justify-center">
+                <Search className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-medium text-foreground mb-2">No Stamps Found</h3>
+              <p className="text-muted-foreground mb-4">
+                No stamps match your current search criteria. Try adjusting your filters or search terms.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSearchTerm("")
+                  setCountryFilter("all")
+                  fetchStamps(1, "", "all", itemsPerPage)
+                }}
+              >
+                Clear Filters
+              </Button>
+            </div>
+          </div>
+        )
+      }
     }
 
     return (

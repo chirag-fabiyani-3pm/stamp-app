@@ -19,36 +19,22 @@ import { AuthGuard } from "@/components/auth/route-guard"
 // API Types based on the provided structure
 interface ApiStamp {
   id: string
-  catalogId: string
+  stampCatalogCode: string
   name: string
-  publisher: string
+  publisher: string | null
   country: string
   stampImageUrl: string
   catalogName: string
   catalogNumber: string
   seriesName: string
   issueDate: string
+  issueYear: number | null
   denominationValue: number
   denominationCurrency: string
   denominationSymbol: string
   color: string
-  design: string
-  theme: string
-  artist: string
-  engraver: string
-  printing: string
-  paperType: string
-  perforation: string
-  size: string
-  specialNotes: string
-  historicalContext: string
-  printingQuantity: number
-  usagePeriod: string
-  rarenessLevel: string
-  hasGum: boolean
-  gumCondition: string
-  description: string
-  watermark: string | null
+  paperType: string | null
+  stampDetailsJson: string
 }
 
 interface ApiHierarchy {
@@ -176,14 +162,70 @@ const getJWT = (): string | null => {
   return null;
 };
 
+// Helper function to parse stamp details JSON
+const parseStampDetails = (stampDetailsJson: string) => {
+  try {
+    const details = JSON.parse(stampDetailsJson);
+    const getNestedValue = (obj: any, path: string): string => {
+      const keys = path.split('.');
+      let current = obj;
+      for (const key of keys) {
+        if (current && typeof current === 'object' && key in current) {
+          current = current[key];
+        } else {
+          return '';
+        }
+      }
+      return typeof current === 'string' ? current : '';
+    };
+
+    // Extract relevant information from the parsed JSON
+    const printingMethod = getNestedValue(details, 'printchar.printmethods.printmethod.value') || 
+                          getNestedValue(details, 'printmethod.value') || '';
+    const perforation = getNestedValue(details, 'perfsep.perftype.value') || 
+                       getNestedValue(details, 'perftype.value') || '';
+    const watermarkPresence = getNestedValue(details, 'wmkchar.watermarkpresence.value') || '';
+    const hasWatermark = watermarkPresence.toLowerCase().includes('yes') || watermarkPresence.toLowerCase().includes('watermark');
+    const hasGum = getNestedValue(details, 'primarydetails.gum.value') || '';
+    const theme = getNestedValue(details, 'theme.value') || '';
+    const paperType = getNestedValue(details, 'paperchar.papertypes.papertype.value') || '';
+    const rarityRating = getNestedValue(details, 'knownrarity.rarityrating.value') || '';
+    
+    return {
+      printingMethod,
+      perforation,
+      hasWatermark,
+      hasGum: hasGum.toLowerCase().includes('original') || hasGum.toLowerCase().includes('gum'),
+      theme,
+      paperType,
+      rarityRating,
+      notes: ''
+    };
+  } catch (error) {
+    console.warn('Error parsing stamp details JSON:', error);
+    return {
+      printingMethod: '',
+      perforation: '',
+      hasWatermark: false,
+      hasGum: false,
+      theme: '',
+      paperType: '',
+      rarityRating: '',
+      notes: ''
+    };
+  }
+};
+
 // Helper function to transform API stamp to internal format
 const transformStamp = (apiStamp: ApiStamp, position: string = "variety"): TransformedStamp => {
+  const stampDetails = parseStampDetails(apiStamp.stampDetailsJson);
+  
   return {
     id: apiStamp.id,
     name: apiStamp.name,
     imagePath: apiStamp.stampImageUrl,
     position,
-    description: apiStamp.description,
+    description: apiStamp.name,
     colorName: apiStamp.color,
     year: new Date(apiStamp.issueDate).getFullYear().toString(),
     denomination: `${apiStamp.denominationValue}${apiStamp.denominationSymbol}`,
@@ -191,24 +233,24 @@ const transformStamp = (apiStamp: ApiStamp, position: string = "variety"): Trans
       sg: apiStamp.catalogNumber || undefined,
     },
     features: [
-      ...(apiStamp.perforation ? [apiStamp.perforation] : []),
-      ...(apiStamp.watermark ? ['Watermark'] : []),
-      ...(apiStamp.hasGum ? ['Original Gum'] : []),
+      ...(stampDetails.perforation ? [stampDetails.perforation] : []),
+      ...(stampDetails.hasWatermark ? ['Watermark'] : []),
+      ...(stampDetails.hasGum ? ['Original Gum'] : []),
     ],
-    printingMethod: apiStamp.printing,
-    paper: apiStamp.paperType,
+    printingMethod: stampDetails.printingMethod || apiStamp.paperType || '',
+    paper: stampDetails.paperType || apiStamp.paperType || '',
     country: apiStamp.country,
     issueSeries: apiStamp.seriesName,
-    code: apiStamp.catalogId,
+    code: apiStamp.stampCatalogCode,
         varieties: [
       { name: "Color", description: apiStamp.color },
-      { name: "Design", description: apiStamp.design },
-      { name: "Theme", description: apiStamp.theme },
+      { name: "Design", description: apiStamp.seriesName },
+      { name: "Theme", description: stampDetails.theme || apiStamp.seriesName },
     ],
-    watermarkType: apiStamp.watermark || undefined,
-    collectorGroup: apiStamp.theme,
-    rarityRating: apiStamp.rarenessLevel,
-    notes: apiStamp.specialNotes + (apiStamp.historicalContext ? ` | ${apiStamp.historicalContext}` : ''),
+    watermarkType: stampDetails.hasWatermark ? 'Present' : undefined,
+    collectorGroup: apiStamp.seriesName,
+    rarityRating: stampDetails.rarityRating || 'Unknown',
+    notes: stampDetails.notes,
   };
 };
 
@@ -266,7 +308,7 @@ const organizeStampsBySeries = (apiData: ApiSeries): SeriesGroup[] => {
       return {
       id: series.seriesName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
       seriesName: series.seriesName,
-      description: firstStamp?.description || `${series.seriesName} stamp series`,
+      description: firstStamp?.name || `${series.seriesName} stamp series`,
       image: firstStamp?.stampImageUrl || '',
       country: firstStamp?.country || 'Unknown',
       yearRange,
@@ -790,7 +832,8 @@ function CatalogPage() {
   });
   
   // API state
-  const [seriesGroups, setSeriesGroups] = useState<SeriesGroup[]>([]);
+  const [allSeriesGroups, setAllSeriesGroups] = useState<SeriesGroup[]>([]); // Store original data
+  const [seriesGroups, setSeriesGroups] = useState<SeriesGroup[]>([]); // Store filtered data
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
@@ -801,8 +844,126 @@ function CatalogPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
   
-  // Fetch data from API with filters
-  const fetchCatalogData = async (page: number = currentPage, filters = selectedFilters, search = searchTerm) => {
+  // Client-side filtering function
+  const applyFilters = (data: SeriesGroup[], filters: typeof selectedFilters, search: string) => {
+    return data.filter(seriesGroup => {
+      // Get all stamps from the series
+      const allStamps = seriesGroup.hierarchies.flatMap(h => h.varieties);
+      
+      // Search filter - check series name and stamp names
+      if (search && search.trim() !== '') {
+        const searchLower = search.toLowerCase();
+        const matchesSearch = seriesGroup.seriesName.toLowerCase().includes(searchLower) ||
+                            allStamps.some(stamp => 
+                              stamp.name.toLowerCase().includes(searchLower) ||
+                              stamp.colorName.toLowerCase().includes(searchLower) ||
+                              stamp.denomination.toLowerCase().includes(searchLower)
+                            );
+        if (!matchesSearch) return false;
+      }
+
+      // Country filter
+      if (filters.country !== 'all') {
+        if (seriesGroup.country !== filters.country) return false;
+      }
+
+      // Series filter
+      if (filters.series !== 'all') {
+        if (seriesGroup.seriesName !== filters.series) return false;
+      }
+
+      // Year filter
+      if (filters.year !== 'all') {
+        const yearRange = getFilterData.yearRanges.find(range => range.value === filters.year);
+        if (yearRange) {
+          const hasMatchingYear = allStamps.some(stamp => 
+            yearRange.years.includes(stamp.year)
+          );
+          if (!hasMatchingYear) return false;
+        }
+      }
+
+      // Denomination filter
+      if (filters.denomination !== 'all') {
+        const hasMatchingDenomination = allStamps.some(stamp =>
+          stamp.denomination === filters.denomination
+        );
+        if (!hasMatchingDenomination) return false;
+      }
+
+      // Color filter
+      if (filters.color !== 'all') {
+        const hasMatchingColor = allStamps.some(stamp =>
+          stamp.colorName.toLowerCase().includes(filters.color.toLowerCase())
+        );
+        if (!hasMatchingColor) return false;
+      }
+
+      // Printing Method filter
+      if (filters.printingMethod !== 'all') {
+        const hasMatchingPrintingMethod = allStamps.some(stamp =>
+          stamp.printingMethod.toLowerCase().includes(filters.printingMethod.toLowerCase())
+        );
+        if (!hasMatchingPrintingMethod) return false;
+      }
+
+      // Theme filter (check collector group/series theme)
+      if (filters.theme !== 'all') {
+        const hasMatchingTheme = allStamps.some(stamp =>
+          stamp.collectorGroup?.toLowerCase().includes(filters.theme.toLowerCase()) ||
+          stamp.varieties.some(variety => 
+            variety.name === 'Theme' && 
+            variety.description.toLowerCase().includes(filters.theme.toLowerCase())
+          )
+        );
+        if (!hasMatchingTheme) return false;
+      }
+
+      // Features filter (watermark, perforation, etc.)
+      if (filters.features.size > 0) {
+        const hasMatchingFeatures = Array.from(filters.features).every(feature =>
+          allStamps.some(stamp => 
+            stamp.features.some(stampFeature => 
+              stampFeature.toLowerCase().includes(feature.toLowerCase())
+            )
+          )
+        );
+        if (!hasMatchingFeatures) return false;
+      }
+
+      return true;
+    });
+  };
+
+  // Dynamic filter data generation from current page data
+  const getFilterData = useMemo(() => {
+    const allStamps = allSeriesGroups.flatMap(series => 
+      series.hierarchies.flatMap(h => h.varieties)
+    );
+    
+    return {
+      countries: Array.from(new Set(allSeriesGroups.map(series => series.country))).filter(Boolean),
+      series: Array.from(new Set(allSeriesGroups.map(series => series.seriesName))),
+      years: Array.from(new Set(allStamps.map(stamp => stamp.year))).sort(),
+      denominations: Array.from(new Set(allStamps.map(stamp => stamp.denomination))),
+      colors: Array.from(new Set(allStamps.map(stamp => stamp.colorName))).filter(Boolean),
+      printingMethods: Array.from(new Set(allStamps.map(stamp => stamp.printingMethod))).filter(Boolean),
+      themes: Array.from(new Set(allStamps.map(stamp => stamp.collectorGroup))).filter(Boolean),
+      features: Array.from(new Set(allStamps.flatMap(stamp => stamp.features))).filter(Boolean),
+      // Year ranges for easier filtering
+      yearRanges: [
+        { label: "Pre-1880", value: "pre-1880", years: ["1870", "1871", "1872", "1873", "1874", "1875", "1876", "1877", "1878", "1879"] },
+        { label: "1880s", value: "1880s", years: ["1880", "1881", "1882", "1883", "1884", "1885", "1886", "1887", "1888", "1889"] },
+        { label: "1890s", value: "1890s", years: ["1890", "1891", "1892", "1893", "1894", "1895", "1896", "1897", "1898", "1899"] },
+        { label: "1900s", value: "1900s", years: ["1900", "1901", "1902", "1903", "1904", "1905", "1906", "1907", "1908", "1909"] },
+        { label: "1910s+", value: "1910s", years: ["1910", "1911", "1912", "1913", "1914", "1915", "1916", "1917", "1918", "1919", "1920"] },
+        { label: "2000s+", value: "2000s", years: Array.from({length: 24}, (_, i) => (2000 + i).toString()) } // 2000-2023
+      ]
+    };
+  }, [allSeriesGroups]);
+
+  // Fetch data from API without filters (filters are applied client-side)
+  const fetchCatalogData = async (page: number = currentPage) => {
     try {
       setLoading(true);
       setError(null);
@@ -815,34 +976,6 @@ function CatalogPage() {
       const url = new URL('https://3pm-stampapp-prod.azurewebsites.net/api/v1/StampCatalog/Hierarchy');
       url.searchParams.append('pageNumber', page.toString());
       url.searchParams.append('pageSize', pageSize.toString());
-      
-      // Add search parameter if provided
-      if (search && search.trim() !== '') {
-        url.searchParams.append('search', search.trim());
-      }
-      
-      // Add filter parameters if they're not "all"
-      if (filters.country && filters.country !== 'all') {
-        url.searchParams.append('country', filters.country);
-      }
-      if (filters.series && filters.series !== 'all') {
-        url.searchParams.append('series', filters.series);
-      }
-      if (filters.year && filters.year !== 'all') {
-        url.searchParams.append('year', filters.year);
-      }
-      if (filters.denomination && filters.denomination !== 'all') {
-        url.searchParams.append('denomination', filters.denomination);
-      }
-      if (filters.color && filters.color !== 'all') {
-        url.searchParams.append('color', filters.color);
-      }
-      if (filters.printingMethod && filters.printingMethod !== 'all') {
-        url.searchParams.append('printingMethod', filters.printingMethod);
-      }
-      if (filters.theme && filters.theme !== 'all') {
-        url.searchParams.append('theme', filters.theme);
-      }
 
       const response = await fetch(url.toString(), {
         method: 'GET',
@@ -858,7 +991,11 @@ function CatalogPage() {
 
       const apiData: ApiPaginatedResponse = await response.json();
       const transformedData = organizeStampsBySeries({ items: apiData.items });
-      setSeriesGroups(transformedData);
+      
+      // Store the original data and apply current filters
+      setAllSeriesGroups(transformedData);
+      const filteredData = applyFilters(transformedData, selectedFilters, searchTerm);
+      setSeriesGroups(filteredData);
       
       // Use actual pagination data from API response
       setTotalCount(apiData.totalCount);
@@ -872,7 +1009,8 @@ function CatalogPage() {
         totalPages: apiData.totalPages,
         hasNextPage: apiData.hasNextPage,
         hasPreviousPage: apiData.hasPreviousPage,
-        resultCount: transformedData.length
+        originalCount: transformedData.length,
+        filteredCount: filteredData.length
       });
     } catch (err) {
       console.error('Error fetching catalog data:', err);
@@ -882,19 +1020,26 @@ function CatalogPage() {
     }
   };
 
+  // Apply filters whenever search term or filters change
+  useEffect(() => {
+    if (allSeriesGroups.length > 0) {
+      const filteredData = applyFilters(allSeriesGroups, selectedFilters, searchTerm);
+      setSeriesGroups(filteredData);
+    }
+  }, [selectedFilters, searchTerm, allSeriesGroups]);
+
   useEffect(() => {
     fetchCatalogData(1);
   }, []);
   
-  // Handle search input change
+  // Handle search input change (client-side filtering)
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newSearchTerm = e.target.value;
     setSearchTerm(newSearchTerm);
-    setCurrentPage(1);
-    fetchCatalogData(1, selectedFilters, newSearchTerm);
+    // Filtering happens automatically via useEffect
   };
   
-  // Clear filters function
+  // Clear filters function (client-side)
   const clearFilters = () => {
     const clearedFilters = {
       country: "all",
@@ -908,50 +1053,25 @@ function CatalogPage() {
     };
     setSearchTerm("");
     setSelectedFilters(clearedFilters);
-    setCurrentPage(1);
-    fetchCatalogData(1, clearedFilters, "");
+    // Filtering happens automatically via useEffect
   };
   
-  // Handle filter changes
+  // Handle filter changes (client-side filtering)
   const handleFilterChange = (filterType: keyof typeof selectedFilters, value: string) => {
     const newFilters = {
       ...selectedFilters,
       [filterType]: value
     };
     setSelectedFilters(newFilters);
-    setCurrentPage(1);
-    fetchCatalogData(1, newFilters, searchTerm);
+    // Filtering happens automatically via useEffect
   };
   
-  // Static filter data - since filtering is server-side, we don't need to derive from current data
-  const getFilterData = useMemo(() => {
-    // For now, use static filter options. In a real app, you might want to fetch these from an API endpoint
-    return {
-      countries: ["British Guiana", "United Kingdom", "United States", "Germany", "France", "Canada", "Australia"], // Static list
-      series: [], // Will be populated from current page data for reference only
-      years: Array.from({length: 50}, (_, i) => (new Date().getFullYear() - i).toString()), // Last 50 years
-      denominations: ["1¢", "2¢", "3¢", "4¢", "5¢", "6¢", "8¢", "10¢", "12¢", "15¢", "20¢", "24¢", "25¢", "30¢", "50¢", "96¢"], // Common denominations
-      colors: ["Red", "Blue", "Green", "Yellow", "Black", "Brown", "Purple", "Orange", "Pink", "Gray"],
-      printingMethods: ["Typographed", "Lithographed", "Engraved", "Offset", "Rotary"],
-      themes: ["Historical", "Nature", "People", "Architecture", "Art", "Sports", "Transportation"],
-      features: ["Watermark", "Perforation", "Original Gum", "Overprint"],
-      // Year ranges for easier filtering
-      yearRanges: [
-        { label: "Pre-1880", value: "pre-1880", years: ["1870", "1871", "1872", "1873", "1874", "1875", "1876", "1877", "1878", "1879"] },
-        { label: "1880s", value: "1880s", years: ["1880", "1881", "1882", "1883", "1884", "1885", "1886", "1887", "1888", "1889"] },
-        { label: "1890s", value: "1890s", years: ["1890", "1891", "1892", "1893", "1894", "1895", "1896", "1897", "1898", "1899"] },
-        { label: "1900s", value: "1900s", years: ["1900", "1901", "1902", "1903", "1904", "1905", "1906", "1907", "1908", "1909"] },
-        { label: "1910s+", value: "1910s", years: ["1910", "1911", "1912", "1913", "1914", "1915", "1916", "1917", "1918", "1919", "1920"] }
-      ]
-    };
-  }, []); // No dependencies since it's static
+  // Client-side filtering is now active - display filtered results
+  // Note: We still have server-side pagination for fetching different pages of raw data
+  const paginatedSeriesGroups = seriesGroups; // Already filtered client-side
+  const totalPages = Math.ceil(totalCount / pageSize); // Keep original pagination for fetching new data
   
-  // Remove frontend filtering - all filtering is now done server-side
-  // Use server data directly since API handles filtering and pagination
-  const totalPages = Math.ceil(totalCount / pageSize);
-  const paginatedSeriesGroups = seriesGroups; // Server already returns filtered and paginated data
-  
-  // Page change handler
+  // Page change handler - fetches new raw data from server
   const handlePageChange = (pageNumber: number) => {
     setCurrentPage(pageNumber);
     fetchCatalogData(pageNumber);
@@ -1003,7 +1123,7 @@ function CatalogPage() {
         
         {/* Mobile Filter Toggle */}
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div className="flex-1 sm:hidden">
+          <div className="flex-1 lg:hidden">
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -1019,13 +1139,13 @@ function CatalogPage() {
             variant="outline"
             size="sm"
             onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
-            className="sm:hidden flex items-center gap-2"
+            className="lg:hidden flex items-center gap-2"
           >
             <Filter className="h-4 w-4" />
             Filters
           </Button>
-          <div className="hidden sm:block text-sm text-muted-foreground">
-            Page {currentPage} of {totalPages} ({seriesGroups.length} series on this page)
+          <div className="hidden lg:block text-sm text-muted-foreground">
+            Page {currentPage} of {totalPages} ({seriesGroups.length} series {seriesGroups.length !== allSeriesGroups.length ? `filtered from ${allSeriesGroups.length}` : 'on this page'})
           </div>
         </div>
       </div>
@@ -1034,7 +1154,7 @@ function CatalogPage() {
         {/* Desktop Sidebar & Mobile Collapsible Filters */}
         <div className={`w-full lg:w-72 xl:w-80 space-y-4 ${mobileFiltersOpen ? 'block' : 'hidden'} lg:block`}>
           {/* Desktop Search */}
-          <div className="hidden sm:block">
+          <div className="hidden lg:block">
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -1229,9 +1349,9 @@ function CatalogPage() {
         {/* Main Content */}
         <div className="flex-1 min-w-0">
           {/* Mobile Results Summary */}
-          <div className="sm:hidden mb-4">
+          <div className="lg:hidden mb-4">
             <div className="text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages} ({paginatedSeriesGroups.length} series on this page)
+              Page {currentPage} of {totalPages} ({paginatedSeriesGroups.length} series {seriesGroups.length !== allSeriesGroups.length ? `filtered from ${allSeriesGroups.length}` : 'on this page'})
             </div>
           </div>
           

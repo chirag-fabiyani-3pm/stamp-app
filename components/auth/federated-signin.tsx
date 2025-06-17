@@ -84,10 +84,6 @@ export function FederatedSignIn() {
         throw new Error('No credential received from Google');
       }
 
-      const jwtDecoded = jwtDecode(credentialResponse.credential);
-
-      console.log(jwtDecoded);
-
       const response = await googleSignIn(credentialResponse.credential);
       
       toast({
@@ -281,30 +277,6 @@ export function FederatedSignIn() {
     }
   }
 
-  const handleFacebookSignIn = async () => {
-    setIsLoading(prev => ({ ...prev, facebook: true }))
-    try {
-      // This would call your backend authentication service
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // TODO: Replace with actual Facebook authentication
-      // For now, this is a placeholder implementation
-      
-      // Check for redirect parameter
-      const redirectPath = searchParams.get('redirect')
-      const targetPath = redirectPath || ROUTES.HOME
-      router.push(targetPath)
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Could not sign in with Facebook. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(prev => ({ ...prev, facebook: false }))
-    }
-  }
-
   if (authStep === 'otp') {
     return (
       <div className="grid gap-6">
@@ -415,6 +387,8 @@ export function FederatedSignIn() {
           text="signin_with"
           shape="rectangular"
           logo_alignment="left"
+          auto_select={false}
+          useOneTap={false}
         />
       </div>
     </div>
