@@ -199,7 +199,7 @@ export async function googleSignIn(idToken: string): Promise<VerifyEmailResponse
   const body = {
     idToken: idToken,
     deviceId: deviceId,
-    isAppleDevice: isApple.toString()
+    isAppleDevice: "false"
   };
 
   try {

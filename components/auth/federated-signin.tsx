@@ -389,6 +389,7 @@ export function FederatedSignIn() {
           logo_alignment="left"
           auto_select={false}
           useOneTap={false}
+          width={'100%'}
         />
       </div>
     </div>
