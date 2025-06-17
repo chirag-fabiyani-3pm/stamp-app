@@ -3835,7 +3835,7 @@ export default function StampObservationManager({
             const stampDetailsJson = transformFormDataToApiFormat(formData, categories);
 
             // Get stamp catalog ID from selected stamp API data
-            const stampCatalogId = selectedStamp?.apiData?.id || selectedStamp?.id || '';
+            const stampCatalogId = selectedStamp?.apiData?.id.startsWith('00000000') ? selectedStamp?.id.startsWith('00000000') ? '' : selectedStamp?.id : selectedStamp?.apiData?.id;
 
             if (!stampCatalogId) {
                 throw new Error('No stamp catalog ID found.');
