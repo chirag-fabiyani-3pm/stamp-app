@@ -8,6 +8,7 @@ import Footer from "@/components/footer"
 import { BotpressProvider } from "@/components/providers/BotpressProvider"
 import { Toaster } from "@/components/ui/toaster"
 import { PWAProvider } from "@/components/pwa/PWAProvider"
+import { GoogleOAuthProvider } from '@react-oauth/google'
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -49,23 +50,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-title" content="Stamp Catalog" />
       </head>
       <body className={inter.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <PWAProvider>
-            <BotpressProvider>
-              <div className="flex min-h-screen flex-col">
-                <Header />
-                <main className="flex-1">{children}</main>
-                <Footer />
-                <Toaster />
-              </div>
-            </BotpressProvider>
-          </PWAProvider>
-        </ThemeProvider>
+        <GoogleOAuthProvider clientId={"818826618127-43jqkdl3f4r3ei2uk060ed2rne14u91o.apps.googleusercontent.com"}>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <PWAProvider>
+              <BotpressProvider>
+                <div className="flex min-h-screen flex-col">
+                  <Header />
+                  <main className="flex-1">{children}</main>
+                  <Footer />
+                  <Toaster />
+                </div>
+              </BotpressProvider>
+            </PWAProvider>
+          </ThemeProvider>
+        </GoogleOAuthProvider>
       </body>
     </html>
   )

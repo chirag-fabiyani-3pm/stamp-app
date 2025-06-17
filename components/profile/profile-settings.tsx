@@ -110,7 +110,7 @@ export default function ProfileSettings() {
     // Save theme to localStorage when it changes
     if (setting === 'theme' && typeof window !== 'undefined') {
       try {
-        localStorage.setItem('stamp_app_theme', value);
+        localStorage.setItem('theme', value);
       } catch (error) {
         console.error('Error saving theme to localStorage:', error);
       }
@@ -227,7 +227,6 @@ export default function ProfileSettings() {
                     <ul className="list-disc list-inside space-y-1 text-sm">
                       <li>Your profile and personal information</li>
                       <li>All your stamp collections and observations</li>
-                      <li>Your transaction history</li>
                       <li>Any saved preferences and settings</li>
                     </ul>
                   </AlertDialogDescription>

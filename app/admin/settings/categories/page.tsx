@@ -41,13 +41,6 @@ const initialCategories = [
     count: 37,
   },
   {
-    id: 4,
-    name: "Trading",
-    slug: "trading",
-    description: "Discussions about trading stamps",
-    count: 42,
-  },
-  {
     id: 5,
     name: "Events",
     slug: "events",

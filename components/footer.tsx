@@ -30,11 +30,6 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/marketplace" className="hover:text-primary">
-                  Trading Marketplace
-                </Link>
-              </li>
-              <li>
                 <Link href="/community" className="hover:text-primary">
                   Community
                 </Link>

@@ -29,16 +29,6 @@ export default function HelpCenterPage() {
         </div>
 
         <div className="rounded-lg border p-6">
-          <h3 className="text-xl font-medium mb-3">Trading & Sales</h3>
-          <ul className="space-y-2 text-sm text-muted-foreground">
-            <li className="hover:text-primary">Creating marketplace listings</li>
-            <li className="hover:text-primary">Making offers and bids</li>
-            <li className="hover:text-primary">Trading best practices</li>
-            <li className="hover:text-primary">Shipping and handling</li>
-          </ul>
-        </div>
-
-        <div className="rounded-lg border p-6">
           <h3 className="text-xl font-medium mb-3">Authentication</h3>
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li className="hover:text-primary">Getting stamps authenticated</li>

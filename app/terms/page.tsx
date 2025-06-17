@@ -53,22 +53,7 @@ export default function TermsPage() {
           of any stamp through our platform.
         </p>
 
-        <h2>6. Marketplace and Trading</h2>
-        <p>
-          When listing stamps for sale or trade on our marketplace, you represent that you have the right to sell or
-          trade such items and that all information provided is accurate and complete.
-        </p>
-        <p>
-          We charge a 5% fee on completed sales, with a minimum fee of $0.50. There are no fees for listing items or for
-          trades that don't involve monetary exchange.
-        </p>
-        <p>
-          All transactions between users are agreements between those users only. While we provide the platform to
-          facilitate such transactions, we are not a party to any transaction and are not responsible for resolving
-          disputes between users, except as expressly provided in our Buyer and Seller Protection policies.
-        </p>
-
-        <h2>7. User Content</h2>
+        <h2>6. User Content</h2>
         <p>
           You retain ownership of any content you submit to our Services ("User Content"). By submitting User Content,
           you grant us a worldwide, non-exclusive, royalty-free license to use, reproduce, modify, adapt, publish,
@@ -80,7 +65,7 @@ export default function TermsPage() {
           applicable laws.
         </p>
 
-        <h2>8. Prohibited Conduct</h2>
+        <h2>7. Prohibited Conduct</h2>
         <p>You agree not to:</p>
         <ul>
           <li>Use our Services for any illegal purpose</li>
@@ -92,14 +77,14 @@ export default function TermsPage() {
           <li>Use automated methods to access or use our Services without our permission</li>
         </ul>
 
-        <h2>9. Termination</h2>
+        <h2>8. Termination</h2>
         <p>
           We reserve the right to suspend or terminate your access to our Services at any time, without notice, for
           conduct that we believe violates these Terms or is harmful to other users, us, or third parties, or for any
           other reason at our discretion.
         </p>
 
-        <h2>10. Disclaimer of Warranties</h2>
+        <h2>9. Disclaimer of Warranties</h2>
         <p>
           OUR SERVICES ARE PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
           IMPLIED. TO THE FULLEST EXTENT PERMISSIBLE UNDER APPLICABLE LAW, WE DISCLAIM ALL WARRANTIES, EXPRESS OR
@@ -107,7 +92,7 @@ export default function TermsPage() {
           NON-INFRINGEMENT.
         </p>
 
-        <h2>11. Limitation of Liability</h2>
+        <h2>10. Limitation of Liability</h2>
         <p>
           TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT SHALL WE BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL,
           CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS OR REVENUES, WHETHER INCURRED DIRECTLY OR
@@ -115,13 +100,13 @@ export default function TermsPage() {
           USE OF OR INABILITY TO ACCESS OR USE THE SERVICES.
         </p>
 
-        <h2>12. Governing Law</h2>
+        <h2>11. Governing Law</h2>
         <p>
           These Terms shall be governed by and construed in accordance with the laws of the State of New York, without
           regard to its conflict of law provisions.
         </p>
 
-        <h2>13. Contact Us</h2>
+        <h2>12. Contact Us</h2>
         <p>If you have any questions about these Terms, please contact us at:</p>
         <p>
           Stamps of Approval

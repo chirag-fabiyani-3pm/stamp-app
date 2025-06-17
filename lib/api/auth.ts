@@ -190,6 +190,51 @@ export async function verifyEmailOtc(userId: string, otc: number): Promise<Verif
   }
 }
 
+// Maintain Google Sign In
+export async function googleSignIn(idToken: string): Promise<VerifyEmailResponse> {
+  const deviceId = getDeviceId();
+  const isApple = isAppleDevice();
+  
+  // Build query parameters
+  const body = {
+    idToken: idToken,
+    deviceId: deviceId,
+    isAppleDevice: isApple.toString()
+  };
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/UserFederatedAuth/GoogleAuth`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
+
+    const data: UserAuthResponse = await response.json();
+    
+    // Store JWT as cookie and user data in localStorage
+    if (data.jwt) {
+      setCookie('stamp_jwt', data.jwt, 30);
+      storeUserData(data);
+    }
+    
+    return {
+      success: true,
+      user: data,
+      message: 'Successfully authenticated'
+    };
+  } catch (error) {
+    console.error('Verify Email OTC error:', error);
+    throw new Error(error instanceof Error ? error.message : 'Failed to verify OTC');
+  }
+}
+
 // Store user data in localStorage
 export function storeUserData(userData: UserAuthResponse): void {
   if (typeof window !== 'undefined') {

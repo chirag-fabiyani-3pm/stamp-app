@@ -19,7 +19,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           <FeatureCard
             icon={<Camera className="h-10 w-10 text-primary" />}
             title="AI Recognition"
@@ -34,11 +34,6 @@ export default function Home() {
             icon={<BarChart3 className="h-10 w-10 text-primary" />}
             title="Value Estimation"
             description="Get accurate market value estimates for your stamp collection."
-          />
-          <FeatureCard
-            icon={<Users className="h-10 w-10 text-primary" />}
-            title="Trading Platform"
-            description="Connect with collectors worldwide to trade or sell stamps securely."
           />
         </div>
 
