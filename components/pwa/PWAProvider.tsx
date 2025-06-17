@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Download, X } from "lucide-react";
+import { Download, X, RotateCcw } from "lucide-react";
 import {
     Tooltip,
     TooltipContent,
@@ -15,6 +15,9 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
     const [isOnline, setIsOnline] = useState(true);
     const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+    const [showUpdatePrompt, setShowUpdatePrompt] = useState(false);
+    const [updateAvailable, setUpdateAvailable] = useState(false);
+    const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | null>(null);
     const [isDismissed, setIsDismissed] = useState(() => {
         // Initialize from session storage
         if (typeof window !== 'undefined') {
@@ -29,20 +32,56 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
         if (isStandalone) {
             console.log('PWA is already installed');
             setIsInstallable(false);
-            return;
         }
 
-        // Register service worker
+        // Register service worker with update handling
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js').then(
-                    (registration) => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((registration) => {
                         console.log('ServiceWorker registration successful:', registration);
-                    },
-                    (err) => {
+                        setSwRegistration(registration);
+
+                        // Check for updates every 30 seconds
+                        setInterval(() => {
+                            registration.update();
+                        }, 30000);
+
+                        // Listen for updates
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            if (newWorker) {
+                                newWorker.addEventListener('statechange', () => {
+                                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                        // New version available
+                                        console.log('New version available');
+                                        setUpdateAvailable(true);
+                                        setShowUpdatePrompt(true);
+                                    }
+                                });
+                            }
+                        });
+                    })
+                    .catch((err) => {
                         console.error('ServiceWorker registration failed:', err);
+                    });
+
+                // Listen for service worker messages
+                navigator.serviceWorker.addEventListener('message', (event) => {
+                    if (event.data && event.data.type === 'SW_UPDATED') {
+                        console.log('SW Update message received:', event.data.message);
+                        setUpdateAvailable(true);
+                        setShowUpdatePrompt(true);
                     }
-                );
+                });
+
+                // Check if there's a waiting service worker
+                navigator.serviceWorker.ready.then((registration) => {
+                    if (registration.waiting) {
+                        setUpdateAvailable(true);
+                        setShowUpdatePrompt(true);
+                    }
+                });
             });
         }
 
@@ -95,6 +134,16 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
         setDeferredPrompt(null);
     };
 
+    const handleUpdateClick = () => {
+        if (swRegistration?.waiting) {
+            // Tell the waiting service worker to skip waiting
+            swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+        
+        // Force reload the page to activate new service worker
+        window.location.reload();
+    };
+
     const handleDismiss = () => {
         setIsDismissed(true);
         setShowInstallPrompt(false);
@@ -104,12 +153,49 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
+    const handleUpdateDismiss = () => {
+        setShowUpdatePrompt(false);
+        // Auto-show again after 5 minutes if not updated
+        setTimeout(() => {
+            if (updateAvailable) {
+                setShowUpdatePrompt(true);
+            }
+        }, 300000); // 5 minutes
+    };
+
     return (
         <>
             {/* Offline status banner */}
             {!isOnline && (
                 <div className="fixed top-0 left-0 right-0 bg-yellow-100 text-yellow-800 px-4 py-2 text-center z-50">
                     You are currently offline. Some features may be limited.
+                </div>
+            )}
+
+            {/* Update notification banner */}
+            {updateAvailable && showUpdatePrompt && (
+                <div className="fixed top-0 left-0 right-0 bg-blue-100 text-blue-800 px-4 py-3 text-center z-50 border-b border-blue-200">
+                    <div className="flex items-center justify-center gap-4">
+                        <span>A new version is available!</span>
+                        <div className="flex gap-2">
+                            <Button
+                                size="sm"
+                                onClick={handleUpdateClick}
+                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                            >
+                                <RotateCcw className="h-4 w-4 mr-1" />
+                                Update Now
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={handleUpdateDismiss}
+                                className="text-blue-800 hover:bg-blue-200"
+                            >
+                                Later
+                            </Button>
+                        </div>
+                    </div>
                 </div>
             )}
 

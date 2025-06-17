@@ -4,10 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/update-sw-version.js && next build",
     "start": "next start",
     "lint": "next lint",
-    "generate-icons": "node scripts/generate-pwa-icons.js"
+    "generate-icons": "node scripts/generate-pwa-icons.js",
+    "update-sw": "node scripts/update-sw-version.js"
   },
   "dependencies": {
     "@auth/core": "^0.39.1",

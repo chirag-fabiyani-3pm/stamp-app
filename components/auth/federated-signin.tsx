@@ -10,7 +10,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { Separator } from "@/components/ui/separator"
 import { sendEmailOtc, verifyEmailOtc, storeUserData, googleSignIn } from "@/lib/api/auth"
 import { ADMIN_ROLE_ID, ROUTES } from "@/lib/constants"
-import { GoogleLogin, CredentialResponse } from '@react-oauth/google'
+import { GoogleLogin, CredentialResponse, useGoogleLogin } from '@react-oauth/google'
 import { jwtDecode } from 'jwt-decode'
 
 type AuthStep = 'email' | 'otp'
@@ -389,7 +389,7 @@ export function FederatedSignIn() {
           logo_alignment="left"
           auto_select={false}
           useOneTap={false}
-          width={'100%'}
+          width={'400'}
         />
       </div>
     </div>
