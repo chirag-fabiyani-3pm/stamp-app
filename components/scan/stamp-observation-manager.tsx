@@ -514,47 +514,47 @@ function mapApiDataToFormStructure(apiData: any): Record<string, any> {
     return formData;
 }
 
-    // Helper function to get preview data from categories
-    const getPreviewData = (option: string, field?: Category) => {
-        if (!field?.preview || !field.preview[option]) {
-            return null;
-        }
-        return field.preview[option];
-    };
+// Helper function to get preview data from categories
+const getPreviewData = (option: string, field?: Category) => {
+    if (!field?.preview || !field.preview[option]) {
+        return null;
+    }
+    return field.preview[option];
+};
 
-    // Helper function to get hex value from shadesToHexMap
-    const getHexFromShade = (option: string, field?: Category | null) => {
-        if (!field?.shadesToHexMap || !field.shadesToHexMap[option]) {
-            return null;
-        }
-        return field.shadesToHexMap[option];
-    };
+// Helper function to get hex value from shadesToHexMap
+const getHexFromShade = (option: string, field?: Category | null) => {
+    if (!field?.shadesToHexMap || !field.shadesToHexMap[option]) {
+        return null;
+    }
+    return field.shadesToHexMap[option];
+};
 
-    // Helper function to find the corresponding color picker field for a shade field
-    const getColorPickerFieldId = (shadeFieldId: string): string | null => {
-        // Create a case-insensitive mapping
-        const colorPickerMap: Record<string, string> = {
-            'purpleshade': 'PurpleColorPicker',
-            'brownshade': 'BrownColorPicker',
-            'redshade': 'RedColorPicker',
-            'blueshade': 'BlueColorPicker',
-            'greenshade': 'GreenColorPicker',
-            'blackshade': 'BlackColorPicker',
-            'greyshade': 'GreyColorPicker',
-            'yellowshade': 'YellowColorPicker',
-            // Also support PascalCase for Edit tab compatibility
-            'PurpleShade': 'PurpleColorPicker',
-            'BrownShade': 'BrownColorPicker',
-            'RedShade': 'RedColorPicker',
-            'BlueShade': 'BlueColorPicker',
-            'GreenShade': 'GreenColorPicker',
-            'BlackShade': 'BlackColorPicker',
-            'GreyShade': 'GreyColorPicker',
-            'YellowShade': 'YellowColorPicker'
-        };
-        const result = colorPickerMap[shadeFieldId] || null;
-        return result;
+// Helper function to find the corresponding color picker field for a shade field
+const getColorPickerFieldId = (shadeFieldId: string): string | null => {
+    // Create a case-insensitive mapping
+    const colorPickerMap: Record<string, string> = {
+        'purpleshade': 'PurpleColorPicker',
+        'brownshade': 'BrownColorPicker',
+        'redshade': 'RedColorPicker',
+        'blueshade': 'BlueColorPicker',
+        'greenshade': 'GreenColorPicker',
+        'blackshade': 'BlackColorPicker',
+        'greyshade': 'GreyColorPicker',
+        'yellowshade': 'YellowColorPicker',
+        // Also support PascalCase for Edit tab compatibility
+        'PurpleShade': 'PurpleColorPicker',
+        'BrownShade': 'BrownColorPicker',
+        'RedShade': 'RedColorPicker',
+        'BlueShade': 'BlueColorPicker',
+        'GreenShade': 'GreenColorPicker',
+        'BlackShade': 'BlackColorPicker',
+        'GreyShade': 'GreyColorPicker',
+        'YellowShade': 'YellowColorPicker'
     };
+    const result = colorPickerMap[shadeFieldId] || null;
+    return result;
+};
 
 // Update the EditablePreviewItem interface to match the expected signature
 function EditablePreviewItem({
@@ -648,7 +648,7 @@ function EditablePreviewItem({
                         </DialogContent>
                     </Dialog>
                 )}
-                
+
                 {/* Edit icon */}
                 <Button
                     variant="ghost"
@@ -1875,15 +1875,15 @@ export default function StampObservationManager({
                 // Find the current field to get shadesToHexMap
                 const currentField = findCategoryInTree(fieldId, allCategories);
                 const hexValue = currentField ? getHexFromShade(value, currentField) : null;
-                
+
                 if (hexValue) {
                     // Create path for the color picker field by modifying the shade field path
                     const shadeFieldPath = createFieldPath(navigationPath, fieldId);
-                    
+
                     // Replace the last segment (shade field) with the color picker field
                     const colorPickerPath = [...shadeFieldPath];
                     const lastSegment = colorPickerPath[colorPickerPath.length - 1];
-                    
+
                     // Map shade field names to color picker field names
                     if (lastSegment === 'purpleshade') {
                         colorPickerPath[colorPickerPath.length - 1] = 'purplecolorpicker';
@@ -1902,7 +1902,7 @@ export default function StampObservationManager({
                     } else if (lastSegment === 'yellowshade') {
                         colorPickerPath[colorPickerPath.length - 1] = 'yellowcolorpicker';
                     }
-                    
+
                     newFormData = setNestedValue(newFormData, colorPickerPath, hexValue);
                 }
             }
@@ -1949,7 +1949,7 @@ export default function StampObservationManager({
 
             // AUTO-SET COLOR PICKER: If a shade is selected, automatically set the corresponding color picker
             const colorPickerFieldId = getColorPickerFieldId(fieldId);
-            
+
             if (colorPickerFieldId && value && value.trim() !== '') {
                 // Find the current field to get shadesToHexMap
                 // Try to map lowercase field ID to proper case if needed
@@ -1962,18 +1962,18 @@ export default function StampObservationManager({
                 else if (fieldId.toLowerCase() === 'blackshade') searchFieldId = 'BlackShade';
                 else if (fieldId.toLowerCase() === 'greyshade') searchFieldId = 'GreyShade';
                 else if (fieldId.toLowerCase() === 'yellowshade') searchFieldId = 'YellowShade';
-                
+
                 const currentField = findCategoryInTree(searchFieldId, allCategories);
                 const hexValue = currentField ? getHexFromShade(value, currentField) : null;
-                
+
                 if (hexValue) {
                     // Create path for the color picker field by modifying the shade field path
                     const shadeFieldPath = createFieldPath(path.slice(0, -1), fieldId);
-                    
+
                     // Replace the last segment (shade field) with the color picker field
                     const colorPickerPath = [...shadeFieldPath];
                     const lastSegment = colorPickerPath[colorPickerPath.length - 1];
-                    
+
                     // Map shade field names to color picker field names
                     if (lastSegment === 'purpleshade') {
                         colorPickerPath[colorPickerPath.length - 1] = 'purplecolorpicker';
@@ -1992,7 +1992,7 @@ export default function StampObservationManager({
                     } else if (lastSegment === 'yellowshade') {
                         colorPickerPath[colorPickerPath.length - 1] = 'yellowcolorpicker';
                     }
-                    
+
                     newFormData = setNestedValue(newFormData, colorPickerPath, hexValue);
                 }
             }
@@ -2308,7 +2308,7 @@ export default function StampObservationManager({
                                     ))}
                                 </SelectContent>
                             </Select>
-                            
+
                             {/* Info icon for select fields with preview data */}
                             {shouldShowInfoIcon && previewData && (
                                 <Dialog>
@@ -2383,7 +2383,7 @@ export default function StampObservationManager({
                             />
                         </div>
                         {currentValue && (
-                            <div 
+                            <div
                                 className="w-full h-8 rounded border border-gray-300"
                                 style={{ backgroundColor: currentValue }}
                                 title={`Color: ${currentValue}`}
@@ -3736,8 +3736,8 @@ export default function StampObservationManager({
                                     <button
                                         onClick={() => scrollToCategory(part.categoryPath)}
                                         className={`px-2 py-1 rounded border transition-all duration-200 cursor-pointer hover:scale-105 ${part.isComplete
-                                                ? 'bg-green-100 border-green-300 text-green-800 hover:bg-green-200'
-                                                : 'bg-red-100 border-red-300 text-red-800 hover:bg-red-200 animate-pulse'
+                                            ? 'bg-green-100 border-green-300 text-green-800 hover:bg-green-200'
+                                            : 'bg-red-100 border-red-300 text-red-800 hover:bg-red-200 animate-pulse'
                                             }`}
                                         title={`${part.description}${part.isComplete ? ' (Complete)' : ' (Missing - Click to edit)'}`}
                                     >
@@ -3782,16 +3782,16 @@ export default function StampObservationManager({
                                             <div key={part.label} className="flex items-center justify-between p-2 bg-muted/30 rounded">
                                                 <div className="flex items-center gap-2">
                                                     <span className={`px-2 py-1 text-xs font-mono rounded border ${part.isComplete
-                                                            ? 'bg-green-100 border-green-300 text-green-800'
-                                                            : 'bg-red-100 border-red-300 text-red-800'
+                                                        ? 'bg-green-100 border-green-300 text-green-800'
+                                                        : 'bg-red-100 border-red-300 text-red-800'
                                                         }`}>
                                                         {part.code}
                                                     </span>
                                                     <span className="text-sm font-medium">{part.label}</span>
                                                 </div>
                                                 <span className={`text-xs px-2 py-1 rounded ${part.isComplete
-                                                        ? 'bg-green-50 text-green-700'
-                                                        : 'bg-red-50 text-red-700'
+                                                    ? 'bg-green-50 text-green-700'
+                                                    : 'bg-red-50 text-red-700'
                                                     }`}>
                                                     {part.isComplete ? 'Complete' : 'Missing'}
                                                 </span>
@@ -3836,10 +3836,6 @@ export default function StampObservationManager({
 
             // Get stamp catalog ID from selected stamp API data
             const stampCatalogId = selectedStamp?.apiData?.id.startsWith('00000000') ? selectedStamp?.id.startsWith('00000000') ? '' : selectedStamp?.id : selectedStamp?.apiData?.id;
-
-            if (!stampCatalogId) {
-                throw new Error('No stamp catalog ID found.');
-            }
 
             // Get merged stamp data for extracting field values
             const mergedData = getMergedStampData();
