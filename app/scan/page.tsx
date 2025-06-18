@@ -1498,8 +1498,8 @@ function ScanPage() {
                   {/* Similar Stamps Section */}
                   {selectedStamp.similarMatches && selectedStamp.similarMatches.length > 0 && (
                     <div className="space-y-4">
-                      <Alert className="bg-blue-50 border-blue-200">
-                        <AlertCircle className="h-4 w-4 text-blue-600" />
+                      <Alert className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
+                        <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                         <AlertTitle>Similar Stamps Found</AlertTitle>
                         <AlertDescription>
                           We found {selectedStamp.similarMatches.length} similar stamp{selectedStamp.similarMatches.length !== 1 ? 's' : ''} that might be related to your stamp.

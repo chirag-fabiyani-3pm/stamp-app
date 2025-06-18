@@ -138,7 +138,7 @@ const StampDetailModal = ({ stamp, isOpen, onClose }: {
 
         <div className="space-y-4">
           {/* Image */}
-          <div className="w-full aspect-square relative bg-white rounded-lg border overflow-hidden max-w-sm mx-auto">
+          <div className="w-full aspect-square relative bg-card rounded-lg border overflow-hidden max-w-sm mx-auto">
             <Image
               src={stamp.imagePath}
               alt={stamp.name}
@@ -421,7 +421,7 @@ export default function StampOptions({ matches, selectedIndex, onSelect, onConfi
           >
             <CardContent className="p-4 space-y-3">
               {/* Image */}
-              <div className="aspect-square relative bg-white rounded border overflow-hidden">
+              <div className="aspect-square relative bg-card rounded border overflow-hidden">
                 <Image
                   src={match.imagePath}
                   alt={match.name}

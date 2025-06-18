@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -63,6 +64,9 @@ const getUserId = (): string | null => {
 };
 
 export default function ProfileSettings() {
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  
   const [settings, setSettings] = useState({
     emailNotifications: true,
     marketplaceAlerts: true,
@@ -70,29 +74,16 @@ export default function ProfileSettings() {
     publicProfile: true,
     showOnlineStatus: true,
     allowMessages: true,
-    theme: "system",
     language: "en",
   })
   
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
-  // Load theme from localStorage on component mount
+  // Handle hydration issues with next-themes
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const savedTheme = localStorage.getItem('stamp_app_theme');
-        if (savedTheme && ['light', 'dark', 'system'].includes(savedTheme)) {
-          setSettings(prev => ({
-            ...prev,
-            theme: savedTheme
-          }));
-        }
-      } catch (error) {
-        console.error('Error loading theme from localStorage:', error);
-      }
-    }
-  }, []);
+    setMounted(true)
+  }, [])
 
   const handleToggle = (setting: string, value: boolean) => {
     setSettings({
@@ -106,15 +97,6 @@ export default function ProfileSettings() {
       ...settings,
       [setting]: value,
     })
-    
-    // Save theme to localStorage when it changes
-    if (setting === 'theme' && typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('theme', value);
-      } catch (error) {
-        console.error('Error saving theme to localStorage:', error);
-      }
-    }
   }
 
   const handleDeleteAccount = async () => {
@@ -176,22 +158,27 @@ export default function ProfileSettings() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="theme">Theme</Label>
-            <Select value={settings.theme} onValueChange={(value) => handleChange("theme", value)}>
-              <SelectTrigger id="theme">
-                <SelectValue placeholder="Select theme" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="light">Light</SelectItem>
-                <SelectItem value="dark">Dark</SelectItem>
-                <SelectItem value="system">System</SelectItem>
-              </SelectContent>
-            </Select>
+            {!mounted ? (
+              <Select disabled>
+                <SelectTrigger id="theme">
+                  <SelectValue placeholder="Loading..." />
+                </SelectTrigger>
+              </Select>
+            ) : (
+              <Select value={theme} onValueChange={setTheme}>
+                <SelectTrigger id="theme">
+                  <SelectValue placeholder="Select theme" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="light">Light</SelectItem>
+                  <SelectItem value="dark">Dark</SelectItem>
+                  <SelectItem value="system">System</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </div>
           
         </CardContent>
-        <CardFooter>
-          <Button>Save Preferences</Button>
-        </CardFooter>
       </Card>
 
       <Card className="border-destructive">

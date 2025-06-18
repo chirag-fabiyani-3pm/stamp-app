@@ -2384,7 +2384,7 @@ export default function StampObservationManager({
                         </div>
                         {currentValue && (
                             <div
-                                className="w-full h-8 rounded border border-gray-300"
+                                className="w-full h-8 rounded border border-border"
                                 style={{ backgroundColor: currentValue }}
                                 title={`Color: ${currentValue}`}
                             />
@@ -3722,10 +3722,10 @@ export default function StampObservationManager({
     // Interactive Stamp Code Component
     const InteractiveStampCode = () => (
         <div className="sticky top-16 z-50 mb-6" data-form-content>
-            <Card className="border border-gray-200 bg-white/95 backdrop-blur-sm shadow-sm">
+            <Card className="border border-border bg-card/95 backdrop-blur-sm shadow-sm">
                 <div className="p-3">
                     <div className="flex flex-col items-center gap-3">
-                        <div className="text-xs font-medium text-gray-600">
+                        <div className="text-xs font-medium text-muted-foreground">
                             Stamp Code
                         </div>
 
@@ -3736,15 +3736,15 @@ export default function StampObservationManager({
                                     <button
                                         onClick={() => scrollToCategory(part.categoryPath)}
                                         className={`px-2 py-1 rounded border transition-all duration-200 cursor-pointer hover:scale-105 ${part.isComplete
-                                            ? 'bg-green-100 border-green-300 text-green-800 hover:bg-green-200'
-                                            : 'bg-red-100 border-red-300 text-red-800 hover:bg-red-200 animate-pulse'
+                                            ? 'bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50'
+                                            : 'bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700 text-red-800 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50 animate-pulse'
                                             }`}
                                         title={`${part.description}${part.isComplete ? ' (Complete)' : ' (Missing - Click to edit)'}`}
                                     >
                                         {part.code}
                                     </button>
                                     {index < stampCodeAnalysis.length - 1 && (
-                                        <span className="text-gray-400">.</span>
+                                        <span className="text-muted-foreground">.</span>
                                     )}
                                 </React.Fragment>
                             ))}
@@ -3753,19 +3753,19 @@ export default function StampObservationManager({
                         {/* Legend */}
                         <div className="flex items-center gap-4 text-xs">
                             <div className="flex items-center gap-1">
-                                <div className="w-3 h-3 bg-green-100 border border-green-300 rounded"></div>
-                                <span className="text-gray-600">Complete</span>
+                                <div className="w-3 h-3 bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded"></div>
+                                <span className="text-muted-foreground">Complete</span>
                             </div>
                             <div className="flex items-center gap-1">
-                                <div className="w-3 h-3 bg-red-100 border border-red-300 rounded"></div>
-                                <span className="text-gray-600">Missing (click to edit)</span>
+                                <div className="w-3 h-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded"></div>
+                                <span className="text-muted-foreground">Missing (click to edit)</span>
                             </div>
                         </div>
 
                         {/* Info dialog */}
                         <Dialog>
                             <DialogTrigger className="h-6 w-6 p-0 opacity-60 hover:opacity-90 inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground">
-                                <Info className="h-3 w-3 text-gray-600" />
+                                <Info className="h-3 w-3 text-muted-foreground" />
                             </DialogTrigger>
                             <DialogContent className="max-w-lg py-2 gap-1">
                                 <DialogHeader className="pt-2 pb-0">
@@ -3782,16 +3782,16 @@ export default function StampObservationManager({
                                             <div key={part.label} className="flex items-center justify-between p-2 bg-muted/30 rounded">
                                                 <div className="flex items-center gap-2">
                                                     <span className={`px-2 py-1 text-xs font-mono rounded border ${part.isComplete
-                                                        ? 'bg-green-100 border-green-300 text-green-800'
-                                                        : 'bg-red-100 border-red-300 text-red-800'
+                                                        ? 'bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700 text-green-800 dark:text-green-300'
+                                                        : 'bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700 text-red-800 dark:text-red-300'
                                                         }`}>
                                                         {part.code}
                                                     </span>
                                                     <span className="text-sm font-medium">{part.label}</span>
                                                 </div>
                                                 <span className={`text-xs px-2 py-1 rounded ${part.isComplete
-                                                    ? 'bg-green-50 text-green-700'
-                                                    : 'bg-red-50 text-red-700'
+                                                    ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300'
+                                                    : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'
                                                     }`}>
                                                     {part.isComplete ? 'Complete' : 'Missing'}
                                                 </span>
@@ -4012,7 +4012,7 @@ export default function StampObservationManager({
                         <div className="text-sm font-medium mb-2">Catalogue Image</div>
                         <div
                             ref={catalogueContainerRef}
-                            className="aspect-square relative border rounded-lg overflow-hidden bg-gray-50 mb-4"
+                            className="aspect-square relative border rounded-lg overflow-hidden bg-muted/30 mb-4"
                         >
                             <div
                                 className={`w-full h-full flex items-center justify-center ${catalogueZoom > 1 ? 'cursor-grab' : ''} ${isDragging === 'catalogue' ? 'cursor-grabbing' : ''}`}
@@ -4076,7 +4076,7 @@ export default function StampObservationManager({
                         <div className="text-sm font-medium mb-2">Scanned Image</div>
                         <div
                             ref={scannedContainerRef}
-                            className="aspect-square relative border rounded-lg overflow-hidden bg-gray-50 mb-4"
+                            className="aspect-square relative border rounded-lg overflow-hidden bg-muted/30 mb-4"
                         >
                             {selectedStamp.scannedImage ? (
                                 <div
@@ -4097,7 +4097,7 @@ export default function StampObservationManager({
                                     />
                                 </div>
                             ) : (
-                                <div className="absolute inset-0 flex items-center justify-center text-gray-500">
+                                <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
                                     <div className="text-center">
                                         <div className="text-sm">No scanned image</div>
                                         <div className="text-xs mt-1">Upload or capture an image</div>
@@ -4183,7 +4183,7 @@ export default function StampObservationManager({
 
                     {/* Navigation Header with Tabs */}
                     <TabsContent value="details">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-4 bg-white border-b mb-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-4 bg-card border-b mb-6">
                             <div className="flex items-center gap-2 min-w-0">
                                 {renderBreadcrumbs()}
                             </div>

@@ -38,7 +38,7 @@ export default function StampViewer({ stamp, scanID, onBack, mode = "reference" 
         </CardDescription>
       </CardHeader>
       <CardContent className="p-3 md:p-4">
-        <div className="relative aspect-square w-full max-w-[300px] mx-auto mb-4 border rounded-lg overflow-hidden bg-white">
+        <div className="relative aspect-square w-full max-w-[300px] mx-auto mb-4 border rounded-lg overflow-hidden bg-card">
           <div 
             className="absolute inset-0 flex items-center justify-center"
             style={{ transform: `scale(${zoomLevel})`, transition: 'transform 0.2s ease-in-out' }}

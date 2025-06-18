@@ -28,7 +28,7 @@ export function BotpressProvider({ children }: BotpressProviderProps) {
     // Initialize Botpress after script loads
     script.onload = () => {
       window.botpress?.init({
-        "botId": "0ea616a3-48f1-45b7-9930-36c973910468",
+        "botId": "b7434d3e-7226-485e-81a0-6d9a44c35339",
         "configuration": {
           "website": {},
           "email": {},
@@ -53,7 +53,7 @@ export function BotpressProvider({ children }: BotpressProviderProps) {
             }
           }
         } : {}),
-        "clientId": "8c56712b-5a68-4273-9899-e9ff47bd98ce"
+        "clientId": "75ef7c5c-2bbe-4fa8-9bda-5f64f0e38d68"
       });
     };
 

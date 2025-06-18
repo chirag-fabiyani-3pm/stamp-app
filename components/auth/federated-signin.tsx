@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -35,6 +36,7 @@ export function FederatedSignIn() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
+  const { theme, resolvedTheme } = useTheme()
   const [authStep, setAuthStep] = useState<AuthStep>('email')
   const [isLoading, setIsLoading] = useState<{[key: string]: boolean}>({
     email: false,
@@ -45,6 +47,12 @@ export function FederatedSignIn() {
   const [email, setEmail] = useState("")
   const [otp, setOtp] = useState("")
   const [userId, setUserId] = useState("")
+
+  // Helper function to determine Google button theme
+  const getGoogleButtonTheme = () => {
+    const currentTheme = resolvedTheme || theme
+    return currentTheme === 'dark' ? 'filled_black' : 'outline'
+  }
 
   // Helper functions for device detection
   const generateDeviceId = (): string => {
@@ -382,7 +390,7 @@ export function FederatedSignIn() {
         <GoogleLogin
           onSuccess={handleGoogleSuccess}
           onError={handleGoogleError}
-          theme="outline"
+          theme={getGoogleButtonTheme()}
           size="large"
           text="signin_with"
           shape="rectangular"

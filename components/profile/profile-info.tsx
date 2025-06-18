@@ -377,11 +377,11 @@ export default function ProfileInfo() {
   if (loading) {
     return (
       <div className="space-y-4">
-        <Card className="border shadow-sm">
+        <Card className="border border-slate-200 dark:border-slate-700 shadow-sm">
           <CardContent className="flex items-center justify-center py-12">
             <div className="text-center space-y-3">
               <Loader2 className="h-8 w-8 animate-spin mx-auto" style={{ color: '#f4831f' }} />
-              <p className="text-slate-600">Loading your profile...</p>
+              <p className="text-slate-600 dark:text-slate-300">Loading your profile...</p>
             </div>
           </CardContent>
         </Card>
@@ -392,16 +392,16 @@ export default function ProfileInfo() {
   if (error) {
     return (
       <div className="space-y-4">
-        <Card className="border shadow-sm">
+        <Card className="border border-slate-200 dark:border-slate-700 shadow-sm">
           <CardContent className="flex items-center justify-center py-12">
             <div className="text-center space-y-3">
               <AlertCircle className="h-8 w-8 mx-auto text-red-500" />
-              <p className="text-red-600">Error loading profile</p>
-              <p className="text-sm text-slate-500">{error}</p>
+              <p className="text-red-600 dark:text-red-400">Error loading profile</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">{error}</p>
               <Button
                 variant="outline"
                 onClick={handleRefresh}
-                className="mt-3 border-[#f4831f] text-[#f4831f] hover:bg-[#f4831f] hover:text-white"
+                className="mt-3 border-[#f4831f] text-[#f4831f] hover:bg-[#f4831f] hover:text-white dark:border-[#f4831f] dark:text-[#f4831f] dark:hover:bg-[#f4831f] dark:hover:text-white"
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Try Again
@@ -416,15 +416,15 @@ export default function ProfileInfo() {
   if (!userData) {
     return (
       <div className="space-y-4">
-        <Card className="border shadow-sm">
+        <Card className="border border-slate-200 dark:border-slate-700 shadow-sm">
           <CardContent className="flex items-center justify-center py-12">
             <div className="text-center space-y-3">
-              <AlertCircle className="h-8 w-8 mx-auto text-slate-500" />
-              <p className="text-slate-600">No profile data found</p>
+              <AlertCircle className="h-8 w-8 mx-auto text-slate-500 dark:text-slate-400" />
+              <p className="text-slate-600 dark:text-slate-300">No profile data found</p>
               <Button
                 variant="outline"
                 onClick={handleRefresh}
-                className="mt-3 border-[#f4831f] text-[#f4831f] hover:bg-[#f4831f] hover:text-white"
+                className="mt-3 border-[#f4831f] text-[#f4831f] hover:bg-[#f4831f] hover:text-white dark:border-[#f4831f] dark:text-[#f4831f] dark:hover:bg-[#f4831f] dark:hover:text-white"
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
@@ -464,19 +464,19 @@ export default function ProfileInfo() {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Subtle Profile Header */}
-      <Card className="border border-slate-200 shadow-sm">
+      <Card className="border border-slate-200 dark:border-slate-700 shadow-sm">
         <CardContent className="p-4 sm:p-6">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-4 sm:gap-6">
             <div className="relative">
               <Avatar
-                className="h-16 w-16 sm:h-20 sm:w-20 border-2 border-slate-100 shadow-sm cursor-pointer hover:border-[#f4831f] transition-colors duration-200"
+                className="h-16 w-16 sm:h-20 sm:w-20 border-2 border-slate-100 dark:border-slate-600 shadow-sm cursor-pointer hover:border-[#f4831f] transition-colors duration-200"
                 onClick={() => setIsImageDialogOpen(true)}
               >
                 <AvatarImage
                   src={userData.avatarUrl || "/man-avatar-profile-picture.avif"}
                   alt={getFullName()}
                 />
-                <AvatarFallback className="text-base sm:text-lg bg-slate-100 text-slate-600">
+                <AvatarFallback className="text-base sm:text-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200">
                   {(userData.firstName?.[0] || '') + (userData.lastName?.[0] || '') ||
                     userData.userName?.substring(0, 2).toUpperCase() || 'U'}
                 </AvatarFallback>
@@ -490,9 +490,9 @@ export default function ProfileInfo() {
             </div>
 
             <div className="flex-1 text-center md:text-left">
-              <h1 className="text-xl sm:text-2xl font-semibold text-slate-800 mb-2">{getFullName()}</h1>
+              <h1 className="text-xl sm:text-2xl font-semibold text-slate-800 dark:text-slate-100 mb-2">{getFullName()}</h1>
               <div className="flex flex-col sm:flex-row md:flex-row items-center gap-2 mb-3">
-                <Badge variant="outline" className="border-slate-300 text-slate-600 bg-slate-50/50 text-xs">
+                <Badge variant="outline" className="border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 text-xs">
                   {isAdmin ? (
                     <>
                       <Shield className="mr-1 h-3 w-3" /> {userData.roleMasterName}
@@ -503,7 +503,7 @@ export default function ProfileInfo() {
                     </>
                   )}
                 </Badge>
-                <span className="text-slate-500 text-sm">{userData.userName}</span>
+                <span className="text-slate-500 dark:text-slate-400 text-sm">{userData.userName}</span>
               </div>
               <div className="flex justify-center md:justify-start">
                 <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -511,16 +511,16 @@ export default function ProfileInfo() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-slate-300 text-slate-600 hover:bg-slate-50 hover:border-slate-400 text-xs transition-colors w-full sm:w-auto"
+                      className="border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-400 dark:hover:border-slate-500 text-xs transition-colors w-full sm:w-auto"
                     >
                       <Edit className="h-3 w-3 mr-2" />
                       Edit Profile
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-[500px] h-[450px] flex flex-col p-0 mx-2">
-                    <DialogHeader className="flex-shrink-0 px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200">
-                      <DialogTitle className="flex items-center gap-2 text-slate-700 text-base sm:text-lg">
-                        <Edit className="h-4 w-4 text-slate-500" />
+                    <DialogHeader className="flex-shrink-0 px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-700">
+                      <DialogTitle className="flex items-center gap-2 text-slate-700 dark:text-slate-200 text-base sm:text-lg">
+                        <Edit className="h-4 w-4 text-slate-500 dark:text-slate-400" />
                         Edit Profile
                       </DialogTitle>
                     </DialogHeader>
@@ -529,98 +529,98 @@ export default function ProfileInfo() {
                       <form onSubmit={handleEditSubmit} className="space-y-3 sm:space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                           <div>
-                            <Label htmlFor="firstName" className="text-slate-600 text-sm">First Name</Label>
+                            <Label htmlFor="firstName" className="text-slate-600 dark:text-slate-300 text-sm">First Name</Label>
                             <Input
                               id="firstName"
                               value={editForm.firstName}
                               onChange={(e) => setEditForm(prev => ({ ...prev, firstName: e.target.value }))}
                               placeholder="Enter your first name"
-                              className="border-slate-200 focus:border-slate-400 text-sm"
+                              className="border-slate-200 dark:border-slate-600 focus:border-slate-400 dark:focus:border-slate-500 text-sm"
                             />
                           </div>
                           <div>
-                            <Label htmlFor="lastName" className="text-slate-600 text-sm">Last Name</Label>
+                            <Label htmlFor="lastName" className="text-slate-600 dark:text-slate-300 text-sm">Last Name</Label>
                             <Input
                               id="lastName"
                               value={editForm.lastName}
                               onChange={(e) => setEditForm(prev => ({ ...prev, lastName: e.target.value }))}
                               placeholder="Enter your last name"
-                              className="border-slate-200 focus:border-slate-400 text-sm"
+                              className="border-slate-200 dark:border-slate-600 focus:border-slate-400 dark:focus:border-slate-500 text-sm"
                             />
                           </div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                           <div>
-                            <Label htmlFor="dateOfBirth" className="text-slate-600 text-sm">Date of Birth</Label>
+                            <Label htmlFor="dateOfBirth" className="text-slate-600 dark:text-slate-300 text-sm">Date of Birth</Label>
                             <Input
                               id="dateOfBirth"
                               type="date"
                               value={editForm.dateOfBirth}
                               onChange={(e) => setEditForm(prev => ({ ...prev, dateOfBirth: e.target.value }))}
-                              className="border-slate-200 focus:border-slate-400 text-sm"
+                              className="border-slate-200 dark:border-slate-600 focus:border-slate-400 dark:focus:border-slate-500 text-sm"
                             />
                           </div>
                           <div>
-                            <Label htmlFor="mobileNumber" className="text-slate-600 text-sm">Mobile Number</Label>
+                            <Label htmlFor="mobileNumber" className="text-slate-600 dark:text-slate-300 text-sm">Mobile Number</Label>
                             <Input
                               id="mobileNumber"
                               type="tel"
                               value={editForm.mobileNumber}
                               onChange={(e) => setEditForm(prev => ({ ...prev, mobileNumber: e.target.value }))}
                               placeholder="Enter your mobile number"
-                              className="border-slate-200 focus:border-slate-400 text-sm"
+                              className="border-slate-200 dark:border-slate-600 focus:border-slate-400 dark:focus:border-slate-500 text-sm"
                             />
                           </div>
                         </div>
                         <div>
-                          <Label htmlFor="userName" className="text-slate-600 text-sm">Username</Label>
+                          <Label htmlFor="userName" className="text-slate-600 dark:text-slate-300 text-sm">Username</Label>
                           <Input
                             id="userName"
                             value={editForm.userName}
                             onChange={(e) => setEditForm(prev => ({ ...prev, userName: e.target.value }))}
                             placeholder="Enter your username"
-                            className="border-slate-200 focus:border-slate-400 text-sm"
+                            className="border-slate-200 dark:border-slate-600 focus:border-slate-400 dark:focus:border-slate-500 text-sm"
                           />
                         </div>
                         <div>
-                          <Label htmlFor="email" className="text-slate-600 text-sm">Email Address</Label>
+                          <Label htmlFor="email" className="text-slate-600 dark:text-slate-300 text-sm">Email Address</Label>
                           <Input
                             id="email"
                             type="email"
                             value={userData?.email || ""}
                             readOnly
-                            className="border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed text-sm"
+                            className="border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed text-sm"
                           />
                         </div>
                         <div>
-                          <Label htmlFor="aboutMe" className="text-slate-600 text-sm">About Me</Label>
+                          <Label htmlFor="aboutMe" className="text-slate-600 dark:text-slate-300 text-sm">About Me</Label>
                           <Textarea
                             id="aboutMe"
                             value={editForm.aboutMe}
                             onChange={(e) => setEditForm(prev => ({ ...prev, aboutMe: e.target.value }))}
                             placeholder="Tell us about yourself..."
                             rows={3}
-                            className="border-slate-200 focus:border-slate-400 text-sm"
+                            className="border-slate-200 dark:border-slate-600 focus:border-slate-400 dark:focus:border-slate-500 text-sm"
                           />
                         </div>
 
                         {/* Address Section */}
                         <div className="space-y-2 sm:space-y-3">
                           <div>
-                            <Label htmlFor="fullAddress" className="text-slate-600 text-sm">Address</Label>
+                            <Label htmlFor="fullAddress" className="text-slate-600 dark:text-slate-300 text-sm">Address</Label>
                             <Input
                               id="fullAddress"
                               value={editForm.fullAddress}
                               onChange={(e) => setEditForm(prev => ({ ...prev, fullAddress: e.target.value }))}
                               placeholder="Enter your full address"
-                              className="border-slate-200 focus:border-slate-400 text-sm"
+                              className="border-slate-200 dark:border-slate-600 focus:border-slate-400 dark:focus:border-slate-500 text-sm"
                             />
                           </div>
                         </div>
                       </form>
                     </div>
 
-                    <div className="flex-shrink-0 px-4 sm:px-6 py-3 sm:py-4 border-t border-slate-200 bg-slate-50/50">
+                    <div className="flex-shrink-0 px-4 sm:px-6 py-3 sm:py-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30">
                       <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
                         <Button
                           type="button"
@@ -628,7 +628,7 @@ export default function ProfileInfo() {
                           size="sm"
                           onClick={() => setIsEditDialogOpen(false)}
                           disabled={editLoading}
-                          className="border-slate-300 text-slate-600 hover:bg-slate-100 w-full sm:w-auto order-2 sm:order-1"
+                          className="border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 w-full sm:w-auto order-2 sm:order-1"
                         >
                           <X className="h-4 w-4 sm:mr-2" />
                           <span className="hidden sm:inline">Cancel</span>
@@ -662,19 +662,19 @@ export default function ProfileInfo() {
       <Dialog open={isImageDialogOpen} onOpenChange={setIsImageDialogOpen}>
         <DialogContent className="sm:max-w-[400px] mx-2">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-slate-700 text-base sm:text-lg">
-              <User className="h-4 w-4 text-slate-500" />
+            <DialogTitle className="flex items-center gap-2 text-slate-700 dark:text-slate-200 text-base sm:text-lg">
+              <User className="h-4 w-4 text-slate-500 dark:text-slate-400" />
               Profile Image
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 sm:space-y-4">
             <div className="flex justify-center">
-              <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-2 border-slate-200">
+              <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-2 border-slate-200 dark:border-slate-600">
                 <AvatarImage
                   src={previewUrl || userData.avatarUrl || "/man-avatar-profile-picture.avif"}
                   alt={getFullName()}
                 />
-                <AvatarFallback className="text-xl sm:text-2xl bg-slate-100 text-slate-600">
+                <AvatarFallback className="text-xl sm:text-2xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200">
                   {(userData.firstName?.[0] || '') + (userData.lastName?.[0] || '') ||
                     userData.userName?.substring(0, 2).toUpperCase() || 'U'}
                 </AvatarFallback>
@@ -694,7 +694,7 @@ export default function ProfileInfo() {
                   <Button
                     variant="outline"
                     onClick={() => setIsImagePreviewOpen(true)}
-                    className="border-slate-300 text-slate-600 hover:bg-slate-100 text-sm"
+                    className="border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-sm"
                   >
                     <Eye className="h-4 w-4 mr-1 sm:mr-2" />
                     <span className="hidden sm:inline">Preview</span>
@@ -710,7 +710,7 @@ export default function ProfileInfo() {
               </div>
             ) : (
               <div className="space-y-3">
-                <p className="text-sm text-slate-600 text-center">
+                <p className="text-sm text-slate-600 dark:text-slate-300 text-center">
                   New image selected: {selectedImage.name}
                 </p>
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
@@ -721,7 +721,7 @@ export default function ProfileInfo() {
                       setPreviewUrl(null)
                     }}
                     disabled={imageUploading}
-                    className="border-slate-300 text-slate-600 hover:bg-slate-100 text-sm"
+                    className="border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-sm"
                   >
                     <X className="h-4 w-4 mr-1 sm:mr-2" />
                     <span className="hidden sm:inline">Cancel</span>
@@ -749,8 +749,8 @@ export default function ProfileInfo() {
       <Dialog open={isImagePreviewOpen} onOpenChange={setIsImagePreviewOpen}>
         <DialogContent className="sm:max-w-[600px] mx-2">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-slate-700 text-base sm:text-lg">
-              <Eye className="h-4 w-4 text-slate-500" />
+            <DialogTitle className="flex items-center gap-2 text-slate-700 dark:text-slate-200 text-base sm:text-lg">
+              <Eye className="h-4 w-4 text-slate-500 dark:text-slate-400" />
               Profile Image Preview
             </DialogTitle>
           </DialogHeader>
@@ -765,10 +765,10 @@ export default function ProfileInfo() {
       </Dialog>
 
       {/* Profile Information Section */}
-      <Card className="border border-slate-200 shadow-sm">
-        <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-2 sm:py-3">
-          <h3 className="text-base sm:text-lg font-medium text-slate-700 flex items-center">
-            <User className="h-4 w-4 mr-2 text-slate-500" />
+      <Card className="border border-slate-200 dark:border-slate-700 shadow-sm">
+        <CardHeader className="bg-slate-50/50 dark:bg-slate-800/20 border-b border-slate-100 dark:border-slate-600 py-2 sm:py-3">
+          <h3 className="text-base sm:text-lg font-medium text-slate-700 dark:text-slate-200 flex items-center">
+            <User className="h-4 w-4 mr-2 text-slate-500 dark:text-slate-400" />
             Profile Information
           </h3>
         </CardHeader>
@@ -776,12 +776,12 @@ export default function ProfileInfo() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3">
             {/* Full Name - Always show */}
             <div>
-              <label className="text-xs sm:text-sm font-medium text-slate-500 mb-1 block">Full Name</label>
-              <div className="flex items-center gap-2 sm:gap-3 p-2 bg-slate-50/50 rounded-lg border border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer min-w-0">
-                <User className="h-3 w-3 sm:h-4 sm:w-4 text-slate-400 flex-shrink-0" />
-                <span className="text-xs sm:text-sm text-slate-700 font-medium truncate">
+              <label className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 block">Full Name</label>
+              <div className="flex items-center gap-2 sm:gap-3 p-2 bg-slate-50/50 dark:bg-transparent rounded-lg border border-slate-100 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer min-w-0">
+                <User className="h-3 w-3 sm:h-4 sm:w-4 text-slate-400 dark:text-slate-500 flex-shrink-0" />
+                <span className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 font-medium truncate">
                   {getFullName() !== userData.userName ? getFullName() : (
-                    <span className="text-slate-500 italic">Name not provided</span>
+                    <span className="text-slate-500 dark:text-slate-400 italic">Name not provided</span>
                   )}
                 </span>
               </div>
@@ -789,24 +789,24 @@ export default function ProfileInfo() {
 
             {/* Username - Always show */}
             <div>
-              <label className="text-xs sm:text-sm font-medium text-slate-500 mb-1 block">Username</label>
-              <div className="flex items-center gap-2 sm:gap-3 p-2 bg-slate-50/50 rounded-lg border border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer min-w-0">
-                <IdCard className="h-3 w-3 sm:h-4 sm:w-4 text-slate-400 flex-shrink-0" />
-                <span className="text-xs sm:text-sm text-slate-700 font-medium truncate">{userData.userName}</span>
+              <label className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 block">Username</label>
+              <div className="flex items-center gap-2 sm:gap-3 p-2 bg-slate-50/50 dark:bg-transparent rounded-lg border border-slate-100 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer min-w-0">
+                <IdCard className="h-3 w-3 sm:h-4 sm:w-4 text-slate-400 dark:text-slate-500 flex-shrink-0" />
+                <span className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 font-medium truncate">{userData.userName}</span>
               </div>
             </div>
 
             {/* Role - Only show if available */}
             {userData.roleMasterName && (
               <div>
-                <label className="text-xs sm:text-sm font-medium text-slate-500 mb-1 block">Role</label>
-                <div className="flex items-center gap-2 sm:gap-3 p-2 bg-slate-50/50 rounded-lg border border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer min-w-0">
+                <label className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 block">Role</label>
+                <div className="flex items-center gap-2 sm:gap-3 p-2 bg-slate-50/50 dark:bg-transparent rounded-lg border border-slate-100 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer min-w-0">
                   {isAdmin ? (
-                    <Shield className="h-3 w-3 sm:h-4 sm:w-4 text-slate-400 flex-shrink-0" />
+                    <Shield className="h-3 w-3 sm:h-4 sm:w-4 text-slate-400 dark:text-slate-500 flex-shrink-0" />
                   ) : (
-                    <User className="h-3 w-3 sm:h-4 sm:w-4 text-slate-400 flex-shrink-0" />
+                    <User className="h-3 w-3 sm:h-4 sm:w-4 text-slate-400 dark:text-slate-500 flex-shrink-0" />
                   )}
-                  <span className="text-xs sm:text-sm text-slate-700 font-medium truncate">{userData.roleMasterName}</span>
+                  <span className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 font-medium truncate">{userData.roleMasterName}</span>
                 </div>
               </div>
             )}
@@ -814,10 +814,10 @@ export default function ProfileInfo() {
             {/* Membership Code - Only show if available */}
             {userData.membershipCode && (
               <div>
-                <label className="text-xs sm:text-sm font-medium text-slate-500 mb-1 block">Membership Code</label>
-                <div className="flex items-center gap-2 sm:gap-3 p-2 bg-slate-50/50 rounded-lg border border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer min-w-0">
-                  <IdCard className="h-3 w-3 sm:h-4 sm:w-4 text-slate-400 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm text-slate-700 font-medium truncate">{userData.membershipCode}</span>
+                <label className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 block">Membership Code</label>
+                <div className="flex items-center gap-2 sm:gap-3 p-2 bg-slate-50/50 dark:bg-transparent rounded-lg border border-slate-100 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer min-w-0">
+                  <IdCard className="h-3 w-3 sm:h-4 sm:w-4 text-slate-400 dark:text-slate-500 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 font-medium truncate">{userData.membershipCode}</span>
                 </div>
               </div>
             )}
@@ -825,10 +825,10 @@ export default function ProfileInfo() {
             {/* Date of Birth - Only show if available */}
             {userData.dateOfBirth && formatDate(userData.dateOfBirth) && (
               <div>
-                <label className="text-xs sm:text-sm font-medium text-slate-500 mb-1 block">Date of Birth</label>
-                <div className="flex items-center gap-2 sm:gap-3 p-2 bg-slate-50/50 rounded-lg border border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer min-w-0">
-                  <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-slate-400 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm text-slate-700 font-medium truncate">{formatDate(userData.dateOfBirth)}</span>
+                <label className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 block">Date of Birth</label>
+                <div className="flex items-center gap-2 sm:gap-3 p-2 bg-slate-50/50 dark:bg-transparent rounded-lg border border-slate-100 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer min-w-0">
+                  <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-slate-400 dark:text-slate-500 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 font-medium truncate">{formatDate(userData.dateOfBirth)}</span>
                 </div>
               </div>
             )}
@@ -837,12 +837,12 @@ export default function ProfileInfo() {
           {/* About Me Section - Only show if aboutMe exists */}
           {(userData as any).aboutMe && (
             <>
-              <Separator className="my-3 sm:my-4" />
+              <Separator className="my-3 sm:my-4 dark:bg-slate-600" />
 
               <div>
-                <label className="text-xs sm:text-sm font-medium text-slate-500 mb-2 block">About Me</label>
-                <div className="p-2 sm:p-3 bg-slate-50/50 rounded-lg border border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer">
-                  <p className="text-xs sm:text-sm text-slate-700 leading-relaxed break-words">{(userData as any).aboutMe}</p>
+                <label className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 mb-2 block">About Me</label>
+                <div className="p-2 sm:p-3 bg-slate-50/50 dark:bg-transparent rounded-lg border border-slate-100 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer">
+                  <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed break-words">{(userData as any).aboutMe}</p>
                 </div>
               </div>
             </>
@@ -850,26 +850,26 @@ export default function ProfileInfo() {
 
           {/* Address Section - Always show */}
           <>
-            <Separator className="my-3 sm:my-4" />
+            <Separator className="my-3 sm:my-4 dark:bg-slate-600" />
 
             <div>
-              <label className="text-xs sm:text-sm font-medium text-slate-500 mb-2 block">Address</label>
+              <label className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 mb-2 block">Address</label>
               {addressLoading ? (
-                <div className="flex items-center justify-center py-2 sm:py-3 bg-slate-50/50 rounded-lg border border-slate-100">
+                <div className="flex items-center justify-center py-2 sm:py-3 bg-slate-50/50 dark:bg-transparent rounded-lg border border-slate-100 dark:border-slate-600">
                   <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin text-slate-400 mr-2" />
-                  <span className="text-slate-500 text-xs sm:text-sm">Loading address...</span>
+                  <span className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm">Loading address...</span>
                 </div>
               ) : addressData && (Array.isArray(addressData) ? addressData[0]?.fullAddress : addressData.fullAddress) ? (
-                <div className="p-2 sm:p-3 bg-slate-50/50 rounded-lg border border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer">
+                <div className="p-2 sm:p-3 bg-slate-50/50 dark:bg-transparent rounded-lg border border-slate-100 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer">
                   <div className="flex items-start gap-2 sm:gap-3 min-w-0">
-                    <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-slate-400 mt-0.5 flex-shrink-0" />
-                    <p className="text-xs sm:text-sm text-slate-700 break-words">{Array.isArray(addressData) ? addressData[0]?.fullAddress : addressData.fullAddress}</p>
+                    <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0" />
+                    <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 break-words">{Array.isArray(addressData) ? addressData[0]?.fullAddress : addressData.fullAddress}</p>
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-slate-50/30 rounded-lg border border-dashed border-slate-200 hover:border-slate-300 transition-colors cursor-pointer">
-                  <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-slate-400 flex-shrink-0" />
-                  <span className="text-slate-500 italic text-xs sm:text-sm">No address provided</span>
+                <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-slate-50/30 dark:bg-transparent rounded-lg border border-dashed border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer">
+                  <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-slate-400 dark:text-slate-500 flex-shrink-0" />
+                  <span className="text-slate-500 dark:text-slate-400 italic text-xs sm:text-sm">No address provided</span>
                 </div>
               )}
             </div>
@@ -878,49 +878,49 @@ export default function ProfileInfo() {
         </CardContent>
       </Card>
       {/* Contact Information Section */}
-      <Card className="border border-slate-200 shadow-sm">
-        <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-2 sm:py-3">
-          <h3 className="text-base sm:text-lg font-medium text-slate-700 flex items-center">
-            <Mail className="h-4 w-4 mr-2 text-slate-500" />
+      <Card className="border border-slate-200 dark:border-slate-700 shadow-sm">
+        <CardHeader className="bg-slate-50/50 dark:bg-slate-800/20 border-b border-slate-100 dark:border-slate-600 py-2 sm:py-3">
+          <h3 className="text-base sm:text-lg font-medium text-slate-700 dark:text-slate-200 flex items-center">
+            <Mail className="h-4 w-4 mr-2 text-slate-500 dark:text-slate-400" />
             Contact Information
           </h3>
         </CardHeader>
         <CardContent className="p-3 sm:p-4">
           <div className="space-y-3 sm:space-y-4">
-            <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-slate-50/50 rounded-lg border border-slate-100 hover:border-slate-200 transition-colors">
+            <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-slate-50/50 dark:bg-transparent rounded-lg border border-slate-100 dark:border-slate-600 hover:border-slate-200 dark:hover:border-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
               <div className="flex-shrink-0">
-                <div className="p-1.5 sm:p-2 bg-blue-100 rounded-full">
-                  <Mail className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
+                <div className="p-1.5 sm:p-2 bg-blue-100 dark:bg-blue-900/50 rounded-full">
+                  <Mail className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 dark:text-blue-400" />
                 </div>
               </div>
               <div className="flex-1 min-w-0">
-                <h4 className="font-medium text-slate-700 mb-1 text-sm sm:text-base">Email Address</h4>
-                <p className="text-slate-600 text-xs sm:text-sm truncate">{userData?.email}</p>
+                <h4 className="font-medium text-slate-700 dark:text-slate-200 mb-1 text-sm sm:text-base">Email Address</h4>
+                <p className="text-slate-600 dark:text-slate-300 text-xs sm:text-sm truncate">{userData?.email}</p>
               </div>
             </div>
 
             {userData.mobileNumber ? (
-              <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-slate-50/50 rounded-lg border border-slate-100 hover:border-slate-200 transition-colors">
+              <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-slate-50/50 dark:bg-transparent rounded-lg border border-slate-100 dark:border-slate-600 hover:border-slate-200 dark:hover:border-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                 <div className="flex-shrink-0">
-                  <div className="p-1.5 sm:p-2 bg-emerald-100 rounded-full">
-                    <Phone className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-600" />
+                  <div className="p-1.5 sm:p-2 bg-emerald-100 dark:bg-emerald-900/50 rounded-full">
+                    <Phone className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-600 dark:text-emerald-400" />
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-slate-700 mb-1 text-sm sm:text-base">Phone Number</h4>
-                  <p className="text-slate-600 text-xs sm:text-sm">{userData.mobileNumber}</p>
+                  <h4 className="font-medium text-slate-700 dark:text-slate-200 mb-1 text-sm sm:text-base">Phone Number</h4>
+                  <p className="text-slate-600 dark:text-slate-300 text-xs sm:text-sm">{userData.mobileNumber}</p>
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-slate-50/30 rounded-lg border border-dashed border-slate-200 hover:border-slate-300 transition-colors">
+              <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-slate-50/30 dark:bg-transparent rounded-lg border border-dashed border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                 <div className="flex-shrink-0">
-                  <div className="p-1.5 sm:p-2 bg-slate-100 rounded-full">
-                    <Phone className="h-3 w-3 sm:h-4 sm:w-4 text-slate-400" />
+                  <div className="p-1.5 sm:p-2 bg-slate-100 dark:bg-slate-600 rounded-full">
+                    <Phone className="h-3 w-3 sm:h-4 sm:w-4 text-slate-400 dark:text-slate-500" />
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-slate-700 mb-1 text-sm sm:text-base">Phone Number</h4>
-                  <p className="text-slate-500 text-xs sm:text-sm">No phone number provided</p>
+                  <h4 className="font-medium text-slate-700 dark:text-slate-200 mb-1 text-sm sm:text-base">Phone Number</h4>
+                  <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm">No phone number provided</p>
                 </div>
               </div>
             )}
