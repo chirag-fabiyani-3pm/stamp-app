@@ -29,11 +29,6 @@ export default function Footer() {
                   AI Recognition
                 </Link>
               </li>
-              <li>
-                <Link href="/community" className="hover:text-primary">
-                  Community
-                </Link>
-              </li>
             </ul>
           </div>
 
