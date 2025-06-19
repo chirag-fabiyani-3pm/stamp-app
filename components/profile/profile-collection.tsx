@@ -163,6 +163,27 @@ export default function ProfileCollection() {
         }
       })
 
+      // Handle 204 No Content as a valid empty response
+      if (response.status === 204) {
+        const emptyData: StampsResponse = {
+          items: [],
+          pageNumber: 1,
+          pageSize: itemsPerPage,
+          totalCount: 0,
+          totalPages: 0,
+          hasPreviousPage: false,
+          hasNextPage: false
+        }
+        
+        setStamps(emptyData.items)
+        setTotalCount(emptyData.totalCount)
+        setTotalPages(emptyData.totalPages)
+        setHasNextPage(emptyData.hasNextPage)
+        setHasPreviousPage(emptyData.hasPreviousPage)
+        setCurrentPage(emptyData.pageNumber)
+        return
+      }
+
       if (!response.ok) {
         // Handle specific HTTP status codes with user-friendly messages
         if (response.status === 401) {
