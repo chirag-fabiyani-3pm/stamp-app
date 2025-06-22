@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { useToast } from "@/hooks/use-toast"
 import {
   Upload,
   Database,
@@ -34,7 +35,113 @@ import {
   MapPin,
   Tag,
   Image as ImageIcon,
+  FileText,
+  X,
 } from "lucide-react"
+
+// API Response Types
+interface ModelError {
+  key: string;
+  value: string;
+}
+
+// The actual API response - returns this object directly
+interface CatalogExtractionResult {
+  id: string;
+  catalogName: string;
+  processStartDatetime: string | null;
+  processEndDatetime: string | null;
+  status: number;
+  statusName: string;
+  totalPagesInCatalog: number;
+  totalStampsInCatalog: number;
+  stampsExtractedCount: number;
+  stage: number;
+  stageName: string;
+  error: string | null;
+}
+
+// This was the expected structure but API returns CatalogExtractionResult directly
+interface CatalogExtractionResponse {
+  id: string;
+  isSuccess: boolean;
+  notFound: boolean;
+  message: string;
+  modelErrors: ModelError[];
+  result: CatalogExtractionResult;
+}
+
+// Processing History API Response Types
+interface ProcessingHistoryItem {
+  id: string;
+  catalogName: string;
+  processStartDatetime: string | null;
+  processEndDatetime: string | null;
+  status: number;
+  statusName: string;
+  totalPagesInCatalog: number;
+  totalStampsInCatalog: number;
+  stampsExtractedCount: number;
+  stage: number;
+  stageName: string;
+  error: string | null;
+}
+
+interface ProcessingHistoryResponse {
+  items: ProcessingHistoryItem[];
+  pageNumber: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+}
+
+// Status and Stage mappings
+const CatalogUploadStatus = {
+  0: "Idle",
+  1: "Processing", 
+  2: "Completed",
+  3: "Failed"
+} as const;
+
+const CatalogUploadStage = {
+  0: "Ready",
+  1: "Conversion",
+  2: "Extraction", 
+  3: "Generation"
+} as const;
+
+// API Response Types for Stamp Catalog
+interface StampCatalogItem {
+  id: string;
+  catalogExtractionProcessId: string | null;
+  stampCatalogCode: string;
+  name: string;
+  publisher: string | null;
+  country: string;
+  stampImageUrl: string;
+  catalogName: string;
+  catalogNumber: string;
+  seriesName: string;
+  issueDate: string;
+  issueYear: number | null;
+  denominationValue: number;
+  denominationCurrency: string;
+  denominationSymbol: string;
+  color: string;
+  paperType: string | null;
+}
+
+interface StampCatalogResponse {
+  items: StampCatalogItem[];
+  pageNumber: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+}
 
 // Sample data for demonstration
 const recentIngestions = [
@@ -529,6 +636,34 @@ const sampleExtractedData = [
   },
 ]
 
+// Add JWT helper function
+const getJWT = (): string | null => {
+  // Try to get from localStorage first
+  if (typeof window !== 'undefined') {
+    try {
+      const stampUserData = localStorage.getItem('stamp_user_data');
+      if (stampUserData) {
+        const userData = JSON.parse(stampUserData);
+        if (userData && userData.jwt) {
+          return userData.jwt;
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing stamp_user_data from localStorage:', error);
+    }
+
+    // Try to get from cookies
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+      const [name, value] = cookie.trim().split('=');
+      if (name === 'stamp_jwt') {
+        return value;
+      }
+    }
+  }
+  return null;
+};
+
 export default function CatalogManagementPage() {
   const [activeTab, setActiveTab] = useState("upload")
   const [selectedCatalogType, setSelectedCatalogType] = useState("stamp")
@@ -536,18 +671,37 @@ export default function CatalogManagementPage() {
   const [selectedSource, setSelectedSource] = useState("")
   const [uploadProgress, setUploadProgress] = useState(0)
   const [isUploading, setIsUploading] = useState(false)
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Processing History state
+  const [processingHistory, setProcessingHistory] = useState<ProcessingHistoryItem[]>([])
+  const [historyPageNumber, setHistoryPageNumber] = useState(1)
+  const [historyPageSize, setHistoryPageSize] = useState(10)
+  const [historyTotalCount, setHistoryTotalCount] = useState(0)
+  const [historyTotalPages, setHistoryTotalPages] = useState(0)
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false)
+  const [isRefreshingHistory, setIsRefreshingHistory] = useState(false)
+
+  // Catalog data state
+  const [catalogData, setCatalogData] = useState<StampCatalogItem[]>([])
+  const [catalogPageNumber, setCatalogPageNumber] = useState(1)
+  const [catalogPageSize, setCatalogPageSize] = useState(10)
+  const [catalogTotalCount, setCatalogTotalCount] = useState(0)
+  const [catalogTotalPages, setCatalogTotalPages] = useState(0)
+  const [isLoadingCatalog, setIsLoadingCatalog] = useState(false)
+  const [isRefreshingCatalog, setIsRefreshingCatalog] = useState(false)
+
+  const { toast } = useToast()
 
   // Catalog database state
   const [searchTerm, setSearchTerm] = useState("")
   const [countryFilter, setCountryFilter] = useState("all")
-  const [categoryFilter, setCategoryFilter] = useState("all")
-  const [rarityFilter, setRarityFilter] = useState("all")
-  const [conditionFilter, setConditionFilter] = useState("all")
+  const [catalogFilter, setCatalogFilter] = useState("all")
+  const [seriesFilter, setSeriesFilter] = useState("all")
   const [sortField, setSortField] = useState("name")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
-  const [selectedStamp, setSelectedStamp] = useState<any>(null)
+  const [selectedStamp, setSelectedStamp] = useState<StampCatalogItem | null>(null)
 
   // New Zealand stamp catalogs
   const nzStampCatalogs = [
@@ -622,25 +776,25 @@ export default function CatalogManagementPage() {
     switch (status) {
       case "completed":
         return (
-          <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+          <Badge className="bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/20">
             <CheckCircle2 className="h-3 w-3 mr-1" /> Completed
           </Badge>
         )
       case "processing":
         return (
-          <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+          <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/20">
             <RefreshCw className="h-3 w-3 mr-1 animate-spin" /> Processing
           </Badge>
         )
       case "queued":
         return (
-          <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
+          <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 dark:bg-yellow-900/20 dark:text-yellow-400 dark:hover:bg-yellow-900/20">
             <Clock className="h-3 w-3 mr-1" /> Queued
           </Badge>
         )
       case "validation":
         return (
-          <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">
+          <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:hover:bg-orange-900/20">
             <AlertCircle className="h-3 w-3 mr-1" /> Needs Validation
           </Badge>
         )
@@ -649,63 +803,376 @@ export default function CatalogManagementPage() {
     }
   }
 
-  // Handle file selection
-  const handleFileSelect = () => {
-    // Simulate file selection and upload
-    setIsUploading(true)
-    setUploadProgress(0)
+  // API call to submit catalog for processing
+  const submitCatalogForProcessing = async (catalogName: string, files: File[]) => {
+    try {
+      setIsSubmitting(true)
+      
+      // Get JWT token
+      const jwt = getJWT()
+      if (!jwt) {
+        throw new Error("Authentication required. Please log in again.")
+      }
+      
+      // Create FormData for each file (assuming we process one file at a time for now)
+      const file = files[0] // Take the first file for now
+      if (!file) {
+        throw new Error("No file selected")
+      }
 
-    const interval = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval)
-          setIsUploading(false)
-          return 100
-        }
-        return prev + 5
+      const formData = new FormData()
+      formData.append("CatalogName", catalogName)
+      formData.append("StampFileAttachment", file)
+
+      const response = await fetch("https://3pm-stampapp-prod.azurewebsites.net/api/v1/CatalogExtractionProcess", {
+        method: "POST",
+        headers: {
+          'Authorization': `Bearer ${jwt}`
+        },
+        body: formData,
       })
-    }, 200)
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const result: CatalogExtractionResult = await response.json()
+
+      // Check if the response contains an error
+      if (result.error) {
+        throw new Error(result.error)
+      }
+
+      // Success case - the API returns the result object directly
+      toast({
+        title: "Catalog Processing Initiated",
+        description: `${catalogName} has been submitted for processing. Status: ${result.statusName}. You can track progress in the Processing History tab.`,
+        duration: 5000,
+      })
+
+      // Reset form
+      setSelectedFiles([])
+      setSelectedSource("")
+      setUploadProgress(0)
+      
+      // Switch to processing history tab to show the new job
+      setActiveTab("recent")
+      
+      return result
+    } catch (error) {
+      console.error("Error submitting catalog:", error)
+      toast({
+        title: "Upload Failed",
+        description: error instanceof Error ? error.message : "Failed to submit catalog for processing. Please try again.",
+        variant: "destructive",
+        duration: 5000,
+      })
+      throw error
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  // Filter and sort data
-  const filteredAndSortedData = sampleExtractedData
+  // Handle file selection
+  const handleFileSelect = (event?: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event?.target?.files
+    if (files && files.length > 0) {
+      setSelectedFiles(Array.from(files))
+      setUploadProgress(0)
+    }
+  }
+
+  // Handle drag and drop
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    const files = event.dataTransfer.files
+    if (files && files.length > 0) {
+      setSelectedFiles(Array.from(files))
+      setUploadProgress(0)
+    }
+  }
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+  }
+
+  // Remove selected file
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index))
+  }
+
+  // Submit for processing
+  const handleSubmitForProcessing = async () => {
+    if (!selectedSource) {
+      toast({
+        title: "Source Required",
+        description: "Please select a catalog source before uploading.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (selectedFiles.length === 0) {
+      toast({
+        title: "File Required",
+        description: "Please select at least one file to upload.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      await submitCatalogForProcessing(selectedSource, selectedFiles)
+    } catch (error) {
+      // Error is already handled in submitCatalogForProcessing
+    }
+  }
+
+  // Validate file types
+  const isValidFileType = (file: File) => {
+    const allowedTypes = ["application/pdf", "image/jpeg", "image/png", "image/jpg"]
+    return allowedTypes.includes(file.type)
+  }
+
+  // Format file size
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return "0 Bytes"
+    const k = 1024
+    const sizes = ["Bytes", "KB", "MB", "GB"]
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
+  }
+
+  // Fetch catalog data from API
+  const fetchCatalogData = async (pageNumber: number = 1, pageSize: number = 10, isRefresh: boolean = false) => {
+    try {
+      if (isRefresh) {
+        setIsRefreshingCatalog(true)
+      } else {
+        setIsLoadingCatalog(true)
+      }
+
+      // Get JWT token
+      const jwt = getJWT()
+      if (!jwt) {
+        throw new Error("Authentication required. Please log in again.")
+      }
+
+      const response = await fetch(
+        `https://3pm-stampapp-prod.azurewebsites.net/api/v1/StampCatalog?pageNumber=${pageNumber}&pageSize=${pageSize}`,
+        {
+          method: "GET",
+          headers: {
+            'Authorization': `Bearer ${jwt}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const result: StampCatalogResponse = await response.json()
+
+      setCatalogData(result.items || [])
+      setCatalogPageNumber(result.pageNumber || pageNumber)
+      setCatalogPageSize(result.pageSize || pageSize)
+      setCatalogTotalCount(result.totalCount || 0)
+      setCatalogTotalPages(result.totalPages || 0)
+
+    } catch (error) {
+      console.error("Error fetching catalog data:", error)
+      toast({
+        title: "Failed to Load Catalog Data",
+        description: error instanceof Error ? error.message : "Unable to fetch catalog data. Please try again.",
+        variant: "destructive",
+        duration: 5000,
+      })
+    } finally {
+      setIsLoadingCatalog(false)
+      setIsRefreshingCatalog(false)
+    }
+  }
+
+  // Load data when switching to tabs
+  const handleTabChange = (value: string) => {
+    setActiveTab(value)
+    if (value === "recent") {
+      // Always load fresh data when switching to the processing history tab
+      fetchProcessingHistory(1, historyPageSize)
+    } else if (value === "data") {
+      // Load catalog data when switching to the catalog data tab
+      fetchCatalogData(1, catalogPageSize)
+    }
+  }
+
+  // Fetch processing history from API
+  const fetchProcessingHistory = async (pageNumber: number = 1, pageSize: number = 10, isRefresh: boolean = false) => {
+    try {
+      if (isRefresh) {
+        setIsRefreshingHistory(true)
+      } else {
+        setIsLoadingHistory(true)
+      }
+
+      // Get JWT token
+      const jwt = getJWT()
+      if (!jwt) {
+        throw new Error("Authentication required. Please log in again.")
+      }
+
+      const response = await fetch(
+        `https://3pm-stampapp-prod.azurewebsites.net/api/v1/CatalogExtractionProcess?pageNumber=${pageNumber}&pageSize=${pageSize}`,
+        {
+          method: "GET",
+          headers: {
+            'Authorization': `Bearer ${jwt}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const result: ProcessingHistoryResponse = await response.json()
+
+      setProcessingHistory(result.items || [])
+      setHistoryPageNumber(result.pageNumber || pageNumber)
+      setHistoryPageSize(result.pageSize || pageSize)
+      setHistoryTotalCount(result.totalCount || 0)
+      setHistoryTotalPages(result.totalPages || 0)
+
+    } catch (error) {
+      console.error("Error fetching processing history:", error)
+      toast({
+        title: "Failed to Load Processing History",
+        description: error instanceof Error ? error.message : "Unable to fetch processing history. Please try again.",
+        variant: "destructive",
+        duration: 5000,
+      })
+    } finally {
+      setIsLoadingHistory(false)
+      setIsRefreshingHistory(false)
+    }
+  }
+
+  // Refresh processing history
+  const refreshProcessingHistory = () => {
+    fetchProcessingHistory(historyPageNumber, historyPageSize, true)
+  }
+
+  // Refresh catalog data
+  const refreshCatalogData = () => {
+    fetchCatalogData(catalogPageNumber, catalogPageSize, true)
+  }
+
+  // Handle page changes for processing history
+  const handleHistoryPageChange = (newPage: number) => {
+    setHistoryPageNumber(newPage)
+    fetchProcessingHistory(newPage, historyPageSize)
+  }
+
+  // Handle page size changes for processing history
+  const handleHistoryPageSizeChange = (newPageSize: number) => {
+    setHistoryPageSize(newPageSize)
+    setHistoryPageNumber(1) // Reset to first page
+    fetchProcessingHistory(1, newPageSize)
+  }
+
+  // Handle page changes for catalog data
+  const handleCatalogPageChange = (newPage: number) => {
+    setCatalogPageNumber(newPage)
+    fetchCatalogData(newPage, catalogPageSize)
+  }
+
+  // Handle page size changes for catalog data
+  const handleCatalogPageSizeChange = (newPageSize: number) => {
+    setCatalogPageSize(newPageSize)
+    setCatalogPageNumber(1) // Reset to first page
+    fetchCatalogData(1, newPageSize)
+  }
+
+  // Get status badge for processing history
+  const getProcessingStatusBadge = (status: number) => {
+    const statusName = CatalogUploadStatus[status as keyof typeof CatalogUploadStatus] || "Unknown"
+    
+    switch (status) {
+      case 2: // Completed
+        return (
+          <Badge className="bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/20">
+            <CheckCircle2 className="h-3 w-3 mr-1" /> {statusName}
+          </Badge>
+        )
+      case 1: // Processing
+        return (
+          <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/20">
+            <RefreshCw className="h-3 w-3 mr-1 animate-spin" /> {statusName}
+          </Badge>
+        )
+      case 0: // Idle
+        return (
+          <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 dark:bg-yellow-900/20 dark:text-yellow-400 dark:hover:bg-yellow-900/20">
+            <Clock className="h-3 w-3 mr-1" /> {statusName}
+          </Badge>
+        )
+      case 3: // Failed
+        return (
+          <Badge className="bg-red-100 text-red-800 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/20">
+            <AlertCircle className="h-3 w-3 mr-1" /> {statusName}
+          </Badge>
+        )
+      default:
+        return <Badge variant="outline">{statusName}</Badge>
+    }
+  }
+
+  // Format datetime for display
+  const formatDateTime = (dateTime: string | null) => {
+    if (!dateTime) return "-"
+    try {
+      return new Date(dateTime).toLocaleString()
+    } catch {
+      return dateTime
+    }
+  }
+
+  // Filter and sort data (now works with API data)
+  const filteredAndSortedData = catalogData
     .filter((item) => {
       const matchesSearch =
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.catalogCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.soaCode.toLowerCase().includes(searchTerm.toLowerCase())
+        item.seriesName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.catalogNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.stampCatalogCode.toLowerCase().includes(searchTerm.toLowerCase())
 
       const matchesCountry = countryFilter === "all" || item.country === countryFilter
-      const matchesCategory = categoryFilter === "all" || item.category === categoryFilter
-      const matchesRarity = rarityFilter === "all" || item.rarity === rarityFilter
-      const matchesCondition = conditionFilter === "all" || item.condition === conditionFilter
+      const matchesCatalog = catalogFilter === "all" || item.catalogName === catalogFilter
+      const matchesSeries = seriesFilter === "all" || item.seriesName === seriesFilter
 
-      return matchesSearch && matchesCountry && matchesCategory && matchesRarity && matchesCondition
+      return matchesSearch && matchesCountry && matchesCatalog && matchesSeries
     })
     .sort((a, b) => {
-      const aValue = a[sortField as keyof typeof a]
-      const bValue = b[sortField as keyof typeof b]
+      const aValue = a[sortField as keyof StampCatalogItem]
+      const bValue = b[sortField as keyof StampCatalogItem]
+
+      // Handle null/undefined values and convert to strings for comparison
+      const aString = aValue ? String(aValue) : ''
+      const bString = bValue ? String(bValue) : ''
 
       if (sortDirection === "asc") {
-        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0
+        return aString < bString ? -1 : aString > bString ? 1 : 0
       } else {
-        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0
+        return aString > bString ? -1 : aString < bString ? 1 : 0
       }
     })
 
-  // Pagination
-  const totalItems = filteredAndSortedData.length
-  const totalPages = Math.ceil(totalItems / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const currentData = filteredAndSortedData.slice(startIndex, endIndex)
-
-  // Get unique values for filters
-  const countries = [...new Set(sampleExtractedData.map(item => item.country))].sort()
-  const categories = [...new Set(sampleExtractedData.map(item => item.category))].sort()
-  const rarities = [...new Set(sampleExtractedData.map(item => item.rarity))].sort()
-  const conditions = [...new Set(sampleExtractedData.map(item => item.condition))].sort()
+  // Get unique values for filters (now from API data)
+  const countries = [...new Set(catalogData.map(item => item.country))].sort()
+  const catalogs = [...new Set(catalogData.map(item => item.catalogName))].sort()
+  const series = [...new Set(catalogData.map(item => item.seriesName))].sort()
 
   // Handle sorting
   const handleSort = (field: string) => {
@@ -727,10 +1194,22 @@ export default function CatalogManagementPage() {
   const resetFilters = () => {
     setSearchTerm("")
     setCountryFilter("all")
-    setCategoryFilter("all")
-    setRarityFilter("all")
-    setConditionFilter("all")
-    setCurrentPage(1)
+    setCatalogFilter("all")
+    setSeriesFilter("all")
+  }
+
+  // Format year from issue date
+  const formatYear = (issueDate: string) => {
+    try {
+      return new Date(issueDate).getFullYear().toString()
+    } catch {
+      return "Unknown"
+    }
+  }
+
+  // Format denomination
+  const formatDenomination = (value: number, symbol: string) => {
+    return `${symbol}${value}`
   }
 
   return (
@@ -742,7 +1221,7 @@ export default function CatalogManagementPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="upload" value={activeTab} onValueChange={setActiveTab}>
+      <Tabs defaultValue="upload" value={activeTab} onValueChange={handleTabChange}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="upload" className="flex items-center gap-2">
             <Upload className="h-4 w-4" /> Data Ingestion
@@ -793,7 +1272,12 @@ export default function CatalogManagementPage() {
                 </div>
               </div>
 
-              <div className="border-2 border-dashed rounded-md p-8 text-center">
+              {/* File Upload Area */}
+              <div 
+                className="border-2 border-dashed rounded-md p-8 text-center border-border transition-colors hover:border-primary/50"
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+              >
                 <div className="flex flex-col items-center justify-center gap-4">
                   <Upload className="h-12 w-12 text-muted-foreground" />
                   <div>
@@ -803,10 +1287,64 @@ export default function CatalogManagementPage() {
                         ? "Upload scanned catalog pages (PDF, JPG, PNG)"
                         : "Upload auction results or price lists (PDF, CSV, XLS)"}
                     </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Maximum file size: 50MB per file
+                    </p>
                   </div>
-                  <Button onClick={handleFileSelect}>Select Files</Button>
+                  <div>
+                    <Input
+                      type="file"
+                      multiple
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                      id="file-upload"
+                    />
+                    <Button asChild>
+                      <label htmlFor="file-upload" className="cursor-pointer">
+                        Select Files
+                      </label>
+                    </Button>
+                  </div>
                 </div>
               </div>
+
+              {/* Selected Files Display */}
+              {selectedFiles.length > 0 && (
+                <div className="space-y-3">
+                  <Label>Selected Files ({selectedFiles.length})</Label>
+                  <div className="space-y-2">
+                    {selectedFiles.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <FileText className="h-5 w-5 text-muted-foreground" />
+                          <div>
+                            <p className="font-medium text-sm">{file.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatFileSize(file.size)} • {file.type}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {!isValidFileType(file) && (
+                            <Badge variant="destructive" className="text-xs">
+                              Invalid Type
+                            </Badge>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeFile(index)}
+                            disabled={isSubmitting}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {isUploading && (
                 <div className="space-y-2">
@@ -818,9 +1356,9 @@ export default function CatalogManagementPage() {
                 </div>
               )}
 
-              <div className="flex flex-col gap-2 p-4 rounded-md bg-blue-50 border border-blue-200">
+              <div className="flex flex-col gap-2 p-4 rounded-md bg-blue-50 border border-blue-200 dark:bg-blue-950/30 dark:border-blue-800/30">
                 <h3 className="font-medium flex items-center gap-2">
-                  <BookOpen className="h-4 w-4 text-blue-500" />
+                  <BookOpen className="h-4 w-4 text-blue-500 dark:text-blue-400" />
                   How the AI Agent Works
                 </h3>
                 <p className="text-sm text-muted-foreground">
@@ -837,496 +1375,673 @@ export default function CatalogManagementPage() {
                 </ul>
               </div>
 
-            <div className="flex justify-end gap-2">
-              <Button variant="outline">Cancel</Button>
-              <Button disabled={isUploading}>
-                {isUploading ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Uploading...
-                  </>
-                ) : (
-                  "Process with AI"
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </TabsContent>
-
-      <TabsContent value="recent" className="space-y-6 pt-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Processing History</CardTitle>
-            <CardDescription>
-              Track the status and progress of catalog data processing jobs
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Source</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Items</TableHead>
-                  <TableHead>Started</TableHead>
-                  <TableHead>Completed</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recentIngestions.map((ingestion) => (
-                  <TableRow key={ingestion.id}>
-                    <TableCell className="font-medium">{ingestion.source}</TableCell>
-                    <TableCell>
-                      {ingestion.type === "price" ? (
-                        <Badge variant="outline" className="bg-green-50 text-green-700">
-                          <DollarSign className="h-3 w-3 mr-1" /> Price Data
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                          <BookOpen className="h-3 w-3 mr-1" /> Catalog
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(ingestion.status)}</TableCell>
-                    <TableCell>{ingestion.status === "processing" ? "-" : ingestion.items.toLocaleString()}</TableCell>
-                    <TableCell>{ingestion.startDate}</TableCell>
-                    <TableCell>{ingestion.completionDate || "-"}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </TabsContent>
-
-      <TabsContent value="data" className="space-y-6 pt-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Catalog Database</CardTitle>
-            <CardDescription>
-              Browse and manage stamps and pricing information in the catalog database
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Search and Filters */}
-            <div className="flex flex-col gap-4">
-              {/* Search Bar */}
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search stamps by name, description, catalog code, or SOA code..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <Button variant="outline" onClick={resetFilters}>
-                  Clear Filters
+              <div className="flex justify-end gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setSelectedFiles([])
+                    setSelectedSource("")
+                    setUploadProgress(0)
+                  }}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleSubmitForProcessing}
+                  disabled={isSubmitting || selectedFiles.length === 0 || !selectedSource || selectedFiles.some(file => !isValidFileType(file))}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    "Process with AI"
+                  )}
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-              {/* Filters Row */}
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                <Select value={countryFilter} onValueChange={setCountryFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Country" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Countries</SelectItem>
-                    {countries.map((country) => (
-                      <SelectItem key={country} value={country}>
-                        {country}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+        <TabsContent value="recent" className="space-y-6 pt-6">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Processing History</CardTitle>
+                  <CardDescription>
+                    Track the status and progress of catalog data processing jobs
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select value={historyPageSize.toString()} onValueChange={(value) => handleHistoryPageSizeChange(Number(value))}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5 per page</SelectItem>
+                      <SelectItem value="10">10 per page</SelectItem>
+                      <SelectItem value="25">25 per page</SelectItem>
+                      <SelectItem value="50">50 per page</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button 
+                    variant="outline" 
+                    onClick={refreshProcessingHistory}
+                    disabled={isLoadingHistory || isRefreshingHistory}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshingHistory ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoadingHistory ? (
+                <div className="flex items-center justify-center py-8">
+                  <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+                  <span>Loading processing history...</span>
+                </div>
+              ) : (
+                <>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Catalog Name</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Stage</TableHead>
+                        <TableHead>Progress</TableHead>
+                        <TableHead>Started</TableHead>
+                        <TableHead>Completed</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {processingHistory.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                            No processing history found.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        processingHistory.map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell className="font-medium">{item.catalogName}</TableCell>
+                            <TableCell>{getProcessingStatusBadge(item.status)}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {CatalogUploadStage[item.stage as keyof typeof CatalogUploadStage] || "Unknown"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {item.totalStampsInCatalog > 0 ? (
+                                <div className="flex items-center gap-2">
+                                  <Progress 
+                                    value={(item.stampsExtractedCount / item.totalStampsInCatalog) * 100} 
+                                    className="h-2 flex-1" 
+                                  />
+                                  <span className="text-sm text-muted-foreground">
+                                    {item.stampsExtractedCount}/{item.totalStampsInCatalog}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-sm text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell>{formatDateTime(item.processStartDatetime)}</TableCell>
+                            <TableCell>{formatDateTime(item.processEndDatetime)}</TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
 
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    {categories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  {/* Pagination */}
+                  {historyTotalPages > 0 && (
+                    <div className="flex items-center justify-between mt-4">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleHistoryPageChange(1)}
+                          disabled={historyPageNumber === 1 || historyTotalPages <= 1}
+                        >
+                          <ChevronsLeft className="h-4 w-4 mr-1" />
+                          First
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleHistoryPageChange(historyPageNumber - 1)}
+                          disabled={historyPageNumber === 1 || historyTotalPages <= 1}
+                        >
+                          <ChevronLeft className="h-4 w-4 mr-1" />
+                          Previous
+                        </Button>
+                      </div>
 
-                <Select value={rarityFilter} onValueChange={setRarityFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Rarity" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Rarities</SelectItem>
-                    {rarities.map((rarity) => (
-                      <SelectItem key={rarity} value={rarity}>
-                        {rarity}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                      <div className="flex items-center gap-1">
+                        {historyTotalPages > 1 && Array.from({ length: Math.min(5, historyTotalPages) }, (_, i) => {
+                          let pageNumber;
+                          if (historyTotalPages <= 5) {
+                            pageNumber = i + 1;
+                          } else if (historyPageNumber <= 3) {
+                            pageNumber = i + 1;
+                          } else if (historyPageNumber >= historyTotalPages - 2) {
+                            pageNumber = historyTotalPages - 4 + i;
+                          } else {
+                            pageNumber = historyPageNumber - 2 + i;
+                          }
 
-                <Select value={conditionFilter} onValueChange={setConditionFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Condition" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Conditions</SelectItem>
-                    {conditions.map((condition) => (
-                      <SelectItem key={condition} value={condition}>
-                        {condition}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                          return (
+                            <Button
+                              key={pageNumber}
+                              variant={historyPageNumber === pageNumber ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => handleHistoryPageChange(pageNumber)}
+                              className="w-8 h-8 p-0"
+                            >
+                              {pageNumber}
+                            </Button>
+                          );
+                        })}
+                        {historyTotalPages === 1 && (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="w-8 h-8 p-0"
+                            disabled
+                          >
+                            1
+                          </Button>
+                        )}
+                      </div>
 
-                <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5 per page</SelectItem>
-                    <SelectItem value="10">10 per page</SelectItem>
-                    <SelectItem value="25">25 per page</SelectItem>
-                    <SelectItem value="50">50 per page</SelectItem>
-                  </SelectContent>
-                </Select>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleHistoryPageChange(historyPageNumber + 1)}
+                          disabled={historyPageNumber === historyTotalPages || historyTotalPages <= 1}
+                        >
+                          Next
+                          <ChevronRight className="h-4 w-4 ml-1" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleHistoryPageChange(historyTotalPages)}
+                          disabled={historyPageNumber === historyTotalPages || historyTotalPages <= 1}
+                        >
+                          Last
+                          <ChevronsRight className="h-4 w-4 ml-1" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Results Summary */}
+                  {historyTotalCount > 0 && (
+                    <div className="flex items-center justify-between text-sm text-muted-foreground mt-4">
+                      <span>
+                        Showing {((historyPageNumber - 1) * historyPageSize) + 1}-{Math.min(historyPageNumber * historyPageSize, historyTotalCount)} of {historyTotalCount} records
+                      </span>
+                      <span>
+                        Page {historyPageNumber} of {historyTotalPages}
+                      </span>
+                    </div>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="data" className="space-y-6 pt-6">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Catalog Database</CardTitle>
+                  <CardDescription>
+                    Browse and manage stamps and pricing information in the catalog database
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select value={catalogPageSize.toString()} onValueChange={(value) => handleCatalogPageSizeChange(Number(value))}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10 per page</SelectItem>
+                      <SelectItem value="25">25 per page</SelectItem>
+                      <SelectItem value="50">50 per page</SelectItem>
+                      <SelectItem value="100">100 per page</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button 
+                    variant="outline" 
+                    onClick={refreshCatalogData}
+                    disabled={isLoadingCatalog || isRefreshingCatalog}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshingCatalog ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Search and Filters */}
+              <div className="flex flex-col gap-4">
+                {/* Search Bar */}
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search stamps by name, series, catalog number, or stamp code..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <Button variant="outline" onClick={resetFilters}>
+                    Clear Filters
+                  </Button>
+                </div>
+
+                {/* Filters Row */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
+                  <Select value={countryFilter} onValueChange={setCountryFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Country" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Countries</SelectItem>
+                      {countries.map((country) => (
+                        <SelectItem key={country} value={country}>
+                          {country}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={catalogFilter} onValueChange={setCatalogFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Catalog" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Catalogs</SelectItem>
+                      {catalogs.map((catalog) => (
+                        <SelectItem key={catalog} value={catalog}>
+                          {catalog}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={seriesFilter} onValueChange={setSeriesFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Series" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Series</SelectItem>
+                      {series.map((seriesItem) => (
+                        <SelectItem key={seriesItem} value={seriesItem}>
+                          {seriesItem}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Results Summary */}
+                {catalogTotalCount > 0 && (
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <span>
+                      Showing page {catalogPageNumber} of {catalogTotalPages}
+                    </span>
+                    <span>
+                      Total: {catalogTotalCount} stamps
+                    </span>
+                  </div>
+                )}
               </div>
 
-              {/* Results Summary */}
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>
-                  Showing {startIndex + 1}-{Math.min(endIndex, totalItems)} of {totalItems} stamps
-                </span>
-                <span>
-                  Page {currentPage} of {totalPages}
-                </span>
-              </div>
-            </div>
-
-            {/* Table */}
-            <div className="border rounded-md">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[50px]">Actions</TableHead>
-                    <TableHead>
-                      <Button
-                        variant="ghost"
-                        onClick={() => handleSort("name")}
-                        className="h-auto p-0 font-semibold hover:bg-transparent"
-                      >
-                        Stamp {getSortIcon("name")}
-                      </Button>
-                    </TableHead>
-                    <TableHead>
-                      <Button
-                        variant="ghost"
-                        onClick={() => handleSort("country")}
-                        className="h-auto p-0 font-semibold hover:bg-transparent"
-                      >
-                        Country {getSortIcon("country")}
-                      </Button>
-                    </TableHead>
-                    <TableHead>
-                      <Button
-                        variant="ghost"
-                        onClick={() => handleSort("year")}
-                        className="h-auto p-0 font-semibold hover:bg-transparent"
-                      >
-                        Year {getSortIcon("year")}
-                      </Button>
-                    </TableHead>
-                    <TableHead>Catalog Code</TableHead>
-                    <TableHead>SOA Code</TableHead>
-                    <TableHead>
-                      <Button
-                        variant="ghost"
-                        onClick={() => handleSort("catalogPrice")}
-                        className="h-auto p-0 font-semibold hover:bg-transparent"
-                      >
-                        Catalog Price {getSortIcon("catalogPrice")}
-                      </Button>
-                    </TableHead>
-                    <TableHead>Market Price</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {currentData.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>
-                        <Dialog>
-                          <DialogTrigger asChild>
+              {isLoadingCatalog ? (
+                <div className="flex items-center justify-center py-8">
+                  <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+                  <span>Loading catalog data...</span>
+                </div>
+              ) : (
+                <>
+                  {/* Table */}
+                  <div className="border rounded-md">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[50px]">Actions</TableHead>
+                          <TableHead className="min-w-[200px] max-w-[250px]">
                             <Button
                               variant="ghost"
-                              size="sm"
-                              onClick={() => setSelectedStamp(item)}
+                              onClick={() => handleSort("name")}
+                              className="h-auto p-0 font-semibold hover:bg-transparent"
                             >
-                              <Eye className="h-4 w-4" />
+                              Stamp {getSortIcon("name")}
                             </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                            <DialogHeader>
-                              <DialogTitle className="flex items-center gap-2">
-                                <ImageIcon className="h-5 w-5" />
-                                {item.name} ({item.year})
-                              </DialogTitle>
-                              <DialogDescription>
-                                Detailed information for {item.catalogCode}
-                              </DialogDescription>
-                            </DialogHeader>
+                          </TableHead>
+                          <TableHead className="w-[120px]">
+                            <Button
+                              variant="ghost"
+                              onClick={() => handleSort("country")}
+                              className="h-auto p-0 font-semibold hover:bg-transparent"
+                            >
+                              Country {getSortIcon("country")}
+                            </Button>
+                          </TableHead>
+                          <TableHead className="w-[80px]">
+                            <Button
+                              variant="ghost"
+                              onClick={() => handleSort("issueDate")}
+                              className="h-auto p-0 font-semibold hover:bg-transparent"
+                            >
+                              Year {getSortIcon("issueDate")}
+                            </Button>
+                          </TableHead>
+                          <TableHead className="w-[120px]">Catalog Number</TableHead>
+                          <TableHead className="w-[140px]">Stamp Code</TableHead>
+                          <TableHead className="w-[100px]">Denomination</TableHead>
+                          <TableHead className="min-w-[150px] max-w-[200px]">Series</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {catalogData.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                              No catalog data found.
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          catalogData.map((item) => (
+                            <TableRow key={item.id}>
+                              <TableCell>
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => setSelectedStamp(item)}
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                                    <DialogHeader>
+                                      <DialogTitle className="flex items-center gap-2">
+                                        <ImageIcon className="h-5 w-5" />
+                                        {item.name} ({formatYear(item.issueDate)})
+                                      </DialogTitle>
+                                      <DialogDescription>
+                                        Detailed information for {item.catalogNumber}
+                                      </DialogDescription>
+                                    </DialogHeader>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              {/* Image Placeholder */}
-                              <div className="space-y-4">
-                                <div className="aspect-square bg-muted rounded-lg flex items-center justify-center">
-                                  <div className="text-center text-muted-foreground">
-                                    <ImageIcon className="h-12 w-12 mx-auto mb-2" />
-                                    <p className="text-sm">Stamp Image</p>
-                                    <p className="text-xs">{item.imageUrl}</p>
-                                  </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                      {/* Image */}
+                                      <div className="space-y-4">
+                                        <div className="aspect-square bg-muted rounded-lg flex items-center justify-center">
+                                          {item.stampImageUrl ? (
+                                            <img 
+                                              src={item.stampImageUrl} 
+                                              alt={item.name}
+                                              className="max-w-full max-h-full object-contain rounded-lg"
+                                              onError={(e) => {
+                                                e.currentTarget.style.display = 'none';
+                                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                              }}
+                                            />
+                                          ) : (
+                                            <div className="text-center text-muted-foreground">
+                                              <ImageIcon className="h-12 w-12 mx-auto mb-2" />
+                                              <p className="text-sm">No image available</p>
+                                            </div>
+                                          )}
+                                          <div className="hidden text-center text-muted-foreground">
+                                            <ImageIcon className="h-12 w-12 mx-auto mb-2" />
+                                            <p className="text-sm">Image not available</p>
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* Details */}
+                                      <div className="space-y-4">
+                                        <div>
+                                          <h3 className="font-semibold mb-2">Basic Information</h3>
+                                          <div className="space-y-2 text-sm">
+                                            <div className="flex justify-between">
+                                              <span className="text-muted-foreground">Name:</span>
+                                              <span className="font-medium">{item.name}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                              <span className="text-muted-foreground">Country:</span>
+                                              <span className="font-medium flex items-center gap-1">
+                                                <MapPin className="h-3 w-3" />
+                                                {item.country}
+                                              </span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                              <span className="text-muted-foreground">Issue Date:</span>
+                                              <span className="font-medium flex items-center gap-1">
+                                                <Calendar className="h-3 w-3" />
+                                                {formatDateTime(item.issueDate)}
+                                              </span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                              <span className="text-muted-foreground">Series:</span>
+                                              <Badge variant="outline">{item.seriesName}</Badge>
+                                            </div>
+                                            <div className="flex justify-between">
+                                              <span className="text-muted-foreground">Publisher:</span>
+                                              <span className="font-medium">{item.publisher || "Not specified"}</span>
+                                            </div>
+                                          </div>
+                                        </div>
+
+                                        <div>
+                                          <h3 className="font-semibold mb-2">Catalog Information</h3>
+                                          <div className="space-y-2 text-sm">
+                                            <div className="flex justify-between">
+                                              <span className="text-muted-foreground">Catalog:</span>
+                                              <span className="font-medium text-right">{item.catalogName}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                              <span className="text-muted-foreground">Catalog Number:</span>
+                                              <Badge variant="outline" className="font-mono">{item.catalogNumber}</Badge>
+                                            </div>
+                                            <div className="flex justify-between">
+                                              <span className="text-muted-foreground">Stamp Code:</span>
+                                              <Badge className="font-mono text-xs">
+                                                {item.stampCatalogCode}
+                                              </Badge>
+                                            </div>
+                                          </div>
+                                        </div>
+
+                                        <div>
+                                          <h3 className="font-semibold mb-2">Technical Details</h3>
+                                          <div className="space-y-2 text-sm">
+                                            <div className="flex justify-between">
+                                              <span className="text-muted-foreground">Denomination:</span>
+                                              <span className="font-medium">{formatDenomination(item.denominationValue, item.denominationSymbol)}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                              <span className="text-muted-foreground">Currency:</span>
+                                              <span className="font-medium">{item.denominationCurrency}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                              <span className="text-muted-foreground">Color:</span>
+                                              <span className="font-medium">{item.color}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                              <span className="text-muted-foreground">Paper Type:</span>
+                                              <span className="font-medium">{item.paperType || "Not specified"}</span>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </DialogContent>
+                                </Dialog>
+                              </TableCell>
+                              <TableCell className="min-w-[200px] max-w-[250px]">
+                                <div className="font-medium text-sm overflow-hidden text-ellipsis whitespace-nowrap pr-2" title={item.name}>
+                                  {item.name}
                                 </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div className="text-center p-3 bg-muted rounded-lg">
-                                    <div className="text-lg font-semibold">{item.catalogPrice}</div>
-                                    <div className="text-sm text-muted-foreground">Catalog Price</div>
-                                  </div>
-                                  <div className="text-center p-3 bg-muted rounded-lg">
-                                    <div className="text-lg font-semibold">{item.marketPrice}</div>
-                                    <div className="text-sm text-muted-foreground">Market Price</div>
-                                  </div>
+                              </TableCell>
+                              <TableCell className="w-[120px]">
+                                <div className="flex items-center gap-1 overflow-hidden">
+                                  <MapPin className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                                  <span className="overflow-hidden text-ellipsis whitespace-nowrap">{item.country}</span>
                                 </div>
-                              </div>
-
-                              {/* Details */}
-                              <div className="space-y-4">
-                                <div>
-                                  <h3 className="font-semibold mb-2">Basic Information</h3>
-                                  <div className="space-y-2 text-sm">
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Name:</span>
-                                      <span className="font-medium">{item.name}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Description:</span>
-                                      <span className="font-medium text-right">{item.description}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Country:</span>
-                                      <span className="font-medium flex items-center gap-1">
-                                        <MapPin className="h-3 w-3" />
-                                        {item.country}
-                                      </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Year:</span>
-                                      <span className="font-medium flex items-center gap-1">
-                                        <Calendar className="h-3 w-3" />
-                                        {item.year}
-                                      </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Category:</span>
-                                      <Badge variant="outline">{item.category}</Badge>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Series:</span>
-                                      <span className="font-medium">{item.series}</span>
-                                    </div>
-                                  </div>
+                              </TableCell>
+                              <TableCell className="w-[80px]">
+                                <div className="flex items-center gap-1 whitespace-nowrap">
+                                  <Calendar className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                                  <span>{formatYear(item.issueDate)}</span>
                                 </div>
-
-                                <div>
-                                  <h3 className="font-semibold mb-2">Catalog Information</h3>
-                                  <div className="space-y-2 text-sm">
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Catalog Code:</span>
-                                      <Badge variant="outline" className="font-mono">{item.catalogCode}</Badge>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">SOA Code:</span>
-                                      <Badge className="font-mono">{item.soaCode}</Badge>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Condition:</span>
-                                      <Badge variant={item.condition === "Mint" ? "default" : "secondary"}>
-                                        {item.condition}
-                                      </Badge>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Rarity:</span>
-                                      <Badge
-                                        variant={
-                                          item.rarity === "Extremely Rare" ? "destructive" :
-                                            item.rarity === "Very Rare" ? "destructive" :
-                                              item.rarity === "Rare" ? "default" :
-                                                item.rarity === "Uncommon" ? "secondary" : "outline"
-                                        }
-                                      >
-                                        {item.rarity}
-                                      </Badge>
-                                    </div>
-                                  </div>
+                              </TableCell>
+                              <TableCell className="w-[120px]">
+                                <div className="overflow-hidden text-ellipsis whitespace-nowrap" title={item.catalogNumber}>
+                                  <Badge variant="outline" className="font-mono text-xs max-w-full">
+                                    <span className="overflow-hidden text-ellipsis whitespace-nowrap">{item.catalogNumber}</span>
+                                  </Badge>
                                 </div>
-
-                                <div>
-                                  <h3 className="font-semibold mb-2">Technical Details</h3>
-                                  <div className="space-y-2 text-sm">
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Denomination:</span>
-                                      <span className="font-medium">{item.denomination}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Color:</span>
-                                      <span className="font-medium">{item.color}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Perforation:</span>
-                                      <span className="font-medium">{item.perforation}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Watermark:</span>
-                                      <span className="font-medium">{item.watermark}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Designer:</span>
-                                      <span className="font-medium">{item.designer}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Printer:</span>
-                                      <span className="font-medium text-right">{item.printer}</span>
-                                    </div>
-                                  </div>
+                              </TableCell>
+                              <TableCell className="w-[140px]">
+                                <div className="overflow-hidden text-ellipsis whitespace-nowrap" title={item.stampCatalogCode}>
+                                  <Badge className="font-mono text-xs max-w-full">
+                                    <span className="overflow-hidden text-ellipsis whitespace-nowrap">{item.stampCatalogCode}</span>
+                                  </Badge>
                                 </div>
+                              </TableCell>
+                              <TableCell className="font-medium w-[100px] whitespace-nowrap">
+                                {formatDenomination(item.denominationValue, item.denominationSymbol)}
+                              </TableCell>
+                              <TableCell className="min-w-[150px] max-w-[200px]">
+                                <div className="overflow-hidden text-ellipsis whitespace-nowrap" title={item.seriesName}>
+                                  <Badge variant="outline" className="text-xs max-w-full inline-block">
+                                    <span className="overflow-hidden text-ellipsis whitespace-nowrap block">{item.seriesName}</span>
+                                  </Badge>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
 
-                                {item.notes && (
-                                  <div>
-                                    <h3 className="font-semibold mb-2">Notes</h3>
-                                    <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
-                                      {item.notes}
-                                    </p>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{item.name}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3 text-muted-foreground" />
-                          {item.country}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3 text-muted-foreground" />
-                          {item.year}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="font-mono text-xs">
-                          {item.catalogCode}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className="font-mono text-xs">
-                          {item.soaCode}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-medium">{item.catalogPrice}</TableCell>
-                      <TableCell className="font-medium">{item.marketPrice}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  {/* Pagination */}
+                  {catalogTotalPages > 0 && (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCatalogPageChange(1)}
+                          disabled={catalogPageNumber === 1 || catalogTotalPages <= 1}
+                        >
+                          <ChevronsLeft className="h-4 w-4 mr-1" />
+                          First
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCatalogPageChange(catalogPageNumber - 1)}
+                          disabled={catalogPageNumber === 1 || catalogTotalPages <= 1}
+                        >
+                          <ChevronLeft className="h-4 w-4 mr-1" />
+                          Previous
+                        </Button>
+                      </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(1)}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronsLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                </div>
+                      <div className="flex items-center gap-1">
+                        {catalogTotalPages > 1 && Array.from({ length: Math.min(5, catalogTotalPages) }, (_, i) => {
+                          let pageNumber;
+                          if (catalogTotalPages <= 5) {
+                            pageNumber = i + 1;
+                          } else if (catalogPageNumber <= 3) {
+                            pageNumber = i + 1;
+                          } else if (catalogPageNumber >= catalogTotalPages - 2) {
+                            pageNumber = catalogTotalPages - 4 + i;
+                          } else {
+                            pageNumber = catalogPageNumber - 2 + i;
+                          }
 
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNumber;
-                    if (totalPages <= 5) {
-                      pageNumber = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNumber = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNumber = totalPages - 4 + i;
-                    } else {
-                      pageNumber = currentPage - 2 + i;
-                    }
+                          return (
+                            <Button
+                              key={pageNumber}
+                              variant={catalogPageNumber === pageNumber ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => handleCatalogPageChange(pageNumber)}
+                              className="w-8 h-8 p-0"
+                            >
+                              {pageNumber}
+                            </Button>
+                          );
+                        })}
+                        {catalogTotalPages === 1 && (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="w-8 h-8 p-0"
+                            disabled
+                          >
+                            1
+                          </Button>
+                        )}
+                      </div>
 
-                    return (
-                      <Button
-                        key={pageNumber}
-                        variant={currentPage === pageNumber ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setCurrentPage(pageNumber)}
-                        className="w-8 h-8 p-0"
-                      >
-                        {pageNumber}
-                      </Button>
-                    );
-                  })}
-                </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCatalogPageChange(catalogPageNumber + 1)}
+                          disabled={catalogPageNumber === catalogTotalPages || catalogTotalPages <= 1}
+                        >
+                          Next
+                          <ChevronRight className="h-4 w-4 ml-1" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCatalogPageChange(catalogTotalPages)}
+                          disabled={catalogPageNumber === catalogTotalPages || catalogTotalPages <= 1}
+                        >
+                          Last
+                          <ChevronsRight className="h-4 w-4 ml-1" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
 
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(totalPages)}
-                    disabled={currentPage === totalPages}
-                  >
-                    <ChevronsRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </TabsContent>
-    </Tabs>
-    </div >
+                  {/* Results Summary */}
+                  {catalogTotalCount > 0 && (
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span>
+                        Showing page {catalogPageNumber} of {catalogTotalPages}
+                      </span>
+                      <span>
+                        Total: {catalogTotalCount} stamps
+                      </span>
+                    </div>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   )
 }
