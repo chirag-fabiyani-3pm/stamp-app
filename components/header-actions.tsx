@@ -102,6 +102,17 @@ export function HeaderActions() {
       {/* Desktop Navigation */}
       <nav className="hidden md:flex items-center space-x-1">
         <Link
+          href="/catalog-2"
+          className={cn(
+            "px-4 py-2 rounded-md text-sm font-medium transition-colors",
+            pathname === "/catalog-2" || pathname.startsWith("/catalog-2/")
+              ? "bg-primary/10 text-primary"
+              : "text-muted-foreground hover:text-primary hover:bg-accent",
+          )}
+        >
+          Catalog 2.0
+        </Link>
+        <Link
           href="/catalog"
           className={cn(
             "px-4 py-2 rounded-md text-sm font-medium transition-colors",
@@ -183,6 +194,18 @@ export function HeaderActions() {
               onClick={() => setIsSheetOpen(false)}
             >
               Home
+            </Link>
+            <Link
+              href="/catalog-2"
+              className={cn(
+                "text-lg font-medium transition-colors hover:text-primary",
+                pathname === "/catalog-2" || pathname.startsWith("/catalog-2/")
+                  ? "text-primary font-semibold"
+                  : "text-muted-foreground",
+              )}
+              onClick={() => setIsSheetOpen(false)}
+            >
+              Catalog 2.0
             </Link>
             <Link
               href="/catalog"
