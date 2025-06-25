@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -23,17 +23,11 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { ChevronRight, Search, Filter, Grid, List, ArrowLeft, Home, Share2 } from "lucide-react"
+import { ChevronRight, Search, Filter, Grid, List, ArrowLeft, Home, Share2, RefreshCw, Loader2, Star, Eye } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface StampData {
   id: string
@@ -60,6 +54,37 @@ interface StampData {
   actualPrice: number | null
 }
 
+interface ApiStampData {
+  id: string
+  catalogExtractionProcessId: string
+  stampCatalogCode: string
+  name: string
+  publisher: string
+  country: string
+  stampImageUrl: string
+  catalogName: string
+  catalogNumber: string
+  seriesName: string
+  issueDate: string
+  issueYear: number
+  denominationValue: number
+  denominationCurrency: string
+  denominationSymbol: string
+  color: string
+  paperType: string
+  stampDetailsJson: string
+}
+
+interface ApiResponse {
+  items: ApiStampData[]
+  pageNumber: number
+  pageSize: number
+  totalCount: number
+  totalPages: number
+  hasPreviousPage: boolean
+  hasNextPage: boolean
+}
+
 interface GroupedStamps {
   [key: string]: StampData[] | GroupedStamps
 }
@@ -81,21 +106,301 @@ const GROUPING_FIELDS: { value: GroupingField; label: string }[] = [
   { value: 'publisher', label: 'Publisher' },
 ]
 
+// IndexedDB utility functions
+const DB_NAME = 'StampCatalogDB'
+const DB_VERSION = 2 // Increment version to handle schema changes
+const STORE_NAME = 'stamps'
+
+const openDB = (): Promise<IDBDatabase> => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION)
+    
+    request.onerror = () => reject(request.error)
+    request.onsuccess = () => resolve(request.result)
+    
+    request.onupgradeneeded = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result
+      const transaction = (event.target as IDBOpenDBRequest).transaction!
+      
+      // Delete existing store if it exists (to handle schema changes)
+      if (db.objectStoreNames.contains(STORE_NAME)) {
+        console.log('Deleting existing store to upgrade schema...')
+        db.deleteObjectStore(STORE_NAME)
+      }
+      
+      // Create new store with updated schema
+      console.log('Creating new store with updated schema...')
+      const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' })
+      // Remove unique constraint from stampCode since API data can have duplicates
+      store.createIndex('stampCode', 'stampCode', { unique: false })
+      store.createIndex('country', 'country', { unique: false })
+      store.createIndex('seriesName', 'seriesName', { unique: false })
+      store.createIndex('issueYear', 'issueYear', { unique: false })
+      store.createIndex('publisher', 'publisher', { unique: false })
+    }
+  })
+}
+
+const saveStampsToIndexedDB = async (stamps: StampData[]): Promise<void> => {
+  try {
+    const db = await openDB()
+    const transaction = db.transaction([STORE_NAME], 'readwrite')
+    const store = transaction.objectStore(STORE_NAME)
+    
+    // Clear existing data
+    await new Promise<void>((resolve, reject) => {
+      const clearRequest = store.clear()
+      clearRequest.onsuccess = () => resolve()
+      clearRequest.onerror = () => reject(clearRequest.error)
+    })
+    
+    // Add new stamps
+    for (const stamp of stamps) {
+      await new Promise<void>((resolve, reject) => {
+        const addRequest = store.add(stamp)
+        addRequest.onsuccess = () => resolve()
+        addRequest.onerror = () => reject(addRequest.error)
+      })
+    }
+  } catch (error) {
+    console.error('Error saving stamps to IndexedDB:', error)
+    throw error
+  }
+}
+
+const getStampsFromIndexedDB = async (): Promise<StampData[]> => {
+  try {
+    const db = await openDB()
+    const transaction = db.transaction([STORE_NAME], 'readonly')
+    const store = transaction.objectStore(STORE_NAME)
+    
+    return new Promise((resolve, reject) => {
+      const request = store.getAll()
+      request.onsuccess = () => resolve(request.result)
+      request.onerror = () => reject(request.error)
+    })
+  } catch (error) {
+    console.error('Error getting stamps from IndexedDB:', error)
+    return []
+  }
+}
+
+const getPaginatedStampsFromIndexedDB = async (offset: number = 0, limit: number = 50): Promise<{ stamps: StampData[], hasMore: boolean, total: number }> => {
+  try {
+    const db = await openDB()
+    const transaction = db.transaction([STORE_NAME], 'readonly')
+    const store = transaction.objectStore(STORE_NAME)
+    
+    // First, get the total count
+    const countRequest = store.count()
+    const total = await new Promise<number>((resolve, reject) => {
+      countRequest.onsuccess = () => resolve(countRequest.result)
+      countRequest.onerror = () => reject(countRequest.error)
+    })
+    
+    // Then get the paginated data using cursor
+    const stamps: StampData[] = []
+    let currentOffset = 0
+    let collected = 0
+    
+    return new Promise((resolve, reject) => {
+      const request = store.openCursor()
+      
+      request.onsuccess = (event) => {
+        const cursor = (event.target as IDBRequest).result
+        
+        if (cursor && collected < limit) {
+          if (currentOffset >= offset) {
+            stamps.push(cursor.value)
+            collected++
+          }
+          currentOffset++
+          cursor.continue()
+        } else {
+          const hasMore = offset + limit < total
+          resolve({ stamps, hasMore, total })
+        }
+      }
+      
+      request.onerror = () => reject(request.error)
+    })
+  } catch (error) {
+    console.error('Error getting paginated stamps from IndexedDB:', error)
+    return { stamps: [], hasMore: false, total: 0 }
+  }
+}
+
+const getTotalStampsCountFromIndexedDB = async (): Promise<number> => {
+  try {
+    const db = await openDB()
+    const transaction = db.transaction([STORE_NAME], 'readonly')
+    const store = transaction.objectStore(STORE_NAME)
+    
+    return new Promise((resolve, reject) => {
+      const request = store.count()
+      request.onsuccess = () => resolve(request.result)
+      request.onerror = () => reject(request.error)
+    })
+  } catch (error) {
+    console.error('Error getting stamps count from IndexedDB:', error)
+    return 0
+  }
+}
+
+const clearIndexedDB = async (): Promise<void> => {
+  try {
+    const db = await openDB()
+    const transaction = db.transaction([STORE_NAME], 'readwrite')
+    const store = transaction.objectStore(STORE_NAME)
+    
+    await new Promise<void>((resolve, reject) => {
+      const clearRequest = store.clear()
+      clearRequest.onsuccess = () => resolve()
+      clearRequest.onerror = () => reject(clearRequest.error)
+    })
+    
+    console.log('IndexedDB cleared successfully')
+  } catch (error) {
+    console.error('Error clearing IndexedDB:', error)
+    throw error
+  }
+}
+
+const checkIndexedDBEmpty = async (): Promise<boolean> => {
+  try {
+    const stamps = await getStampsFromIndexedDB()
+    return stamps.length === 0
+  } catch (error) {
+    console.error('Error checking IndexedDB:', error)
+    return true
+  }
+}
+
+// Map API response to StampData format
+const mapApiStampToStampData = (apiStamp: ApiStampData): StampData => {
+  return {
+    id: apiStamp.id,
+    stampCode: apiStamp.stampCatalogCode,
+    status: 1, // Default to active
+    userId: 'system', // Default value
+    stampCatalogId: apiStamp.catalogExtractionProcessId,
+    name: apiStamp.name,
+    publisher: apiStamp.publisher,
+    country: apiStamp.country,
+    stampImageUrl: apiStamp.stampImageUrl,
+    catalogName: apiStamp.catalogName,
+    catalogNumber: apiStamp.catalogNumber,
+    seriesName: apiStamp.seriesName,
+    issueDate: apiStamp.issueDate,
+    issueYear: apiStamp.issueYear || null,
+    denominationValue: apiStamp.denominationValue,
+    denominationCurrency: apiStamp.denominationCurrency,
+    denominationSymbol: apiStamp.denominationSymbol,
+    color: apiStamp.color,
+    paperType: apiStamp.paperType || null,
+    stampDetailsJson: apiStamp.stampDetailsJson,
+    estimatedMarketValue: null, // Not provided by API
+    actualPrice: null // Not provided by API
+  }
+}
+
+// Fetch all stamps from API with pagination
+const fetchAllStampsFromAPI = async (jwt: string): Promise<StampData[]> => {
+  const allStamps: StampData[] = []
+  let currentPage = 1
+  let hasMorePages = true
+  const maxPageSize = 200 // Use maximum allowed page size for efficiency
+
+  console.log('Starting API fetch with JWT token length:', jwt.length)
+
+  try {
+    while (hasMorePages) {
+      console.log(`Fetching page ${currentPage} from API...`)
+      
+      const url = new URL('https://3pm-stampapp-prod.azurewebsites.net/api/v1/StampCatalog')
+      url.searchParams.append('pageNumber', currentPage.toString())
+      url.searchParams.append('pageSize', maxPageSize.toString())
+      
+      console.log('API Request URL:', url.toString())
+      
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${jwt}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      console.log(`API Response: ${response.status} ${response.statusText}`)
+
+      if (!response.ok) {
+        if (response.status === 204) {
+          console.log('API returned 204 No Content - end of data')
+          break
+        }
+        const errorText = await response.text()
+        console.error(`API error response:`, errorText)
+        throw new Error(`API request failed with status ${response.status}: ${errorText}`)
+      }
+
+      const data: ApiResponse = await response.json()
+      console.log('API Response data:', {
+        itemsCount: data.items?.length || 0,
+        pageNumber: data.pageNumber,
+        totalCount: data.totalCount,
+        totalPages: data.totalPages,
+        hasNextPage: data.hasNextPage
+      })
+      
+      if (data.items && data.items.length > 0) {
+        const mappedStamps = data.items.map(mapApiStampToStampData)
+        allStamps.push(...mappedStamps)
+        console.log(`Fetched ${data.items.length} stamps from page ${currentPage}. Total so far: ${allStamps.length}`)
+        
+        // Check if there are more pages
+        hasMorePages = data.hasNextPage && currentPage < data.totalPages
+        currentPage++
+      } else {
+        console.log('No items in response, ending pagination')
+        hasMorePages = false
+      }
+
+      // Add a small delay to avoid overwhelming the API
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
+
+    console.log(`Finished fetching all stamps. Total: ${allStamps.length}`)
+    return allStamps
+  } catch (error) {
+    console.error('Error fetching stamps from API:', error)
+    throw error
+  }
+}
+
 export default function Catalog2Page() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
   
   const [stamps, setStamps] = useState<StampData[]>([])
+  const [allStampsLoaded, setAllStampsLoaded] = useState(false)
+  const [totalStampsCount, setTotalStampsCount] = useState(0)
+  const [currentOffset, setCurrentOffset] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
   const [groupingLevels, setGroupingLevels] = useState<GroupingField[]>([]) // Default to empty - show all stamps
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [groupSearchTerm, setGroupSearchTerm] = useState("")
+  const [debouncedGroupSearchTerm, setDebouncedGroupSearchTerm] = useState("")
   const [isInitialized, setIsInitialized] = useState(false) // Track initialization
-  const [selectedStamp, setSelectedStamp] = useState<StampData | null>(null)
-  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
+  
+  // Infinite scrolling state
+  const [displayedItemsCount, setDisplayedItemsCount] = useState(6)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const ITEMS_PER_LOAD = 15
+  const INDEXEDDB_PAGE_SIZE = 50
 
   // Get navigation state from URL
   const navigation = useMemo(() => {
@@ -114,8 +419,14 @@ export default function Catalog2Page() {
     const urlViewMode = searchParams.get('view') as 'grid' | 'list'
     const urlGrouping = searchParams.get('grouping')
 
-    if (urlSearchTerm !== null) setSearchTerm(urlSearchTerm)
-    if (urlGroupSearch !== null) setGroupSearchTerm(urlGroupSearch)
+    if (urlSearchTerm !== null) {
+      setSearchTerm(urlSearchTerm)
+      setDebouncedSearchTerm(urlSearchTerm)
+    }
+    if (urlGroupSearch !== null) {
+      setGroupSearchTerm(urlGroupSearch)
+      setDebouncedGroupSearchTerm(urlGroupSearch)
+    }
     if (urlViewMode && ['grid', 'list'].includes(urlViewMode)) setViewMode(urlViewMode)
     if (urlGrouping) {
       const groupingFields = urlGrouping.split(',').filter(field => 
@@ -127,6 +438,23 @@ export default function Catalog2Page() {
     }
     setIsInitialized(true)
   }, [searchParams])
+
+  // Debounce search terms
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+    }, 300)
+    
+    return () => clearTimeout(timeoutId)
+  }, [searchTerm])
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedGroupSearchTerm(groupSearchTerm)
+    }, 300)
+    
+    return () => clearTimeout(timeoutId)
+  }, [groupSearchTerm])
 
   // Update URL when search, view mode, or grouping changes
   useEffect(() => {
@@ -149,6 +477,7 @@ export default function Catalog2Page() {
       params.set('path', encodeURIComponent(newPath.join(',')))
     }
     
+    
     if (preserveOtherParams) {
       // Preserve other parameters
       if (searchTerm) params.set('search', searchTerm)
@@ -170,718 +499,288 @@ export default function Catalog2Page() {
     updateURL(navigation.path, true)
   }
 
-  // Mock data for development/demo purposes
-  const mockStamps: StampData[] = [
-    // US Stamps - American Bicentennial Series
-    {
-      id: "1",
-      stampCode: "US001",
-      status: 1,
-      userId: "user1",
-      stampCatalogId: "cat1",
-      name: "Liberty Bell",
-      publisher: "USPS",
-      country: "United States",
-      stampImageUrl: "/placeholder.svg",
-      catalogName: "Scott",
-      catalogNumber: "1595",
-      seriesName: "American Bicentennial",
-      issueDate: "1976-07-04",
-      issueYear: 1976,
-      denominationValue: 13,
-      denominationCurrency: "USD",
-      denominationSymbol: "¢",
-      color: "Blue",
-      paperType: "Regular",
-      stampDetailsJson: "{}",
-      estimatedMarketValue: 5.00,
-      actualPrice: 3.50
-    },
-    {
-      id: "2",
-      stampCode: "US002",
-      status: 1,
-      userId: "user1",
-      stampCatalogId: "cat2",
-      name: "Independence Hall",
-      publisher: "USPS",
-      country: "United States",
-      stampImageUrl: "/placeholder.svg",
-      catalogName: "Scott",
-      catalogNumber: "1596",
-      seriesName: "American Bicentennial",
-      issueDate: "1976-07-04",
-      issueYear: 1976,
-      denominationValue: 13,
-      denominationCurrency: "USD",
-      denominationSymbol: "¢",
-      color: "Red",
-      paperType: "Regular",
-      stampDetailsJson: "{}",
-      estimatedMarketValue: 5.00,
-      actualPrice: 3.50
-    },
-    {
-      id: "3",
-      stampCode: "US003",
-      status: 1,
-      userId: "user1",
-      stampCatalogId: "cat3",
-      name: "American Flag",
-      publisher: "USPS",
-      country: "United States",
-      stampImageUrl: "/placeholder.svg",
-      catalogName: "Scott",
-      catalogNumber: "1597",
-      seriesName: "American Bicentennial",
-      issueDate: "1976-07-04",
-      issueYear: 1976,
-      denominationValue: 13,
-      denominationCurrency: "USD",
-      denominationSymbol: "¢",
-      color: "Multi-color",
-      paperType: "Regular",
-      stampDetailsJson: "{}",
-      estimatedMarketValue: 6.00,
-      actualPrice: 4.00
-    },
-    
-    // US Stamps - Wildlife Series
-    {
-      id: "4",
-      stampCode: "US004",
-      status: 1,
-      userId: "user1",
-      stampCatalogId: "cat4",
-      name: "Eagle",
-      publisher: "USPS",
-      country: "United States",
-      stampImageUrl: "/placeholder.svg",
-      catalogName: "Scott",
-      catalogNumber: "2000",
-      seriesName: "Wildlife Series",
-      issueDate: "2000-01-01",
-      issueYear: 2000,
-      denominationValue: 34,
-      denominationCurrency: "USD",
-      denominationSymbol: "¢",
-      color: "Brown",
-      paperType: "Self-Adhesive",
-      stampDetailsJson: "{}",
-      estimatedMarketValue: 1.50,
-      actualPrice: 1.00
-    },
-    {
-      id: "5",
-      stampCode: "US005",
-      status: 1,
-      userId: "user1",
-      stampCatalogId: "cat5",
-      name: "Wolf",
-      publisher: "USPS",
-      country: "United States",
-      stampImageUrl: "/placeholder.svg",
-      catalogName: "Scott",
-      catalogNumber: "2001",
-      seriesName: "Wildlife Series",
-      issueDate: "2000-03-15",
-      issueYear: 2000,
-      denominationValue: 34,
-      denominationCurrency: "USD",
-      denominationSymbol: "¢",
-      color: "Gray",
-      paperType: "Self-Adhesive",
-      stampDetailsJson: "{}",
-      estimatedMarketValue: 1.50,
-      actualPrice: 1.00
-    },
-    {
-      id: "6",
-      stampCode: "US006",
-      status: 1,
-      userId: "user1",
-      stampCatalogId: "cat6",
-      name: "Bear",
-      publisher: "USPS",
-      country: "United States",
-      stampImageUrl: "/placeholder.svg",
-      catalogName: "Scott",
-      catalogNumber: "2002",
-      seriesName: "Wildlife Series",
-      issueDate: "2000-06-20",
-      issueYear: 2000,
-      denominationValue: 34,
-      denominationCurrency: "USD",
-      denominationSymbol: "¢",
-      color: "Black",
-      paperType: "Self-Adhesive",
-      stampDetailsJson: "{}",
-      estimatedMarketValue: 1.75,
-      actualPrice: 1.25
-    },
-
-    // US Stamps - Space Exploration Series
-    {
-      id: "7",
-      stampCode: "US007",
-      status: 1,
-      userId: "user1",
-      stampCatalogId: "cat7",
-      name: "Moon Landing",
-      publisher: "USPS",
-      country: "United States",
-      stampImageUrl: "/placeholder.svg",
-      catalogName: "Scott",
-      catalogNumber: "2419",
-      seriesName: "Space Exploration",
-      issueDate: "1989-07-20",
-      issueYear: 1989,
-      denominationValue: 25,
-      denominationCurrency: "USD",
-      denominationSymbol: "¢",
-      color: "Blue",
-      paperType: "Regular",
-      stampDetailsJson: "{}",
-      estimatedMarketValue: 3.00,
-      actualPrice: 2.50
-    },
-    {
-      id: "8",
-      stampCode: "US008",
-      status: 1,
-      userId: "user1",
-      stampCatalogId: "cat8",
-      name: "Space Shuttle",
-      publisher: "USPS",
-      country: "United States",
-      stampImageUrl: "/placeholder.svg",
-      catalogName: "Scott",
-      catalogNumber: "2420",
-      seriesName: "Space Exploration",
-      issueDate: "1989-07-20",
-      issueYear: 1989,
-      denominationValue: 25,
-      denominationCurrency: "USD",
-      denominationSymbol: "¢",
-      color: "White",
-      paperType: "Regular",
-      stampDetailsJson: "{}",
-      estimatedMarketValue: 3.00,
-      actualPrice: 2.50
-    },
-
-    // UK Stamps - Definitive Series
-    {
-      id: "9",
-      stampCode: "UK001",
-      status: 1,
-      userId: "user1",
-      stampCatalogId: "cat9",
-      name: "Queen Elizabeth II",
-      publisher: "Royal Mail",
-      country: "United Kingdom",
-      stampImageUrl: "/placeholder.svg",
-      catalogName: "Stanley Gibbons",
-      catalogNumber: "SG1234",
-      seriesName: "Definitive Series",
-      issueDate: "1990-03-15",
-      issueYear: 1990,
-      denominationValue: 20,
-      denominationCurrency: "GBP",
-      denominationSymbol: "p",
-      color: "Green",
-      paperType: "Phosphor",
-      stampDetailsJson: "{}",
-      estimatedMarketValue: 2.50,
-      actualPrice: 1.80
-    },
-    {
-      id: "10",
-      stampCode: "UK002",
-      status: 1,
-      userId: "user1",
-      stampCatalogId: "cat10",
-      name: "Queen Elizabeth II Portrait",
-      publisher: "Royal Mail",
-      country: "United Kingdom",
-      stampImageUrl: "/placeholder.svg",
-      catalogName: "Stanley Gibbons",
-      catalogNumber: "SG1235",
-      seriesName: "Definitive Series",
-      issueDate: "1990-03-15",
-      issueYear: 1990,
-      denominationValue: 50,
-      denominationCurrency: "GBP",
-      denominationSymbol: "p",
-      color: "Purple",
-      paperType: "Phosphor",
-      stampDetailsJson: "{}",
-      estimatedMarketValue: 4.50,
-      actualPrice: 3.20
-    },
-
-    // UK Stamps - Castles Series
-    {
-      id: "11",
-      stampCode: "UK003",
-      status: 1,
-      userId: "user1",
-      stampCatalogId: "cat11",
-      name: "Windsor Castle",
-      publisher: "Royal Mail",
-      country: "United Kingdom",
-      stampImageUrl: "/placeholder.svg",
-      catalogName: "Stanley Gibbons",
-      catalogNumber: "SG1567",
-      seriesName: "Castles Series",
-      issueDate: "1992-05-20",
-      issueYear: 1992,
-      denominationValue: 50,
-      denominationCurrency: "GBP",
-      denominationSymbol: "p",
-      color: "Purple",
-      paperType: "Regular",
-      stampDetailsJson: "{}",
-      estimatedMarketValue: 8.00,
-      actualPrice: 6.50
-    },
-    {
-      id: "12",
-      stampCode: "UK004",
-      status: 1,
-      userId: "user1",
-      stampCatalogId: "cat12",
-      name: "Edinburgh Castle",
-      publisher: "Royal Mail",
-      country: "United Kingdom",
-      stampImageUrl: "/placeholder.svg",
-      catalogName: "Stanley Gibbons",
-      catalogNumber: "SG1568",
-      seriesName: "Castles Series",
-      issueDate: "1992-05-20",
-      issueYear: 1992,
-      denominationValue: 75,
-      denominationCurrency: "GBP",
-      denominationSymbol: "p",
-      color: "Blue",
-      paperType: "Regular",
-      stampDetailsJson: "{}",
-      estimatedMarketValue: 10.00,
-      actualPrice: 8.00
-    },
-    {
-      id: "13",
-      stampCode: "UK005",
-      status: 1,
-      userId: "user1",
-      stampCatalogId: "cat13",
-      name: "Caerphilly Castle",
-      publisher: "Royal Mail",
-      country: "United Kingdom",
-      stampImageUrl: "/placeholder.svg",
-      catalogName: "Stanley Gibbons",
-      catalogNumber: "SG1569",
-      seriesName: "Castles Series",
-      issueDate: "1992-05-20",
-      issueYear: 1992,
-      denominationValue: 100,
-      denominationCurrency: "GBP",
-      denominationSymbol: "p",
-      color: "Brown",
-      paperType: "Regular",
-      stampDetailsJson: "{}",
-      estimatedMarketValue: 12.00,
-      actualPrice: 9.50
-    },
-
-    // UK Stamps - Royal Family Series
-    {
-      id: "14",
-      stampCode: "UK006",
-      status: 1,
-      userId: "user1",
-      stampCatalogId: "cat14",
-      name: "Queen Mother Birthday",
-      publisher: "Royal Mail",
-      country: "United Kingdom",
-      stampImageUrl: "/placeholder.svg",
-      catalogName: "Stanley Gibbons",
-      catalogNumber: "SG2000",
-      seriesName: "Royal Family",
-      issueDate: "1995-08-04",
-      issueYear: 1995,
-      denominationValue: 25,
-      denominationCurrency: "GBP",
-      denominationSymbol: "p",
-      color: "Pink",
-      paperType: "Regular",
-      stampDetailsJson: "{}",
-      estimatedMarketValue: 5.00,
-      actualPrice: 4.00
-    },
-
-    // Canada Stamps - Canadian Symbols
-    {
-      id: "15",
-      stampCode: "CA001",
-      status: 1,
-      userId: "user1",
-      stampCatalogId: "cat15",
-      name: "Maple Leaf",
-      publisher: "Canada Post",
-      country: "Canada",
-      stampImageUrl: "/placeholder.svg",
-      catalogName: "Unitrade",
-      catalogNumber: "1234",
-      seriesName: "Canadian Symbols",
-      issueDate: "1995-07-01",
-      issueYear: 1995,
-      denominationValue: 45,
-      denominationCurrency: "CAD",
-      denominationSymbol: "¢",
-      color: "Red",
-      paperType: "Regular",
-      stampDetailsJson: "{}",
-      estimatedMarketValue: 3.00,
-      actualPrice: 2.25
-    },
-    {
-      id: "16",
-      stampCode: "CA002",
-      status: 1,
-      userId: "user1",
-      stampCatalogId: "cat16",
-      name: "Canadian Flag",
-      publisher: "Canada Post",
-      country: "Canada",
-      stampImageUrl: "/placeholder.svg",
-      catalogName: "Unitrade",
-      catalogNumber: "1235",
-      seriesName: "Canadian Symbols",
-      issueDate: "1995-07-01",
-      issueYear: 1995,
-      denominationValue: 45,
-      denominationCurrency: "CAD",
-      denominationSymbol: "¢",
-      color: "Red",
-      paperType: "Regular",
-      stampDetailsJson: "{}",
-      estimatedMarketValue: 3.00,
-      actualPrice: 2.25
-    },
-
-    // Canada Stamps - Wildlife Series
-    {
-      id: "17",
-      stampCode: "CA003",
-      status: 1,
-      userId: "user1",
-      stampCatalogId: "cat17",
-      name: "Polar Bear",
-      publisher: "Canada Post",
-      country: "Canada",
-      stampImageUrl: "/placeholder.svg",
-      catalogName: "Unitrade",
-      catalogNumber: "1500",
-      seriesName: "Canadian Wildlife",
-      issueDate: "1998-04-15",
-      issueYear: 1998,
-      denominationValue: 50,
-      denominationCurrency: "CAD",
-      denominationSymbol: "¢",
-      color: "White",
-      paperType: "Regular",
-      stampDetailsJson: "{}",
-      estimatedMarketValue: 4.00,
-      actualPrice: 3.00
-    },
-    {
-      id: "18",
-      stampCode: "CA004",
-      status: 1,
-      userId: "user1",
-      stampCatalogId: "cat18",
-      name: "Moose",
-      publisher: "Canada Post",
-      country: "Canada",
-      stampImageUrl: "/placeholder.svg",
-      catalogName: "Unitrade",
-      catalogNumber: "1501",
-      seriesName: "Canadian Wildlife",
-      issueDate: "1998-04-15",
-      issueYear: 1998,
-      denominationValue: 50,
-      denominationCurrency: "CAD",
-      denominationSymbol: "¢",
-      color: "Brown",
-      paperType: "Regular",
-      stampDetailsJson: "{}",
-      estimatedMarketValue: 4.00,
-      actualPrice: 3.00
-    },
-
-    // Australia Stamps - Flora and Fauna
-    {
-      id: "19",
-      stampCode: "AU001",
-      status: 1,
-      userId: "user1",
-      stampCatalogId: "cat19",
-      name: "Kangaroo",
-      publisher: "Australia Post",
-      country: "Australia",
-      stampImageUrl: "/placeholder.svg",
-      catalogName: "Michel",
-      catalogNumber: "AU2000",
-      seriesName: "Flora and Fauna",
-      issueDate: "2005-01-26",
-      issueYear: 2005,
-      denominationValue: 50,
-      denominationCurrency: "AUD",
-      denominationSymbol: "¢",
-      color: "Orange",
-      paperType: "Self-Adhesive",
-      stampDetailsJson: "{}",
-      estimatedMarketValue: 2.50,
-      actualPrice: 2.00
-    },
-    {
-      id: "20",
-      stampCode: "AU002",
-      status: 1,
-      userId: "user1",
-      stampCatalogId: "cat20",
-      name: "Koala",
-      publisher: "Australia Post",
-      country: "Australia",
-      stampImageUrl: "/placeholder.svg",
-      catalogName: "Michel",
-      catalogNumber: "AU2001",
-      seriesName: "Flora and Fauna",
-      issueDate: "2005-01-26",
-      issueYear: 2005,
-      denominationValue: 50,
-      denominationCurrency: "AUD",
-      denominationSymbol: "¢",
-      color: "Gray",
-      paperType: "Self-Adhesive",
-      stampDetailsJson: "{}",
-      estimatedMarketValue: 2.50,
-      actualPrice: 2.00
-    },
-
-    // Germany Stamps - Architecture Series
-    {
-      id: "21",
-      stampCode: "DE001",
-      status: 1,
-      userId: "user1",
-      stampCatalogId: "cat21",
-      name: "Brandenburg Gate",
-      publisher: "Deutsche Post",
-      country: "Germany",
-      stampImageUrl: "/placeholder.svg",
-      catalogName: "Michel",
-      catalogNumber: "DE3000",
-      seriesName: "German Architecture",
-      issueDate: "2010-10-03",
-      issueYear: 2010,
-      denominationValue: 55,
-      denominationCurrency: "EUR",
-      denominationSymbol: "¢",
-      color: "Blue",
-      paperType: "Regular",
-      stampDetailsJson: "{}",
-      estimatedMarketValue: 3.50,
-      actualPrice: 2.80
-    },
-    {
-      id: "22",
-      stampCode: "DE002",
-      status: 1,
-      userId: "user1",
-      stampCatalogId: "cat22",
-      name: "Neuschwanstein Castle",
-      publisher: "Deutsche Post",
-      country: "Germany",
-      stampImageUrl: "/placeholder.svg",
-      catalogName: "Michel",
-      catalogNumber: "DE3001",
-      seriesName: "German Architecture",
-      issueDate: "2010-10-03",
-      issueYear: 2010,
-      denominationValue: 75,
-      denominationCurrency: "EUR",
-      denominationSymbol: "¢",
-      color: "Purple",
-      paperType: "Regular",
-      stampDetailsJson: "{}",
-      estimatedMarketValue: 4.50,
-      actualPrice: 3.60
-    },
-
-    // France Stamps - Art Series
-    {
-      id: "23",
-      stampCode: "FR001",
-      status: 1,
-      userId: "user1",
-      stampCatalogId: "cat23",
-      name: "Mona Lisa",
-      publisher: "La Poste",
-      country: "France",
-      stampImageUrl: "/placeholder.svg",
-      catalogName: "Yvert",
-      catalogNumber: "FR4000",
-      seriesName: "French Art Masterpieces",
-      issueDate: "2015-05-01",
-      issueYear: 2015,
-      denominationValue: 70,
-      denominationCurrency: "EUR",
-      denominationSymbol: "¢",
-      color: "Multi-color",
-      paperType: "Regular",
-      stampDetailsJson: "{}",
-      estimatedMarketValue: 5.00,
-      actualPrice: 4.20
-    },
-    {
-      id: "24",
-      stampCode: "FR002",
-      status: 1,
-      userId: "user1",
-      stampCatalogId: "cat24",
-      name: "The Thinker",
-      publisher: "La Poste",
-      country: "France",
-      stampImageUrl: "/placeholder.svg",
-      catalogName: "Yvert",
-      catalogNumber: "FR4001",
-      seriesName: "French Art Masterpieces",
-      issueDate: "2015-05-01",
-      issueYear: 2015,
-      denominationValue: 70,
-      denominationCurrency: "EUR",
-      denominationSymbol: "¢",
-      color: "Bronze",
-      paperType: "Regular",
-      stampDetailsJson: "{}",
-      estimatedMarketValue: 5.00,
-      actualPrice: 4.20
-    },
-
-    // Japan Stamps - Cherry Blossom Series
-    {
-      id: "25",
-      stampCode: "JP001",
-      status: 1,
-      userId: "user1",
-      stampCatalogId: "cat25",
-      name: "Sakura Blossoms",
-      publisher: "Japan Post",
-      country: "Japan",
-      stampImageUrl: "/placeholder.svg",
-      catalogName: "JSCA",
-      catalogNumber: "JP5000",
-      seriesName: "Cherry Blossom Festival",
-      issueDate: "2020-04-01",
-      issueYear: 2020,
-      denominationValue: 84,
-      denominationCurrency: "JPY",
-      denominationSymbol: "¥",
-      color: "Pink",
-      paperType: "Self-Adhesive",
-      stampDetailsJson: "{}",
-      estimatedMarketValue: 1.50,
-      actualPrice: 1.20
-    },
-    {
-      id: "26",
-      stampCode: "JP002",
-      status: 1,
-      userId: "user1",
-      stampCatalogId: "cat26",
-      name: "Mount Fuji with Sakura",
-      publisher: "Japan Post",
-      country: "Japan",
-      stampImageUrl: "/placeholder.svg",
-      catalogName: "JSCA",
-      catalogNumber: "JP5001",
-      seriesName: "Cherry Blossom Festival",
-      issueDate: "2020-04-01",
-      issueYear: 2020,
-      denominationValue: 84,
-      denominationCurrency: "JPY",
-      denominationSymbol: "¥",
-      color: "Multi-color",
-      paperType: "Self-Adhesive",
-      stampDetailsJson: "{}",
-      estimatedMarketValue: 2.00,
-      actualPrice: 1.60
-    }
-  ]
-
-  // Fetch stamps from API
-  const fetchStamps = async () => {
-    setLoading(true)
-    setError(null)
-
+  // Initialize IndexedDB with real API data if empty
+  const initializeIndexedDB = async () => {
     try {
-      const userDataStr = localStorage.getItem('stamp_user_data')
-      if (!userDataStr) {
-        // Use mock data if not logged in
-        setStamps(mockStamps)
-        setLoading(false)
-        return
-      }
+      const isEmpty = await checkIndexedDBEmpty()
+      console.log('IndexedDB isEmpty:', isEmpty)
       
-      const userData = JSON.parse(userDataStr)
-      const jwt = userData.jwt
-
-      const url = new URL('https://3pm-stampapp-prod.azurewebsites.net/api/v1/Stamp')
-      url.searchParams.append('pageNumber', '1')
-      url.searchParams.append('pageSize', '1000') // Large page size for grouping
-      
-      const response = await fetch(url.toString(), {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${jwt}`,
-          'Content-Type': 'application/json'
+      if (isEmpty) {
+        console.log('IndexedDB is empty, checking authentication...')
+        
+        // Check if user is logged in
+        const userDataStr = localStorage.getItem('stamp_user_data')
+        console.log('User data from localStorage:', userDataStr ? 'Found' : 'Not found')
+        
+        if (!userDataStr) {
+          // No logged in user - show error that authentication is required
+          console.log('User not logged in, no data available')
+          toast({
+            title: "Authentication Required",
+            description: "Please log in to access the stamp catalog",
+            variant: "destructive"
+          })
+          return
         }
+
+        try {
+          const userData = JSON.parse(userDataStr)
+          console.log('Parsed user data:', { hasJwt: !!userData.jwt, userId: userData.id || 'N/A' })
+          const jwt = userData.jwt
+
+          if (!jwt) {
+            console.log('No JWT token found in user data')
+            throw new Error('No JWT token found')
+          }
+
+          console.log('JWT token found, fetching data from API...')
+          toast({
+            title: "Loading Catalog",
+            description: "Fetching stamp data from server...",
+          })
+
+          // Fetch all stamps from API
+          const apiStamps = await fetchAllStampsFromAPI(jwt)
+          console.log(`API returned ${apiStamps.length} stamps`)
+          
+          if (apiStamps.length > 0) {
+            console.log('Saving API stamps to IndexedDB...')
+            await saveStampsToIndexedDB(apiStamps)
+            toast({
+              title: "Database Initialized",
+              description: `Loaded ${apiStamps.length} stamps from server`,
+            })
+          } else {
+            // No stamps available from API
+            console.log('API returned no stamps')
+            toast({
+              title: "No Data Available", 
+              description: "No stamps found on server",
+              variant: "destructive"
+            })
+          }
+        } catch (apiError: unknown) {
+          console.error('Error fetching from API:', apiError)
+          const errorMessage = apiError instanceof Error ? apiError.message : 'Unknown error'
+          
+          // Check if it's a constraint error (schema issue)
+          if (errorMessage.includes('ConstraintError') || errorMessage.includes('uniqueness requirements')) {
+            console.log('Detected schema conflict, recreating database...')
+            try {
+              await recreateIndexedDB()
+              // Try API fetch again with fresh database
+              const userData = JSON.parse(userDataStr)
+              const retryJwt = userData.jwt
+              if (retryJwt) {
+                const apiStamps = await fetchAllStampsFromAPI(retryJwt)
+                if (apiStamps.length > 0) {
+                  await saveStampsToIndexedDB(apiStamps)
+                  toast({
+                    title: "Database Upgraded",
+                    description: `Database schema updated. Loaded ${apiStamps.length} stamps from server.`,
+                  })
+                  return
+                }
+              }
+            } catch (retryError) {
+              console.error('Retry after database recreation failed:', retryError)
+            }
+          }
+          
+          toast({
+            title: "Server Error",
+            description: `Unable to load data: ${errorMessage}`,
+            variant: "destructive"
+          })
+        }
+      } else {
+        console.log('IndexedDB already has data, skipping initialization')
+      }
+    } catch (error) {
+      console.error('Error initializing IndexedDB:', error)
+      toast({
+        title: "Database Error",
+        description: "Unable to initialize local database",
+        variant: "destructive"
       })
+    }
+  }
 
-      if (response.status === 204) {
-        setStamps(mockStamps) // Fall back to mock data if no stamps
-        return
+  // Clear and recreate IndexedDB (for schema changes)
+  const recreateIndexedDB = async () => {
+    try {
+      // Close any existing connections
+      const dbs = await indexedDB.databases()
+      for (const dbInfo of dbs) {
+        if (dbInfo.name === DB_NAME) {
+          console.log('Deleting existing database for schema upgrade...')
+          await new Promise<void>((resolve, reject) => {
+            const deleteRequest = indexedDB.deleteDatabase(DB_NAME)
+            deleteRequest.onsuccess = () => resolve()
+            deleteRequest.onerror = () => reject(deleteRequest.error)
+          })
+          break
+        }
       }
+    } catch (error) {
+      console.log('Database deletion not needed or failed:', error)
+    }
+  }
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch stamps')
-      }
-
-      const data = await response.json()
-      const fetchedStamps = data.items || []
+  // Force refresh data from API
+  const refreshDataFromAPI = async () => {
+    try {
+      setLoading(true)
+      setError(null)
       
-      // If no stamps from API, use mock data for demo
-      setStamps(fetchedStamps.length > 0 ? fetchedStamps : mockStamps)
-    } catch (err) {
-      console.warn('API error, using mock data:', err)
-      // Fall back to mock data on error
-      setStamps(mockStamps)
+      // Clear existing data
+      await clearIndexedDB()
+      
+      // Reset state
+      setStamps([])
+      setCurrentOffset(0)
+      setAllStampsLoaded(false)
+      setTotalStampsCount(0)
+      
+      // Initialize with fresh data
+      await initializeIndexedDB()
+      
+      // Reload data
+      await loadInitialStamps()
+      
+      toast({
+        title: "Data Refreshed",
+        description: "Catalog data has been refreshed from server",
+      })
+    } catch (error) {
+      console.error('Error refreshing data:', error)
+      setError('Failed to refresh data from server')
+      toast({
+        title: "Refresh Failed",
+        description: "Unable to refresh data from server",
+        variant: "destructive"
+      })
     } finally {
       setLoading(false)
     }
   }
 
+  // Load initial stamps data
+  const loadInitialStamps = async () => {
+    setLoading(true)
+    setError(null)
+    setCurrentOffset(0)
+    setAllStampsLoaded(false)
+
+    try {
+      // First, initialize IndexedDB if needed
+      await initializeIndexedDB()
+      
+      // Try to get total count first
+      const totalCount = await getTotalStampsCountFromIndexedDB()
+      setTotalStampsCount(totalCount)
+      
+      if (totalCount > 0) {
+        // Load first page from IndexedDB
+        const { stamps: initialStamps, hasMore } = await getPaginatedStampsFromIndexedDB(0, INDEXEDDB_PAGE_SIZE)
+        setStamps(initialStamps)
+        setCurrentOffset(INDEXEDDB_PAGE_SIZE)
+        setAllStampsLoaded(!hasMore)
+        console.log(`Loaded ${initialStamps.length} stamps from IndexedDB (page 1)`)
+      } else {
+        // Fallback to API or mock data
+        await loadFromAPIOrData()
+      }
+    } catch (err) {
+      console.warn('Error loading initial stamps:', err)
+      await loadFromAPIOrData()
+      setError('Using offline data. Some features may be limited.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Load more stamps from IndexedDB for infinite scroll
+  const loadMoreStamps = async () => {
+    if (isLoadingMore || allStampsLoaded) return
+    
+    setIsLoadingMore(true)
+    
+    try {
+      const { stamps: moreStamps, hasMore } = await getPaginatedStampsFromIndexedDB(currentOffset, INDEXEDDB_PAGE_SIZE)
+      
+      if (moreStamps.length > 0) {
+        setStamps(prevStamps => [...prevStamps, ...moreStamps])
+        setCurrentOffset(prev => prev + INDEXEDDB_PAGE_SIZE)
+        setAllStampsLoaded(!hasMore)
+        console.log(`Loaded ${moreStamps.length} more stamps from IndexedDB`)
+      } else {
+        setAllStampsLoaded(true)
+      }
+    } catch (err) {
+      console.error('Error loading more stamps:', err)
+      setAllStampsLoaded(true)
+    } finally {
+      setIsLoadingMore(false)
+    }
+  }
+
+  // Fallback function for API data
+  const loadFromAPIOrData = async () => {
+    const userDataStr = localStorage.getItem('stamp_user_data')
+    if (!userDataStr) {
+      // No user logged in
+      setStamps([])
+      setTotalStampsCount(0)
+      setAllStampsLoaded(true)
+      setError('Please log in to access the stamp catalog')
+      return
+    }
+    
+    try {
+      const userData = JSON.parse(userDataStr)
+      const jwt = userData.jwt
+
+      if (!jwt) {
+        throw new Error('No JWT token found')
+      }
+
+      // Fetch all stamps from the API endpoint
+      const apiStamps = await fetchAllStampsFromAPI(jwt)
+      
+      if (apiStamps.length > 0) {
+        setStamps(apiStamps)
+        setTotalStampsCount(apiStamps.length)
+        setAllStampsLoaded(true)
+        
+        // Save fetched data to IndexedDB for future use
+        await saveStampsToIndexedDB(apiStamps)
+      } else {
+        // No stamps available from API
+        setStamps([])
+        setTotalStampsCount(0)
+        setAllStampsLoaded(true)
+        setError('No stamps found on server')
+      }
+    } catch (error) {
+      console.error('Error fetching from API:', error)
+      // No data available
+      setStamps([])
+      setTotalStampsCount(0)
+      setAllStampsLoaded(true)
+      setError('Unable to load stamp data from server')
+    }
+  }
+
   useEffect(() => {
-    fetchStamps()
+    loadInitialStamps()
   }, [])
 
-  // Filter stamps based on search term
+  // Filter stamps based on debounced search term
   const filteredStamps = useMemo(() => {
-    if (!searchTerm) return stamps
+    if (!debouncedSearchTerm) return stamps
     
-    const lowerSearchTerm = searchTerm.toLowerCase()
+    const lowerSearchTerm = debouncedSearchTerm.toLowerCase()
     return stamps.filter(stamp => 
       stamp.name.toLowerCase().includes(lowerSearchTerm) ||
       stamp.seriesName.toLowerCase().includes(lowerSearchTerm) ||
@@ -890,7 +789,7 @@ export default function Catalog2Page() {
       (stamp.denominationValue && stamp.denominationSymbol && 
        `${stamp.denominationValue}${stamp.denominationSymbol}`.toLowerCase().includes(lowerSearchTerm))
     )
-  }, [stamps, searchTerm])
+  }, [stamps, debouncedSearchTerm])
 
   // Group stamps by the selected grouping levels
   const groupedStamps = useMemo(() => {
@@ -957,13 +856,13 @@ export default function Catalog2Page() {
     return groupStamps(filteredStamps, groupingLevels)
   }, [filteredStamps, groupingLevels])
 
-  // Filter groups based on group search term
+  // Filter groups based on debounced group search term
   const filteredGroups = useMemo(() => {
-    if (!groupSearchTerm) return groupedStamps
+    if (!debouncedGroupSearchTerm) return groupedStamps
 
     const filterGroups = (groups: GroupedStamps): GroupedStamps => {
       const filtered: GroupedStamps = {}
-      const lowerSearchTerm = groupSearchTerm.toLowerCase()
+      const lowerSearchTerm = debouncedGroupSearchTerm.toLowerCase()
 
       Object.entries(groups).forEach(([key, value]) => {
         // Check if the group key matches the search term
@@ -982,7 +881,7 @@ export default function Catalog2Page() {
     }
 
     return filterGroups(groupedStamps)
-  }, [groupedStamps, groupSearchTerm])
+  }, [groupedStamps, debouncedGroupSearchTerm])
 
   // Get top-level group options for quick filter
   const topLevelGroups = useMemo(() => {
@@ -994,10 +893,12 @@ export default function Catalog2Page() {
 
   const setQuickGroupFilter = (groupName: string) => {
     setGroupSearchTerm(groupName)
+    setDebouncedGroupSearchTerm(groupName) // Update immediately for quick filters
   }
 
   const clearGroupSearch = () => {
     setGroupSearchTerm("")
+    setDebouncedGroupSearchTerm("") // Update immediately for clear action
   }
 
   // Count total stamps in filtered groups
@@ -1014,6 +915,128 @@ export default function Catalog2Page() {
   const filteredStampsCount = useMemo(() => {
     return countStampsInGroups(filteredGroups)
   }, [filteredGroups])
+
+  // Get current level data based on navigation path
+  const getCurrentLevelData = useMemo(() => {
+    let currentData: GroupedStamps | StampData[] = filteredGroups
+    
+    for (const pathSegment of navigation.path) {
+      if (!Array.isArray(currentData) && currentData[pathSegment]) {
+        currentData = currentData[pathSegment]
+      } else {
+        // Path doesn't exist, reset to root
+        updateURL([])
+        return filteredGroups
+      }
+    }
+    
+    return currentData
+  }, [filteredGroups, navigation.path])
+
+  // Reset displayed items count when filters or grouping changes
+  useEffect(() => {
+    setDisplayedItemsCount(15)
+  }, [searchTerm, groupSearchTerm, groupingLevels, navigation.path])
+
+  // Load all stamps when debounced search terms or grouping changes to ensure complete results
+  useEffect(() => {
+    const debounceTimer = setTimeout(async () => {
+      if (!isInitialized) return
+      
+      // If user is searching or grouping is applied, we need all stamps for accurate results
+      const needsAllStamps = debouncedSearchTerm.trim() !== '' || groupingLevels.length > 0
+      
+      if (needsAllStamps && !allStampsLoaded) {
+        try {
+          setLoading(true)
+          console.log('Loading all stamps for search/grouping...')
+          
+          // Load all stamps from IndexedDB
+          const allStamps = await getStampsFromIndexedDB()
+          if (allStamps.length > 0) {
+            setStamps(allStamps)
+            setAllStampsLoaded(true)
+            setCurrentOffset(allStamps.length)
+            setTotalStampsCount(allStamps.length)
+            console.log(`Loaded all ${allStamps.length} stamps for complete search/grouping`)
+            
+            toast({
+              title: "Complete Dataset Loaded",
+              description: `All ${allStamps.length} stamps are now available for accurate search and grouping results.`,
+            })
+          }
+        } catch (error) {
+          console.error('Error loading all stamps for search/grouping:', error)
+        } finally {
+          setLoading(false)
+        }
+      }
+    }, 500)
+
+    return () => clearTimeout(debounceTimer)
+  }, [debouncedSearchTerm, groupingLevels, isInitialized, allStampsLoaded])
+
+  // Infinite scroll detection
+  const handleScroll = useCallback(() => {
+    if (isLoadingMore) return
+
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+    const scrollHeight = document.documentElement.scrollHeight
+    const clientHeight = document.documentElement.clientHeight
+
+    // Load more when user is 200px from bottom
+    if (scrollTop + clientHeight >= scrollHeight - 200) {
+      // Calculate current level data within the callback
+      let currentLevelData: GroupedStamps | StampData[] = filteredGroups
+      
+      for (const pathSegment of navigation.path) {
+        if (!Array.isArray(currentLevelData) && currentLevelData[pathSegment]) {
+          currentLevelData = currentLevelData[pathSegment]
+        } else {
+          currentLevelData = filteredGroups
+          break
+        }
+      }
+      
+      // Determine what type of data we're currently displaying
+      let currentTotalCount: number
+      let needsMoreFromDB = false
+      
+      if (groupingLevels.length === 0) {
+        // No grouping - showing all filtered stamps
+        currentTotalCount = filteredStamps.length
+        needsMoreFromDB = displayedItemsCount >= filteredStamps.length * 0.8 && !allStampsLoaded
+      } else if (Array.isArray(currentLevelData)) {
+        // At stamp level within a group
+        currentTotalCount = currentLevelData.length
+        // For grouped stamps, we might need more data if this group is exhausted and we haven't loaded all stamps
+        needsMoreFromDB = displayedItemsCount >= currentLevelData.length && !allStampsLoaded
+      } else {
+        // At group level
+        const groupEntries = Object.entries(currentLevelData)
+        currentTotalCount = groupEntries.length
+        needsMoreFromDB = false // Groups are already computed from loaded data
+      }
+      
+      // Check if we need to load more data from IndexedDB
+      if (needsMoreFromDB) {
+        loadMoreStamps()
+      } else if (displayedItemsCount < currentTotalCount) {
+        // Just show more of the already loaded/computed data
+        setIsLoadingMore(true)
+        setTimeout(() => {
+          setDisplayedItemsCount(prev => prev + ITEMS_PER_LOAD)
+          setIsLoadingMore(false)
+        }, 300)
+      }
+    }
+  }, [isLoadingMore, filteredStamps.length, displayedItemsCount, allStampsLoaded, loadMoreStamps, groupingLevels, filteredGroups, navigation.path])
+
+  // Add scroll event listener
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [handleScroll])
 
   // Navigation functions
   const navigateToGroup = (groupName: string) => {
@@ -1057,23 +1080,6 @@ export default function Catalog2Page() {
     }
   }
 
-  // Get current level data based on navigation path
-  const getCurrentLevelData = useMemo(() => {
-    let currentData: GroupedStamps | StampData[] = filteredGroups
-    
-    for (const pathSegment of navigation.path) {
-      if (!Array.isArray(currentData) && currentData[pathSegment]) {
-        currentData = currentData[pathSegment]
-      } else {
-        // Path doesn't exist, reset to root
-        updateURL([])
-        return filteredGroups
-      }
-    }
-    
-    return currentData
-  }, [filteredGroups, navigation.path])
-
   const addGroupingLevel = (field: GroupingField) => {
     if (!groupingLevels.includes(field)) {
       setGroupingLevels([...groupingLevels, field])
@@ -1093,14 +1099,98 @@ export default function Catalog2Page() {
     return value ? `${value}${symbol || ''}` : 'N/A'
   }
 
-  const handleStampClick = (stamp: StampData) => {
-    setSelectedStamp(stamp)
-    setIsDetailsDialogOpen(true)
-  }
+  // Loading components
+  const StampCardSkeleton = () => (
+    <Card className="overflow-hidden">
+      <div className="aspect-square relative bg-muted/10">
+        <Skeleton className="w-full h-full" />
+        <div className="absolute top-2 left-2">
+          <Skeleton className="h-5 w-12 rounded" />
+        </div>
+      </div>
+      <div className="p-3 space-y-2">
+        <div className="space-y-1">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-3 w-1/2" />
+        </div>
+        <div className="flex justify-between">
+          <Skeleton className="h-3 w-16" />
+          <Skeleton className="h-3 w-20" />
+        </div>
+        <Skeleton className="h-3 w-24" />
+      </div>
+    </Card>
+  )
 
-  const handleCloseDetails = () => {
-    setIsDetailsDialogOpen(false)
-    setSelectedStamp(null)
+  const StampListSkeleton = () => (
+    <Card className="mb-3">
+      <CardContent className="p-4">
+        <div className="flex items-center space-x-4">
+          <Skeleton className="w-16 h-16 rounded" />
+          <div className="flex-1 space-y-2">
+            <div className="space-y-1">
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-3 w-1/2" />
+            </div>
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-4 w-12 rounded" />
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-3 w-20" />
+            </div>
+          </div>
+          <Skeleton className="h-4 w-4" />
+        </div>
+      </CardContent>
+    </Card>
+  )
+
+  const GroupCardSkeleton = () => (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <Skeleton className="h-5 w-32" />
+          <ChevronRight className="h-5 w-5 text-muted-foreground" />
+        </div>
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-5 w-16 rounded" />
+          <Skeleton className="h-3 w-20" />
+        </div>
+      </CardContent>
+    </Card>
+  )
+
+  const LoadingStamps = ({ count = 6, type = 'grid' }: { count?: number; type?: 'grid' | 'list' | 'groups' }) => (
+    <div className="space-y-6">
+      <div className={cn(
+        type === 'grid' 
+          ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4"
+          : type === 'list'
+          ? "space-y-3"
+          : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+      )}>
+        {Array.from({ length: count }, (_, i) => (
+          <div key={i}>
+            {type === 'grid' ? <StampCardSkeleton /> : 
+             type === 'list' ? <StampListSkeleton /> : 
+             <GroupCardSkeleton />}
+          </div>
+        ))}
+      </div>
+      <div className="text-center py-6">
+        <div className="flex items-center justify-center space-x-3">
+          <div className="flex space-x-1">
+            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+          </div>
+          <p className="text-sm text-muted-foreground">Loading content...</p>
+        </div>
+      </div>
+    </div>
+  )
+
+  const handleStampClick = (stamp: StampData) => {
+    router.push(`/catalog-2/${stamp.id}`)
   }
 
   const formatDate = (dateString: string) => {
@@ -1119,83 +1209,99 @@ export default function Catalog2Page() {
   const renderStampCard = (stamp: StampData) => (
     <Card 
       key={stamp.id} 
-      className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+      className="group cursor-pointer transition-all duration-200 hover:shadow-lg border bg-background hover:bg-muted/20"
       onClick={() => handleStampClick(stamp)}
     >
-      <div className="aspect-square relative">
+      {/* Image Section */}
+      <div className="aspect-square relative overflow-hidden bg-muted/10">
         <Image
           src={stamp.stampImageUrl || "/placeholder.svg"}
           alt={stamp.name}
           fill
-          className="object-cover"
+          className="object-contain transition-transform duration-300 group-hover:scale-105"
           sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
         />
-      </div>
-      <CardContent className="p-3">
-        <h3 className="font-medium text-sm truncate" title={stamp.name}>
-          {stamp.name}
-        </h3>
-        <div className="space-y-1 mt-2">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Series</span>
-            <span className="truncate ml-2" title={stamp.seriesName}>
-              {stamp.seriesName}
-            </span>
-          </div>
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Year</span>
-            <span>{stamp.issueYear || 'N/A'}</span>
-          </div>
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Value</span>
-            <span>{formatDenomination(stamp.denominationValue, stamp.denominationSymbol)}</span>
-          </div>
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Country</span>
-            <span className="truncate ml-2" title={stamp.country}>
-              {stamp.country}
-            </span>
-          </div>
+        
+        {/* Simple denomination badge */}
+        <div className="absolute top-2 left-2 z-10">
+          <Badge variant="secondary" className="text-xs font-medium bg-background/90 backdrop-blur-sm">
+            {formatDenomination(stamp.denominationValue, stamp.denominationSymbol)}
+          </Badge>
         </div>
-      </CardContent>
+        
+        {/* Hover overlay */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-200" />
+      </div>
+      
+      {/* Content Section */}
+      <div className="p-3 space-y-2">
+        {/* Title */}
+        <div>
+          <h3 className="font-semibold text-sm leading-tight line-clamp-2 mb-1" title={stamp.name}>
+            {stamp.name}
+          </h3>
+          <p className="text-xs text-muted-foreground truncate" title={stamp.seriesName}>
+            {stamp.seriesName}
+          </p>
+        </div>
+        
+        {/* Simple info row */}
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>{stamp.issueYear || 'Unknown'}</span>
+          <span>•</span>
+          <span>{stamp.country}</span>
+        </div>
+        
+        {/* Catalog number */}
+        <div className="text-xs text-muted-foreground">
+          #{stamp.catalogNumber}
+        </div>
+      </div>
     </Card>
   )
 
   const renderStampList = (stamp: StampData) => (
     <Card 
       key={stamp.id} 
-      className="mb-2 cursor-pointer hover:shadow-lg transition-shadow"
+      className="group mb-3 cursor-pointer transition-all duration-200 hover:shadow-md border bg-background hover:bg-muted/10"
       onClick={() => handleStampClick(stamp)}
     >
       <CardContent className="p-4">
         <div className="flex items-center space-x-4">
-          <div className="w-16 h-16 relative flex-shrink-0">
+          <div className="w-16 h-16 relative flex-shrink-0 bg-muted/10 rounded overflow-hidden">
             <Image
               src={stamp.stampImageUrl || "/placeholder.svg"}
               alt={stamp.name}
               fill
-              className="object-cover rounded"
+              className="object-cover"
               sizes="64px"
             />
           </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-medium truncate" title={stamp.name}>
-              {stamp.name}
-            </h3>
-            <div className="flex flex-wrap gap-2 mt-1">
-              <Badge variant="outline" className="text-xs">
+          
+          <div className="flex-1 min-w-0 space-y-2">
+            <div>
+              <h3 className="font-semibold text-base leading-tight mb-1" title={stamp.name}>
+                {stamp.name}
+              </h3>
+              <p className="text-sm text-muted-foreground" title={stamp.seriesName}>
                 {stamp.seriesName}
-              </Badge>
+              </p>
+            </div>
+            
+            <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
               <Badge variant="secondary" className="text-xs">
-                {stamp.issueYear || 'Unknown Year'}
-              </Badge>
-              <Badge variant="outline" className="text-xs">
                 {formatDenomination(stamp.denominationValue, stamp.denominationSymbol)}
               </Badge>
-              <Badge variant="outline" className="text-xs">
-                {stamp.country}
-              </Badge>
+              <span>{stamp.issueYear || 'Unknown'}</span>
+              <span>•</span>
+              <span>{stamp.country}</span>
+              <span>•</span>
+              <span>#{stamp.catalogNumber}</span>
             </div>
+          </div>
+          
+          <div className="flex-shrink-0 opacity-50 group-hover:opacity-100 transition-opacity duration-200">
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
           </div>
         </div>
       </CardContent>
@@ -1207,14 +1313,39 @@ export default function Catalog2Page() {
     
     // If no grouping levels are set, show all filtered stamps directly
     if (groupingLevels.length === 0) {
+      const displayedStamps = filteredStamps.slice(0, displayedItemsCount)
+      const hasMore = displayedItemsCount < filteredStamps.length
+      
       return (
-        <div className={cn(
-          viewMode === 'grid' 
-            ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4"
-            : "space-y-2"
-        )}>
-          {filteredStamps.map(stamp => 
-            viewMode === 'grid' ? renderStampCard(stamp) : renderStampList(stamp)
+        <div className="space-y-4">
+          <div className={cn(
+            viewMode === 'grid' 
+              ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4"
+              : "space-y-2"
+          )}>
+            {displayedStamps.map(stamp => 
+              viewMode === 'grid' ? renderStampCard(stamp) : renderStampList(stamp)
+            )}
+          </div>
+          {isLoadingMore && (hasMore || (!allStampsLoaded && displayedItemsCount >= filteredStamps.length * 0.8)) && (
+            <div className="text-center py-6">
+              <div className="flex items-center justify-center space-x-3">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+                <p className="text-sm text-muted-foreground">Loading more...</p>
+              </div>
+            </div>
+          )}
+          {!hasMore && !isLoadingMore && filteredStamps.length > 6 && displayedItemsCount >= filteredStamps.length && (
+            <div className="text-center py-4 text-muted-foreground">
+              {allStampsLoaded 
+                ? `All ${filteredStamps.length} stamps loaded` 
+                : `Showing ${filteredStamps.length} stamps (${totalStampsCount - stamps.length} more available)`
+              }
+            </div>
           )}
         </div>
       )
@@ -1222,52 +1353,100 @@ export default function Catalog2Page() {
     
     if (Array.isArray(currentData)) {
       // We're at the final level - show stamps
+      const displayedStamps = currentData.slice(0, displayedItemsCount)
+      const hasMore = displayedItemsCount < currentData.length
+      
       return (
-        <div className={cn(
-          viewMode === 'grid' 
-            ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4"
-            : "space-y-2"
-        )}>
-          {currentData.map(stamp => 
-            viewMode === 'grid' ? renderStampCard(stamp) : renderStampList(stamp)
+        <div className="space-y-4">
+          <div className={cn(
+            viewMode === 'grid' 
+              ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4"
+              : "space-y-2"
+          )}>
+            {displayedStamps.map(stamp => 
+              viewMode === 'grid' ? renderStampCard(stamp) : renderStampList(stamp)
+            )}
+          </div>
+          {isLoadingMore && (hasMore || (!allStampsLoaded && displayedItemsCount >= currentData.length)) && (
+            <div className="text-center py-6">
+              <div className="flex items-center justify-center space-x-3">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+                <p className="text-sm text-muted-foreground">Loading more...</p>
+              </div>
+            </div>
+          )}
+          {!hasMore && !isLoadingMore && currentData.length > 6 && displayedItemsCount >= currentData.length && (
+            <div className="text-center py-4 text-muted-foreground">
+              {allStampsLoaded 
+                ? `All ${currentData.length} stamps loaded in this group` 
+                : `Showing ${currentData.length} stamps in this group (more may be available)`
+              }
+            </div>
           )}
         </div>
       )
     }
 
     // We're at a group level - show groups as clickable cards
+    const groupEntries = Object.entries(currentData)
+    const displayedGroups = groupEntries.slice(0, displayedItemsCount)
+    const hasMore = displayedItemsCount < groupEntries.length
+
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {Object.entries(currentData).map(([groupName, groupData]) => {
-          const stampCount = countStampsInGroups(groupData)
-          
-          return (
-            <Card 
-              key={groupName} 
-              className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-primary/20"
-              onClick={() => navigateToGroup(groupName)}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-medium text-lg truncate" title={groupName}>
-                    {groupName}
-                  </h3>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div className="flex items-center justify-between">
-                  <Badge variant="secondary" className="text-sm">
-                    {stampCount} stamp{stampCount !== 1 ? 's' : ''}
-                  </Badge>
-                  {navigation.level < groupingLevels.length - 1 && (
-                    <span className="text-xs text-muted-foreground">
-                      {GROUPING_FIELDS.find(f => f.value === groupingLevels[navigation.level + 1])?.label}
-                    </span>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )
-        })}
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {displayedGroups.map(([groupName, groupData]) => {
+            const stampCount = countStampsInGroups(groupData)
+            
+            return (
+              <Card 
+                key={groupName} 
+                className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-primary/20"
+                onClick={() => navigateToGroup(groupName)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-medium text-lg truncate" title={groupName}>
+                      {groupName}
+                    </h3>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Badge variant="secondary" className="text-sm">
+                      {stampCount} stamp{stampCount !== 1 ? 's' : ''}
+                    </Badge>
+                    {navigation.level < groupingLevels.length - 1 && (
+                      <span className="text-xs text-muted-foreground">
+                        {GROUPING_FIELDS.find(f => f.value === groupingLevels[navigation.level + 1])?.label}
+                      </span>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+        {isLoadingMore && hasMore && groupEntries.length > 0 && (
+          <div className="text-center py-6">
+            <div className="flex items-center justify-center space-x-3">
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+              <p className="text-sm text-muted-foreground">Loading more...</p>
+            </div>
+          </div>
+        )}
+        {!hasMore && groupEntries.length > 6 && displayedItemsCount >= groupEntries.length && (
+          <div className="text-center py-4 text-muted-foreground">
+            All {groupEntries.length} groups loaded
+          </div>
+        )}
       </div>
     )
   }
@@ -1311,168 +1490,56 @@ export default function Catalog2Page() {
     )
   }
 
-  const renderStampDetails = () => {
-    if (!selectedStamp) return null
 
+
+  if (loading && stamps.length === 0) {
     return (
-      <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">{selectedStamp.name}</DialogTitle>
-            <DialogDescription>
-              Complete stamp information and details
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
-            {/* Stamp Image */}
-            <div className="space-y-4">
-              <div className="aspect-square relative bg-gray-50 rounded-lg overflow-hidden">
-                <Image
-                  src={selectedStamp.stampImageUrl || "/placeholder.svg"}
-                  alt={selectedStamp.name}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                />
-              </div>
-              
-              {/* Quick Info Cards */}
-              <div className="grid grid-cols-2 gap-2">
-                <Card className="p-3">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">
-                      {formatDenomination(selectedStamp.denominationValue, selectedStamp.denominationSymbol)}
-                    </div>
-                    <div className="text-xs text-muted-foreground">Face Value</div>
-                  </div>
-                </Card>
-                <Card className="p-3">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">
-                      {selectedStamp.issueYear || 'Unknown'}
-                    </div>
-                    <div className="text-xs text-muted-foreground">Issue Year</div>
-                  </div>
-                </Card>
-              </div>
-            </div>
-
-            {/* Stamp Details */}
-            <div className="space-y-6">
-              {/* Basic Information */}
-              <div>
-                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-primary rounded-full"></span>
-                  Basic Information
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Stamp Code:</span>
-                    <span className="font-medium">{selectedStamp.stampCode}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Country:</span>
-                    <span className="font-medium">{selectedStamp.country}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Publisher:</span>
-                    <span className="font-medium">{selectedStamp.publisher}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Series:</span>
-                    <span className="font-medium">{selectedStamp.seriesName}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Catalog Information */}
-              <div>
-                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                  Catalog Information
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Catalog:</span>
-                    <span className="font-medium">{selectedStamp.catalogName || 'N/A'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Catalog Number:</span>
-                    <span className="font-medium">{selectedStamp.catalogNumber}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Issue Date:</span>
-                    <span className="font-medium">{formatDate(selectedStamp.issueDate)}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Physical Properties */}
-              <div>
-                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                  Physical Properties
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Color:</span>
-                    <span className="font-medium">{selectedStamp.color}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Paper Type:</span>
-                    <span className="font-medium">{selectedStamp.paperType || 'N/A'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Denomination:</span>
-                    <span className="font-medium">
-                      {selectedStamp.denominationValue} {selectedStamp.denominationCurrency}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Value Information */}
-              {(selectedStamp.estimatedMarketValue || selectedStamp.actualPrice) && (
-                <div>
-                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                    <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
-                    Value Information
-                  </h3>
-                  <div className="space-y-3">
-                    {selectedStamp.estimatedMarketValue && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Estimated Market Value:</span>
-                        <span className="font-medium">${selectedStamp.estimatedMarketValue.toFixed(2)}</span>
-                      </div>
-                    )}
-                    {selectedStamp.actualPrice && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Actual Price:</span>
-                        <span className="font-medium">${selectedStamp.actualPrice.toFixed(2)}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Status Badge */}
-              <div className="pt-4">
-                <Badge variant={selectedStamp.status === 1 ? "default" : "secondary"} className="text-sm">
-                  {selectedStamp.status === 1 ? "Active" : "Inactive"}
-                </Badge>
-              </div>
-            </div>
+      <div className="container mx-auto p-6 space-y-6">
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-8 w-32 mb-2" />
+            <Skeleton className="h-4 w-48" />
           </div>
-        </DialogContent>
-      </Dialog>
-    )
-  }
+          <div className="flex items-center space-x-2">
+            <Skeleton className="h-10 w-10" />
+            <Skeleton className="h-10 w-10" />
+            <Skeleton className="h-10 w-10" />
+            <Skeleton className="h-10 w-10" />
+          </div>
+        </div>
 
-  if (loading) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="text-center">Loading stamps...</div>
+        {/* Controls skeleton */}
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-48" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Skeleton className="h-4 w-24 mb-2" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+            <div>
+              <Skeleton className="h-4 w-32 mb-2" />
+              <div className="flex gap-2 mb-2">
+                <Skeleton className="h-6 w-20 rounded-full" />
+                <Skeleton className="h-6 w-24 rounded-full" />
+              </div>
+              <Skeleton className="h-10 w-full" />
+            </div>
+            <Skeleton className="h-4 w-40" />
+          </CardContent>
+        </Card>
+
+        {/* Stamps skeleton */}
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-24" />
+          </CardHeader>
+          <CardContent>
+            <LoadingStamps count={12} type="grid" />
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -1484,7 +1551,7 @@ export default function Catalog2Page() {
           <CardContent className="p-6">
             <div className="text-center">
               <p className="text-red-600 mb-4">{error}</p>
-              <Button onClick={fetchStamps}>Retry</Button>
+              <Button onClick={loadInitialStamps}>Retry</Button>
             </div>
           </CardContent>
         </Card>
@@ -1500,6 +1567,15 @@ export default function Catalog2Page() {
           <p className="text-muted-foreground">Advanced stamp catalog with flexible grouping</p>
         </div>
         <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={refreshDataFromAPI}
+            title="Refresh data from server"
+            disabled={loading}
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
           <Button
             variant="outline"
             size="icon"
@@ -1551,32 +1627,144 @@ export default function Catalog2Page() {
 
           {/* Grouping Levels */}
           <div className="space-y-2">
-            <Label>Grouping Levels (in order)</Label>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {groupingLevels.map((level, index) => (
-                <Badge key={index} variant="default" className="flex items-center gap-1">
-                  {GROUPING_FIELDS.find(f => f.value === level)?.label}
-                  <button
-                    onClick={() => removeGroupingLevel(index)}
-                    className="ml-1 hover:bg-white/20 rounded-full p-0.5"
-                  >
-                    ×
-                  </button>
-                </Badge>
-              ))}
+            <div className="flex items-center justify-between">
+              <Label>Grouping Hierarchy</Label>
+              {groupingLevels.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setGroupingLevels([])}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Clear all
+                </Button>
+              )}
             </div>
-            <Select onValueChange={(value) => addGroupingLevel(value as GroupingField)}>
+            
+            {groupingLevels.length > 0 && (
+              <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+                <div className="text-xs text-muted-foreground mb-2">
+                  Groups are nested from left to right. Remove levels from right to left only.
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {groupingLevels.map((level, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      {/* Level indicator */}
+                      <div className="flex items-center gap-1">
+                        <div className={cn(
+                          "flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold",
+                          index === 0 
+                            ? "bg-primary text-primary-foreground" 
+                            : "bg-primary/20 text-primary"
+                        )}>
+                          {index + 1}
+                        </div>
+                        <Badge 
+                          variant={index === 0 ? "default" : "secondary"} 
+                          className={cn(
+                            "flex items-center gap-1 pr-1",
+                            index === groupingLevels.length - 1 && "ring-2 ring-primary/20"
+                          )}
+                        >
+                          <span className="text-xs">
+                            {index === 0 ? "Root: " : "Then: "}
+                          </span>
+                          {GROUPING_FIELDS.find(f => f.value === level)?.label}
+                          {/* Only show remove button on the last (rightmost) item */}
+                          {index === groupingLevels.length - 1 && (
+                            <button
+                              onClick={() => removeGroupingLevel(index)}
+                              className="ml-1 hover:bg-white/20 rounded-full p-0.5 transition-colors"
+                              title="Remove this grouping level"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </Badge>
+                      </div>
+                      
+                      {/* Arrow separator (except for last item) */}
+                      {index < groupingLevels.length - 1 && (
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <Select 
+              onValueChange={(value) => addGroupingLevel(value as GroupingField)}
+              value="" // Always keep the select empty/uncontrolled
+            >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Add grouping level" />
+                <SelectValue placeholder={
+                  groupingLevels.length === 0 
+                    ? "Select root grouping level" 
+                    : `Add level ${groupingLevels.length + 1} grouping`
+                } />
               </SelectTrigger>
               <SelectContent>
                 {GROUPING_FIELDS.filter(field => !groupingLevels.includes(field.value)).map(field => (
                   <SelectItem key={field.value} value={field.value}>
                     {field.label}
+                    {groupingLevels.length === 0 && (
+                      <span className="text-xs text-muted-foreground ml-2">(Root level)</span>
+                    )}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            
+            {/* Quick Grouping Options */}
+            {groupingLevels.length === 0 && (
+              <div className="space-y-2">
+                <Label className="text-sm text-muted-foreground">Quick start with common groupings:</Label>
+                <div className="flex flex-wrap gap-2">
+                  {GROUPING_FIELDS.slice(0, 4).map(field => (
+                    <Button
+                      key={field.value}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs h-8"
+                      onClick={() => addGroupingLevel(field.value)}
+                    >
+                      {field.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Quick Add More Grouping Options */}
+            {groupingLevels.length > 0 && groupingLevels.length < GROUPING_FIELDS.length && (
+              <div className="space-y-2">
+                <Label className="text-sm text-muted-foreground">Quick add grouping level:</Label>
+                <div className="flex flex-wrap gap-2">
+                  {GROUPING_FIELDS
+                    .filter(field => !groupingLevels.includes(field.value))
+                    .map(field => (
+                      <Button
+                        key={field.value}
+                        variant="outline"
+                        size="sm"
+                        className="text-xs h-8"
+                        onClick={() => addGroupingLevel(field.value)}
+                      >
+                        + {field.label}
+                      </Button>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* Helpful explanation */}
+            {groupingLevels.length === 0 && (
+              <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/20 p-2 rounded border border-blue-200 dark:border-blue-800">
+                💡 <strong>Tip:</strong> Start with a root grouping (e.g., Country), then add nested levels (e.g., Year, then Series). 
+                Stamps will be organized hierarchically based on your selection order.
+              </div>
+            )}
           </div>
 
           {/* Group Search */}
@@ -1604,28 +1792,40 @@ export default function Catalog2Page() {
                 )}
               </div>
               
-              {/* Quick Group Filters */}
-              {topLevelGroups.length > 0 && topLevelGroups.length <= 15 && (
+              {/* Quick Group Value Filters */}
+              {topLevelGroups.length > 0 && (
                 <div className="space-y-2">
-                  <Label className="text-sm text-muted-foreground">Quick filters:</Label>
-                  <div className="flex flex-wrap gap-1">
-                    {topLevelGroups.slice(0, 10).map(groupName => (
+                  <Label className="text-sm text-muted-foreground">
+                    Quick filter by {GROUPING_FIELDS.find(f => f.value === groupingLevels[0])?.label.toLowerCase() || 'group'}:
+                  </Label>
+                  <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+                    {topLevelGroups.slice(0, 20).map(groupName => (
                       <Button
                         key={groupName}
-                        variant={groupSearchTerm === groupName ? "default" : "outline"}
+                        variant={debouncedGroupSearchTerm === groupName ? "default" : "outline"}
                         size="sm"
-                        className="text-xs h-7"
+                        className="text-xs h-7 flex-shrink-0"
                         onClick={() => setQuickGroupFilter(groupName)}
                       >
                         {groupName}
                       </Button>
                     ))}
-                    {topLevelGroups.length > 10 && (
-                      <span className="text-xs text-muted-foreground flex items-center px-2">
-                        +{topLevelGroups.length - 10} more
-                      </span>
+                    {topLevelGroups.length > 20 && (
+                      <div className="text-xs text-muted-foreground flex items-center px-2 py-1 bg-muted/50 rounded">
+                        +{topLevelGroups.length - 20} more
+                      </div>
                     )}
                   </div>
+                  {debouncedGroupSearchTerm && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs h-6 text-muted-foreground hover:text-foreground"
+                      onClick={clearGroupSearch}
+                    >
+                      Clear filter
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
@@ -1633,8 +1833,21 @@ export default function Catalog2Page() {
 
           <div className="text-sm text-muted-foreground">
             Found {filteredStamps.length} stamps
-            {groupSearchTerm && ` • Showing ${filteredStampsCount} stamps in groups matching "${groupSearchTerm}"`}
+            {!allStampsLoaded && ` (${stamps.length} of ${totalStampsCount} loaded)`}
+            {debouncedGroupSearchTerm && ` • Showing ${filteredStampsCount} stamps in groups matching "${debouncedGroupSearchTerm}"`}
+            {(debouncedSearchTerm.trim() !== '' || groupingLevels.length > 0) && !allStampsLoaded && (
+              <span className="text-orange-600 font-medium">
+                {" • Loading complete dataset for accurate results..."}
+              </span>
+            )}
+            {searchTerm !== debouncedSearchTerm && searchTerm.trim() !== '' && (
+              <span className="text-blue-600 font-medium">
+                {" • Typing..."}
+              </span>
+            )}
           </div>
+          
+
         </CardContent>
       </Card>
 
@@ -1658,13 +1871,41 @@ export default function Catalog2Page() {
           {renderBreadcrumbs()}
         </CardHeader>
         <CardContent className="p-6">
-          {filteredStamps.length === 0 ? (
+          {loading && (debouncedSearchTerm.trim() !== '' || groupingLevels.length > 0) && !allStampsLoaded ? (
+            <div className="space-y-6">
+              <div className="text-center py-8">
+                <div className="flex items-center justify-center space-x-3 mb-4">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                  <p className="text-sm text-muted-foreground">Loading complete dataset...</p>
+                </div>
+                <div className="max-w-md mx-auto">
+                  <div className="bg-muted/20 rounded-lg p-4">
+                    <div className="flex items-center justify-center space-x-2 text-sm text-muted-foreground">
+                      <Search className="h-4 w-4" />
+                      <span>Ensuring accurate search results</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Show skeleton while loading */}
+              <LoadingStamps 
+                count={6} 
+                type={groupingLevels.length === 0 ? viewMode : 
+                      Array.isArray(getCurrentLevelData) ? viewMode : 'groups'} 
+              />
+            </div>
+          ) : filteredStamps.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground">No stamps found</p>
             </div>
-          ) : Object.keys(filteredGroups).length === 0 && groupSearchTerm ? (
+                      ) : Object.keys(filteredGroups).length === 0 && debouncedGroupSearchTerm ? (
             <div className="text-center py-8">
-              <p className="text-muted-foreground">No groups found matching "{groupSearchTerm}"</p>
+              <p className="text-muted-foreground">No groups found matching "{debouncedGroupSearchTerm}"</p>
               <Button variant="outline" className="mt-2" onClick={clearGroupSearch}>
                 Clear group search
               </Button>
@@ -1675,7 +1916,7 @@ export default function Catalog2Page() {
         </CardContent>
       </Card>
 
-      {renderStampDetails()}
+
     </div>
   )
 } 
