@@ -26,6 +26,187 @@ import {
 import { ChevronRight, Search, Filter, Grid, List, ArrowLeft, Home, Share2, RefreshCw, Loader2, Star, Eye } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
+import {
+  ReactFlow,
+  Node,
+  Edge,
+  Controls,
+  Background,
+  useNodesState,
+  useEdgesState,
+  ConnectionMode,
+  Panel,
+  MarkerType,
+  Handle,
+  Position,
+} from 'reactflow'
+import 'reactflow/dist/style.css'
+import dagre from 'dagre'
+
+// Override ReactFlow default styles to match theme
+const reactFlowStyles = `
+  .react-flow__node-default,
+  .react-flow__node-input,
+  .react-flow__node-output,
+  .react-flow__node-group {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    width: auto !important;
+  }
+  
+  .react-flow__node {
+    border: none !important;
+  }
+  
+  /* Background styling to match theme */
+  .react-flow__renderer {
+    background: hsl(var(--background)) !important;
+  }
+  
+  .react-flow__background {
+    background: hsl(var(--background)) !important;
+  }
+  
+  /* SVG Gradient Definitions */
+  .react-flow svg defs {
+    position: absolute;
+  }
+  
+  /* Edge styling for elegance */
+  .react-flow__edge {
+    z-index: 1000 !important;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .react-flow__edge-path {
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.08));
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  
+  /* Group connection edges - elegant gradient flow */
+  .react-flow__edge.group-connection .react-flow__edge-path {
+    stroke: url(#group-gradient) !important;
+    stroke-width: 3px;
+    opacity: 0.95;
+    filter: drop-shadow(0 4px 16px rgba(249, 115, 22, 0.2)) drop-shadow(0 0 8px rgba(249, 115, 22, 0.1));
+  }
+  
+  /* Stamp connection edges - subtle dotted elegance */
+  .react-flow__edge.stamp-connection .react-flow__edge-path {
+    stroke: url(#stamp-gradient) !important;
+    stroke-width: 2.5px;
+    stroke-dasharray: 10 5;
+    opacity: 0.85;
+    filter: drop-shadow(0 3px 12px rgba(100, 116, 139, 0.15)) drop-shadow(0 0 6px rgba(100, 116, 139, 0.08));
+    animation: dash 3s linear infinite;
+  }
+  
+  /* Hover effects */
+  .react-flow__edge:hover .react-flow__edge-path {
+    filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.2));
+    transform: scale(1.02);
+    stroke-width: 4px !important;
+  }
+  
+  .react-flow__edge.group-connection:hover .react-flow__edge-path {
+    filter: drop-shadow(0 6px 24px rgba(249, 115, 22, 0.4)) drop-shadow(0 0 16px rgba(249, 115, 22, 0.3));
+    stroke: url(#group-gradient-hover) !important;
+    stroke-width: 4px !important;
+    animation: breathe 2s ease-in-out infinite;
+  }
+  
+  .react-flow__edge.stamp-connection:hover .react-flow__edge-path {
+    filter: drop-shadow(0 4px 20px rgba(59, 130, 246, 0.3)) drop-shadow(0 0 12px rgba(59, 130, 246, 0.2));
+    stroke: url(#stamp-gradient-hover) !important;
+    stroke-width: 3px !important;
+    stroke-dasharray: 14 7;
+    animation: dash 1.2s linear infinite, breathe 2.5s ease-in-out infinite;
+  }
+  
+  /* Selected state */
+  .react-flow__edge.selected .react-flow__edge-path {
+    stroke: url(#selected-gradient) !important;
+    stroke-width: 5px !important;
+    opacity: 1 !important;
+    filter: drop-shadow(0 6px 24px rgba(168, 85, 247, 0.4));
+    animation: pulse 2s ease-in-out infinite;
+  }
+  
+  /* Keyframe animations */
+  @keyframes dash {
+    to {
+      stroke-dashoffset: -24;
+    }
+  }
+  
+  @keyframes pulse {
+    0%, 100% {
+      filter: drop-shadow(0 6px 24px rgba(168, 85, 247, 0.4));
+    }
+    50% {
+      filter: drop-shadow(0 8px 32px rgba(168, 85, 247, 0.6));
+    }
+  }
+  
+  @keyframes breathe {
+    0%, 100% {
+      opacity: 0.9;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+  
+  /* Edge markers (arrows) */
+  .react-flow__edge .react-flow__edge-path {
+    marker-end: url(#elegant-arrow);
+  }
+  
+  .react-flow__edge.group-connection .react-flow__edge-path {
+    marker-end: url(#group-arrow);
+  }
+  
+  .react-flow__edge.stamp-connection .react-flow__edge-path {
+    marker-end: url(#stamp-arrow);
+  }
+  
+  /* Controls styling */
+  .react-flow__controls {
+    background: hsl(var(--card)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    border-radius: var(--radius) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .react-flow__controls-button {
+    background: hsl(var(--card)) !important;
+    border: none !important;
+    color: hsl(var(--foreground)) !important;
+    transition: all 0.2s ease;
+  }
+  
+  .react-flow__controls-button:hover {
+    background: hsl(var(--accent)) !important;
+    transform: scale(1.05);
+  }
+  
+  /* Minimap styling */
+  .react-flow__minimap {
+    background: hsl(var(--card)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    border-radius: var(--radius) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+`
 
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -377,10 +558,135 @@ const fetchAllStampsFromAPI = async (jwt: string): Promise<StampData[]> => {
   }
 }
 
+// Custom node components for xyflow tree
+const GroupNode = ({ data }: { data: any }) => {
+  const { name, count, level, fieldLabel } = data
+  
+  return (
+    <div className={cn(
+      "px-4 py-3 shadow-lg rounded-lg bg-background min-w-[140px] transition-all hover:shadow-xl relative",
+      level === 0 && "border-0 bg-gradient-to-br from-primary/10 to-primary/20 shadow-primary/20",
+      level === 1 && "border-2 border-blue-400 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/30",
+      level === 2 && "border-2 border-green-400 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/30",
+      level >= 3 && "border-2 border-orange-400 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/20 dark:to-orange-900/30"
+    )}>
+      {/* Input handle (top) */}
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="top"
+        className="w-2 h-2 !bg-primary !border-0"
+      />
+      
+      <div className="flex flex-col items-center text-center">
+        <div className={cn(
+          "w-4 h-4 rounded-full mb-2 shadow-sm",
+          level === 0 && "bg-gradient-to-r from-primary to-primary/80",
+          level === 1 && "bg-gradient-to-r from-blue-500 to-blue-600",
+          level === 2 && "bg-gradient-to-r from-green-500 to-green-600", 
+          level >= 3 && "bg-gradient-to-r from-orange-500 to-orange-600"
+        )}></div>
+        <h4 className="font-semibold text-sm text-foreground truncate max-w-[120px] mb-1" title={name}>
+          {name}
+        </h4>
+        <p className="text-xs text-muted-foreground mb-2">
+          {fieldLabel}
+        </p>
+        <Badge variant="outline" className={cn(
+          "text-xs font-medium",
+          level === 0 && "border-primary/50 text-primary bg-primary/5",
+          level === 1 && "border-blue-400/50 text-blue-600 bg-blue-50 dark:bg-blue-950/30",
+          level === 2 && "border-green-400/50 text-green-600 bg-green-50 dark:bg-green-950/30",
+          level >= 3 && "border-orange-400/50 text-orange-600 bg-orange-50 dark:bg-orange-950/30"
+        )}>
+          {count} stamp{count !== 1 ? 's' : ''}
+        </Badge>
+      </div>
+      
+      {/* Output handle (bottom) */}
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="bottom"
+        className="w-2 h-2 !bg-primary !border-0"
+      />
+    </div>
+  )
+}
+
+const StampNode = ({ data }: { data: any }) => {
+  const { stamp, onStampClick } = data
+  
+  return (
+    <div 
+      className="group cursor-pointer transition-all duration-200 hover:shadow-xl rounded-lg p-3 bg-background border-2 border-muted hover:border-primary/50 min-w-[220px] max-w-[280px] hover:scale-105 relative"
+      onClick={() => onStampClick && onStampClick(stamp)}
+    >
+      {/* Input handle (top) */}
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="top"
+        className="w-2 h-2 !bg-primary !border-0"
+      />
+      
+      <div className="flex items-center space-x-3">
+        <div className="w-14 h-14 relative flex-shrink-0 bg-muted/10 rounded-lg overflow-hidden shadow-sm">
+          <Image
+            src={stamp.stampImageUrl || "/placeholder.svg"}
+            alt={stamp.name}
+            fill
+            className="object-cover"
+            sizes="56px"
+          />
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <h4 className="font-semibold text-sm leading-tight mb-1 text-foreground truncate" title={stamp.name}>
+            {stamp.name}
+          </h4>
+          <div className="flex flex-wrap gap-1 text-xs text-muted-foreground mb-1">
+            <Badge variant="outline" className="text-xs px-2 py-0.5 h-auto bg-primary/5 border-primary/30 text-primary">
+              {stamp.denominationValue} {stamp.denominationSymbol}
+            </Badge>
+            <span className="bg-muted/50 px-1 py-0.5 rounded text-xs">
+              {stamp.issueYear || 'Unknown'}
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground truncate">
+            #{stamp.catalogNumber}
+          </p>
+        </div>
+        
+        <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <ChevronRight className="h-4 w-4 text-primary" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Define node types for xyflow
+const nodeTypes = {
+  group: GroupNode,
+  stamp: StampNode,
+}
+
 function Catalog2Content() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
+  
+  // Inject custom styles to override ReactFlow defaults
+  useEffect(() => {
+    const styleElement = document.createElement('style')
+    styleElement.textContent = reactFlowStyles
+    document.head.appendChild(styleElement)
+    
+    return () => {
+      document.head.removeChild(styleElement)
+    }
+  }, [])
   
   const [stamps, setStamps] = useState<StampData[]>([])
   const [allStampsLoaded, setAllStampsLoaded] = useState(false)
@@ -1093,6 +1399,11 @@ function Catalog2Content() {
     setGroupingLevels(newLevels)
     // Reset navigation when grouping changes
     updateURL([])
+    
+    // If no grouping levels left and we're in list view, switch back to grid view
+    if (newLevels.length === 0 && viewMode === 'list') {
+      setViewMode('grid')
+    }
   }
 
   const formatDenomination = (value: number, symbol: string) => {
@@ -1190,7 +1501,26 @@ function Catalog2Content() {
   )
 
   const handleStampClick = (stamp: StampData) => {
-    router.push(`/catalog-2/${stamp.id}`)
+    // Get JWT token from localStorage
+    const userDataStr = localStorage.getItem('stamp_user_data')
+    let jwtParam = ''
+    
+    if (userDataStr) {
+      try {
+        const userData = JSON.parse(userDataStr)
+        if (userData.jwt) {
+          jwtParam = `?jwt=${encodeURIComponent(userData.jwt)}`
+        }
+      } catch (error) {
+        console.error('Error parsing user data for JWT:', error)
+      }
+    }
+
+    // Open stamp detail in a new window with specific dimensions
+    const url = `/catalog-2/${stamp.id}${jwtParam}`
+    const windowFeatures = 'width=350,height=500,scrollbars=yes,resizable=yes,status=no,menubar=no,toolbar=no,location=no'
+    
+    window.open(url, '_blank', windowFeatures)
   }
 
   const formatDate = (dateString: string) => {
@@ -1308,7 +1638,432 @@ function Catalog2Content() {
     </Card>
   )
 
+   
+
+  // Function to create tree layout using dagre
+  const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
+    console.log('getLayoutedElements input:')
+    console.log('- Nodes:', nodes.length, nodes.map(n => n.id))
+    console.log('- Edges:', edges.length, edges.map(e => `${e.source} -> ${e.target}`))
+    
+    const g = new dagre.graphlib.Graph()
+    g.setDefaultEdgeLabel(() => ({}))
+    g.setGraph({ 
+      rankdir: 'TB', // Top to Bottom
+      ranksep: 120,  // Increased vertical spacing between ranks
+      nodesep: 80,   // Increased horizontal spacing between nodes
+      marginx: 60,
+      marginy: 60,
+      edgesep: 20,   // Space between edges
+      ranker: 'longest-path' // Better edge routing
+    })
+
+    nodes.forEach((node) => {
+      g.setNode(node.id, { width: 250, height: 100 })
+    })
+
+    edges.forEach((edge) => {
+      g.setEdge(edge.source, edge.target)
+    })
+
+    dagre.layout(g)
+
+    const layoutedNodes = nodes.map((node) => {
+      const nodeWithPosition = g.node(node.id)
+      return {
+        ...node,
+        position: {
+          x: nodeWithPosition.x - (node.type === 'stamp' ? 125 : 60),
+          y: nodeWithPosition.y - 50,
+        },
+      }
+    })
+
+    console.log('getLayoutedElements output:')
+    console.log('- Layouted nodes:', layoutedNodes.map(n => ({ id: n.id, pos: n.position })))
+    console.log('- Edges (unchanged):', edges.map(e => ({ id: e.id, source: e.source, target: e.target, style: e.style })))
+
+    return { nodes: layoutedNodes, edges }
+  }
+
+  // Function to convert grouped data to xyflow nodes and edges
+  const createTreeFromData = (data: GroupedStamps | StampData[], parentId: string | null = null, level: number = 0): { nodes: Node[], edges: Edge[] } => {
+    const nodes: Node[] = []
+    const edges: Edge[] = []
+
+    if (Array.isArray(data)) {
+      // This is an array of stamps
+      data.forEach((stamp, index) => {
+        const nodeId = `stamp-${stamp.id}`
+        nodes.push({
+          id: nodeId,
+          type: 'stamp',
+          position: { x: 0, y: 0 }, // Will be set by layout
+          data: { stamp, level, onStampClick: handleStampClick },
+        })
+
+        if (parentId) {
+          edges.push({
+            id: `edge-${parentId}-${nodeId}`,
+            source: parentId,
+            sourceHandle: 'bottom',
+            target: nodeId,
+            targetHandle: 'top',
+            className: 'stamp-connection',
+            style: { 
+              stroke: 'url(#stamp-gradient)',
+              strokeWidth: 2,
+              strokeOpacity: 0.8,
+            },
+            animated: false,
+            type: 'smoothstep',
+            markerEnd: {
+              type: MarkerType.ArrowClosed,
+              width: 16,
+              height: 16,
+              color: '#64748b',
+            }
+          })
+        }
+      })
+    } else {
+      // This is a grouped object
+      const entries = Object.entries(data)
+      const groupingField = groupingLevels[level]
+      const fieldLabel = GROUPING_FIELDS.find(f => f.value === groupingField)?.label || 'Group'
+
+      entries.forEach(([groupName, groupData]) => {
+        const nodeId = `group-${level}-${groupName}-${Math.random()}`
+        const stampCount = countStampsInGroups(groupData)
+        
+        nodes.push({
+          id: nodeId,
+          type: 'group',
+          position: { x: 0, y: 0 }, // Will be set by layout
+          data: { 
+            name: groupName, 
+            count: stampCount, 
+            level, 
+            fieldLabel 
+          },
+        })
+
+        if (parentId) {
+          edges.push({
+            id: `edge-${parentId}-${nodeId}`,
+            source: parentId,
+            sourceHandle: 'bottom',
+            target: nodeId,
+            targetHandle: 'top',
+            className: 'group-connection',
+            style: { 
+              stroke: 'url(#group-gradient)',
+              strokeWidth: 3,
+              strokeOpacity: 0.9
+            },
+            animated: false,
+            type: 'smoothstep',
+            markerEnd: {
+              type: MarkerType.ArrowClosed,
+              width: 20,
+              height: 20,
+              color: '#f97316',
+            }
+          })
+        }
+
+        // Recursively create child nodes
+        const childResult = createTreeFromData(groupData, nodeId, level + 1)
+        nodes.push(...childResult.nodes)
+        edges.push(...childResult.edges)
+      })
+    }
+
+    return { nodes, edges }
+  }
+
+  // Render tree view for a specific group's hierarchy
+  const renderTreeForGroup = (groupData: GroupedStamps | StampData[], groupName: string) => {
+    // Create root node for this group
+    const rootNodeId = `root-${groupName}`
+    const rootNode: Node = {
+      id: rootNodeId,
+      type: 'group',
+      position: { x: 0, y: 0 },
+      data: {
+        name: groupName,
+        count: countStampsInGroups(groupData),
+        level: 0,
+        fieldLabel: GROUPING_FIELDS.find(f => f.value === groupingLevels[0])?.label || 'Root'
+      },
+    }
+    
+    // Create tree structure for this specific group
+    const treeData = createTreeFromData(groupData, rootNodeId, 1) // Start from level 1 since root is the accordion
+    
+    // Debug: Log all data for debugging
+    console.log('=== DEBUGGING EDGES ===')
+    console.log('Group name:', groupName)
+    console.log('Root node ID:', rootNodeId)
+    console.log('Tree nodes:', treeData.nodes.map(n => ({ id: n.id, type: n.type, data: n.data.name || n.data.stamp?.name })))
+    console.log('Tree edges:', treeData.edges.map(e => ({ id: e.id, source: e.source, target: e.target, style: e.style })))
+    console.log('All nodes (including root):', [rootNode, ...treeData.nodes].map(n => ({ id: n.id, type: n.type })))
+    console.log('All edges:', treeData.edges)
+    console.log('========================')
+    
+    // If no sub-structure, just show stamps
+    if (Array.isArray(groupData)) {
+      return (
+        <div className="space-y-2 p-4">
+          {groupData.map(stamp => (
+            <div 
+              key={stamp.id}
+              className="group cursor-pointer transition-all duration-200 hover:bg-muted/30 rounded-lg p-3 border border-muted/50 hover:border-primary/30"
+              onClick={() => handleStampClick(stamp)}
+            >
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 relative flex-shrink-0 bg-muted/10 rounded overflow-hidden">
+                  <Image
+                    src={stamp.stampImageUrl || "/placeholder.svg"}
+                    alt={stamp.name}
+                    fill
+                    className="object-cover"
+                    sizes="40px"
+                  />
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium text-sm leading-tight mb-1 text-foreground truncate" title={stamp.name}>
+                    {stamp.name}
+                  </h4>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Badge variant="outline" className="text-xs px-1 py-0.5 h-auto">
+                      {formatDenomination(stamp.denominationValue, stamp.denominationSymbol)}
+                    </Badge>
+                    <span>{stamp.issueYear || 'Unknown'}</span>
+                    <span>#{stamp.catalogNumber}</span>
+                  </div>
+                </div>
+                
+                <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )
+    }
+
+    // Apply layout for tree visualization including root node
+    const allNodes = [rootNode, ...treeData.nodes]
+    const allEdges = treeData.edges
+    
+    console.log('Edges to layout:', allEdges)
+    
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(allNodes, allEdges)
+
+    return (
+      <div className="h-[400px] w-full">
+        <ReactFlow
+          nodes={layoutedNodes}
+          edges={layoutedEdges}
+          nodeTypes={nodeTypes}
+          connectionMode={ConnectionMode.Strict}
+          fitView
+          attributionPosition="bottom-left"
+          className="bg-background"
+          panOnDrag={true}
+          zoomOnScroll={true}
+          minZoom={0.5}
+          maxZoom={2}
+          defaultEdgeOptions={{
+            style: { 
+              strokeWidth: 2,
+              strokeOpacity: 1
+            },
+            type: 'smoothstep'
+          }}
+          onInit={() => console.log('ReactFlow initialized')}
+          onNodesChange={(changes) => console.log('Nodes changed:', changes)}
+          onEdgesChange={(changes) => console.log('Edges changed:', changes)}
+        >
+          {/* SVG Gradient Definitions */}
+          <svg style={{ position: 'absolute', width: 0, height: 0 }}>
+            <defs>
+              {/* Group connection gradients */}
+              <linearGradient id="group-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#f97316" stopOpacity="0.9" />
+                <stop offset="50%" stopColor="#fb923c" stopOpacity="0.8" />
+                <stop offset="100%" stopColor="#fdba74" stopOpacity="0.7" />
+              </linearGradient>
+              
+              <linearGradient id="group-gradient-hover" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#ea580c" stopOpacity="1" />
+                <stop offset="50%" stopColor="#f97316" stopOpacity="0.9" />
+                <stop offset="100%" stopColor="#fb923c" stopOpacity="0.8" />
+              </linearGradient>
+              
+              {/* Stamp connection gradients */}
+              <linearGradient id="stamp-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#64748b" stopOpacity="0.8" />
+                <stop offset="50%" stopColor="#94a3b8" stopOpacity="0.7" />
+                <stop offset="100%" stopColor="#cbd5e1" stopOpacity="0.6" />
+              </linearGradient>
+              
+              <linearGradient id="stamp-gradient-hover" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.9" />
+                <stop offset="50%" stopColor="#60a5fa" stopOpacity="0.8" />
+                <stop offset="100%" stopColor="#93c5fd" stopOpacity="0.7" />
+              </linearGradient>
+              
+              {/* Selected edge gradient */}
+              <linearGradient id="selected-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#a855f7" stopOpacity="1" />
+                <stop offset="25%" stopColor="#c084fc" stopOpacity="0.9" />
+                <stop offset="50%" stopColor="#e879f9" stopOpacity="0.8" />
+                <stop offset="75%" stopColor="#f0abfc" stopOpacity="0.9" />
+                <stop offset="100%" stopColor="#a855f7" stopOpacity="1" />
+              </linearGradient>
+              
+              {/* Custom arrow markers */}
+              <marker id="group-arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                <polygon points="0,0 0,6 9,3" fill="url(#group-gradient)" stroke="none" />
+              </marker>
+              
+              <marker id="stamp-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+                <polygon points="0,0 0,6 7,3" fill="url(#stamp-gradient)" stroke="none" />
+              </marker>
+              
+              <marker id="elegant-arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                <polygon points="0,0 0,6 9,3" fill="#64748b" stroke="none" />
+              </marker>
+            </defs>
+          </svg>
+          
+          <Background 
+            color="hsl(214.3 31.8% 91.4%)" 
+            size={1} 
+          />
+          <Controls 
+            className="bg-background border border-muted rounded-lg shadow-sm" 
+            showInteractive={false}
+          />
+        </ReactFlow>
+        
+        {/* Debug info */}
+        <div className="mt-2 p-2 bg-gray-100 text-xs">
+          <div>Nodes: {layoutedNodes.length}</div>
+          <div>Edges: {layoutedEdges.length}</div>
+          <div>Sample edge: {layoutedEdges[0] ? `${layoutedEdges[0].source} → ${layoutedEdges[0].target}` : 'None'}</div>
+        </div>
+      </div>
+    )
+  }
+
+  // Main hierarchical accordion view
+  const renderHierarchicalAccordionView = () => {
+    const currentData = getCurrentLevelData
+    
+    // If no grouping levels, show message
+    if (groupingLevels.length === 0) {
+      return (
+        <div className="h-[400px] flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-muted-foreground mb-4">
+              Hierarchical view is available when grouping levels are configured.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Please add grouping levels to see the tree visualization.
+            </p>
+          </div>
+        </div>
+      )
+    }
+
+    // Get root level groups
+    const groupEntries = Object.entries(currentData as GroupedStamps)
+    const rootFieldLabel = GROUPING_FIELDS.find(f => f.value === groupingLevels[0])?.label || 'Groups'
+    
+    return (
+      <div className="space-y-4">
+        <div className="text-sm text-muted-foreground mb-4 p-3 bg-muted/20 rounded-lg border border-muted/50">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-2 h-2 rounded-full bg-primary"></div>
+            <span className="font-medium">Hierarchical Tree View</span>
+          </div>
+          <p>
+            {groupEntries.length} {rootFieldLabel.toLowerCase()} organized by{' '}
+            <span className="font-medium">
+              {groupingLevels.map((field, idx) => 
+                GROUPING_FIELDS.find(f => f.value === field)?.label
+              ).join(' → ')}
+            </span>
+          </p>
+        </div>
+        
+        <Accordion type="multiple" className="w-full space-y-3">
+          {groupEntries.map(([groupName, groupData]) => {
+            const stampCount = countStampsInGroups(groupData)
+            
+            return (
+              <AccordionItem 
+                key={groupName} 
+                value={groupName}
+                className="border border-muted/50 rounded-lg shadow-sm bg-background hover:shadow-md transition-shadow"
+              >
+                <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/20 rounded-t-lg data-[state=open]:rounded-b-none">
+                  <div className="flex items-center justify-between w-full mr-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-3 h-3 rounded-full bg-gradient-to-r from-primary to-primary/70"></div>
+                      <div className="text-left">
+                        <h3 className="font-semibold text-base text-foreground" title={groupName}>
+                          {groupName}
+                        </h3>
+                        <p className="text-xs text-muted-foreground">
+                          {rootFieldLabel}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Badge variant="secondary" className="text-sm font-medium bg-primary/10 text-primary border-primary/20">
+                        {stampCount} stamp{stampCount !== 1 ? 's' : ''}
+                      </Badge>
+                      {groupingLevels.length > 1 && (
+                        <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded border">
+                          {GROUPING_FIELDS.find(f => f.value === groupingLevels[1])?.label} Tree
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-0 pb-0">
+                  <div className="border-t border-muted/30">
+                    {renderTreeForGroup(groupData, groupName)}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            )
+          })}
+        </Accordion>
+        
+        {groupEntries.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground">
+            No groups found
+          </div>
+        )}
+      </div>
+    )
+  }
+
+
+
   const renderCurrentLevel = () => {
+    // Use hierarchical accordion tree view when viewMode is 'list' and we have grouping levels
+    if (viewMode === 'list' && groupingLevels.length > 0) {
+      return renderHierarchicalAccordionView()
+    }
+
     const currentData = getCurrentLevelData
     
     // If no grouping levels are set, show all filtered stamps directly
@@ -1593,6 +2348,8 @@ function Catalog2Content() {
             variant={viewMode === 'list' ? 'default' : 'outline'}
             size="icon"
             onClick={() => setViewMode('list')}
+            disabled={groupingLevels.length === 0}
+            title={groupingLevels.length === 0 ? "List view requires grouping levels" : "Switch to hierarchical tree view"}
           >
             <List className="h-4 w-4" />
           </Button>
