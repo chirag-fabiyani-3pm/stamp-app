@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useEffect, useMemo, useCallback, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -377,7 +377,7 @@ const fetchAllStampsFromAPI = async (jwt: string): Promise<StampData[]> => {
   }
 }
 
-export default function Catalog2Page() {
+function Catalog2Content() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
@@ -1490,8 +1490,6 @@ export default function Catalog2Page() {
     )
   }
 
-
-
   if (loading && stamps.length === 0) {
     return (
       <div className="container mx-auto p-6 space-y-6">
@@ -1918,5 +1916,49 @@ export default function Catalog2Page() {
 
 
     </div>
+  )
+}
+
+// Loading component for the Suspense fallback
+function Catalog2Loading() {
+  return (
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-96" />
+        </div>
+        <div className="flex items-center space-x-2">
+          <Skeleton className="h-10 w-32" />
+          <Skeleton className="h-10 w-10" />
+          <Skeleton className="h-10 w-10" />
+        </div>
+      </div>
+      
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-40" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="space-y-3">
+                <Skeleton className="h-48 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-2/3" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+export default function Catalog2Page() {
+  return (
+    <Suspense fallback={<Catalog2Loading />}>
+      <Catalog2Content />
+    </Suspense>
   )
 } 
