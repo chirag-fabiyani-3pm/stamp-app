@@ -23,7 +23,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { ChevronRight, Search, Filter, Grid, List, ArrowLeft, Home, Share2, RefreshCw, Loader2, Star, Eye } from "lucide-react"
+import { ChevronRight, Search, Filter, Grid, List, ArrowLeft, Home, Share2, RefreshCw, Loader2, Star, Eye, X, Calendar, MapPin, Palette, FileText, DollarSign, Tag } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
 import {
@@ -32,6 +32,13 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import {
   ReactFlow,
   Node,
@@ -137,7 +144,7 @@ const reactFlowStyles = `
     stroke: url(#selected-gradient) !important;
     stroke-width: 5px !important;
     opacity: 1 !important;
-    filter: drop-shadow(0 6px 24px rgba(168, 85, 247, 0.4));
+    filter: drop-shadow(0 6px 24px rgba(0, 0, 0, 0.2));
     animation: pulse 2s ease-in-out infinite;
   }
   
@@ -150,10 +157,10 @@ const reactFlowStyles = `
   
   @keyframes pulse {
     0%, 100% {
-      filter: drop-shadow(0 6px 24px rgba(168, 85, 247, 0.4));
+      filter: drop-shadow(0 6px 24px rgba(0, 0, 0, 0.2));
     }
     50% {
-      filter: drop-shadow(0 8px 32px rgba(168, 85, 247, 0.6));
+      filter: drop-shadow(0 8px 32px rgba(0, 0, 0, 0.3));
     }
   }
   
@@ -564,7 +571,7 @@ const GroupNode = ({ data }: { data: any }) => {
   
   return (
     <div className={cn(
-      "px-4 py-3 shadow-lg rounded-lg bg-background min-w-[140px] transition-all hover:shadow-xl relative",
+      "px-3 md:px-4 py-2 md:py-3 shadow-lg rounded-lg bg-background min-w-[120px] md:min-w-[140px] transition-all hover:shadow-xl relative",
       level === 0 && "border-0 bg-gradient-to-br from-primary/10 to-primary/20 shadow-primary/20",
       level === 1 && "border-2 border-blue-400 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/30",
       level === 2 && "border-2 border-green-400 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/30",
@@ -619,7 +626,7 @@ const StampNode = ({ data }: { data: any }) => {
   
   return (
     <div 
-      className="group cursor-pointer transition-all duration-200 hover:shadow-xl rounded-lg p-3 bg-background border-2 border-muted hover:border-primary/50 min-w-[220px] max-w-[280px] hover:scale-105 relative"
+      className="group cursor-pointer transition-all duration-200 hover:shadow-xl rounded-lg p-2 md:p-3 bg-background border-2 border-muted hover:border-primary/50 min-w-[200px] md:min-w-[220px] max-w-[260px] md:max-w-[280px] hover:scale-105 relative"
       onClick={() => onStampClick && onStampClick(stamp)}
     >
       {/* Input handle (top) */}
@@ -630,8 +637,8 @@ const StampNode = ({ data }: { data: any }) => {
         className="w-2 h-2 !bg-primary !border-0"
       />
       
-      <div className="flex items-center space-x-3">
-        <div className="w-14 h-14 relative flex-shrink-0 bg-muted/10 rounded-lg overflow-hidden shadow-sm">
+              <div className="flex items-center space-x-2 md:space-x-3">
+          <div className="w-12 md:w-14 h-12 md:h-14 relative flex-shrink-0 bg-muted/10 rounded-lg overflow-hidden shadow-sm">
           <Image
             src={stamp.stampImageUrl || "/placeholder.svg"}
             alt={stamp.name}
@@ -701,6 +708,10 @@ function Catalog2Content() {
   const [groupSearchTerm, setGroupSearchTerm] = useState("")
   const [debouncedGroupSearchTerm, setDebouncedGroupSearchTerm] = useState("")
   const [isInitialized, setIsInitialized] = useState(false) // Track initialization
+  
+  // Modal state for stamp details
+  const [selectedStamp, setSelectedStamp] = useState<StampData | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
   
   // Infinite scrolling state
   const [displayedItemsCount, setDisplayedItemsCount] = useState(6)
@@ -1208,18 +1219,38 @@ function Catalog2Content() {
   }
 
   // Count total stamps in filtered groups
-  const countStampsInGroups = (groups: GroupedStamps | StampData[]): number => {
+  const countStampsInGroups = (groups: GroupedStamps | StampData[], visited = new Set()): number => {
+    // Prevent infinite recursion with circular references
+    if (visited.has(groups)) {
+      return 0
+    }
+    visited.add(groups)
+    
     if (Array.isArray(groups)) {
       return groups.length
     }
     
+    // Check if groups is a valid object
+    if (!groups || typeof groups !== 'object') {
+      return 0
+    }
+    
     return Object.values(groups).reduce((total, value) => {
-      return total + countStampsInGroups(value)
+      // Ensure value exists and is valid before recursing
+      if (value == null) {
+        return total
+      }
+      return total + countStampsInGroups(value, visited)
     }, 0)
   }
 
   const filteredStampsCount = useMemo(() => {
-    return countStampsInGroups(filteredGroups)
+    try {
+      return countStampsInGroups(filteredGroups)
+    } catch (error) {
+      console.error('Error counting stamps in groups:', error)
+      return 0
+    }
   }, [filteredGroups])
 
   // Get current level data based on navigation path
@@ -1312,6 +1343,11 @@ function Catalog2Content() {
         // No grouping - showing all filtered stamps
         currentTotalCount = filteredStamps.length
         needsMoreFromDB = displayedItemsCount >= filteredStamps.length * 0.8 && !allStampsLoaded
+      } else if (viewMode === 'list' && navigation.level === 0) {
+        // Hierarchical view - showing groups at root level
+        const groupEntries = Object.entries(currentLevelData as GroupedStamps)
+        currentTotalCount = groupEntries.length
+        needsMoreFromDB = false // Groups are already computed from loaded data
       } else if (Array.isArray(currentLevelData)) {
         // At stamp level within a group
         currentTotalCount = currentLevelData.length
@@ -1336,7 +1372,7 @@ function Catalog2Content() {
         }, 300)
       }
     }
-  }, [isLoadingMore, filteredStamps.length, displayedItemsCount, allStampsLoaded, loadMoreStamps, groupingLevels, filteredGroups, navigation.path])
+  }, [isLoadingMore, filteredStamps.length, displayedItemsCount, allStampsLoaded, loadMoreStamps, groupingLevels, filteredGroups, navigation.path, viewMode, navigation.level])
 
   // Add scroll event listener
   useEffect(() => {
@@ -1501,26 +1537,8 @@ function Catalog2Content() {
   )
 
   const handleStampClick = (stamp: StampData) => {
-    // Get JWT token from localStorage
-    const userDataStr = localStorage.getItem('stamp_user_data')
-    let jwtParam = ''
-    
-    if (userDataStr) {
-      try {
-        const userData = JSON.parse(userDataStr)
-        if (userData.jwt) {
-          jwtParam = `?jwt=${encodeURIComponent(userData.jwt)}`
-        }
-      } catch (error) {
-        console.error('Error parsing user data for JWT:', error)
-      }
-    }
-
-    // Open stamp detail in a new window with specific dimensions
-    const url = `/catalog-2/${stamp.id}${jwtParam}`
-    const windowFeatures = 'width=350,height=500,scrollbars=yes,resizable=yes,status=no,menubar=no,toolbar=no,location=no'
-    
-    window.open(url, '_blank', windowFeatures)
+    setSelectedStamp(stamp)
+    setIsModalOpen(true)
   }
 
   const formatDate = (dateString: string) => {
@@ -1534,6 +1552,251 @@ function Catalog2Content() {
     } catch {
       return dateString
     }
+  }
+
+  // Stamp Details Modal Component
+  const StampDetailsModal = () => {
+    if (!selectedStamp) return null
+
+    let stampDetails = null
+    try {
+      if (selectedStamp.stampDetailsJson) {
+        stampDetails = JSON.parse(selectedStamp.stampDetailsJson)
+      }
+    } catch (error) {
+      console.error('Error parsing stamp details JSON:', error)
+    }
+
+    return (
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-5xl w-[calc(100vw-16px)] sm:w-[90vw] md:w-[85vw] lg:w-[80vw] max-h-[95vh] overflow-hidden p-0 gap-0">
+                      <DialogHeader className="px-3 py-3 border-b bg-muted/20 relative">
+            <DialogTitle className="text-base md:text-lg font-semibold leading-tight pr-8 truncate">
+              {selectedStamp.name}
+            </DialogTitle>
+            <p className="text-xs md:text-sm text-muted-foreground truncate">
+              {selectedStamp.seriesName} • {selectedStamp.country}
+            </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute right-2 top-2 h-8 w-8 p-0 md:hidden"
+              onClick={() => setIsModalOpen(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </DialogHeader>
+          
+          <div className="overflow-y-auto max-h-[calc(95vh-4rem)]">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+              {/* Image Section */}
+              <div className="p-2 md:p-4 space-y-3 md:border-r border-b md:border-b-0">
+                <div className="aspect-square max-w-[280px] mx-auto relative bg-muted/10 rounded-lg overflow-hidden">
+                  <Image
+                    src={selectedStamp.stampImageUrl || "/placeholder.svg"}
+                    alt={selectedStamp.name}
+                    fill
+                    className="object-contain"
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                  />
+                </div>
+                
+                {/* Quick Info Cards */}
+                <div className="grid grid-cols-2 gap-1 md:gap-2">
+                  <Card className="p-1.5 md:p-2 bg-primary/5 border-primary/20">
+                    <div className="flex items-center gap-1 md:gap-1.5 mb-1">
+                      <Tag className="h-3 w-3 text-primary" />
+                      <span className="text-xs font-medium text-primary">Denomination</span>
+                    </div>
+                    <p className="text-xs md:text-sm font-semibold">
+                      {formatDenomination(selectedStamp.denominationValue, selectedStamp.denominationSymbol)}
+                    </p>
+                  </Card>
+                  
+                  <Card className="p-1.5 md:p-2 bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+                    <div className="flex items-center gap-1 md:gap-1.5 mb-1">
+                      <Calendar className="h-3 w-3 text-blue-600" />
+                      <span className="text-xs font-medium text-blue-600">Year</span>
+                    </div>
+                    <p className="text-xs md:text-sm font-semibold">
+                      {selectedStamp.issueYear || 'Unknown'}
+                    </p>
+                  </Card>
+                  
+                  <Card className="p-1.5 md:p-2 bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
+                    <div className="flex items-center gap-1 md:gap-1.5 mb-1">
+                      <MapPin className="h-3 w-3 text-green-600" />
+                      <span className="text-xs font-medium text-green-600">Country</span>
+                    </div>
+                    <p className="text-xs md:text-sm font-semibold truncate" title={selectedStamp.country}>
+                      {selectedStamp.country}
+                    </p>
+                  </Card>
+                  
+                  <Card className="p-1.5 md:p-2 bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800">
+                    <div className="flex items-center gap-1 md:gap-1.5 mb-1">
+                      <Palette className="h-3 w-3 text-orange-600" />
+                      <span className="text-xs font-medium text-orange-600">Color</span>
+                    </div>
+                    <p className="text-xs md:text-sm font-semibold truncate" title={selectedStamp.color}>
+                      {selectedStamp.color}
+                    </p>
+                  </Card>
+                </div>
+              </div>
+
+                              {/* Details Section */}
+                               <div className="p-2 md:p-4 space-y-3 md:space-y-4">
+                {/* Basic Information */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-foreground border-b pb-1.5 flex items-center gap-1.5">
+                    <FileText className="h-3.5 w-3.5" />
+                    Basic Information
+                  </h3>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-start gap-3">
+                      <span className="text-xs text-muted-foreground">Series:</span>
+                      <span className="text-xs font-medium text-right break-words max-w-[65%]">
+                        {selectedStamp.seriesName}
+                      </span>
+                    </div>
+                    
+                    <div className="flex justify-between items-start gap-3">
+                      <span className="text-xs text-muted-foreground">Publisher:</span>
+                      <span className="text-xs font-medium text-right break-words max-w-[65%]">
+                        {selectedStamp.publisher}
+                      </span>
+                    </div>
+                    
+                    <div className="flex justify-between items-start gap-3">
+                      <span className="text-xs text-muted-foreground">Catalog #:</span>
+                      <span className="text-xs font-medium text-right font-mono">
+                        #{selectedStamp.catalogNumber}
+                      </span>
+                    </div>
+                    
+                    <div className="flex justify-between items-start gap-3">
+                      <span className="text-xs text-muted-foreground">Stamp Code:</span>
+                      <span className="text-xs font-medium text-right font-mono">
+                        {selectedStamp.stampCode}
+                      </span>
+                    </div>
+                    
+                    {selectedStamp.catalogName && (
+                      <div className="flex justify-between items-start gap-3">
+                        <span className="text-xs text-muted-foreground">Catalog:</span>
+                        <span className="text-xs font-medium text-right break-words max-w-[65%]">
+                          {selectedStamp.catalogName}
+                        </span>
+                      </div>
+                    )}
+                    
+                    <div className="flex justify-between items-start gap-3">
+                      <span className="text-xs text-muted-foreground">Issue Date:</span>
+                      <span className="text-xs font-medium text-right">
+                        {selectedStamp.issueDate ? formatDate(selectedStamp.issueDate) : 'Unknown'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Physical Characteristics */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-foreground border-b pb-1.5 flex items-center gap-1.5">
+                    <Palette className="h-3.5 w-3.5" />
+                    Physical Details
+                  </h3>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-start gap-3">
+                      <span className="text-xs text-muted-foreground">Paper Type:</span>
+                      <span className="text-xs font-medium text-right break-words max-w-[65%]">
+                        {selectedStamp.paperType || 'Not specified'}
+                      </span>
+                    </div>
+                    
+                    <div className="flex justify-between items-start gap-3">
+                      <span className="text-xs text-muted-foreground">Currency:</span>
+                      <span className="text-xs font-medium text-right">
+                        {selectedStamp.denominationCurrency}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Market Information */}
+                {(selectedStamp.estimatedMarketValue || selectedStamp.actualPrice) && (
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold text-foreground border-b pb-1.5 flex items-center gap-1.5">
+                      <DollarSign className="h-3.5 w-3.5" />
+                      Market Information
+                    </h3>
+                    
+                    <div className="space-y-2">
+                      {selectedStamp.estimatedMarketValue && (
+                        <div className="flex justify-between items-start gap-3">
+                          <span className="text-xs text-muted-foreground">Estimated Value:</span>
+                          <span className="text-xs font-semibold text-green-600">
+                            ${selectedStamp.estimatedMarketValue.toFixed(2)}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {selectedStamp.actualPrice && (
+                        <div className="flex justify-between items-start gap-3">
+                          <span className="text-xs text-muted-foreground">Actual Price:</span>
+                          <span className="text-xs font-semibold text-blue-600">
+                            ${selectedStamp.actualPrice.toFixed(2)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-3 border-t">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="flex-1 text-xs h-8"
+                    onClick={() => {
+                      const stampInfo = `${selectedStamp.name} (${selectedStamp.catalogNumber})\n${selectedStamp.country}, ${selectedStamp.issueYear}\n${formatDenomination(selectedStamp.denominationValue, selectedStamp.denominationSymbol)}`
+                      navigator.clipboard.writeText(stampInfo)
+                      toast({
+                        title: "Copied!",
+                        description: "Stamp info copied to clipboard",
+                      })
+                    }}
+                  >
+                    Copy Info
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 text-xs h-8"
+                    onClick={() => {
+                      if (navigator.share) {
+                        navigator.share({
+                          title: selectedStamp.name,
+                          text: `Check out this stamp: ${selectedStamp.name} from ${selectedStamp.country}`,
+                        })
+                      }
+                    }}
+                  >
+                    Share
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    )
   }
 
   const renderStampCard = (stamp: StampData) => (
@@ -1687,9 +1950,28 @@ function Catalog2Content() {
   }
 
   // Function to convert grouped data to xyflow nodes and edges
-  const createTreeFromData = (data: GroupedStamps | StampData[], parentId: string | null = null, level: number = 0): { nodes: Node[], edges: Edge[] } => {
+  const createTreeFromData = (data: GroupedStamps | StampData[], parentId: string | null = null, level: number = 0, visited = new Set(), maxDepth = 10): { nodes: Node[], edges: Edge[] } => {
     const nodes: Node[] = []
     const edges: Edge[] = []
+
+    // Prevent infinite recursion
+    if (level >= maxDepth) {
+      console.warn(`Maximum tree depth (${maxDepth}) reached, stopping recursion`)
+      return { nodes, edges }
+    }
+
+    // Prevent circular references
+    if (visited.has(data)) {
+      console.warn('Circular reference detected in tree data, stopping recursion')
+      return { nodes, edges }
+    }
+    visited.add(data)
+
+    // Validate data
+    if (!data || (typeof data !== 'object')) {
+      console.warn('Invalid data provided to createTreeFromData:', data)
+      return { nodes, edges }
+    }
 
     if (Array.isArray(data)) {
       // This is an array of stamps
@@ -1729,12 +2011,45 @@ function Catalog2Content() {
     } else {
       // This is a grouped object
       const entries = Object.entries(data)
+      
+      // Validate grouping levels to prevent infinite recursion
+      if (level >= groupingLevels.length) {
+        console.warn(`Level ${level} exceeds available grouping levels (${groupingLevels.length}), treating as stamps`)
+        // If we've exceeded grouping levels, treat any remaining data as stamps
+        return { nodes, edges }
+      }
+      
       const groupingField = groupingLevels[level]
       const fieldLabel = GROUPING_FIELDS.find(f => f.value === groupingField)?.label || 'Group'
+      
+      // Prevent processing too many groups at once to avoid stack overflow
+      if (entries.length > 100) {
+        console.warn(`Too many groups (${entries.length}) at level ${level}, limiting to first 100`)
+        entries.splice(100)
+      }
 
       entries.forEach(([groupName, groupData]) => {
-        const nodeId = `group-${level}-${groupName}-${Math.random()}`
-        const stampCount = countStampsInGroups(groupData)
+        // Validate group data before processing
+        if (!groupData || (!Array.isArray(groupData) && typeof groupData !== 'object')) {
+          console.warn(`Invalid group data for "${groupName}":`, groupData)
+          return // Skip this group
+        }
+        
+        // Ensure we don't have empty group names that could cause issues
+        if (!groupName || groupName.trim() === '') {
+          console.warn('Empty group name detected, skipping')
+          return
+        }
+        
+        const nodeId = `group-${level}-${groupName.replace(/[^a-zA-Z0-9]/g, '_')}-${Math.random()}`
+        const stampCount = (() => {
+          try {
+            return countStampsInGroups(groupData)
+          } catch (error) {
+            console.error('Error counting stamps in createTreeFromData:', error)
+            return 0
+          }
+        })()
         
         nodes.push({
           id: nodeId,
@@ -1773,11 +2088,14 @@ function Catalog2Content() {
         }
 
         // Recursively create child nodes
-        const childResult = createTreeFromData(groupData, nodeId, level + 1)
+        const childResult = createTreeFromData(groupData, nodeId, level + 1, new Set(visited), maxDepth)
         nodes.push(...childResult.nodes)
         edges.push(...childResult.edges)
       })
     }
+
+    // Clean up visited set for this level
+    visited.delete(data)
 
     return { nodes, edges }
   }
@@ -1792,14 +2110,76 @@ function Catalog2Content() {
       position: { x: 0, y: 0 },
       data: {
         name: groupName,
-        count: countStampsInGroups(groupData),
+        count: (() => {
+          try {
+            return countStampsInGroups(groupData)
+          } catch (error) {
+            console.error('Error counting stamps in renderTreeForGroup:', error)
+            return 0
+          }
+        })(),
         level: 0,
         fieldLabel: GROUPING_FIELDS.find(f => f.value === groupingLevels[0])?.label || 'Root'
       },
     }
     
     // Create tree structure for this specific group
-    const treeData = createTreeFromData(groupData, rootNodeId, 1) // Start from level 1 since root is the accordion
+    let treeData: { nodes: Node[], edges: Edge[] }
+    try {
+      treeData = createTreeFromData(groupData, rootNodeId, 1) // Start from level 1 since root is the accordion
+    } catch (error) {
+      console.error('Error creating tree data:', error)
+      // Return early with just the stamps if tree creation fails
+      if (Array.isArray(groupData)) {
+        return (
+          <div className="space-y-2 p-4">
+            {groupData.map(stamp => (
+              <div 
+                key={stamp.id}
+                className="group cursor-pointer transition-all duration-200 hover:bg-muted/30 rounded-lg p-3 border border-muted/50 hover:border-primary/30"
+                onClick={() => handleStampClick(stamp)}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 relative flex-shrink-0 bg-muted/10 rounded overflow-hidden">
+                    <Image
+                      src={stamp.stampImageUrl || "/placeholder.svg"}
+                      alt={stamp.name}
+                      fill
+                      className="object-cover"
+                      sizes="40px"
+                    />
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-sm leading-tight mb-1 text-foreground truncate" title={stamp.name}>
+                      {stamp.name}
+                    </h4>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Badge variant="outline" className="text-xs px-1 py-0.5 h-auto">
+                        {formatDenomination(stamp.denominationValue, stamp.denominationSymbol)}
+                      </Badge>
+                      <span>{stamp.issueYear || 'Unknown'}</span>
+                      <span>#{stamp.catalogNumber}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      }
+      // If not an array, return error message
+      return (
+        <div className="p-4 text-center text-muted-foreground">
+          <p>Unable to render tree view for this group</p>
+          <p className="text-xs mt-1">Error: {error instanceof Error ? error.message : 'Unknown error'}</p>
+        </div>
+      )
+    }
     
     // Debug: Log all data for debugging
     console.log('=== DEBUGGING EDGES ===')
@@ -1919,11 +2299,11 @@ function Catalog2Content() {
               
               {/* Selected edge gradient */}
               <linearGradient id="selected-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#a855f7" stopOpacity="1" />
-                <stop offset="25%" stopColor="#c084fc" stopOpacity="0.9" />
-                <stop offset="50%" stopColor="#e879f9" stopOpacity="0.8" />
-                <stop offset="75%" stopColor="#f0abfc" stopOpacity="0.9" />
-                <stop offset="100%" stopColor="#a855f7" stopOpacity="1" />
+                <stop offset="0%" stopColor="#64748b" stopOpacity="1" />
+                <stop offset="25%" stopColor="#94a3b8" stopOpacity="0.9" />
+                <stop offset="50%" stopColor="#cbd5e1" stopOpacity="0.8" />
+                <stop offset="75%" stopColor="#e2e8f0" stopOpacity="0.9" />
+                <stop offset="100%" stopColor="#64748b" stopOpacity="1" />
               </linearGradient>
               
               {/* Custom arrow markers */}
@@ -1961,7 +2341,7 @@ function Catalog2Content() {
     )
   }
 
-  // Main hierarchical accordion view
+  // Main hierarchical accordion view with pagination
   const renderHierarchicalAccordionView = () => {
     const currentData = getCurrentLevelData
     
@@ -1981,8 +2361,10 @@ function Catalog2Content() {
       )
     }
 
-    // Get root level groups
+    // Get root level groups with pagination
     const groupEntries = Object.entries(currentData as GroupedStamps)
+    const displayedGroups = groupEntries.slice(0, displayedItemsCount)
+    const hasMoreGroups = displayedItemsCount < groupEntries.length
     const rootFieldLabel = GROUPING_FIELDS.find(f => f.value === groupingLevels[0])?.label || 'Groups'
     
     return (
@@ -1993,7 +2375,7 @@ function Catalog2Content() {
             <span className="font-medium">Hierarchical Tree View</span>
           </div>
           <p>
-            {groupEntries.length} {rootFieldLabel.toLowerCase()} organized by{' '}
+            Showing {displayedGroups.length} of {groupEntries.length} {rootFieldLabel.toLowerCase()} organized by{' '}
             <span className="font-medium">
               {groupingLevels.map((field, idx) => 
                 GROUPING_FIELDS.find(f => f.value === field)?.label
@@ -2002,9 +2384,16 @@ function Catalog2Content() {
           </p>
         </div>
         
-        <Accordion type="multiple" className="w-full space-y-3">
-          {groupEntries.map(([groupName, groupData]) => {
-            const stampCount = countStampsInGroups(groupData)
+        <Accordion type="single" collapsible className="w-full space-y-3">
+          {displayedGroups.map(([groupName, groupData]) => {
+            const stampCount = (() => {
+              try {
+                return countStampsInGroups(groupData)
+              } catch (error) {
+                console.error('Error counting stamps in renderHierarchicalAccordionView:', error)
+                return 0
+              }
+            })()
             
             return (
               <AccordionItem 
@@ -2046,6 +2435,27 @@ function Catalog2Content() {
             )
           })}
         </Accordion>
+        
+        {/* Loading more accordions */}
+        {isLoadingMore && hasMoreGroups && (
+          <div className="text-center py-6">
+            <div className="flex items-center justify-center space-x-3">
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+              <p className="text-sm text-muted-foreground">Loading more groups...</p>
+            </div>
+          </div>
+        )}
+        
+        {/* Show completion message */}
+        {!hasMoreGroups && !isLoadingMore && groupEntries.length > 6 && displayedGroups.length >= groupEntries.length && (
+          <div className="text-center py-4 text-muted-foreground">
+            All {groupEntries.length} groups loaded
+          </div>
+        )}
         
         {groupEntries.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
@@ -2155,7 +2565,14 @@ function Catalog2Content() {
       <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {displayedGroups.map(([groupName, groupData]) => {
-            const stampCount = countStampsInGroups(groupData)
+            const stampCount = (() => {
+              try {
+                return countStampsInGroups(groupData)
+              } catch (error) {
+                console.error('Error counting stamps in renderCurrentLevel:', error)
+                return 0
+              }
+            })()
             
             return (
               <Card 
@@ -2208,42 +2625,52 @@ function Catalog2Content() {
 
   const renderBreadcrumbs = () => {
     if (navigation.path.length === 0) return null
-
+  
     return (
-      <Breadcrumb className="mb-4">
+      <Breadcrumb className="mb-4 bg-white px-4 py-2 rounded-lg shadow">
         <BreadcrumbList>
+          {/* Home / Catalog */}
           <BreadcrumbItem>
-            <BreadcrumbLink 
-              href="#" 
+            <BreadcrumbLink
+              href="#"
               onClick={(e) => { e.preventDefault(); navigateHome() }}
-              className="flex items-center gap-1"
+              className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-gray-600 hover:bg-gray-100 transition"
             >
-              <Home className="h-4 w-4" />
+              <Home className="h-4 w-4 mr-1" />
               Catalog
             </BreadcrumbLink>
           </BreadcrumbItem>
-          
-          {navigation.path.map((segment, index) => (
-            <div key={index} className="flex items-center">
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                {index === navigation.path.length - 1 ? (
-                  <BreadcrumbPage>{segment}</BreadcrumbPage>
+  
+          {navigation.path.map((segment, i) => {
+            const isLast = i === navigation.path.length - 1
+  
+            return (
+              <BreadcrumbItem key={i} className="flex items-center">
+                <BreadcrumbSeparator>
+                  <ChevronRight className="h-4 w-4 text-gray-400" />
+                </BreadcrumbSeparator>
+  
+                {isLast ? (
+                  <BreadcrumbPage className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-primary text-white">
+                    {segment}
+                  </BreadcrumbPage>
                 ) : (
-                  <BreadcrumbLink 
-                    href="#" 
-                    onClick={(e) => { e.preventDefault(); navigateToLevel(index + 1) }}
+                  <BreadcrumbLink
+                    href="#"
+                    onClick={(e) => { e.preventDefault(); navigateToLevel(i + 1) }}
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-gray-600 hover:bg-gray-100 transition"
                   >
                     {segment}
                   </BreadcrumbLink>
                 )}
               </BreadcrumbItem>
-            </div>
-          ))}
+            )
+          })}
         </BreadcrumbList>
       </Breadcrumb>
     )
   }
+  
 
   if (loading && stamps.length === 0) {
     return (
@@ -2340,14 +2767,18 @@ function Catalog2Content() {
           <Button
             variant={viewMode === 'grid' ? 'default' : 'outline'}
             size="icon"
-            onClick={() => setViewMode('grid')}
+            onClick={() => {
+              setViewMode('grid')
+            }}
           >
             <Grid className="h-4 w-4" />
           </Button>
           <Button
             variant={viewMode === 'list' ? 'default' : 'outline'}
             size="icon"
-            onClick={() => setViewMode('list')}
+            onClick={() => {
+              setViewMode('list')
+            }}
             disabled={groupingLevels.length === 0}
             title={groupingLevels.length === 0 ? "List view requires grouping levels" : "Switch to hierarchical tree view"}
           >
@@ -2671,7 +3102,8 @@ function Catalog2Content() {
         </CardContent>
       </Card>
 
-
+      {/* Stamp Details Modal */}
+      <StampDetailsModal />
     </div>
   )
 }
