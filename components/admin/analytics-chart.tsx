@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { BarChart, LineChart, PieChart } from "lucide-react"
 
 interface AnalyticsChartProps {

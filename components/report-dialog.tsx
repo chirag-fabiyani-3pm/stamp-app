@@ -1,8 +1,6 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -27,7 +25,7 @@ interface ReportDialogProps {
   className?: string
 }
 
-export function ReportDialog({ contentType, contentId, contentTitle, trigger, className }: ReportDialogProps) {
+export function ReportDialog({ contentType, contentId: _contentId, contentTitle, trigger, className }: ReportDialogProps) {
   const [reason, setReason] = useState<string>("")
   const [details, setDetails] = useState<string>("")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -101,7 +99,7 @@ export function ReportDialog({ contentType, contentId, contentTitle, trigger, cl
         <DialogHeader>
           <DialogTitle>Report {getContentTypeLabel()}</DialogTitle>
           <DialogDescription>
-            Please let us know why you're reporting this {getContentTypeLabel()}. Our team will review your report and
+            Please let us know why you&apos;re reporting this {getContentTypeLabel()}. Our team will review your report and
             take appropriate action.
           </DialogDescription>
         </DialogHeader>

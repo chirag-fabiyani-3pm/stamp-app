@@ -4,7 +4,6 @@ import React, { useState, useCallback, useMemo, useEffect } from "react"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { SOACode } from "./soa-code"
 import { useTheme } from "next-themes"
 import ReactFlow, {
@@ -12,8 +11,6 @@ import ReactFlow, {
   Edge,
   ConnectionLineType,
   Background,
-  Controls,
-  MiniMap,
   useNodesState,
   useEdgesState,
   Position,
@@ -166,7 +163,15 @@ interface StampDetailModalProps {
 }
 
 // Custom node component for stamps
-const StampNode = ({ data }: { data: any }) => {
+interface StampNodeData {
+  id: string
+  name: string
+  imagePath: string
+  isRoot: boolean
+  onClick: () => void
+}
+
+const StampNode = ({ data }: { data: StampNodeData }) => {
   const { theme } = useTheme();
   const isDark = theme === "dark" || theme === "system";
 
@@ -832,7 +837,7 @@ export function StampTree({ title, subtitle, stamps, rootStamp, connections = []
   useEffect(() => {
     setNodes(getLayoutedElements(initialNodes, initialEdges));
     setEdges(initialEdges);
-    // eslint-disable-next-line
+     
   }, [initialNodes, initialEdges]);
 
   // Set CSS variables for edge colors based on theme
@@ -846,7 +851,7 @@ export function StampTree({ title, subtitle, stamps, rootStamp, connections = []
   return (
     <div className="relative w-full h-[600px]">
       {/* Apply custom CSS styles */}
-      <style jsx global>{reactFlowStyles}</style>
+      <style dangerouslySetInnerHTML={{ __html: reactFlowStyles }} />
       
       <div className={`rounded-lg p-4 md:p-0 overflow-hidden h-full ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
         <div className="absolute top-4 left-4 z-10">

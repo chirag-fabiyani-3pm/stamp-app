@@ -807,7 +807,7 @@ function Catalog2Content() {
     }
     
     const queryString = params.toString()
-    const url = queryString ? `/catalog-2?${queryString}` : '/catalog-2'
+    const url = queryString ? `/investigate-search?${queryString}` : '/investigate-search'
     router.push(url, { scroll: false })
   }
 
@@ -1407,7 +1407,7 @@ function Catalog2Content() {
     try {
       if (navigator.share) {
         await navigator.share({
-          title: 'Catalog 2.0 - Stamp Collection',
+          title: 'Investigate Search - Stamp Collection',
           url: currentURL
         })
       } else {
@@ -2743,7 +2743,7 @@ function Catalog2Content() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Catalog 2.0</h1>
+          <h1 className="text-3xl font-bold">Investigate Search</h1>
           <p className="text-muted-foreground">Advanced stamp catalog with flexible grouping</p>
         </div>
         <div className="flex items-center space-x-2">
@@ -3144,7 +3144,7 @@ function Catalog2Loading() {
   )
 }
 
-export default function Catalog2Page() {
+export default function InvestigateSearchPage() {
   return (
     <Suspense fallback={<Catalog2Loading />}>
       <Catalog2Content />

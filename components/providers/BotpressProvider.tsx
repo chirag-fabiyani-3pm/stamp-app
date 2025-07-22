@@ -1,11 +1,11 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 declare global {
   interface Window {
     botpress?: {
-      init: (config: any) => void
+      init: (config: Record<string, unknown>) => void
     }
   }
 }
@@ -73,14 +73,14 @@ export function BotpressProvider({ children }: BotpressProviderProps) {
         const userDataObj = JSON.parse(userData);
         if (userDataObj.jwt && jwt !== userDataObj.jwt) {
           setJwt(userDataObj.jwt);
-          (window.botpress as any)?.updateUser?.({
+          (window.botpress as Record<string, any>)?.updateUser?.({
             data: {
               "authorization": `Bearer ${userDataObj.jwt}`
             }
           });
         } else if (jwt && !userDataObj.jwt) {
           setJwt("");
-          (window.botpress as any)?.updateUser?.({
+          (window.botpress as Record<string, any>)?.updateUser?.({
             data: {
               "authorization": ``
             }

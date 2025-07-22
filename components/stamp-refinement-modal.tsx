@@ -1,9 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -24,8 +23,8 @@ import {
 interface StampRefinementModalProps {
   isOpen: boolean
   onClose: () => void
-  onComplete: (refinedData: any) => void
-  stampData: any
+  onComplete: (refinedData: Record<string, any>) => void
+  stampData: Record<string, any>
 }
 
 export default function StampRefinementModal({ 
@@ -74,7 +73,7 @@ export default function StampRefinementModal({
   const handleComplete = () => {
     // In a real app, you would use the refinementSelections to identify the exact variety
     const identifiedVariety = stampData.possibleVarieties.find(
-      (v: any) => v.id === selectedVariety
+      (v: { id: string }) => v.id === selectedVariety
     )
 
     onComplete({
@@ -285,7 +284,7 @@ export default function StampRefinementModal({
 
             <TabsContent value="paper" className="space-y-4">
               <div className="text-sm text-muted-foreground mb-4">
-                <p>Paper type can significantly affect a stamp's value and help identify specific printings.</p>
+                <p>Paper type can significantly affect a stamp&apos;s value and help identify specific printings.</p>
               </div>
 
               <RadioGroup 
@@ -404,7 +403,7 @@ export default function StampRefinementModal({
               </Badge>
             </div>
 
-            {stampData.possibleVarieties.map((variety: any) => (
+            {stampData.possibleVarieties.map((variety: { id: string; name: string; image: string; description: string; probability: number }) => (
               <div 
                 key={variety.id} 
                 className={`border p-3 rounded-lg flex items-start gap-3 transition-colors ${
@@ -431,7 +430,7 @@ export default function StampRefinementModal({
                         Best Match Based on Your Selections
                       </Badge>
                       <div className="text-muted-foreground mt-1">
-                        <p>This variety matches the features you've identified.</p>
+                        <p>This variety matches the features you&apos;ve identified.</p>
                       </div>
                     </div>
                   )}

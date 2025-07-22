@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Plus, Trash2, ChevronLeft, ChevronRight, Loader2, Edit, AlertCircle, RefreshCw, X } from "lucide-react"
+import { Search, Plus, ChevronLeft, ChevronRight, Loader2, Edit, AlertCircle, RefreshCw, X } from "lucide-react"
 import Link from "next/link"
 import {
   Dialog,
@@ -93,7 +93,7 @@ export default function ProfileCollection() {
       const details = JSON.parse(stampDetailsJson)
       const parsed: ParsedStampDetails = {}
 
-      const findValueByKey = (obj: any, targetKey: string): string => {
+      const findValueByKey = (obj: Record<string, any>, targetKey: string): string => {
         if (Array.isArray(obj)) {
           for (const item of obj) {
             const result = findValueByKey(item, targetKey)
@@ -138,7 +138,7 @@ export default function ProfileCollection() {
   }
 
   // Fetch stamps from API
-  const fetchStamps = async (page: number = 1, search: string = "", country: string = "all", pageSize: number = itemsPerPage) => {
+  const fetchStamps = async (page: number = 1, _search: string = "", _country: string = "all", pageSize: number = itemsPerPage) => {
     setLoading(true)
     setError(null)
 
@@ -223,7 +223,7 @@ export default function ProfileCollection() {
         } else {
           data = JSON.parse(responseText)
         }
-      } catch (parseError) {
+      } catch {
         throw new Error('Unable to process server response. Please try again.')
       }
       
@@ -349,11 +349,7 @@ export default function ProfileCollection() {
   // Get unique countries for filter - use the country field directly from API response
   const countries = ["all", ...Array.from(new Set(stamps.map(stamp => stamp.country).filter((country): country is string => Boolean(country))))]
 
-  // Handle deleting a stamp
-  const handleDeleteStamp = (stamp: StampData) => {
-    setSelectedStamp(stamp)
-    setIsDeleteDialogOpen(true)
-  }
+
 
   // Handle viewing stamp details
   const handleViewDetails = (stamp: StampData) => {
@@ -931,7 +927,7 @@ export default function ProfileCollection() {
                 </div>
                 <h3 className="text-xl font-semibold text-foreground mb-2">Start Your Collection</h3>
                 <p className="text-muted-foreground mb-6">
-                  You haven't added any stamps to your collection yet. Start by scanning or adding your first stamp!
+                  You haven&apos;t added any stamps to your collection yet. Start by scanning or adding your first stamp!
                 </p>
               </div>
               <Link href="/scan">

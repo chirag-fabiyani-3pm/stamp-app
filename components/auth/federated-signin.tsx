@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React from "react"
+import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
@@ -8,29 +9,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2, Mail, ArrowLeft } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
-import { Separator } from "@/components/ui/separator"
-import { sendEmailOtc, verifyEmailOtc, storeUserData, googleSignIn } from "@/lib/api/auth"
+import { sendEmailOtc, verifyEmailOtc, googleSignIn } from "@/lib/api/auth"
 import { ADMIN_ROLE_ID, ROUTES } from "@/lib/constants"
-import { GoogleLogin, CredentialResponse, useGoogleLogin } from '@react-oauth/google'
-import { jwtDecode } from 'jwt-decode'
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google'
 
 type AuthStep = 'email' | 'otp'
 
-// Google JWT payload interface
-interface GoogleJwtPayload {
-  iss: string;
-  azp: string;
-  aud: string;
-  sub: string;
-  email: string;
-  email_verified: boolean;
-  name: string;
-  picture: string;
-  given_name: string;
-  family_name: string;
-  iat: number;
-  exp: number;
-}
+
 
 export function FederatedSignIn() {
   const router = useRouter()
@@ -54,34 +39,9 @@ export function FederatedSignIn() {
     return currentTheme === 'dark' ? 'filled_black' : 'outline'
   }
 
-  // Helper functions for device detection
-  const generateDeviceId = (): string => {
-    const timestamp = Date.now().toString(36);
-    const randomStr = Math.random().toString(36).substring(2, 15);
-    return `device_${timestamp}_${randomStr}`;
-  };
 
-  const getDeviceId = (): string => {
-    if (typeof window === 'undefined') {
-      return generateDeviceId();
-    }
-    
-    let deviceId = localStorage.getItem('stamp_device_id');
-    if (!deviceId) {
-      deviceId = generateDeviceId();
-      localStorage.setItem('stamp_device_id', deviceId);
-    }
-    return deviceId;
-  };
 
-  const setCookie = (name: string, value: string, days: number = 30): void => {
-    if (typeof window === 'undefined') return;
-    
-    const expires = new Date();
-    expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-    
-    document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;secure;samesite=strict`;
-  };
+
 
   // Google OAuth success handler
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
@@ -323,7 +283,7 @@ export function FederatedSignIn() {
 
         <div className="text-center space-y-2">
           <p className="text-sm text-muted-foreground">
-            Didn't receive the code?
+            Didn&apos;t receive the code?
           </p>
           <div className="flex flex-col sm:flex-row gap-2 justify-center">
             <Button

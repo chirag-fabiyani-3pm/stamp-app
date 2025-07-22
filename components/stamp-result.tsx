@@ -1,10 +1,11 @@
+import React from "react"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
-import { Bookmark, Book, Tag, DollarSign, ExternalLink, AlertTriangle, Info, Image, ImagePlus } from "lucide-react"
+import { Bookmark, Book, Tag, DollarSign, ExternalLink, AlertTriangle, Info, ImagePlus } from "lucide-react"
 
 interface StampResultProps {
   data: {
@@ -149,7 +150,7 @@ export default function StampResult({ data }: StampResultProps) {
                 <h4 className="font-medium text-amber-800">Variety Identification</h4>
                 <p className="text-sm text-amber-700">
                   This stamp belongs to a known group, but specific varieties exist with slight differences.
-                  Use the "Refine Identification" button to examine specific features like watermarks and perforations.
+                  Use the &quot;Refine Identification&quot; button to examine specific features like watermarks and perforations.
                 </p>
               </div>
             </div>
@@ -282,7 +283,7 @@ export default function StampResult({ data }: StampResultProps) {
               <AlertTriangle className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
               <h4 className="font-medium">No Known Varieties</h4>
               <p className="text-sm text-muted-foreground mt-1">
-                This stamp issue doesn't have any documented varieties in our database.
+                This stamp issue doesn&apos;t have any documented varieties in our database.
               </p>
             </div>
           )}

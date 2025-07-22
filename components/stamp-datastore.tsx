@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import React, { useState, useMemo, useEffect } from "react"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -608,7 +608,7 @@ export function CatalogSystemsInfo() {
               <span className="font-medium">Facit:</span> Scandinavian specialist
             </li>
             <li>
-              <span className="font-medium">ACSC:</span> Australian Commonwealth Specialists' Catalog
+              <span className="font-medium">ACSC:</span> Australian Commonwealth Specialists&apos; Catalog
             </li>
           </ul>
         </div>
@@ -651,7 +651,7 @@ export default function StampDatastore() {
   const [catalogFilter, setCatalogFilter] = useState("all") // Add catalog filter
   const [sortBy, setSortBy] = useState("newest")
   const [viewMode, setViewMode] = useState("grid")
-  const [hoveredCardId, setHoveredCardId] = useState<string | null>(null)
+
   const [showCatalogInfo, setShowCatalogInfo] = useState(false) // Toggle for catalog info
 
   // Load stamps with a simulated delay to show loading state
@@ -910,8 +910,7 @@ export default function StampDatastore() {
               href={`/catalogdetail/${stamp.id}`}
               key={stamp.id}
               className="block group"
-              onMouseEnter={() => setHoveredCardId(stamp.id)}
-              onMouseLeave={() => setHoveredCardId(null)}
+
             >
               <Card className="h-full overflow-hidden transition-all hover:shadow-md group-hover:border-slate-400 dark:group-hover:border-slate-600">
                 <div className="relative">
@@ -1009,8 +1008,7 @@ export default function StampDatastore() {
               href={`/catalogdetail/${stamp.id}`}
               key={stamp.id}
               className="block group"
-              onMouseEnter={() => setHoveredCardId(stamp.id)}
-              onMouseLeave={() => setHoveredCardId(null)}
+
             >
               <Card className="transition-all hover:shadow-md group-hover:border-slate-400 dark:group-hover:border-slate-600">
                 <div className="flex flex-col md:flex-row">

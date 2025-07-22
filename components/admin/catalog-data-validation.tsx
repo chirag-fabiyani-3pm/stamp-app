@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -15,7 +16,7 @@ import { AlertCircle, CheckCircle, Edit, ThumbsDown, ThumbsUp, X } from "lucide-
 
 interface CatalogDataValidationProps {
   itemId: string
-  onValidate: (id: string, isValid: boolean, corrections?: any) => void
+  onValidate: (id: string, isValid: boolean, corrections?: Record<string, unknown>) => void
   onSkip: (id: string) => void
 }
 

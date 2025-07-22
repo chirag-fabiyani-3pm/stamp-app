@@ -86,10 +86,10 @@ interface StampObservationManagerProps {
             estimatedMarketValue?: string;
         } | null;
         // Complete stamp data for reference
-        stampData?: any;
+        stampData?: Record<string, unknown>;
     };
     onCancel?: () => void;
-    onSuccess?: (message: string, stampData?: any) => void;
+    onSuccess?: (message: string, stampData?: Record<string, unknown>) => void;
 }
 
 // Define the category structure based on comprehensive philatelic attributes
@@ -140,7 +140,7 @@ function findCategoryLabel(id: string, categories: Category[]): string {
 }
 
 // Helper function to initialize form data structure from categories
-function initializeFormDataFromCategories(categories: Category[]): Record<string, any> {
+function initializeFormDataFromCategories(categories: Category[]): Record<string, string | Record<string, unknown>> {
     return categories.reduce((acc, category) => {
         if (category.type) {
             // If it's a field, initialize with default value or empty string
@@ -153,11 +153,11 @@ function initializeFormDataFromCategories(categories: Category[]): Record<string
             }
         }
         return acc;
-    }, {} as Record<string, any>);
+    }, {} as Record<string, string | Record<string, unknown>>);
 }
 
 // Comprehensive mapping function from API data to nested category structure
-function mapApiDataToFormStructure(apiData: any): Record<string, any> {
+function mapApiDataToFormStructure(apiData: Record<string, unknown>): Record<string, unknown> {
     if (!apiData) return {};
 
     // Helper function to map color to the nested color structure
@@ -167,7 +167,7 @@ function mapApiDataToFormStructure(apiData: any): Record<string, any> {
         const colorLower = color.toLowerCase();
 
         // Determine color type and specific shade
-        let colorType = 'Single Color';
+        const colorType = 'Single Color';
         let colorCategory = '';
         let colorShade = '';
 
@@ -2572,7 +2572,7 @@ export default function StampObservationManager({
 
             // Try to get from cookies
             const cookies = document.cookie.split(';');
-            for (let cookie of cookies) {
+            for (const cookie of cookies) {
                 const [name, value] = cookie.trim().split('=');
                 if (name === 'stamp_jwt') {
                     return value;
@@ -3671,7 +3671,7 @@ export default function StampObservationManager({
 
         // Find the category in the tree
         let targetCategory = null;
-        let pathToCategory: NavigationPathItem[] = [];
+        const pathToCategory: NavigationPathItem[] = [];
 
         // Build navigation path to the target category
         for (let i = 0; i < categoryPath.length; i++) {
@@ -3853,7 +3853,7 @@ export default function StampObservationManager({
             apiFormData.append('Name', mergedData.name || selectedStamp?.apiData?.name || '');
 
             // Extract Publisher from formData if available
-            let publisher = selectedStamp?.apiData?.publisher || '';
+            const publisher = selectedStamp?.apiData?.publisher || '';
             // Note: Publisher, Printer, and Designer fields don't exist in current form structure
             // We'll use API data or leave empty
             apiFormData.append('Publisher', publisher);
@@ -3904,18 +3904,18 @@ export default function StampObservationManager({
             }
 
             // Watermark description
-            let watermark = mergedData.watermark || selectedStamp?.apiData?.watermark || '';
+            const watermark = mergedData.watermark || selectedStamp?.apiData?.watermark || '';
 
             // Designer/Artist
-            let artist = selectedStamp?.apiData?.artist || '';
+            const artist = selectedStamp?.apiData?.artist || '';
             // Note: Designer field doesn't exist in current form structure
 
             // Theme/Subject
-            let theme = selectedStamp?.apiData?.theme || '';
+            const theme = selectedStamp?.apiData?.theme || '';
             // Note: Theme field doesn't exist in current form structure
 
             // Size
-            let size = selectedStamp?.apiData?.size || '';
+            const size = selectedStamp?.apiData?.size || '';
             // Note: Size field doesn't exist in current form structure
 
             // Add the extracted fields to FormData (these may be optional but included for completeness)

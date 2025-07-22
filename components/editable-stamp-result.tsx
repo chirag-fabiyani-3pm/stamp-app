@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,14 +24,25 @@ interface EditableStampResultProps {
     estimatedValue: string
     catalogReference: string
   }
-  onComplete: (editedData: any) => void
+  onComplete: (editedData: {
+    country: string
+    year: number
+    denomination: string
+    color: string
+    condition: string
+    rarity: string
+    designElements: string[]
+    historicalSignificance: string
+    estimatedValue: string
+    catalogReference: string
+  }) => void
 }
 
 export default function EditableStampResult({ data, onComplete }: EditableStampResultProps) {
   const [editedData, setEditedData] = useState({ ...data })
   const [newDesignElement, setNewDesignElement] = useState("")
 
-  const handleChange = (field: string, value: string | number) => {
+  const handleChange = (field: string, value: string | number | string[]) => {
     setEditedData({
       ...editedData,
       [field]: value,

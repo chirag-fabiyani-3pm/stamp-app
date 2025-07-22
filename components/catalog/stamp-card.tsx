@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { useState } from "react"
 import Image from "next/image"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,7 +11,17 @@ import { SOACode } from "./soa-code"
 import { StampHierarchy } from "./stamp-hierarchy"
 
 // Sample variety data for demonstration
-const varietiesByStampId: Record<string, any[]> = {
+interface StampVariety {
+  id: string
+  name: string
+  image: string
+  features: string[]
+  catalogNumbers: { soa: number; sg?: string; scott?: string; michel?: string }
+  description: string
+  marketValue?: string
+}
+
+const varietiesByStampId: Record<string, StampVariety[]> = {
   "stamp-1": [
     {
       id: "stamp-1-var1",

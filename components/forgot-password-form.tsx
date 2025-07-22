@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -40,7 +40,7 @@ export default function ForgotPasswordForm() {
 
       // Show success message
       setSuccess(true)
-    } catch (err) {
+    } catch {
       setError("Failed to send reset email. Please try again.")
     } finally {
       setIsLoading(false)
@@ -55,10 +55,10 @@ export default function ForgotPasswordForm() {
         </div>
         <h3 className="text-lg font-medium mb-2">Check your email</h3>
         <p className="text-muted-foreground mb-6">
-          We've sent a password reset link to <span className="font-medium">{email}</span>
+          We&apos;ve sent a password reset link to <span className="font-medium">{email}</span>
         </p>
         <p className="text-sm text-muted-foreground">
-          Didn't receive the email? Check your spam folder or{" "}
+          Didn&apos;t receive the email? Check your spam folder or{" "}
           <button type="button" onClick={() => setSuccess(false)} className="text-primary hover:underline">
             try again
           </button>
@@ -94,7 +94,7 @@ export default function ForgotPasswordForm() {
       </Button>
 
       <p className="text-sm text-muted-foreground text-center">
-        We'll send you an email with a link to reset your password.
+        We&apos;ll send you an email with a link to reset your password.
       </p>
     </form>
   )

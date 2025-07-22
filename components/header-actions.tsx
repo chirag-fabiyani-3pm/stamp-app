@@ -1,6 +1,7 @@
 "use client"
 
-import { usePathname, useRouter } from "next/navigation"
+import React from "react"
+import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -23,13 +24,12 @@ import {
   isAdmin, 
   getUserDisplayName, 
   getUserAvatar, 
-  signOut,
-  getUserData 
+  signOut 
 } from "@/lib/api/auth"
 
 export function HeaderActions() {
   const pathname = usePathname()
-  const router = useRouter()
+
   const { toast } = useToast()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userIsAdmin, setUserIsAdmin] = useState(false)
@@ -102,26 +102,48 @@ export function HeaderActions() {
       {/* Desktop Navigation */}
       <nav className="hidden md:flex items-center space-x-1">
         <Link
-          href="/catalog-2"
+          href="/modern-catalogue"
           className={cn(
             "px-4 py-2 rounded-md text-sm font-medium transition-colors",
-            pathname === "/catalog-2" || pathname.startsWith("/catalog-2/")
+            pathname === "/modern-catalogue" || pathname.startsWith("/modern-catalogue/")
               ? "bg-primary/10 text-primary"
               : "text-muted-foreground hover:text-primary hover:bg-accent",
           )}
         >
-          Catalog 2.0
+          Modern Catalogue
         </Link>
         <Link
-          href="/catalog"
+          href="/visual-catalogue"
           className={cn(
             "px-4 py-2 rounded-md text-sm font-medium transition-colors",
-            pathname === "/catalog" || pathname.startsWith("/catalog/")
+            pathname === "/visual-catalogue" || pathname.startsWith("/visual-catalogue/")
               ? "bg-primary/10 text-primary"
               : "text-muted-foreground hover:text-primary hover:bg-accent",
           )}
         >
-          Catalog
+          Visual Catalogue
+        </Link>
+        <Link
+          href="/list-catalogue"
+          className={cn(
+            "px-4 py-2 rounded-md text-sm font-medium transition-colors",
+            pathname === "/list-catalogue" || pathname.startsWith("/list-catalogue/")
+              ? "bg-primary/10 text-primary"
+              : "text-muted-foreground hover:text-primary hover:bg-accent",
+          )}
+        >
+          List Catalogue
+        </Link>
+        <Link
+          href="/investigate-search"
+          className={cn(
+            "px-4 py-2 rounded-md text-sm font-medium transition-colors",
+            pathname === "/investigate-search" || pathname.startsWith("/investigate-search/")
+              ? "bg-primary/10 text-primary"
+              : "text-muted-foreground hover:text-primary hover:bg-accent",
+          )}
+        >
+          Investigate Search
         </Link>
         <ScanButton />
       </nav>
@@ -196,28 +218,52 @@ export function HeaderActions() {
               Home
             </Link>
             <Link
-              href="/catalog-2"
+              href="/modern-catalogue"
               className={cn(
                 "text-lg font-medium transition-colors hover:text-primary",
-                pathname === "/catalog-2" || pathname.startsWith("/catalog-2/")
+                pathname === "/modern-catalogue" || pathname.startsWith("/modern-catalogue/")
                   ? "text-primary font-semibold"
                   : "text-muted-foreground",
               )}
               onClick={() => setIsSheetOpen(false)}
             >
-              Catalog 2.0
+              Modern Catalogue
             </Link>
             <Link
-              href="/catalog"
+              href="/visual-catalogue"
               className={cn(
                 "text-lg font-medium transition-colors hover:text-primary",
-                pathname === "/catalog" || pathname.startsWith("/catalog/")
+                pathname === "/visual-catalogue" || pathname.startsWith("/visual-catalogue/")
                   ? "text-primary font-semibold"
                   : "text-muted-foreground",
               )}
               onClick={() => setIsSheetOpen(false)}
             >
-              Catalog
+              Visual Catalogue
+            </Link>
+            <Link
+              href="/list-catalogue"
+              className={cn(
+                "text-lg font-medium transition-colors hover:text-primary",
+                pathname === "/list-catalogue" || pathname.startsWith("/list-catalogue/")
+                  ? "text-primary font-semibold"
+                  : "text-muted-foreground",
+              )}
+              onClick={() => setIsSheetOpen(false)}
+            >
+              List Catalogue
+            </Link>
+            <Link
+              href="/investigate-search"
+              className={cn(
+                "text-lg font-medium transition-colors hover:text-primary",
+                pathname === "/investigate-search" || pathname.startsWith("/investigate-search/")
+                  ? "text-primary font-semibold"
+                  : "text-muted-foreground",
+              )}
+              onClick={() => setIsSheetOpen(false)}
+            >
+              Investigate Search
             </Link>
 
             {/* Mobile Scan Button */}
