@@ -27,6 +27,9 @@ const nextConfig = {
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
   },
+  env: {
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+  },
 }
 
 if (userConfig) {

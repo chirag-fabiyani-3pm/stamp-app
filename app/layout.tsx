@@ -5,10 +5,12 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
-import { BotpressProvider } from "@/components/providers/BotpressProvider"
 import { Toaster } from "@/components/ui/toaster"
 import { PWAProvider } from "@/components/pwa/PWAProvider"
 import { GoogleOAuthProvider } from '@react-oauth/google'
+import { PhilaGuideChat } from "@/components/philaguide-chat"
+import { ChatProvider } from "@/components/chat-provider"
+import { LayoutWrapper } from "@/components/layout-wrapper"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -16,8 +18,6 @@ export const metadata: Metadata = {
   title: "Stamps of Approval",
   description: "A comprehensive stamp cataloging application",
   manifest: "/manifest.json",
-  themeColor: "#000000",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -58,14 +58,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             disableTransitionOnChange
           >
             <PWAProvider>
-              <BotpressProvider>
-                <div className="flex min-h-screen flex-col">
-                  <Header />
-                  <main className="flex-1">{children}</main>
-                  <Footer />
-                  <Toaster />
-                </div>
-              </BotpressProvider>
+              <ChatProvider>
+                <LayoutWrapper>
+                  <div className="flex min-h-screen flex-col">
+                    <Header />
+                    <main className="flex-1">{children}</main>
+                    <Footer />
+                    <Toaster />
+                  </div>
+                </LayoutWrapper>
+                <PhilaGuideChat />
+              </ChatProvider>
             </PWAProvider>
           </ThemeProvider>
         </GoogleOAuthProvider>
