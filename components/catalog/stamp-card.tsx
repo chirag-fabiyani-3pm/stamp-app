@@ -184,8 +184,8 @@ export function StampCard({
   
   return (
     <>
-      <Card className="overflow-hidden cursor-pointer" onClick={() => setShowHierarchy(true)}>
-        <div className="relative aspect-square overflow-hidden bg-muted/20">
+      <Card className="overflow-hidden cursor-pointer dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700" onClick={() => setShowHierarchy(true)}>
+        <div className="relative aspect-square overflow-hidden bg-muted/20 dark:bg-gray-700">
           <Image 
             src={image} 
             alt={title}
@@ -215,43 +215,43 @@ export function StampCard({
               <Bookmark className="h-4 w-4" />
             </Button>
           </div>
-          <CardTitle className="text-base">{title}</CardTitle>
-          <CardDescription>{description}</CardDescription>
+          <CardTitle className="text-base dark:text-gray-100">{title}</CardTitle>
+          <CardDescription className="dark:text-gray-300">{description}</CardDescription>
         </CardHeader>
         <CardContent className="text-sm pb-2">
           <div className="grid grid-cols-2 gap-1">
             <div className="flex flex-col">
-              <span className="text-xs text-muted-foreground">Country</span>
+              <span className="text-xs text-muted-foreground dark:text-gray-400">Country</span>
               <span>{country}</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-xs text-muted-foreground">Year</span>
+              <span className="text-xs text-muted-foreground dark:text-gray-400">Year</span>
               <span>{year}</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-xs text-muted-foreground">Denomination</span>
+              <span className="text-xs text-muted-foreground dark:text-gray-400">Denomination</span>
               <span>{denomination}</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-xs text-muted-foreground">Market Value</span>
-              <span className="font-medium">{marketValue || "—"}</span>
+              <span className="text-xs text-muted-foreground dark:text-gray-400">Market Value</span>
+              <span className="font-medium dark:text-gray-100">{marketValue || "—"}</span>
             </div>
           </div>
           
           {(catalogNumbers.sg || catalogNumbers.scott || catalogNumbers.michel) && (
-            <div className="mt-3 pt-3 border-t flex flex-wrap gap-2">
+            <div className="mt-3 pt-3 border-t dark:border-gray-700 flex flex-wrap gap-2">
               {catalogNumbers.sg && (
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-xs dark:text-gray-300 dark:border-gray-600">
                   SG {catalogNumbers.sg}
                 </Badge>
               )}
               {catalogNumbers.scott && (
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-xs dark:text-gray-300 dark:border-gray-600">
                   Scott {catalogNumbers.scott}
                 </Badge>
               )}
               {catalogNumbers.michel && (
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-xs dark:text-gray-300 dark:border-gray-600">
                   Michel {catalogNumbers.michel}
                 </Badge>
               )}
@@ -262,7 +262,7 @@ export function StampCard({
           <Button 
             variant="secondary" 
             size="sm" 
-            className="w-full gap-1"
+            className="w-full gap-1 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
             onClick={(e) => {
               e.stopPropagation();
               setShowHierarchy(true);
