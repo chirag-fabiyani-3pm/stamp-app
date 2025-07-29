@@ -1,12 +1,12 @@
 "use client"
 
-import React from "react"
+import React, { Suspense } from "react"
 import { ModernCatalogContent } from "@/components/catalog/modern-catalog-content"
 
 export default function ModernCataloguePage() {
   return (
-    // <AuthGuard>
+    <Suspense fallback={<div>Loading...</div>}>
       <ModernCatalogContent />
-    // </AuthGuard>
+    </Suspense>
   )
 } 
