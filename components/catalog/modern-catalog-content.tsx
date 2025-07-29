@@ -488,20 +488,18 @@ export function ModernCatalogContent() {
                     </div>
                 </div>
 
-                <div ref={mainContentRef} className="h-16 bg-gradient-to-b from-gray-900 to-gray-950"></div>
-
                 {/* Navigation Bar */}
                 <div className="bg-white/90 backdrop-blur border-b border-gray-200 dark:bg-gray-900/90 dark:border-gray-700">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="flex items-center justify-between h-16">
                             <nav className="flex space-x-4 sm:space-x-8 overflow-x-auto pb-2 no-scrollbar">
                                 <button
-                                    onClick={() => {
+                                    onClick={(ele) => {
                                         setActiveSection('countries');
                                         router.push(`?tab=countries`, { scroll: false });
-                                        setTimeout(() => {
-                                            mainContentRef.current?.scrollIntoView({ behavior: 'smooth' });
-                                        }, 100);
+                                        const yOffset = -64;
+                                        const y = (ele?.target as HTMLElement)?.getBoundingClientRect().top + window.scrollY + yOffset;
+                                        window.scrollTo({ top: y, behavior: 'smooth' });
                                     }}
                                     className={cn(
                                         "py-2 px-1 border-b-2 font-medium text-sm transition-colors",
@@ -513,12 +511,12 @@ export function ModernCatalogContent() {
                                     Country Catalogs
                                 </button>
                                 <button
-                                    onClick={() => {
+                                    onClick={(ele) => {
                                         setActiveSection('visual');
                                         router.push(`?tab=visual`, { scroll: false });
-                                        setTimeout(() => {
-                                            mainContentRef.current?.scrollIntoView({ behavior: 'smooth' });
-                                        }, 100);
+                                        const yOffset = -64;
+                                        const y = (ele?.target as HTMLElement)?.getBoundingClientRect().top + window.scrollY + yOffset;
+                                        window.scrollTo({ top: y, behavior: 'smooth' });
                                     }}
                                     className={cn(
                                         "py-2 px-1 border-b-2 font-medium text-sm transition-colors",
@@ -530,12 +528,12 @@ export function ModernCatalogContent() {
                                     Visual Catalog
                                 </button>
                                 <button
-                                    onClick={() => {
+                                    onClick={(ele) => {
                                         setActiveSection('list');
                                         router.push(`?tab=list`, { scroll: false });
-                                        setTimeout(() => {
-                                            mainContentRef.current?.scrollIntoView({ behavior: 'smooth' });
-                                        }, 100);
+                                        const yOffset = -64;
+                                        const y = (ele?.target as HTMLElement)?.getBoundingClientRect().top + window.scrollY + yOffset;
+                                        window.scrollTo({ top: y, behavior: 'smooth' });
                                     }}
                                     className={cn(
                                         "py-2 px-1 border-b-2 font-medium text-sm transition-colors",
@@ -547,12 +545,12 @@ export function ModernCatalogContent() {
                                     List Catalog
                                 </button>
                                 <button
-                                    onClick={() => {
+                                    onClick={(ele) => {
                                         setActiveSection('investigate');
                                         router.push(`?tab=investigate`, { scroll: false });
-                                        setTimeout(() => {
-                                            mainContentRef.current?.scrollIntoView({ behavior: 'smooth' });
-                                        }, 100);
+                                        const yOffset = -64;
+                                        const y = (ele?.target as HTMLElement)?.getBoundingClientRect().top + window.scrollY + yOffset;
+                                        window.scrollTo({ top: y, behavior: 'smooth' });
                                     }}
                                     className={cn(
                                         "py-2 px-1 border-b-2 font-medium text-sm transition-colors",
@@ -694,7 +692,7 @@ export function ModernCatalogContent() {
                                     <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
                                         <span>Level {modalStack.length}</span>
                                         <span>•</span>
-                                        <code className="bg-primary/10 dark:bg-primary/20 px-2 py-1 rounded font-mono text-xs text-primary dark:text-amber-300">
+                                        <code className="bg-primary/10 dark:bg-primary/20 px-2 py-1 rounded font-mono text-xs text-primary dark:text-amber-300 break-all">
                                             {modalStack[modalStack.length - 1].stampCode}
                                         </code>
 

@@ -19,12 +19,12 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Menu, User, LogOut, LayoutDashboard, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/components/ui/use-toast"
-import { 
-  isAuthenticated, 
-  isAdmin, 
-  getUserDisplayName, 
-  getUserAvatar, 
-  signOut 
+import {
+  isAuthenticated,
+  isAdmin,
+  getUserDisplayName,
+  getUserAvatar,
+  signOut
 } from "@/lib/api/auth"
 
 export function HeaderActions() {
@@ -60,7 +60,7 @@ export function HeaderActions() {
 
   const handleLogout = () => {
     signOut()
-    
+
     setIsLoggedIn(false)
     setUserIsAdmin(false)
     setUserName("")
@@ -101,50 +101,6 @@ export function HeaderActions() {
     <div className="flex items-center gap-2">
       {/* Desktop Navigation */}
       <nav className="hidden md:flex items-center space-x-1">
-        <Link
-          href="/modern-catalogue"
-          className={cn(
-            "px-4 py-2 rounded-md text-sm font-medium transition-colors",
-            pathname === "/modern-catalogue" || pathname.startsWith("/modern-catalogue/")
-              ? "bg-primary/10 text-primary"
-              : "text-muted-foreground hover:text-primary hover:bg-accent",
-          )}
-        >
-          Modern Catalogue
-        </Link>
-        <Link
-          href="/visual-catalogue"
-          className={cn(
-            "px-4 py-2 rounded-md text-sm font-medium transition-colors",
-            pathname === "/visual-catalogue" || pathname.startsWith("/visual-catalogue/")
-              ? "bg-primary/10 text-primary"
-              : "text-muted-foreground hover:text-primary hover:bg-accent",
-          )}
-        >
-          Visual Catalogue
-        </Link>
-        <Link
-          href="/list-catalogue"
-          className={cn(
-            "px-4 py-2 rounded-md text-sm font-medium transition-colors",
-            pathname === "/list-catalogue" || pathname.startsWith("/list-catalogue/")
-              ? "bg-primary/10 text-primary"
-              : "text-muted-foreground hover:text-primary hover:bg-accent",
-          )}
-        >
-          List Catalogue
-        </Link>
-        <Link
-          href="/investigate-search"
-          className={cn(
-            "px-4 py-2 rounded-md text-sm font-medium transition-colors",
-            pathname === "/investigate-search" || pathname.startsWith("/investigate-search/")
-              ? "bg-primary/10 text-primary"
-              : "text-muted-foreground hover:text-primary hover:bg-accent",
-          )}
-        >
-          Investigate Search
-        </Link>
         <ScanButton />
       </nav>
 
@@ -207,78 +163,17 @@ export function HeaderActions() {
         </SheetTrigger>
         <SheetContent side="right">
           <nav className="flex flex-col gap-4">
-            <Link
-              href="/"
-              className={cn(
-                "text-lg font-medium transition-colors hover:text-primary",
-                pathname === "/" ? "text-primary font-semibold" : "text-muted-foreground",
-              )}
-              onClick={() => setIsSheetOpen(false)}
-            >
-              Home
-            </Link>
-            <Link
-              href="/modern-catalogue"
-              className={cn(
-                "text-lg font-medium transition-colors hover:text-primary",
-                pathname === "/modern-catalogue" || pathname.startsWith("/modern-catalogue/")
-                  ? "text-primary font-semibold"
-                  : "text-muted-foreground",
-              )}
-              onClick={() => setIsSheetOpen(false)}
-            >
-              Modern Catalogue
-            </Link>
-            <Link
-              href="/visual-catalogue"
-              className={cn(
-                "text-lg font-medium transition-colors hover:text-primary",
-                pathname === "/visual-catalogue" || pathname.startsWith("/visual-catalogue/")
-                  ? "text-primary font-semibold"
-                  : "text-muted-foreground",
-              )}
-              onClick={() => setIsSheetOpen(false)}
-            >
-              Visual Catalogue
-            </Link>
-            <Link
-              href="/list-catalogue"
-              className={cn(
-                "text-lg font-medium transition-colors hover:text-primary",
-                pathname === "/list-catalogue" || pathname.startsWith("/list-catalogue/")
-                  ? "text-primary font-semibold"
-                  : "text-muted-foreground",
-              )}
-              onClick={() => setIsSheetOpen(false)}
-            >
-              List Catalogue
-            </Link>
-            <Link
-              href="/investigate-search"
-              className={cn(
-                "text-lg font-medium transition-colors hover:text-primary",
-                pathname === "/investigate-search" || pathname.startsWith("/investigate-search/")
-                  ? "text-primary font-semibold"
-                  : "text-muted-foreground",
-              )}
-              onClick={() => setIsSheetOpen(false)}
-            >
-              Investigate Search
-            </Link>
-
             {/* Mobile Scan Button */}
             <div className="relative">
               <Link
                 href="/scan"
                 className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-md text-lg font-medium",
-                  pathname === "/scan" ? "bg-accent text-accent-foreground" : "text-foreground hover:bg-accent",
+                  "text-lg font-medium transition-colors hover:text-primary",
+                  pathname === "/scan" ? "text-primary" : "text-muted-foreground",
                 )}
                 onClick={() => setIsSheetOpen(false)}
               >
-                <Sparkles className="h-5 w-5 text-amber-500" />
-                <span>Scan</span>
-                <span className="text-sm text-amber-500 font-normal ml-0.5">✦</span>
+                Scan
               </Link>
             </div>
 

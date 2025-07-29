@@ -30,7 +30,7 @@ export default function PinnedStampCard({
         isMinimized
           ? "w-14 h-14 sm:w-16 sm:h-16"
           : imageZoomed
-            ? "w-[90vw] h-[90vh] md:w-[500px] max-h-[calc(100vh-2rem)] overflow-y-auto"
+            ? "w-[90vw] h-[90vh] md:h-[60vh] md:w-[500px] max-h-[calc(100vh-2rem)] overflow-y-auto"
             : "w-[90vw] max-w-sm md:w-96"
       )}
       style={{

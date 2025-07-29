@@ -313,7 +313,7 @@ export function VisualCatalogContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-4 md:p-6 bg-background">
+      <div className="min-h-screen p-4 md:p-6">
         <Card className="mx-auto mt-4 mb-6 w-full max-w-4xl border bg-card text-card-foreground shadow-sm">
           <CardContent className="p-4 md:p-6">
             <Skeleton className="h-8 w-1/2 mb-4 mx-auto" />
@@ -361,7 +361,7 @@ export function VisualCatalogContent() {
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-6 bg-background">
+    <div className="min-h-screen p-4 md:p-6">
       {/* Header */}
       <Card className="mx-auto mt-4 mb-6 w-full max-w-4xl border bg-card text-card-foreground shadow-sm">
         <CardContent className="p-4 md:p-6">
