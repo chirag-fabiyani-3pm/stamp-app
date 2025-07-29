@@ -63,8 +63,8 @@ export function StampHierarchy({ stampType, varieties, onClose }: StampHierarchy
   
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-background rounded-lg w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="border-b p-4 flex items-center justify-between sticky top-0 bg-background z-10">
+      <div className="bg-background rounded-lg w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col dark:bg-gray-900 dark:text-gray-100">
+        <div className="border-b p-4 flex items-center justify-between sticky top-0 bg-background z-10 dark:border-gray-700 dark:bg-gray-900">
           <div className="flex items-center gap-3">
             <div className="h-12 w-12 relative">
               <Image 
@@ -77,10 +77,10 @@ export function StampHierarchy({ stampType, varieties, onClose }: StampHierarchy
             <div>
               <h2 className="text-xl font-bold">{stampType.title}</h2>
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="font-mono">
+                <Badge variant="outline" className="font-mono dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600">
                   {stampType.country}-{stampType.year.slice(-2)}-{stampType.denomination}
                 </Badge>
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-xs dark:bg-gray-700 dark:text-gray-100">
                   Color #{stampType.colorNumber}: {stampType.colorName}
                 </Badge>
               </div>
@@ -89,7 +89,7 @@ export function StampHierarchy({ stampType, varieties, onClose }: StampHierarchy
           
           <button 
             onClick={onClose} 
-            className="rounded-full h-8 w-8 flex items-center justify-center hover:bg-muted"
+            className="rounded-full h-8 w-8 flex items-center justify-center hover:bg-muted dark:hover:bg-gray-700 dark:text-gray-300"
           >
             <span className="sr-only">Close</span>
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
@@ -103,9 +103,9 @@ export function StampHierarchy({ stampType, varieties, onClose }: StampHierarchy
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <h3 className="text-lg font-medium mb-3">Stamp Hierarchy Tree</h3>
-              <div className="bg-muted/50 p-4 rounded-lg">
+              <div className="bg-muted/50 p-4 rounded-lg dark:bg-gray-800">
                 <div className="flex flex-col">
-                  <div className="flex items-center gap-2 p-2 bg-muted mb-2 rounded">
+                  <div className="flex items-center gap-2 p-2 bg-muted mb-2 rounded dark:bg-gray-700">
                     <div className="h-8 w-8 relative">
                       <Image 
                         src={stampType.image} 
@@ -117,17 +117,17 @@ export function StampHierarchy({ stampType, varieties, onClose }: StampHierarchy
                     <span className="font-medium">{stampType.title}</span>
                   </div>
                   
-                  <div className="ml-4 pl-4 border-l">
+                  <div className="ml-4 pl-4 border-l dark:border-gray-700">
                     {Object.entries(groupedVarieties).map(([feature, vars]) => (
                       <div key={feature} className="mb-4">
-                        <div className="flex items-center gap-2 p-2 bg-muted/70 rounded mb-2">
-                          <Badge variant="outline">{featureLabels[feature] || feature}</Badge>
-                          <span className="text-sm text-muted-foreground">({vars.length} varieties)</span>
+                        <div className="flex items-center gap-2 p-2 bg-muted/70 rounded mb-2 dark:bg-gray-700">
+                          <Badge variant="outline" className="dark:bg-gray-600 dark:text-gray-100 dark:border-gray-500">{featureLabels[feature] || feature}</Badge>
+                          <span className="text-sm text-muted-foreground dark:text-gray-400">({vars.length} varieties)</span>
                         </div>
                         
-                        <div className="ml-4 pl-4 border-l">
+                        <div className="ml-4 pl-4 border-l dark:border-gray-700">
                           {vars.map(variety => (
-                            <div key={variety.id} className="flex items-center gap-2 p-2 hover:bg-muted/30 rounded my-1">
+                            <div key={variety.id} className="flex items-center gap-2 p-2 hover:bg-muted/30 rounded my-1 dark:hover:bg-gray-700">
                               <div className="h-6 w-6 relative">
                                 <Image 
                                   src={variety.image} 
@@ -159,9 +159,9 @@ export function StampHierarchy({ stampType, varieties, onClose }: StampHierarchy
             
             <div>
               <h3 className="text-lg font-medium mb-3">Stamp Details</h3>
-              <Card>
+              <Card className="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700">
                 <CardHeader>
-                  <CardTitle>Full Face Queens Group - the Chalons</CardTitle>
+                  <CardTitle className="dark:text-gray-100">Full Face Queens Group - the Chalons</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="aspect-square max-w-xs mx-auto relative">
@@ -192,8 +192,8 @@ export function StampHierarchy({ stampType, varieties, onClose }: StampHierarchy
                     </div>
                   </div>
                   
-                  <div className="border-t pt-3 mt-3">
-                    <p className="text-sm text-muted-foreground">
+                  <div className="border-t pt-3 mt-3 dark:border-gray-700">
+                    <p className="text-sm text-muted-foreground dark:text-gray-400">
                       This stamp is part of the Full Face Queens Group (the Chalons) from New Zealand.
                       Click on any variety in the hierarchy tree to see more details.
                     </p>

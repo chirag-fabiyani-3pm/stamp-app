@@ -16,10 +16,7 @@ import {
   Loader2,
   Phone,
   RefreshCw,
-  CheckCircle,
   AlertCircle,
-  Plus,
-  Copy,
   Calendar,
   IdCard,
   Save,
@@ -72,7 +69,7 @@ export default function ProfileInfo() {
   const [loading, setLoading] = useState(true)
   const [addressLoading, setAddressLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [addressError, setAddressError] = useState<string | null>(null)
+
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [editLoading, setEditLoading] = useState(false)
   const [isImageDialogOpen, setIsImageDialogOpen] = useState(false)
@@ -154,7 +151,6 @@ export default function ProfileInfo() {
   // Fetch address data
   const fetchAddressData = async (userId: string, jwt: string) => {
     setAddressLoading(true)
-    setAddressError(null)
 
     try {
       const response = await fetch(`https://3pm-stampapp-prod.azurewebsites.net/api/v1/UserAddress?userId=${userId}`, {
@@ -175,7 +171,6 @@ export default function ProfileInfo() {
       }
     } catch (error) {
       console.error('Error fetching address data:', error)
-      setAddressError('Failed to load address data')
     } finally {
       setAddressLoading(false)
     }
@@ -253,16 +248,7 @@ export default function ProfileInfo() {
         throw new Error(`Failed to update address! status: ${addressResponse.status}`)
       }
 
-      // Update localStorage with new user data
-      const updatedUserData: UserData = {
-        ...userData,
-        firstName: userBody.firstName,
-        lastName: userBody.lastName,
-        dateOfBirth: userBody.dateOfBirth || undefined,
-        aboutMe: userBody.aboutMe,
-        mobileNumber: userBody.mobileNumber,
-        userName: userBody.userName
-      }
+
       const parsedUserData = localStorage.getItem('stamp_user_data') && JSON.parse(localStorage.getItem('stamp_user_data') || '{}')
       const jwt = parsedUserData.jwt || ''
       // Refresh address data
@@ -329,7 +315,7 @@ export default function ProfileInfo() {
       }
 
       // Get the updated user data
-      const result = await response.json()
+      await response.json()
       const parsedUserData = localStorage.getItem('stamp_user_data') && JSON.parse(localStorage.getItem('stamp_user_data') || '{}')
       // Fetch fresh user data from API to get the updated avatar URL
       await fetchUserData(parsedUserData)
@@ -457,9 +443,7 @@ export default function ProfileInfo() {
   const isAdmin = userData.roleMasterName?.toLowerCase().includes('admin') ||
     userData.roleMasterName?.toLowerCase().includes('administrator')
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-  }
+
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -835,14 +819,14 @@ export default function ProfileInfo() {
           </div>
 
           {/* About Me Section - Only show if aboutMe exists */}
-          {(userData as any).aboutMe && (
+          {(userData as Record<string, any>).aboutMe && (
             <>
               <Separator className="my-3 sm:my-4 dark:bg-slate-600" />
 
               <div>
                 <label className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 mb-2 block">About Me</label>
                 <div className="p-2 sm:p-3 bg-slate-50/50 dark:bg-transparent rounded-lg border border-slate-100 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer">
-                  <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed break-words">{(userData as any).aboutMe}</p>
+                  <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed break-words">{(userData as Record<string, any>).aboutMe}</p>
                 </div>
               </div>
             </>

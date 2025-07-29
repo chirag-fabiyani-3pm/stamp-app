@@ -7,7 +7,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import type { StampVariety } from "@/components/stamp-datastore"
-import { useState } from "react"
+import React, { useState } from "react"
 
 interface StampVarietiesProps {
   varieties: StampVariety[]

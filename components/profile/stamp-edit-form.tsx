@@ -2,9 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { ChevronRight, ChevronLeft, Home, Edit, Eye, X, Loader2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { Edit, X, Loader2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getUserData } from "@/lib/api/auth"
@@ -146,7 +144,7 @@ const getJWT = (): string | null => {
 
         // Try to get from cookies
         const cookies = document.cookie.split(';');
-        for (let cookie of cookies) {
+        for (const cookie of cookies) {
             const [name, value] = cookie.trim().split('=');
             if (name === 'stamp_jwt') {
                 return value;
@@ -175,7 +173,7 @@ const transformFormDataToApiFormat = (formData: Record<string, any>, categories:
     const result: any[] = [];
 
     // Helper function to determine field type based on category definition
-    const getFieldType = (categoryId: string, fieldId: string): string => {
+    const getFieldType = (categoryId: string, _fieldId: string): string => {
         const category = findCategoryInTree(categoryId, categories);
         if (category?.type === 'select') return 'Select Input';
         if (category?.type === 'textarea') return 'Text Area';
@@ -190,7 +188,7 @@ const transformFormDataToApiFormat = (formData: Record<string, any>, categories:
     };
 
     // Recursive function to process nested form data
-    const processFormData = (data: any, parentKey: string = '', level: number = 0): void => {
+    const processFormData = (data: any, parentKey: string = '', _level: number = 0): void => {
         if (!data || typeof data !== 'object') return;
 
         Object.entries(data).forEach(([key, value]) => {
@@ -561,7 +559,7 @@ function FormPreview({ data, categories, onUpdate }: {
 }
 
 export default function StampEditForm({ stamp, onClose, onSave }: StampEditFormProps) {
-    const [navigationPath, setNavigationPath] = useState<NavigationPathItem[]>([])
+    const [_navigationPath, _setNavigationPath] = useState<NavigationPathItem[]>([])
     const [isSaving, setIsSaving] = useState(false)
     
     // Image zoom and pan state
@@ -579,7 +577,7 @@ export default function StampEditForm({ stamp, onClose, onSave }: StampEditFormP
         const defaultData = initializeFormDataFromCategories(categories)
         
         // First, populate from root-level fields in the stamp object
-        let result = { ...defaultData }
+        const result = { ...defaultData }
         
         // Helper function to set value at a nested path
         const setNestedValue = (obj: any, path: string[], value: any) => {
@@ -662,7 +660,7 @@ export default function StampEditForm({ stamp, onClose, onSave }: StampEditFormP
         })
     }
 
-    const resetImagePan = () => {
+    const _resetImagePan = () => {
         setImagePan({ x: 0, y: 0 })
     }
 
@@ -808,7 +806,7 @@ export default function StampEditForm({ stamp, onClose, onSave }: StampEditFormP
 
     // Handle form field changes
     const handleFieldChange = (path: NavigationPathItem[], value: string) => {
-        let newFormData = { ...formData }
+        const newFormData = { ...formData }
         let current = newFormData
 
         for (let i = 0; i < path.length - 1; i++) {

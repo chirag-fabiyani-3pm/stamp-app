@@ -1,4 +1,5 @@
 "use client"
+import React from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -172,7 +173,7 @@ export default function ProfileActivity() {
   )
 }
 
-function renderActivityItem(activity: any) {
+function renderActivityItem(activity: Record<string, any>) {
   let icon
   let content
 
@@ -269,7 +270,7 @@ function renderActivityItem(activity: any) {
         <>
           <div className="flex-1">
             <p>
-              You replied to <span className="font-medium">{activity.topicAuthor.name}</span>'s topic:{" "}
+              You replied to <span className="font-medium">{activity.topicAuthor.name}</span>&apos;s topic:{" "}
               <span className="font-medium">{activity.title}</span>
             </p>
             <p className="text-sm text-muted-foreground">{activity.date}</p>
@@ -283,7 +284,7 @@ function renderActivityItem(activity: any) {
         <>
           <div className="flex-1">
             <p>
-              You liked <span className="font-medium">{activity.topicAuthor.name}</span>'s topic:{" "}
+              You liked <span className="font-medium">{activity.topicAuthor.name}</span>&apos;s topic:{" "}
               <span className="font-medium">{activity.title}</span>
             </p>
             <p className="text-sm text-muted-foreground">{activity.date}</p>

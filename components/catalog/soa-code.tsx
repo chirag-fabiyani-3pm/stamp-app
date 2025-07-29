@@ -64,7 +64,7 @@ export function SOACode({
     <div className="inline-flex items-center gap-1.5">
       <Badge 
         variant="outline" 
-        className="font-mono cursor-pointer hover:bg-primary/10 transition-colors"
+        className="font-mono cursor-pointer hover:bg-primary/10 transition-colors dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-600"
         onClick={handleClick}
       >
         {getDisplayCode()}
@@ -74,9 +74,9 @@ export function SOACode({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <InfoIcon className="h-4 w-4 text-muted-foreground cursor-help" />
+              <InfoIcon className="h-4 w-4 text-muted-foreground cursor-help dark:text-gray-400" />
             </TooltipTrigger>
-            <TooltipContent className="w-64">
+            <TooltipContent className="w-64 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700">
               <div className="space-y-2">
                 <p className="font-medium">{description || "Stamp Details"}</p>
                 <div className="text-sm">

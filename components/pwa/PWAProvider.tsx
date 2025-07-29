@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Download, X, RotateCcw } from "lucide-react";
 import {
@@ -96,7 +96,7 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
         });
 
         // Handle successful installation
-        window.addEventListener('appinstalled', (e) => {
+        window.addEventListener('appinstalled', () => {
             console.log('PWA was installed');
             setIsInstallable(false);
             setShowInstallPrompt(false);

@@ -5,7 +5,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Plus, Minus, Printer, ChevronLeft, ZoomIn, ZoomOut } from "lucide-react"
+import { Printer, ChevronLeft, ZoomIn, ZoomOut } from "lucide-react"
 
 type StampViewerProps = {
   stamp: {

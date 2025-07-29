@@ -3,15 +3,13 @@
 import React, { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Loader2, SendHorizontal, X, MessageSquare, Bot, Sparkles } from "lucide-react"
+import { Loader2, SendHorizontal, Bot, Sparkles } from "lucide-react"
 import { 
   Sheet, 
   SheetContent, 
   SheetHeader, 
   SheetTitle, 
-  SheetTrigger,
-  SheetFooter,
-  SheetClose
+  SheetTrigger
 } from "@/components/ui/sheet"
 import { Avatar } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"

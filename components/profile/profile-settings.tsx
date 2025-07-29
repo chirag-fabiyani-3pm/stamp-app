@@ -1,12 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AlertCircle, Loader2 } from "lucide-react"
 import {
@@ -39,7 +37,7 @@ const getJWT = (): string | null => {
 
     // Try to get from cookies
     const cookies = document.cookie.split(';');
-    for (let cookie of cookies) {
+    for (const cookie of cookies) {
       const [name, value] = cookie.trim().split('=');
       if (name === 'stamp_jwt') {
         return value;
@@ -67,7 +65,7 @@ export default function ProfileSettings() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   
-  const [settings, setSettings] = useState({
+  const [_settings, _setSettings] = useState({
     emailNotifications: true,
     marketplaceAlerts: true,
     communityNotifications: true,
@@ -85,19 +83,7 @@ export default function ProfileSettings() {
     setMounted(true)
   }, [])
 
-  const handleToggle = (setting: string, value: boolean) => {
-    setSettings({
-      ...settings,
-      [setting]: value,
-    })
-  }
 
-  const handleChange = (setting: string, value: string) => {
-    setSettings({
-      ...settings,
-      [setting]: value,
-    })
-  }
 
   const handleDeleteAccount = async () => {
     setIsDeleting(true);

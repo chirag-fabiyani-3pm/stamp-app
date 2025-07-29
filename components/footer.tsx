@@ -1,3 +1,4 @@
+import React from "react"
 import Link from "next/link"
 import { Stamp } from "lucide-react"
 
@@ -20,7 +21,7 @@ export default function Footer() {
             <h3 className="font-medium mb-3">Platform</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
-                <Link href="/catalog" className="hover:text-primary">
+                <Link href="/list-catalogue" className="hover:text-primary">
                   Stamp Catalog
                 </Link>
               </li>

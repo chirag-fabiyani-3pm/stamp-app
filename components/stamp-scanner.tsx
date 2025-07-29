@@ -1,20 +1,15 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useRef, useEffect } from "react"
+import React, { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Camera, Upload, Loader2, Check, AlertCircle, RefreshCw, ZoomIn, Search } from "lucide-react"
+import { Camera, Upload, Loader2, Check, AlertCircle, ZoomIn, Search } from "lucide-react"
 import StampResult from "@/components/stamp-result"
 import EditableStampResult from "@/components/editable-stamp-result"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Progress } from "@/components/ui/progress"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import StampRefinementModal from "@/components/stamp-refinement-modal"
 
 export default function StampScanner() {
@@ -22,11 +17,10 @@ export default function StampScanner() {
   const [scanState, setScanState] = useState<"idle" | "scanning" | "success" | "error">("idle")
   const [showResults, setShowResults] = useState(false)
   const [showEditableResults, setShowEditableResults] = useState(false)
-  const [recognitionConfidence, setRecognitionConfidence] = useState(87)
-  const [possibleMatches, setPossibleMatches] = useState(3)
+
   const [zoomLevel, setZoomLevel] = useState(1)
   const [isRefinementOpen, setIsRefinementOpen] = useState(false)
-  const [selectedFeatureType, setSelectedFeatureType] = useState<string | null>(null)
+
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isCameraActive, setIsCameraActive] = useState(false)
@@ -201,7 +195,7 @@ export default function StampScanner() {
     setShowEditableResults(true);
   }
 
-  const handleCompleteEdit = (editedData: any) => {
+  const handleCompleteEdit = (editedData: Record<string, unknown>) => {
     console.log("Edited stamp data:", editedData);
     // In a real app, you would save this data to your database
     setShowEditableResults(false);
@@ -216,7 +210,7 @@ export default function StampScanner() {
     setIsRefinementOpen(false);
   }
 
-  const handleRefinementComplete = (refinedData: any) => {
+  const handleRefinementComplete = (refinedData: Record<string, unknown>) => {
     console.log("Refined stamp identification:", refinedData);
     setIsRefinementOpen(false);
     
@@ -264,7 +258,7 @@ export default function StampScanner() {
           </Button>
           <h2 className="text-2xl font-bold">Edit Stamp Details</h2>
         </div>
-        <EditableStampResult data={mockStampData as any} onComplete={handleCompleteEdit} />
+        <EditableStampResult data={mockStampData} onComplete={handleCompleteEdit} />
       </div>
     )
   }

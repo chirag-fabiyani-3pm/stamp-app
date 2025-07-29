@@ -1,3 +1,4 @@
+import React from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { ReviewerBadge, type ReviewerLevel } from "@/components/authentication/reviewer-badge"
@@ -94,7 +95,7 @@ export function ReviewerProgress({ level, isAdmin = false }: ReviewerProgressPro
             <p>As an administrator, you have Master Philatelist status with full authentication privileges.</p>
             <ul className="mt-2 space-y-1">
               <li>• Approve or reject any authentication review</li>
-              <li>• Endorse other authenticators' reviews</li>
+              <li>• Endorse other authenticators&apos; reviews</li>
               <li>• Manage authentication standards</li>
             </ul>
           </div>
