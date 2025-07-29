@@ -7,10 +7,14 @@ import HeroSection from "@/components/hero-section"
 import FeatureCard from "@/components/feature-card"
 import { isUserLoggedIn } from "@/lib/client/auth-utils"
 import { ModernCatalogContent } from "@/components/catalog/modern-catalog-content"
-import { Suspense } from "react"
+import { Suspense, useState, useEffect } from "react"
 
 export default function Home() {
-  const isLoggedIn = isUserLoggedIn()
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    setIsLoggedIn(isUserLoggedIn());
+  }, []);
 
   return (
     <>

@@ -120,7 +120,7 @@ export function ListCatalogContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen dark:bg-gray-950 p-4">
+      <div className="min-h-screen p-4">
         <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 shadow-sm mx-auto mt-4 mb-6 rounded-lg">
           <div className="p-6">
             <div className="text-center mb-6">
@@ -194,7 +194,7 @@ export function ListCatalogContent() {
   }
 
   return (
-    <div className="min-h-screen dark:bg-gray-950 text-gray-900 dark:text-gray-100">
+    <div className="min-h-screen text-gray-900 dark:text-gray-100">
       {/* Header */}
       <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 shadow-sm mx-4 mt-4 mb-6 rounded-lg">
         <div className="p-6">
