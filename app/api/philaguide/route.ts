@@ -6,6 +6,8 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 })
 
+//test
+
 const ASSISTANT_ID = 'asst_AfsiDbpnx2WjgZV7O97eHhyb'
 
 // Generate card format for single stamp
