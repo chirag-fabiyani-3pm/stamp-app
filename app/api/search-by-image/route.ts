@@ -1,10 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 
+// Vercel configuration
+export const maxDuration = 15 // 15 seconds for Vercel hobby plan (allows for function calls)
+export const dynamic = 'force-dynamic'
+
 console.log('OPENAI_API_KEY (search-by-image): ', process.env.OPENAI_API_KEY)
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 })
+
+// Add timeout configuration for Vercel
+const TIMEOUT_MS = 12000 // 12 seconds to allow for function calls while staying under Vercel's limit
+
+// Timeout helper function
+function createTimeoutPromise(ms: number): Promise<never> {
+    return new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout')), ms)
+    })
+}
 
 export async function POST(request: NextRequest) {
     try {
@@ -33,42 +47,70 @@ export async function POST(request: NextRequest) {
         const buffer = Buffer.from(bytes)
         const base64Image = buffer.toString('base64')
 
-        // Step 1: Analyze if the image is a stamp
-        const stampAnalysis = await analyzeStampImage(base64Image)
+        // Process image with timeout
+        try {
+            // Create a timeout promise
+            const timeoutPromise = createTimeoutPromise(TIMEOUT_MS)
 
-        if (!stampAnalysis.isStamp) {
+            // Create the image processing promise
+            const imageProcessingPromise = (async () => {
+                // Step 1: Analyze if the image is a stamp
+                const stampAnalysis = await analyzeStampImage(base64Image)
+
+                if (!stampAnalysis.isStamp) {
+                    return {
+                        isStamp: false,
+                        confidence: stampAnalysis.confidence,
+                        message: 'This image does not appear to be a stamp.'
+                    }
+                }
+
+                // Step 2: If it's a stamp, find similar stamps in our database
+                const similarStamps = await findSimilarStamps(stampAnalysis.description)
+
+                // Step 3: Get the best match
+                const bestMatch = similarStamps.length > 0 ? similarStamps[0] : null
+
+                return {
+                    isStamp: true,
+                    confidence: stampAnalysis.confidence,
+                    stampDetails: bestMatch ? {
+                        name: bestMatch.Name,
+                        country: bestMatch.Country,
+                        denomination: `${bestMatch.DenominationValue}${bestMatch.DenominationSymbol || ''}`,
+                        year: bestMatch.IssueYear || 'Unknown',
+                        color: bestMatch.Color || 'Unknown',
+                        description: bestMatch.visualDescription || 'No description available',
+                        imageUrl: bestMatch.StampImageUrl || '/images/stamps/no-image-available.png'
+                    } : null,
+                    suggestions: similarStamps.slice(0, 4).map((stamp: any) => ({
+                        name: stamp.Name,
+                        country: stamp.Country,
+                        similarity: stamp.similarity || 0.8,
+                        imageUrl: stamp.StampImageUrl || '/images/stamps/no-image-available.png'
+                    }))
+                }
+            })()
+
+            // Race between the image processing and timeout
+            const result = await Promise.race([imageProcessingPromise, timeoutPromise])
+
+            return NextResponse.json(result)
+
+        } catch (error) {
+            console.error('❌ Error in image processing:', error)
+
+            // Check if it's a timeout error
+            if (error instanceof Error && error.message === 'Request timeout') {
+                return NextResponse.json({
+                    error: 'Image processing timed out. Please try again with a simpler image.'
+                }, { status: 408 })
+            }
+
             return NextResponse.json({
-                isStamp: false,
-                confidence: stampAnalysis.confidence,
-                message: 'This image does not appear to be a stamp.'
-            })
+                error: 'Failed to process image. Please try again.'
+            }, { status: 500 })
         }
-
-        // Step 2: If it's a stamp, find similar stamps in our database
-        const similarStamps = await findSimilarStamps(stampAnalysis.description)
-
-        // Step 3: Get the best match
-        const bestMatch = similarStamps.length > 0 ? similarStamps[0] : null
-
-        return NextResponse.json({
-            isStamp: true,
-            confidence: stampAnalysis.confidence,
-            stampDetails: bestMatch ? {
-                name: bestMatch.Name,
-                country: bestMatch.Country,
-                denomination: `${bestMatch.DenominationValue}${bestMatch.DenominationSymbol || ''}`,
-                year: bestMatch.IssueYear || 'Unknown',
-                color: bestMatch.Color || 'Unknown',
-                description: bestMatch.visualDescription || 'No description available',
-                imageUrl: bestMatch.StampImageUrl || '/images/stamps/no-image-available.png'
-            } : null,
-            suggestions: similarStamps.slice(0, 4).map((stamp: any) => ({
-                name: stamp.Name,
-                country: stamp.Country,
-                similarity: stamp.similarity || 0.8,
-                imageUrl: stamp.StampImageUrl || '/images/stamps/no-image-available.png'
-            }))
-        })
 
     } catch (error) {
         console.error('❌ Error in image search:', error)
