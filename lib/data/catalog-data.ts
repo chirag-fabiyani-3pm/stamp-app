@@ -128,8 +128,6 @@ export const generateYearsData = async (stampCode: string, groupNumber: string):
       totalStamps: Math.floor(Math.random() * 50) + 10,
       firstIssue: `${year}-01-15`,
       lastIssue: `${year}-12-20`,
-      highlightedSeries: year % 20 === 0 ? 'Premium Edition' : undefined,
-      historicalEvents: year === 1870 ? ['Franco-Prussian War'] : year === 1914 ? ['World War I begins'] : undefined
     })
   }
   return years

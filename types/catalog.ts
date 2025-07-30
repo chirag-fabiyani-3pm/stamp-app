@@ -122,6 +122,8 @@ export interface StampData {
   stampDetailsJson: string
   estimatedMarketValue: number | null
   actualPrice: number | null
+  stampGroupId: string;
+  instances: StampInstance[];
 }
 
 export interface ApiStampData {

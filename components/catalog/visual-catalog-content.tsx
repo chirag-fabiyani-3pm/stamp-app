@@ -361,12 +361,12 @@ export function VisualCatalogContent() {
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-6">
+    <div className="min-h-screen p-2 md:p-6">
       {/* Header */}
-      <Card className="mx-auto mt-4 mb-6 w-full max-w-4xl border bg-card text-card-foreground shadow-sm">
-        <CardContent className="p-4 md:p-6">
-          <div className="text-center mb-4 md:mb-6">
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground font-serif mb-1">
+      <Card className="mx-auto mt-2 mb-4 w-full max-w-4xl border bg-card text-card-foreground shadow-sm">
+        <CardContent className="p-3 md:p-6">
+          <div className="text-center mb-3 md:mb-6">
+            <h1 className="text-xl md:text-3xl font-bold text-foreground font-serif mb-1">
               VISUAL CATALOGUE
             </h1>
             <p className="text-sm text-muted-foreground">
@@ -374,10 +374,10 @@ export function VisualCatalogContent() {
             </p>
           </div>
 
-          <Separator className="my-4 md:my-6 bg-border" />
+          <Separator className="my-3 md:my-6 bg-border" />
 
           {/* Search Controls */}
-          <div className="flex flex-col md:flex-row gap-4 mb-4 md:mb-6">
+          <div className="flex flex-col md:flex-row gap-3 mb-3 md:mb-6">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -392,27 +392,27 @@ export function VisualCatalogContent() {
           </div>
 
           {/* Statistics */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center text-sm border-y border-border py-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-sm border-y border-border py-2">
             <div>
-              <div className="text-lg font-bold text-foreground">
+              <div className="text-base font-bold text-foreground">
                 {countries.length}
               </div>
               <div className="text-xs text-muted-foreground">Countries</div>
             </div>
             <div>
-              <div className="text-lg font-bold text-foreground">
+              <div className="text-base font-bold text-foreground">
                 {countries.reduce((sum, country) => sum + country.totalStamps, 0).toLocaleString()}
               </div>
               <div className="text-xs text-muted-foreground">Total Stamps</div>
             </div>
             <div>
-              <div className="text-lg font-bold text-foreground">
+              <div className="text-base font-bold text-foreground">
                 {Math.floor(Math.random() * 50) + 150}K
               </div>
               <div className="text-xs text-muted-foreground">Varieties</div>
             </div>
             <div>
-              <div className="text-lg font-bold text-foreground">
+              <div className="text-base font-bold text-foreground">
                 {Math.floor(Math.random() * 10) + 5}K
               </div>
               <div className="text-xs text-muted-foreground">Series</div>
@@ -422,16 +422,16 @@ export function VisualCatalogContent() {
       </Card>
 
       {/* Countries Table */}
-      <div className="container mx-auto px-0 md:px-4 pb-8">
+      <div className="container mx-auto px-0 md:px-4 pb-4">
         <div className="max-w-4xl mx-auto">
           <div className="bg-card border border-border rounded shadow-sm">
             {/* Countries Table Header */}
-            <div className="border-b border-border bg-muted/50 px-4 py-2">
-              <div className="grid grid-cols-12 gap-4 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                <div className="col-span-2 sm:col-span-1 text-center">Flag</div>
-                <div className="col-span-5 sm:col-span-5">Country</div>
+            <div className="border-b border-border bg-muted/50 px-3 py-2">
+              <div className="grid grid-cols-12 gap-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                <div className="col-span-2 text-center">Flag</div>
+                <div className="col-span-4">Country</div>
                 <div className="col-span-2 text-center">Code</div>
-                <div className="col-span-3 sm:col-span-3 text-right">Total Stamps</div>
+                <div className="col-span-4 text-right">Total Stamps</div>
                 <div className="hidden sm:block col-span-1"></div>
               </div>
             </div>
@@ -441,27 +441,27 @@ export function VisualCatalogContent() {
               {filteredCountries.map((country) => (
                 <div
                   key={country.code}
-                  className="cursor-pointer px-4 py-3 hover:bg-muted/70 transition-colors"
+                  className="cursor-pointer px-3 py-2 hover:bg-muted/70 transition-colors"
                   onClick={() => handleCountryClick(country)}
                 >
-                  <div className="grid grid-cols-12 gap-4 items-center text-sm">
-                    <div className="col-span-2 sm:col-span-1 text-center">
-                      <span className="text-2xl">{country.flag}</span>
+                  <div className="grid grid-cols-12 gap-3 items-center text-sm">
+                    <div className="col-span-2 text-center">
+                      <span className="text-xl">{country.flag}</span>
                     </div>
-                    <div className="col-span-5 sm:col-span-5 font-bold text-foreground">
+                    <div className="col-span-4 font-bold text-foreground">
                       {country.name}
                     </div>
                     <div className="col-span-2 text-center">
-                      <Badge variant="outline">{country.code}</Badge>
+                      <Badge variant="outline" className="text-xs">{country.code}</Badge>
                     </div>
-                    <div className="col-span-3 sm:col-span-3 text-right text-muted-foreground">
-                      <div className="flex items-center justify-end space-x-2">
-                        <Archive className="h-4 w-4 text-muted-foreground" />
-                        <span>{country.totalStamps.toLocaleString()}</span>
+                    <div className="col-span-4 text-right text-muted-foreground">
+                      <div className="flex items-center justify-end space-x-1">
+                        <Archive className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-xs">{country.totalStamps.toLocaleString()}</span>
                       </div>
                     </div>
                     <div className="hidden sm:block col-span-1 text-right">
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      <ChevronRight className="h-3 w-3 text-muted-foreground" />
                     </div>
                   </div>
                 </div>
@@ -485,17 +485,17 @@ export function VisualCatalogContent() {
               zIndex: 50 + index * 10,
             }}
           >
-            <DialogHeader className="border-b border-border pb-4 mb-4">
+            <DialogHeader className="border-b border-border pb-3 mb-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <DialogTitle className="text-xl md:text-2xl font-bold text-foreground">
+                  <DialogTitle className="text-lg md:text-2xl font-bold text-foreground">
                     {modal.title}
                   </DialogTitle>
-                  <p className="text-sm text-muted-foreground mt-1 break-words">
-                    Stamp Code: <code className="bg-muted px-2 py-1 rounded text-sm text-foreground break-all">{modal.stampCode}</code>
+                  <p className="text-xs text-muted-foreground mt-1 break-words">
+                    Stamp Code: <code className="bg-muted px-1 py-0.5 rounded text-xs text-foreground break-all">{modal.stampCode}</code>
                   </p>
                 </div>
-                <Button variant="ghost" size="sm" onClick={closeModal} className="text-muted-foreground hover:bg-muted/70">
+                <Button variant="ghost" size="sm" onClick={closeModal} className="text-muted-foreground hover:bg-muted/70 w-8 h-8 p-0">
                   <X className="h-4 w-4" />
                 </Button>
               </div>
@@ -503,18 +503,18 @@ export function VisualCatalogContent() {
 
             {/* Render content based on modal type */}
             {loadingModalContent ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
-                {Array.from({ length: 6 }).map((_, i) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3">
+                {Array.from({ length: 4 }).map((_, i) => (
                   <Card key={i} className="w-full">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <Skeleton className="h-6 w-3/4" />
-                      <Skeleton className="h-8 w-8 rounded-full" />
+                      <Skeleton className="h-5 w-3/4" />
+                      <Skeleton className="h-7 w-7 rounded-full" />
                     </CardHeader>
                     <CardContent>
-                      <Skeleton className="h-4 w-1/2 mb-2" />
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-24 w-full mt-4" />
-                      <Skeleton className="h-10 w-full mt-4" />
+                      <Skeleton className="h-3 w-1/2 mb-1" />
+                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-20 w-full mt-3" />
+                      <Skeleton className="h-8 w-full mt-3" />
                     </CardContent>
                   </Card>
                 ))}
@@ -605,7 +605,6 @@ export function VisualCatalogContent() {
                     <AdditionalCategoryModalContent
                       data={modal.data}
                       onCategoryOptionClick={handleAdditionalCategoryOptionClick}
-                      isLoading={loadingModalContent}
                     />
                   )}
               </div>

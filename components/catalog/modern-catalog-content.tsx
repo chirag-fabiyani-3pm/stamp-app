@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Search, Calendar, BookOpen, Archive, Eye, ChevronRight, ArrowLeft, Home, Sparkles, Coins, Palette, Grid, Filter, Share2, Layers, Globe, Star, Zap, Gem, Heart, Navigation, MapPin, Clock, DollarSign, FileText, Package, Menu, User, Settings, X, TrendingUp, AlertCircle, Play, Camera, Image as ImageIcon, Quote, Bookmark, BookmarkPlus, ExternalLink, Award, Telescope, Stamp } from "lucide-react"
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
+import { Search, Calendar, BookOpen, Archive, Eye, ChevronRight, ArrowLeft, Home, Sparkles, Coins, Palette, Grid, Filter, Share2, Layers, Globe, Star, Zap, Gem, Heart, Navigation, MapPin, Clock, DollarSign, FileText, Package, Menu, User, Settings, X, TrendingUp, AlertCircle, Play, Camera, Image as ImageIcon, Quote, Bookmark, BookmarkPlus, ExternalLink, Award, Telescope, Stamp, List, MenuSquare, PanelLeft, AlignJustify, GripVertical, PanelRightOpen, AlignLeft, GripHorizontal, MoreHorizontal, MoreVertical, EllipsisVertical, SlidersHorizontal, Rows2, Grid3x3, LayoutGrid } from "lucide-react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { CountryOption, StampGroupOption, YearOption, CurrencyOption, DenominationOption, ColorOption, PaperOption, WatermarkOption, PerforationOption, ItemTypeOption, StampData, ModalType, ModalStackItem, FeaturedStory, AdditionalCategoryOption } from "@/types/catalog"
@@ -18,6 +18,7 @@ import { VisualCatalogContent } from "@/components/catalog/visual-catalog-conten
 import { ListCatalogContent } from "@/components/catalog/list-catalog-content"
 import { Skeleton } from "@/components/ui/skeleton";
 import { CatalogContent } from "@/components/catalog/investigate-search/catalog-content";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function ModernCatalogContent() {
     const router = useRouter()
@@ -32,6 +33,9 @@ export function ModernCatalogContent() {
     const initialActiveSection = (searchParams.get('tab') as 'countries' | 'visual' | 'list' | 'investigate') || 'countries'
     const [activeSection, setActiveSection] = useState<'countries' | 'visual' | 'list' | 'investigate'>(initialActiveSection)
     const [loadingModalContent, setLoadingModalContent] = useState(false)
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false) // State for mobile menu
+
+    const isMobile = useIsMobile()
 
     // Pinned stamp state for comparison
     const [pinnedStamp, setPinnedStamp] = useState<StampData | null>(null)
@@ -442,7 +446,7 @@ export function ModernCatalogContent() {
             {/* Premium Header */}
             <header className="relative overflow-hidden">
                 {/* Hero Section */}
-                <div className="relative h-[250px] sm:h-[350px] md:h-[400px] bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900">
+                <div className="relative h-[200px] sm:h-[300px] md:h-[350px] bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900">
                     {/* Video Background */}
                     <video
                         autoPlay
@@ -463,11 +467,11 @@ export function ModernCatalogContent() {
 
                     <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
                         <div className="max-w-3xl">
-                            <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold text-white mb-4 leading-tight">
+                            <h1 className="text-3xl md:text-4xl lg:text-6xl font-bold text-white mb-3 leading-tight">
                                 <span className="bg-gradient-to-r from-amber-300 to-orange-500 bg-clip-text text-transparent">Stamps</span> of Approval
                             </h1>
 
-                            <p className="text-base sm:text-lg md:text-xl text-gray-200 mb-8 max-w-2xl drop-shadow-lg leading-relaxed">
+                            <p className="text-sm sm:text-base md:text-lg text-gray-200 mb-6 max-w-2xl drop-shadow-lg leading-relaxed">
                                 Discover exceptional stamps that have earned collector approval through decades of
                                 careful curation. Each specimen represents the finest in philatelic excellence.
                             </p>
@@ -492,7 +496,97 @@ export function ModernCatalogContent() {
                 <div className="bg-white/90 backdrop-blur border-b border-gray-200 dark:bg-gray-900/90 dark:border-gray-700">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="flex items-center justify-between h-16">
-                            <nav className="flex space-x-4 sm:space-x-8 overflow-x-auto pb-2 no-scrollbar">
+                            {isMobile && (
+                                <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="sm:hidden">
+                                            <LayoutGrid className="h-6 w-6" />
+                                            <span className="sr-only">Toggle Navigation</span>
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="fixed -translate-x-9 w-screen rounded-none bg-white dark:bg-gray-900 p-4 shadow-lg animate-in fade-in-0 slide-in-from-top-2 duration-300 ease-out-sine data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=closed]:duration-300 data-[state=closed]:ease-in-sine">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <DropdownMenuItem
+                                                onClick={(e) => {
+                                                    setActiveSection('countries');
+                                                    router.push(`?tab=countries`, { scroll: false });
+                                                    const yOffset = -64;
+                                                    const y = (e.target as HTMLElement).getBoundingClientRect().top + window.scrollY + yOffset;
+                                                    window.scrollTo({ top: y, behavior: 'smooth' });
+                                                    setIsDropdownOpen(false);
+                                                }}
+                                                className={cn(
+                                                    "flex flex-col items-center justify-center h-24 text-center cursor-pointer",
+                                                    activeSection === 'countries'
+                                                        ? "bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-amber-400 dark:text-gray-900 dark:hover:bg-amber-500"
+                                                        : "bg-secondary text-secondary-foreground hover:bg-secondary/90 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+                                                )}
+                                            >
+                                                <Globe className="h-6 w-6 mb-2" />
+                                                Country Catalogs
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                onClick={(e) => {
+                                                    setActiveSection('visual');
+                                                    router.push(`?tab=visual`, { scroll: false });
+                                                    const yOffset = -64;
+                                                    const y = (e.target as HTMLElement).getBoundingClientRect().top + window.scrollY + yOffset;
+                                                    window.scrollTo({ top: y, behavior: 'smooth' });
+                                                    setIsDropdownOpen(false);
+                                                }}
+                                                className={cn(
+                                                    "flex flex-col items-center justify-center h-24 text-center cursor-pointer",
+                                                    activeSection === 'visual'
+                                                        ? "bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-amber-400 dark:text-gray-900 dark:hover:bg-amber-500"
+                                                        : "bg-secondary text-secondary-foreground hover:bg-secondary/90 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+                                                )}
+                                            >
+                                                <Eye className="h-6 w-6 mb-2" />
+                                                Visual Catalog
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                onClick={(e) => {
+                                                    setActiveSection('list');
+                                                    router.push(`?tab=list`, { scroll: false });
+                                                    const yOffset = -64;
+                                                    const y = (e.target as HTMLElement).getBoundingClientRect().top + window.scrollY + yOffset;
+                                                    window.scrollTo({ top: y, behavior: 'smooth' });
+                                                    setIsDropdownOpen(false);
+                                                }}
+                                                className={cn(
+                                                    "flex flex-col items-center justify-center h-24 text-center cursor-pointer",
+                                                    activeSection === 'list'
+                                                        ? "bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-amber-400 dark:text-gray-900 dark:hover:bg-amber-500"
+                                                        : "bg-secondary text-secondary-foreground hover:bg-secondary/90 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+                                                )}
+                                            >
+                                                <Archive className="h-6 w-6 mb-2" />
+                                                List Catalog
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                onClick={(e) => {
+                                                    setActiveSection('investigate');
+                                                    router.push(`?tab=investigate`, { scroll: false });
+                                                    const yOffset = -64;
+                                                    const y = (e.target as HTMLElement).getBoundingClientRect().top + window.scrollY + yOffset;
+                                                    window.scrollTo({ top: y, behavior: 'smooth' });
+                                                    setIsDropdownOpen(false);
+                                                }}
+                                                className={cn(
+                                                    "flex flex-col items-center justify-center h-24 text-center cursor-pointer",
+                                                    activeSection === 'investigate'
+                                                        ? "bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-amber-400 dark:text-gray-900 dark:hover:bg-amber-500"
+                                                        : "bg-secondary text-secondary-foreground hover:bg-secondary/90 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+                                                )}
+                                            >
+                                                <Telescope className="h-6 w-6 mb-2" />
+                                                Investigate Search
+                                            </DropdownMenuItem>
+                                        </div>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            )}
+                            <nav className="hidden sm:flex flex-1 space-x-4 sm:space-x-8 overflow-x-auto pb-2 no-scrollbar">
                                 <button
                                     onClick={(ele) => {
                                         setActiveSection('countries');
@@ -691,14 +785,14 @@ export function ModernCatalogContent() {
             </main>
 
             {/* Premium Modal */}
-            <Dialog open={modalStack.length > 0} onOpenChange={(open) => !open && closeModal()}>
-                <DialogContent className="max-w-7xl w-[95vw] h-[95vh] max-h-[95vh] overflow-y-auto bg-gradient-to-br from-orange-50 to-white dark:from-gray-900 dark:to-gray-950 border-0 shadow-2xl">
-                    <DialogHeader className="border-b border-gray-200 dark:border-gray-700 pb-4 md:pb-6 mb-4 md:mb-6">
-                        <div className="flex items-center justify-between">
+            <div className="fixed inset-0 z-50 overflow-auto bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" style={{ display: modalStack.length > 0 ? 'block' : 'none' }}>
+                <div className="fixed inset-0 z-50 grid place-items-center p-4">
+                    <div className="relative w-full max-w-7xl h-[95vh] max-h-[95vh] overflow-y-auto bg-gradient-to-br from-orange-50 to-white dark:from-gray-900 dark:to-gray-950 border-0 shadow-2xl rounded-lg">
+                        <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-4 md:pb-6 mb-4 md:mb-6 px-6 py-4">
                             <div>
-                                <DialogTitle className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1 md:mb-2">
+                                <h3 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1 md:mb-2">
                                     {modalStack[modalStack.length - 1]?.title}
-                                </DialogTitle>
+                                </h3>
                                 {modalStack.length > 0 && (
                                     <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
                                         <span>Level {modalStack.length}</span>
@@ -714,30 +808,31 @@ export function ModernCatalogContent() {
                                 <X className="w-5 h-5 md:w-6 md-6" />
                             </Button>
                         </div>
-                    </DialogHeader>
 
-                    <div>
-                        {modalStack.length > 0 && (
-                            <ModalContent
-                                modalItem={modalStack[modalStack.length - 1]}
-                                onStampGroupClick={handleStampGroupClick}
-                                onYearClick={handleYearClick}
-                                onCurrencyClick={handleCurrencyClick}
-                                onDenominationClick={handleDenominationClick}
-                                onColorClick={handleColorClick}
-                                onPaperClick={handlePaperClick}
-                                onWatermarkClick={handleWatermarkClick}
-                                onPerforationClick={handlePerforationClick}
-                                onItemTypeClick={handleItemTypeClick}
-                                onStampDetailClick={handleStampDetailClick}
-                                onAdditionalCategoryClick={handleAdditionalCategoryClick}
-                                onAdditionalCategoryOptionClick={handleAdditionalCategoryOptionClick}
-                                isLoading={loadingModalContent}
-                            />
-                        )}
+                        <div className="px-6">
+                            {modalStack.length > 0 && (
+                                <ModalContent
+                                    modalItem={modalStack[modalStack.length - 1]}
+                                    onStampGroupClick={handleStampGroupClick}
+                                    onYearClick={handleYearClick}
+                                    onCurrencyClick={handleCurrencyClick}
+                                    onDenominationClick={handleDenominationClick}
+                                    onColorClick={handleColorClick}
+                                    onPaperClick={handlePaperClick}
+                                    onWatermarkClick={handleWatermarkClick}
+                                    onPerforationClick={handlePerforationClick}
+                                    onItemTypeClick={handleItemTypeClick}
+                                    onStampDetailClick={handleStampDetailClick}
+                                    onAdditionalCategoryClick={handleAdditionalCategoryClick}
+                                    onAdditionalCategoryOptionClick={handleAdditionalCategoryOptionClick}
+                                    isLoading={loadingModalContent}
+                                />
+                            )}
+                        </div>
                     </div>
-                </DialogContent>
-            </Dialog>
+                </div>
+            </div>
+
 
             {/* Pinned Stamp Card */}
             {pinnedStamp && (

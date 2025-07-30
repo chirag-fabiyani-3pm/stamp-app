@@ -595,20 +595,20 @@ export default function ModalContent({
 
             return (
                 <div className="space-y-6 md:space-y-8">
-                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-900 border border-green-200 dark:border-green-700 rounded-2xl p-6 md:p-8 text-center">
-                        <div className="flex items-center justify-center space-x-4 mb-4">
-                            <div className="w-14 h-14 md:w-16 md:h-16 bg-green-500 rounded-2xl flex items-center justify-center">
-                                <Award className="w-7 h-7 md:w-8 md:h-8 text-white" />
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-900 border border-green-200 dark:border-green-700 rounded-xl p-4 text-center">
+                        <div className="flex items-center justify-center space-x-2 mb-3">
+                            <div className="w-12 h-12 md:w-16 md:h-16 bg-green-500 rounded-xl flex items-center justify-center">
+                                <Award className="w-6 h-6 md:w-8 md:h-8 text-white" />
                             </div>
                             <div>
-                                <h3 className="text-xl md:text-2xl font-bold text-green-900 dark:text-green-100">Stamps of Approval</h3>
-                                <p className="text-green-700 dark:text-green-300">Your curated collection of authenticated specimens</p>
+                                <h3 className="text-lg lg:text-xl font-bold text-green-900 dark:text-green-100">Stamps of Approval</h3>
+                                <p className="text-green-700 dark:text-green-300 text-sm">Your curated collection of authenticated specimens</p>
                             </div>
                         </div>
-                        <code className="bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-700 rounded-lg px-3 py-1 md:px-4 md:py-2 text-green-800 dark:text-green-200 font-mono text-sm">
+                        <code className="bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-700 rounded-lg px-2 py-0.5 md:px-4 md:py-2 text-green-800 dark:text-green-200 font-mono text-xs break-all">
                             SOA-{stampCode}
                         </code>
-                        <p className="text-green-700 dark:text-green-300 text-sm mt-3">
+                        <p className="text-green-700 dark:text-green-300 text-xs mt-2">
                             This unique identifier confirms authentication and approval in our premium catalog system.
                         </p>
                     </div>
@@ -836,11 +836,11 @@ export default function ModalContent({
             const details = stamp.stampDetailsJson ? JSON.parse(stamp.stampDetailsJson) : {}
 
             return (
-                <article className="max-w-6xl mx-auto px-4">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
+                <article className="max-w-6xl mx-auto px-2">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-12">
                         {/* Stamp Image */}
-                        <div className="space-y-6">
-                            <div className="relative aspect-[3/4] bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-900 rounded-2xl overflow-hidden shadow-2xl">
+                        <div className="space-y-4">
+                            <div className="relative aspect-[3/4] bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-900 rounded-xl overflow-hidden shadow-xl">
                                 <Image
                                     src={stamp.stampImageUrl}
                                     alt={stamp.name}
@@ -851,42 +851,42 @@ export default function ModalContent({
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
                             </div>
 
-                            <div className="text-center space-y-3">
-                                <Badge className="bg-primary/10 text-primary text-base md:text-lg px-3 py-1 md:px-4 md:py-2 dark:bg-primary/20 dark:text-amber-300">
+                            <div className="text-center space-y-2">
+                                <Badge className="bg-primary/10 text-primary text-sm px-2 py-0.5 dark:bg-primary/20 dark:text-amber-300">
                                     {stamp.catalogNumber}
                                 </Badge>
-                                <div className="flex items-center justify-center space-x-4">
-                                    <Button variant="outline" size="sm">
-                                        <BookOpen className="w-4 h-4 mr-2" />
+                                <div className="flex flex-wrap items-center justify-center gap-2">
+                                    <Button variant="outline" size="sm" className="text-xs h-8">
+                                        <BookOpen className="w-3 h-3 mr-1" />
                                         View Authentication
                                     </Button>
-                                    <Button variant="outline" size="sm">
-                                        <Share2 className="w-4 h-4 mr-2" />
+                                    <Button variant="outline" size="sm" className="text-xs h-8">
+                                        <Share2 className="w-3 h-3 mr-1" />
                                         Share
                                     </Button>
                                 </div>
                             </div>
 
                             {/* Additional Categories */}
-                            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-                                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                                    <Layers className="w-5 h-5 mr-2 text-primary" />
+                            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 p-4">
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+                                    <Layers className="w-4 h-4 mr-2 text-primary" />
                                     Explore Additional Categories
                                 </h3>
-                                <p className="text-gray-600 dark:text-gray-300 mb-6 text-sm leading-relaxed">
+                                <p className="text-gray-600 dark:text-gray-300 mb-4 text-xs leading-relaxed">
                                     Discover specialized varieties and collecting opportunities that have earned collector approval across different categories.
                                 </p>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     {!selectedAdditionalCategories.includes('postalHistory') && (
                                         <button
-                                            className="group p-4 bg-gradient-to-br from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 dark:from-blue-950 dark:to-indigo-900 dark:hover:from-blue-900 dark:hover:to-indigo-800 rounded-xl border border-blue-200 hover:border-blue-300 dark:border-blue-700 dark:hover:border-blue-600 text-left transition-all duration-200 hover:shadow-md"
+                                            className="group p-3 bg-gradient-to-br from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 dark:from-blue-950 dark:to-indigo-900 dark:hover:from-blue-900 dark:hover:to-indigo-800 rounded-lg border border-blue-200 hover:border-blue-300 dark:border-blue-700 dark:hover:border-blue-600 text-left transition-all duration-200 hover:shadow-sm"
                                             onClick={() => onAdditionalCategoryClick('postalHistory', stamp.stampCode ?? '')}
                                         >
-                                            <div className="flex items-center space-x-3">
-                                                <Globe className="w-5 h-5 text-blue-600 group-hover:scale-110 transition-transform" />
+                                            <div className="flex items-center space-x-2">
+                                                <Globe className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
                                                 <div>
-                                                    <div className="font-semibold text-blue-900 dark:text-blue-100 text-sm">Postal History</div>
+                                                    <div className="font-semibold text-blue-900 dark:text-blue-100 text-xs">Postal History</div>
                                                     <div className="text-blue-700 dark:text-blue-300 text-xs">Covers & Usage</div>
                                                 </div>
                                             </div>
@@ -895,13 +895,13 @@ export default function ModalContent({
 
                                     {!selectedAdditionalCategories.includes('postmarks') && (
                                         <button
-                                            className="group p-4 bg-gradient-to-br from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 dark:from-purple-950 dark:to-pink-900 dark:hover:from-purple-900 dark:hover:to-pink-800 rounded-xl border border-purple-200 hover:border-purple-300 dark:border-purple-700 dark:hover:border-purple-600 text-left transition-all duration-200 hover:shadow-md"
+                                            className="group p-3 bg-gradient-to-br from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 dark:from-purple-950 dark:to-pink-900 dark:hover:from-purple-900 dark:hover:to-pink-800 rounded-lg border border-purple-200 hover:border-purple-300 dark:border-purple-700 dark:hover:border-purple-600 text-left transition-all duration-200 hover:shadow-sm"
                                             onClick={() => onAdditionalCategoryClick('postmarks', stamp.stampCode ?? '')}
                                         >
-                                            <div className="flex items-center space-x-3">
-                                                <Clock className="w-5 h-5 text-purple-600 group-hover:scale-110 transition-transform" />
+                                            <div className="flex items-center space-x-2">
+                                                <Clock className="w-4 h-4 text-purple-600 group-hover:scale-110 transition-transform" />
                                                 <div>
-                                                    <div className="font-semibold text-purple-900 dark:text-purple-100 text-sm">Postmarks</div>
+                                                    <div className="font-semibold text-purple-900 dark:text-purple-100 text-xs">Postmarks</div>
                                                     <div className="text-purple-700 dark:text-purple-300 text-xs">Cancellations</div>
                                                 </div>
                                             </div>
@@ -910,13 +910,13 @@ export default function ModalContent({
 
                                     {!selectedAdditionalCategories.includes('proofs') && (
                                         <button
-                                            className="group p-4 bg-gradient-to-br from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 dark:from-emerald-950 dark:to-teal-900 dark:hover:from-emerald-900 dark:hover:to-teal-800 rounded-xl border border-emerald-200 hover:border-emerald-300 dark:border-emerald-700 dark:hover:border-emerald-600 text-left transition-all duration-200 hover:shadow-md"
+                                            className="group p-3 bg-gradient-to-br from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 dark:from-emerald-950 dark:to-teal-900 dark:hover:from-emerald-900 dark:hover:to-teal-800 rounded-lg border border-emerald-200 hover:border-emerald-300 dark:border-emerald-700 dark:hover:border-emerald-600 text-left transition-all duration-200 hover:shadow-sm"
                                             onClick={() => onAdditionalCategoryClick('proofs', stamp.stampCode ?? '')}
                                         >
-                                            <div className="flex items-center space-x-3">
-                                                <FileText className="w-5 h-5 text-emerald-600 group-hover:scale-110 transition-transform" />
+                                            <div className="flex items-center space-x-2">
+                                                <FileText className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" />
                                                 <div>
-                                                    <div className="font-semibold text-emerald-900 dark:text-emerald-100 text-sm">Proofs</div>
+                                                    <div className="font-semibold text-emerald-900 dark:text-emerald-100 text-xs">Proofs</div>
                                                     <div className="text-emerald-700 dark:text-emerald-300 text-xs">Printer Proofs</div>
                                                 </div>
                                             </div>
@@ -925,13 +925,13 @@ export default function ModalContent({
 
                                     {!selectedAdditionalCategories.includes('essays') && (
                                         <button
-                                            className="group p-4 bg-gradient-to-br from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 dark:from-amber-950 dark:to-orange-900 dark:hover:from-amber-900 dark:hover:to-orange-800 rounded-xl border border-amber-200 hover:border-amber-300 dark:border-amber-700 dark:hover:border-amber-600 text-left transition-all duration-200 hover:shadow-md"
+                                            className="group p-3 bg-gradient-to-br from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 dark:from-amber-950 dark:to-orange-900 dark:hover:from-amber-900 dark:hover:to-orange-800 rounded-lg border border-amber-200 hover:border-amber-300 dark:border-amber-700 dark:hover:border-amber-600 text-left transition-all duration-200 hover:shadow-sm"
                                             onClick={() => onAdditionalCategoryClick('essays', stamp.stampCode ?? '')}
                                         >
-                                            <div className="flex items-center space-x-3">
-                                                <Palette className="w-5 h-5 text-amber-600 group-hover:scale-110 transition-transform" />
+                                            <div className="flex items-center space-x-2">
+                                                <Palette className="w-4 h-4 text-amber-600 group-hover:scale-110 transition-transform" />
                                                 <div>
-                                                    <div className="font-semibold text-amber-900 dark:text-amber-100 text-sm">Essays</div>
+                                                    <div className="font-semibold text-amber-900 dark:text-amber-100 text-xs">Essays</div>
                                                     <div className="text-amber-700 dark:text-amber-300 text-xs">Design Studies</div>
                                                 </div>
                                             </div>
@@ -940,13 +940,13 @@ export default function ModalContent({
 
                                     {!selectedAdditionalCategories.includes('onPiece') && (
                                         <button
-                                            className="group p-4 bg-gradient-to-br from-gray-50 to-slate-50 hover:from-gray-100 hover:to-slate-100 dark:from-gray-950 dark:to-slate-900 dark:hover:from-gray-900 dark:hover:to-slate-800 rounded-xl border border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600 text-left transition-all duration-200 hover:shadow-md"
+                                            className="group p-3 bg-gradient-to-br from-gray-50 to-slate-50 hover:from-gray-100 hover:to-slate-100 dark:from-gray-950 dark:to-slate-900 dark:hover:from-gray-900 dark:hover:to-slate-800 rounded-lg border border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600 text-left transition-all duration-200 hover:shadow-sm"
                                             onClick={() => onAdditionalCategoryClick('onPiece', stamp.stampCode ?? '')}
                                         >
-                                            <div className="flex items-center space-x-3">
-                                                <Package className="w-5 h-5 text-gray-600 group-hover:scale-110 transition-transform" />
+                                            <div className="flex items-center space-x-2">
+                                                <Package className="w-4 h-4 text-gray-600 group-hover:scale-110 transition-transform" />
                                                 <div>
-                                                    <div className="font-semibold text-gray-900 dark:text-gray-100 text-sm">On Piece</div>
+                                                    <div className="font-semibold text-gray-900 dark:text-gray-100 text-xs">On Piece</div>
                                                     <div className="text-gray-700 dark:text-gray-300 text-xs">Fragments</div>
                                                 </div>
                                             </div>
@@ -955,13 +955,13 @@ export default function ModalContent({
 
                                     {!selectedAdditionalCategories.includes('errors') && (
                                         <button
-                                            className="group p-4 bg-gradient-to-br from-red-50 to-rose-50 hover:from-red-100 hover:to-rose-100 dark:from-red-950 dark:to-rose-900 dark:hover:from-red-900 dark:hover:to-rose-800 rounded-xl border border-red-200 hover:border-red-300 dark:border-red-700 dark:hover:border-red-600 text-left transition-all duration-200 hover:shadow-md"
+                                            className="group p-3 bg-gradient-to-br from-red-50 to-rose-50 hover:from-red-100 hover:to-rose-100 dark:from-red-950 dark:to-rose-900 dark:hover:from-red-900 dark:hover:to-rose-800 rounded-lg border border-red-200 hover:border-red-300 dark:border-red-700 dark:hover:border-red-600 text-left transition-all duration-200 hover:shadow-sm"
                                             onClick={() => onAdditionalCategoryClick('errors', stamp.stampCode ?? '')}
                                         >
-                                            <div className="flex items-center space-x-3">
-                                                <AlertCircle className="w-5 h-5 text-red-600 group-hover:scale-110 transition-transform" />
+                                            <div className="flex items-center space-x-2">
+                                                <AlertCircle className="w-4 h-4 text-red-600 group-hover:scale-110 transition-transform" />
                                                 <div>
-                                                    <div className="font-semibold text-red-900 dark:text-red-100 text-sm">Errors</div>
+                                                    <div className="font-semibold text-red-900 dark:text-red-100 text-xs">Errors</div>
                                                     <div className="text-red-700 dark:text-red-300 text-xs">Varieties</div>
                                                 </div>
                                             </div>
@@ -970,13 +970,13 @@ export default function ModalContent({
 
                                     {!selectedAdditionalCategories.includes('other') && (
                                         <button
-                                            className="group p-4 bg-gradient-to-br from-violet-50 to-indigo-50 hover:from-violet-100 hover:to-indigo-100 dark:from-violet-950 dark:to-indigo-900 dark:hover:from-violet-900 dark:hover:to-indigo-800 rounded-xl border border-violet-200 hover:border-violet-300 dark:border-violet-700 dark:hover:border-violet-600 text-left transition-all duration-200 hover:shadow-md"
+                                            className="group p-3 bg-gradient-to-br from-violet-50 to-indigo-50 hover:from-violet-100 hover:to-indigo-100 dark:from-violet-950 dark:to-indigo-900 dark:hover:from-violet-900 dark:hover:to-indigo-800 rounded-lg border border-violet-200 hover:border-violet-300 dark:border-violet-700 dark:hover:border-violet-600 text-left transition-all duration-200 hover:shadow-sm"
                                             onClick={() => onAdditionalCategoryClick('other', stamp.stampCode ?? '')}
                                         >
-                                            <div className="flex items-center space-x-3">
-                                                <Menu className="w-5 h-5 text-violet-600 group-hover:scale-110 transition-transform" />
+                                            <div className="flex items-center space-x-2">
+                                                <Menu className="w-4 h-4 text-violet-600 group-hover:scale-110 transition-transform" />
                                                 <div>
-                                                    <div className="font-semibold text-violet-900 dark:text-violet-100 text-sm">Other</div>
+                                                    <div className="font-semibold text-violet-900 dark:text-violet-100 text-xs">Other</div>
                                                     <div className="text-violet-700 dark:text-violet-300 text-xs">Specialists</div>
                                                 </div>
                                             </div>
@@ -987,93 +987,90 @@ export default function ModalContent({
                         </div>
 
                         {/* Authentication Details */}
-                        <div className="space-y-6 md:space-y-8">
+                        <div className="space-y-4 md:space-y-8">
                             <header>
-                                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-3 md:mb-4 leading-tight">{stamp.name}</h1>
-                                <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-4 md:mb-6">{stamp.seriesName}</p>
+                                <h1 className="text-2xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2 md:mb-4 leading-tight">{stamp.name}</h1>
+                                <p className="text-base md:text-xl text-gray-600 dark:text-gray-300 mb-3 md:mb-6">{stamp.seriesName}</p>
 
-                                <div className="flex flex-wrap gap-y-2 items-center space-x-4 md:space-x-6 text-sm text-gray-500 dark:text-gray-400 mb-6">
+                                <div className="flex flex-wrap gap-y-1 items-center space-x-2 md:space-x-6 text-xs text-gray-500 dark:text-gray-400 mb-4">
                                     <span className="flex items-center">
-                                        <Calendar className="w-4 h-4 mr-1" />
+                                        <Calendar className="w-3 h-3 mr-1" />
                                         {stamp.issueYear}
                                     </span>
                                     <span className="flex items-center">
-                                        <Image
-                                            src={`https://flagsapi.com/${stamp.country}/flat/32.png`}
-                                            alt={stamp.country}
-                                            width={16}
-                                            height={16}
-                                            className="mr-1 rounded-full border border-gray-200 dark:border-gray-600"
-                                        />
                                         {stamp.country}
                                     </span>
                                     <span className="flex items-center">
-                                        <Award className="w-4 h-4 mr-1 text-primary" />
+                                        <Award className="w-3 h-3 mr-1 text-primary" />
                                         Approved
                                     </span>
                                 </div>
                             </header>
 
                             {(JSON.parse(stamp.stampDetailsJson)).story && (
-                                <div className="prose prose-lg max-w-none">
-                                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{(JSON.parse(stamp.stampDetailsJson)).story}</p>
+                                <div className="prose prose-sm max-w-none">
+                                    <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">{(JSON.parse(stamp.stampDetailsJson)).story}</p>
                                 </div>
                             )}
 
                             {/* Authentication Specifications */}
-                            <section className="bg-gray-50 dark:bg-gray-900 rounded-2xl p-6 md:p-8">
-                                <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 md:mb-6">Authentication Details</h2>
+                            <section className="bg-gray-50 dark:bg-gray-900 rounded-xl p-4">
+                                <h2 className="text-lg md:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">
+                                    Authentication Details
+                                </h2>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-                                    <div className="space-y-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div className="space-y-2">
                                         <div>
-                                            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Denomination</dt>
-                                            <dd className="text-lg font-semibold text-gray-900 dark:text-gray-100">{stamp.denominationValue}{stamp.denominationSymbol}</dd>
+                                            <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">Denomination</dt>
+                                            <dd className="text-base font-semibold text-gray-900 dark:text-gray-100">{stamp.denominationValue}{stamp.denominationSymbol}</dd>
                                         </div>
                                         <div>
-                                            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Color</dt>
-                                            <dd className="text-lg font-semibold text-gray-900 dark:text-gray-100">{stamp.color}</dd>
+                                            <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">Color</dt>
+                                            <dd className="text-base font-semibold text-gray-900 dark:text-gray-100">{stamp.color}</dd>
                                         </div>
                                         <div>
-                                            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Paper Type</dt>
-                                            <dd className="text-lg font-semibold text-gray-900 dark:text-gray-100">{stamp.paperType}</dd>
+                                            <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">Paper Type</dt>
+                                            <dd className="text-base font-semibold text-gray-900 dark:text-gray-100">{stamp.paperType}</dd>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-4">
+                                    <div className="space-y-2">
                                         <div>
-                                            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Perforation</dt>
-                                            <dd className="text-lg font-semibold text-gray-900 dark:text-gray-100">{(JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).perforation}</dd>
+                                            <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">Perforation</dt>
+                                            <dd className="text-base font-semibold text-gray-900 dark:text-gray-100">{(JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).perforation}</dd>
                                         </div>
                                         <div>
-                                            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Watermark</dt>
-                                            <dd className="text-lg font-semibold text-gray-900 dark:text-gray-100">{(JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).watermark}</dd>
+                                            <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">Watermark</dt>
+                                            <dd className="text-base font-semibold text-gray-900 dark:text-gray-100">{(JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).watermark}</dd>
                                         </div>
                                         <div>
-                                            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Printing Method</dt>
-                                            <dd className="text-lg font-semibold text-gray-900 dark:text-gray-100">{(JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).printingMethod}</dd>
+                                            <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">Printing Method</dt>
+                                            <dd className="text-base font-semibold text-gray-900 dark:text-gray-100">{(JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).printingMethod}</dd>
                                         </div>
                                     </div>
                                 </div>
                             </section>
 
                             {/* Market Valuation */}
-                            <section className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-900 rounded-2xl p-6 md:p-8">
-                                <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 md:mb-6">Market Valuation</h2>
+                            <section className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-900 rounded-xl p-4">
+                                <h2 className="text-lg md:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">
+                                    Market Valuation
+                                </h2>
 
-                                <div className="grid grid-cols-3 gap-4 md:gap-6 text-center">
+                                <div className="grid grid-cols-3 gap-2 text-center">
                                     <div>
-                                        <div className="text-2xl md:text-3xl font-bold text-green-600 dark:text-green-400 mb-1">{(JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).catalogPrice}</div>
-                                        <div className="text-sm text-green-700 dark:text-green-300">Catalog Price</div>
+                                        <div className="text-xl md:text-3xl font-bold text-green-600 dark:text-green-400 mb-0.5">{(JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).catalogPrice}</div>
+                                        <div className="text-xs text-green-700 dark:text-green-300">Catalog Price</div>
                                     </div>
                                     <div>
-                                        <div className="text-2xl md:text-3xl font-bold text-blue-600 dark:text-blue-400 mb-1">{(JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).currentMarketValue}</div>
-                                        <div className="text-sm text-blue-700 dark:text-blue-300">Current Market</div>
+                                        <div className="text-xl md:text-3xl font-bold text-blue-600 dark:text-blue-400 mb-0.5">{(JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).currentMarketValue}</div>
+                                        <div className="text-xs text-blue-700 dark:text-blue-300">Current Market</div>
                                     </div>
                                     <div>
                                         <Badge
                                             className={cn(
-                                                "text-base md:text-lg px-3 py-1 md:px-4 md:py-2",
+                                                "text-sm px-2 py-0.5",
                                                 (JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).rarityRating === 'Collector Approved' && "bg-primary/10 text-primary",
                                                 (JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).rarityRating === 'Rare' && "bg-orange-100 text-orange-800",
                                                 (JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).rarityRating === 'Uncommon' && "bg-yellow-100 text-yellow-800",
@@ -1082,18 +1079,18 @@ export default function ModalContent({
                                         >
                                             {(JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).rarityRating}
                                         </Badge>
-                                        <div className="text-sm text-gray-500 dark:text-gray-400 mt-2">Status</div>
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Status</div>
                                     </div>
                                 </div>
                             </section>
 
                             {/* Catalog Code */}
-                            <section className="bg-primary/5 dark:bg-primary/10 rounded-2xl p-6 md:p-8">
-                                <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Stamps of Approval ID</h2>
-                                <code className="bg-white dark:bg-gray-800 border border-primary/20 dark:border-primary/30 rounded-xl p-4 text-sm font-mono block break-all text-primary dark:text-amber-300">
+                            <section className="bg-primary/5 dark:bg-primary/10 rounded-xl p-4">
+                                <h2 className="text-lg md:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">Stamps of Approval ID</h2>
+                                <code className="bg-white dark:bg-gray-800 border border-primary/20 dark:border-primary/30 rounded-lg p-3 text-xs font-mono block break-all text-primary dark:text-amber-300">
                                     SOA-{stamp.stampCode}
                                 </code>
-                                <p className="text-primary/70 dark:text-amber-400 text-sm mt-3">
+                                <p className="text-primary/70 dark:text-amber-400 text-xs mt-2">
                                     This unique identifier confirms authentication and approval in our premium catalog system.
                                 </p>
                             </section>

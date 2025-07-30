@@ -122,24 +122,24 @@ export function ListCatalogContent() {
     return (
       <div className="min-h-screen p-4">
         <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 shadow-sm mx-auto mt-4 mb-6 rounded-lg">
-          <div className="p-6">
-            <div className="text-center mb-6">
+          <div className="p-4 sm:p-6">
+            <div className="text-center mb-4 sm:mb-6">
               <Skeleton className="h-8 w-2/4 mb-1 mx-auto rounded-md" />
               <Skeleton className="h-5 w-1/3 mx-auto rounded-md" />
             </div>
 
             {/* Layout Toggle */}
-            <div className="flex justify-center mb-6">
-              <div className="flex items-center gap-4 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
+            <div className="flex justify-center mb-4 sm:mb-6">
+              <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
                 <Skeleton className="h-9 w-44 rounded-lg" />
                 <Skeleton className="h-9 w-44 rounded-lg" />
               </div>
             </div>
 
-            <hr className="border-gray-300 dark:border-gray-700 mb-6" />
+            <hr className="border-gray-300 dark:border-gray-700 mb-4 sm:mb-6" />
 
             {/* Search and Filter Controls */}
-            <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row gap-4 mb-6">
               <div className="flex-1">
                 <div className="relative">
                   <Skeleton className="h-10 w-full pl-9 rounded-md" />
@@ -150,7 +150,7 @@ export function ListCatalogContent() {
             </div>
 
             {/* Statistics */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center text-sm border-t border-b border-gray-300 dark:border-gray-700 py-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center text-sm border-t border-b border-gray-300 dark:border-gray-700 py-3">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="text-center">
                   <Skeleton className="h-6 w-1/2 mx-auto mb-1 rounded-md" />
@@ -165,23 +165,23 @@ export function ListCatalogContent() {
           <div className="max-w-4xl mx-auto">
             <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden">
               <div className="border-b border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2">
-                <div className="grid grid-cols-12 gap-4 text-xs font-semibold uppercase tracking-wide">
-                  <Skeleton className="h-4 w-full col-span-4 rounded-md" />
-                  <Skeleton className="h-4 w-full col-span-2 rounded-md" />
-                  <Skeleton className="h-4 w-full col-span-2 rounded-md" />
-                  <Skeleton className="h-4 w-full col-span-3 rounded-md" />
-                  <Skeleton className="h-4 w-4 col-span-1 rounded-md" />
+                <div className="grid grid-cols-2 sm:grid-cols-12 gap-4 text-xs font-semibold uppercase tracking-wide">
+                  <Skeleton className="h-4 w-full col-span-1 sm:col-span-4 rounded-md" />
+                  <Skeleton className="h-4 w-full col-span-1 sm:col-span-2 rounded-md" />
+                  <Skeleton className="h-4 w-full hidden sm:block col-span-2 rounded-md" />
+                  <Skeleton className="h-4 w-full hidden sm:block col-span-3 rounded-md" />
+                  <Skeleton className="h-4 w-4 hidden sm:block col-span-1 rounded-md" />
                 </div>
               </div>
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
                 {Array.from({ length: 10 }).map((_, i) => (
                   <div key={i} className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                    <div className="grid grid-cols-12 gap-4 items-center text-sm">
-                      <Skeleton className="h-4 w-3/4 col-span-4 rounded-md" />
-                      <Skeleton className="h-4 w-1/2 col-span-2 rounded-md text-center" />
-                      <Skeleton className="h-4 w-1/2 col-span-2 rounded-md text-center" />
-                      <Skeleton className="h-4 w-3/4 col-span-3 rounded-md" />
-                      <Skeleton className="h-4 w-4 col-span-1 rounded-md" />
+                    <div className="grid grid-cols-2 sm:grid-cols-12 gap-4 items-center text-sm">
+                      <Skeleton className="h-4 w-3/4 col-span-1 sm:col-span-4 rounded-md" />
+                      <Skeleton className="h-4 w-1/2 col-span-1 sm:col-span-2 rounded-md text-center" />
+                      <Skeleton className="h-4 w-1/2 hidden sm:block col-span-2 rounded-md text-center" />
+                      <Skeleton className="h-4 w-3/4 hidden sm:block col-span-3 rounded-md" />
+                      <Skeleton className="h-4 w-4 hidden sm:block col-span-1 rounded-md" />
                     </div>
                   </div>
                 ))}
@@ -197,19 +197,19 @@ export function ListCatalogContent() {
     <div className="min-h-screen text-gray-900 dark:text-gray-100">
       {/* Header */}
       <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 shadow-sm mx-4 mt-4 mb-6 rounded-lg">
-        <div className="p-6">
-          <div className="text-center mb-6">
-            <h1 className="text-3xl font-bold text-black dark:text-white mb-1">
+        <div className="p-4 sm:p-6">
+          <div className="text-center mb-4 sm:mb-6">
+            <h1 className="text-2xl sm:text-3xl font-bold text-black dark:text-white mb-1">
               {catalogLayout === 'campbell-paterson' ? 'NEW ZEALAND STAMP CATALOGUE' : 'STANLEY GIBBONS CATALOGUE'}
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">
+            <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">
               {catalogLayout === 'campbell-paterson' ? 'Campbell Paterson Style Comprehensive Listing' : 'Stanley Gibbons Style Comprehensive Listing'}
             </p>
           </div>
 
           {/* Layout Toggle */}
-          <div className="flex justify-center mb-6">
-            <div className="flex items-center gap-4 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
+          <div className="flex justify-center mb-4 sm:mb-6">
+            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
               <Button
                 variant={catalogLayout === 'campbell-paterson' ? 'default' : 'outline'}
                 size="sm"
@@ -229,7 +229,7 @@ export function ListCatalogContent() {
             </div>
           </div>
 
-          <hr className="border-gray-300 dark:border-gray-700 mb-6" />
+          <hr className="border-gray-300 dark:border-gray-700 mb-4 sm:mb-6" />
 
           {/* Search and Filter Controls */}
           <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -267,7 +267,7 @@ export function ListCatalogContent() {
           </div>
 
           {/* Statistics */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center text-sm border-t border-b border-gray-300 dark:border-gray-700 py-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center text-sm border-t border-b border-gray-300 dark:border-gray-700 py-3">
             {catalogLayout === 'campbell-paterson' ? (
               <>
                 <div>
@@ -334,13 +334,19 @@ export function ListCatalogContent() {
             {catalogLayout === 'campbell-paterson' ? (
               <>
                 {/* Campbell Paterson Table Header */}
-                <div className="border-b border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2">
+                <div className="border-b border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2 hidden sm:block">
                   <div className="grid grid-cols-12 gap-4 text-xs font-semibold text-gray-700 uppercase tracking-wide">
                     <div className="col-span-4 text-gray-700 dark:text-gray-300">Series Name</div>
                     <div className="col-span-2 text-center text-gray-700 dark:text-gray-300">Period</div>
                     <div className="col-span-2 text-center text-gray-700 dark:text-gray-300">Types</div>
                     <div className="col-span-3 text-gray-700 dark:text-gray-300">Description</div>
                     <div className="col-span-1"></div>
+                  </div>
+                </div>
+                <div className="block sm:hidden border-b border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2">
+                  <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                    <div className="text-gray-700 dark:text-gray-300">Series Name</div>
+                    <div className="text-center text-gray-700 dark:text-gray-300">Period</div>
                   </div>
                 </div>
                 
@@ -352,7 +358,7 @@ export function ListCatalogContent() {
                       className="cursor-pointer px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                       onClick={() => handleSeriesClick(series)}
                     >
-                      <div className="grid grid-cols-12 gap-4 items-center text-sm">
+                      <div className="hidden sm:grid grid-cols-12 gap-4 items-center text-sm">
                         <div className="col-span-4 font-bold text-gray-900 dark:text-gray-100">
                           {series.name}
                         </div>
@@ -369,6 +375,17 @@ export function ListCatalogContent() {
                           <ChevronRight className="h-4 w-4 text-gray-400" />
                         </div>
                       </div>
+                      <div className="block sm:hidden grid grid-cols-2 gap-4 items-center text-sm">
+                        <div>
+                          <div className="font-bold text-gray-900 dark:text-gray-100">{series.name}</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">{series.description}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-gray-600 dark:text-gray-400">{series.periodStart}-{series.periodEnd}</div>
+                          <div className="text-gray-600 dark:text-gray-400 text-xs">{series.totalTypes} Types</div>
+                          <ChevronRight className="h-4 w-4 text-gray-400 inline-block ml-2" />
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -376,7 +393,7 @@ export function ListCatalogContent() {
             ) : (
               <>
                 {/* Stanley Gibbons Table Header */}
-                <div className="border-b border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2">
+                <div className="border-b border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2 hidden sm:block">
                   <div className="grid grid-cols-12 gap-4 text-xs font-semibold text-gray-700 uppercase tracking-wide">
                     <div className="col-span-3 text-gray-700 dark:text-gray-300">Country</div>
                     <div className="col-span-2 text-center text-gray-700 dark:text-gray-300">Code</div>
@@ -384,6 +401,12 @@ export function ListCatalogContent() {
                     <div className="col-span-2 text-center text-gray-700 dark:text-gray-300">Period</div>
                     <div className="col-span-2 text-gray-700 dark:text-gray-300">Description</div>
                     <div className="col-span-1"></div>
+                  </div>
+                </div>
+                <div className="block sm:hidden border-b border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2">
+                  <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                    <div className="text-gray-700 dark:text-gray-300">Country</div>
+                    <div className="text-center text-gray-700 dark:text-gray-300">Years</div>
                   </div>
                 </div>
                 
@@ -395,7 +418,7 @@ export function ListCatalogContent() {
                       className="cursor-pointer px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                       onClick={() => handleCountryClick(country)}
                     >
-                      <div className="grid grid-cols-12 gap-4 items-center text-sm">
+                      <div className="hidden sm:grid grid-cols-12 gap-4 items-center text-sm">
                         <div className="col-span-3 font-bold text-gray-900 dark:text-gray-100">
                           {country.name}
                         </div>
@@ -413,6 +436,16 @@ export function ListCatalogContent() {
                         </div>
                         <div className="col-span-1 text-right dark:text-gray-400">
                           <ChevronRight className="h-4 w-4 text-gray-400" />
+                        </div>
+                      </div>
+                      <div className="block sm:hidden grid grid-cols-2 gap-4 items-center text-sm">
+                        <div>
+                          <div className="font-bold text-gray-900 dark:text-gray-100">{country.name}</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">{country.description}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-gray-600 dark:text-gray-400">{country.yearStart}-{country.yearEnd} ({country.totalYears} Years)</div>
+                          <ChevronRight className="h-4 w-4 text-gray-400 inline-block ml-2" />
                         </div>
                       </div>
                     </div>
@@ -441,7 +474,7 @@ export function ListCatalogContent() {
           onOpenChange={() => index === modalStack.length - 1 && closeModal()}
         >
           <DialogContent 
-            className="max-w-6xl max-h-[95vh] overflow-y-auto bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700"
+            className="max-w-md sm:max-w-6xl max-h-[95vh] overflow-y-auto bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700"
             style={{ zIndex: 1000 + index * 10 }} // Increasing z-index for stack effect
           >
             <DialogHeader>
@@ -458,7 +491,7 @@ export function ListCatalogContent() {
               </DialogTitle>
             </DialogHeader>
             {loadingModalContent ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <Card key={i} className="w-full">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
