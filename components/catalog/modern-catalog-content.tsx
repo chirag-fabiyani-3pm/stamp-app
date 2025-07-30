@@ -442,7 +442,7 @@ export function ModernCatalogContent() {
             {/* Premium Header */}
             <header className="relative overflow-hidden">
                 {/* Hero Section */}
-                <div className="relative h-[300px] sm:h-[400px] md:h-[500px] bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900">
+                <div className="relative h-[250px] sm:h-[350px] md:h-[400px] bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900">
                     {/* Video Background */}
                     <video
                         autoPlay
@@ -596,7 +596,18 @@ export function ModernCatalogContent() {
                                     </p>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+                                <div className="relative mb-8">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
+                                    <Input
+                                        type="text"
+                                        placeholder="Search countries..."
+                                        className="w-full pl-10 pr-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm focus:ring-2 focus:ring-primary dark:focus:ring-amber-500 focus:border-transparent transition-all duration-300"
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                                     {filteredCountries.map((country, index) => (
                                         <article
                                             key={country.code}
@@ -604,7 +615,7 @@ export function ModernCatalogContent() {
                                             onClick={() => handleCountryClick(country)}
                                         >
                                             <div className="relative overflow-hidden rounded-2xl bg-white shadow-lg hover:shadow-2xl transition-all duration-500 group-hover:scale-[1.02] dark:bg-gray-800 dark:border-gray-700">
-                                                <div className="relative h-64 overflow-hidden">
+                                                <div className="relative h-56 overflow-hidden">
                                                     {country.featuredStampUrl && (
                                                         <Image
                                                             src={country.featuredStampUrl}
