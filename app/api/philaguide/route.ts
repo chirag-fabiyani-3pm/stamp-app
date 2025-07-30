@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 
 // Vercel configuration
-export const maxDuration = 10 // 10 seconds for Vercel hobby plan
+export const maxDuration = 15 // 15 seconds for Vercel hobby plan (allows for function calls)
 export const dynamic = 'force-dynamic'
 
 console.log('OPENAI_API_KEY (philaguide): ', process.env.OPENAI_API_KEY)
@@ -15,13 +15,258 @@ const openai = new OpenAI({
 const ASSISTANT_ID = 'asst_AfsiDbpnx2WjgZV7O97eHhyb'
 
 // Add timeout configuration for Vercel
-const TIMEOUT_MS = 8000 // 8 seconds to stay well under Vercel's 10s limit
+const TIMEOUT_MS = 12000 // 12 seconds to allow for function calls while staying under Vercel's limit
 
 // Timeout helper function
 function createTimeoutPromise(ms: number): Promise<never> {
     return new Promise((_, reject) => {
         setTimeout(() => reject(new Error('Request timeout')), ms)
     })
+}
+
+// Streaming response handler
+async function handleStreamingResponse(message: string, history: any[]) {
+    const encoder = new TextEncoder()
+
+    const stream = new ReadableStream({
+        async start(controller) {
+            try {
+                console.log('🔄 Starting streaming response for:', message)
+
+                // Step 1: Create a thread
+                const thread = await openai.beta.threads.create()
+                console.log('✅ Thread created:', thread.id)
+
+                // Step 2: Add the user's message to the thread
+                await openai.beta.threads.messages.create(thread.id, {
+                    role: 'user',
+                    content: message
+                })
+                console.log('✅ Message added to thread')
+
+                // Step 3: Create run with the assistant
+                const run = await openai.beta.threads.runs.create(thread.id, {
+                    assistant_id: ASSISTANT_ID
+                })
+                console.log('✅ Run created:', run.id)
+
+                // Step 4: Stream the response
+                await streamRunResponse(thread.id, run.id, controller, encoder)
+
+                controller.close()
+
+            } catch (error) {
+                console.error('❌ Streaming error:', error)
+                const errorMessage = `data: ${JSON.stringify({ error: 'Failed to process request' })}\n\n`
+                controller.enqueue(encoder.encode(errorMessage))
+                controller.close()
+            }
+        }
+    })
+
+    return new Response(stream, {
+        headers: {
+            'Content-Type': 'text/plain; charset=utf-8',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+        },
+    })
+}
+
+// Stream run response
+async function streamRunResponse(threadId: string, runId: string, controller: ReadableStreamDefaultController, encoder: TextEncoder) {
+    let runStatus = 'queued'
+    let attempts = 0
+    const maxAttempts = 15 // 15 seconds max to allow for function calls
+
+    while ((runStatus === 'queued' || runStatus === 'in_progress') && attempts < maxAttempts) {
+        console.log(`⏳ Run status: ${runStatus} (attempt ${attempts + 1}/${maxAttempts})`)
+
+        // Send status update
+        const statusMessage = `data: ${JSON.stringify({ type: 'status', status: runStatus })}\n\n`
+        controller.enqueue(encoder.encode(statusMessage))
+
+        await new Promise(resolve => setTimeout(resolve, 1000))
+
+        try {
+            const runResult = await openai.beta.threads.runs.retrieve(runId, { thread_id: threadId })
+            runStatus = runResult.status
+            attempts++
+
+            if (runResult.last_error) {
+                console.error('❌ Run error:', runResult.last_error)
+                const errorMessage = `data: ${JSON.stringify({ type: 'error', error: runResult.last_error })}\n\n`
+                controller.enqueue(encoder.encode(errorMessage))
+                return
+            }
+        } catch (error) {
+            console.error('❌ Error checking run status:', error)
+            break
+        }
+    }
+
+    console.log(`✅ Run completed with status: ${runStatus}`)
+
+    // Handle different run statuses
+    if (runStatus === 'failed' || runStatus === 'cancelled' || runStatus === 'expired') {
+        const errorMessage = `data: ${JSON.stringify({ type: 'error', error: `Run ${runStatus}` })}\n\n`
+        controller.enqueue(encoder.encode(errorMessage))
+        return
+    }
+
+    if (runStatus === 'queued' || runStatus === 'in_progress') {
+        const timeoutMessage = `data: ${JSON.stringify({ type: 'timeout', message: 'Processing is taking longer than expected. Please try a more specific query about stamps, or ask about a particular country or year.' })}\n\n`
+        controller.enqueue(encoder.encode(timeoutMessage))
+        return
+    }
+
+    // Handle requires_action (function calls)
+    if (runStatus === 'requires_action') {
+        console.log('🔧 Run requires action - handling function calls...')
+
+        const runResult = await openai.beta.threads.runs.retrieve(runId, { thread_id: threadId })
+        console.log('📊 Run result:', runResult)
+
+        if (runResult.required_action && runResult.required_action.type === 'submit_tool_outputs') {
+            console.log('🔧 Found tool outputs to submit')
+
+            const toolCalls = runResult.required_action.submit_tool_outputs.tool_calls
+            console.log('🔧 Tool calls found:', toolCalls.length)
+
+            const toolOutputs = []
+            let stamps = []
+            let structuredData = null
+
+            for (const toolCall of toolCalls) {
+                console.log('🔧 Processing tool call:', toolCall)
+                if (toolCall.function.name === 'return_stamp_data') {
+                    try {
+                        const functionArgs = JSON.parse(toolCall.function.arguments)
+                        console.log('📊 Function call data:', functionArgs)
+
+                        if (functionArgs.stamps && Array.isArray(functionArgs.stamps)) {
+                            stamps = functionArgs.stamps
+                            structuredData = functionArgs
+                            console.log(`✅ Found ${stamps.length} stamps from function call`)
+                            console.log('📋 Stamp details:', stamps.map((s: any) => ({ name: s.Name, country: s.Country, year: s.IssueYear })))
+
+                            // Send stamp preview immediately
+                            const stampPreview = {
+                                count: stamps.length,
+                                stamps: stamps.slice(0, 5).map((s: any) => ({
+                                    name: s.Name || 'Unknown',
+                                    country: s.Country || 'Unknown',
+                                    year: s.IssueYear || 'Unknown',
+                                    denomination: `${s.DenominationValue || ''}${s.DenominationSymbol || ''}`,
+                                    color: s.Color || 'Unknown'
+                                }))
+                            }
+
+                            const previewMessage = `data: ${JSON.stringify({ type: 'stamp_preview', data: stampPreview })}\n\n`
+                            controller.enqueue(encoder.encode(previewMessage))
+                        } else {
+                            console.log('⚠️ No stamps array found in function call data')
+                        }
+                    } catch (error) {
+                        console.log('❌ Error parsing function arguments:', error)
+                    }
+                }
+
+                toolOutputs.push({
+                    tool_call_id: toolCall.id,
+                    output: JSON.stringify({ success: true, stamps: stamps })
+                })
+            }
+
+            // Create structured data immediately from function call
+            let immediateStructuredData = null
+            if (stamps.length === 1) {
+                console.log('🎴 Creating single stamp card with data:', stamps[0])
+                immediateStructuredData = generateStampCard(stamps[0])
+                console.log('🎴 Generated card data:', immediateStructuredData)
+            } else if (stamps.length > 1) {
+                console.log(`🎠 Creating carousel with ${stamps.length} stamps`)
+                immediateStructuredData = generateStampCarousel(stamps.slice(0, 5))
+                console.log('🎠 Generated carousel data:', immediateStructuredData)
+            } else {
+                console.log('⚠️ No stamps found in function call data')
+            }
+
+            // Stream the immediate response
+            let responseText = ''
+            if (stamps.length > 0) {
+                responseText = `I found ${stamps.length} stamp${stamps.length !== 1 ? 's' : ''} for you.`
+            } else {
+                responseText = "I couldn't find any specific stamps matching your query. Let me provide some general information about philately instead."
+            }
+
+            // Stream the response text
+            const words = responseText.split(' ')
+            for (let i = 0; i < words.length; i++) {
+                const word = words[i]
+                const message = `data: ${JSON.stringify({ type: 'content', content: word + (i < words.length - 1 ? ' ' : '') })}\n\n`
+                controller.enqueue(encoder.encode(message))
+                await new Promise(resolve => setTimeout(resolve, 50))
+            }
+
+            // Send structured data
+            if (immediateStructuredData) {
+                const structuredMessage = `data: ${JSON.stringify({ type: 'structured_data', data: immediateStructuredData })}\n\n`
+                controller.enqueue(encoder.encode(structuredMessage))
+            }
+
+            // Send completion signal
+            const completeMessage = `data: ${JSON.stringify({ type: 'complete' })}\n\n`
+            controller.enqueue(encoder.encode(completeMessage))
+
+            return
+        }
+    }
+
+    // Get the messages and stream the response
+    if (runStatus === 'completed') {
+        await streamMessages(threadId, controller, encoder)
+    }
+}
+
+// Stream messages from thread
+async function streamMessages(threadId: string, controller: ReadableStreamDefaultController, encoder: TextEncoder) {
+    try {
+        const messages = await openai.beta.threads.messages.list(threadId)
+        const assistantMessages = messages.data.filter(msg => msg.role === 'assistant')
+
+        if (assistantMessages.length > 0) {
+            const latestMessage = assistantMessages[0]
+
+            if (latestMessage.content.length > 0) {
+                const content = latestMessage.content[0]
+
+                if (content.type === 'text') {
+                    const text = content.text.value
+                    const cleanedText = cleanResponseText(text)
+
+                    // Stream the text character by character for ChatGPT-like effect
+                    const words = cleanedText.split(' ')
+                    for (let i = 0; i < words.length; i++) {
+                        const word = words[i]
+                        const message = `data: ${JSON.stringify({ type: 'content', content: word + (i < words.length - 1 ? ' ' : '') })}\n\n`
+                        controller.enqueue(encoder.encode(message))
+
+                        // Small delay for streaming effect
+                        await new Promise(resolve => setTimeout(resolve, 50))
+                    }
+
+                    // Send completion signal
+                    const completeMessage = `data: ${JSON.stringify({ type: 'complete' })}\n\n`
+                    controller.enqueue(encoder.encode(completeMessage))
+                }
+            }
+        }
+    } catch (error) {
+        console.error('❌ Error streaming messages:', error)
+        const errorMessage = `data: ${JSON.stringify({ type: 'error', error: 'Failed to get response' })}\n\n`
+        controller.enqueue(encoder.encode(errorMessage))
+    }
 }
 
 // Generate card format for single stamp
@@ -132,11 +377,19 @@ function cleanResponseText(text: string): string {
 
 export async function POST(request: NextRequest) {
     try {
-        const { message, history = [] } = await request.json()
+        const { message, history = [], stream = false } = await request.json()
 
         if (!message) {
             return NextResponse.json({ error: 'Message is required' }, { status: 400 })
         }
+
+        // Check if streaming is requested
+        if (stream) {
+            return handleStreamingResponse(message, history)
+        }
+
+        // Fallback for non-streaming requests (voice chat, etc.)
+        console.log('Using non-streaming mode for:', message)
 
         // Use OpenAI Assistant with file-based knowledge
         console.log('Using OpenAI Assistant for:', message)

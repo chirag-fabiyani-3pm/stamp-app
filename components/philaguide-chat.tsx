@@ -33,6 +33,16 @@ interface Message {
     timestamp: Date
     structuredData?: any
     foundStamps?: number
+    stampPreview?: {
+        count: number
+        stamps: Array<{
+            name: string
+            country: string
+            year: string
+            denomination: string
+            color: string
+        }>
+    }
 }
 
 interface StampCard {
@@ -69,6 +79,50 @@ interface StampCardDisplayProps {
 
 interface StampCarouselDisplayProps {
     data: StampCarousel
+}
+
+interface StampPreviewDisplayProps {
+    preview: {
+        count: number
+        stamps: Array<{
+            name: string
+            country: string
+            year: string
+            denomination: string
+            color: string
+        }>
+    }
+}
+
+function StampPreviewDisplay({ preview }: StampPreviewDisplayProps) {
+    return (
+        <Card className="w-full max-w-full border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 overflow-hidden">
+            <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold text-gray-900">
+                    Found {preview.count} stamp{preview.count !== 1 ? 's' : ''}
+                </CardTitle>
+                <p className="text-xs text-gray-600">Loading detailed information...</p>
+            </CardHeader>
+            <CardContent className="pt-0 space-y-2">
+                {preview.stamps.slice(0, 3).map((stamp, index) => (
+                    <div key={index} className="flex items-center gap-2 p-2 bg-white rounded border">
+                        <div className="w-8 h-10 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="flex-1">
+                            <div className="text-sm font-medium text-gray-900">{stamp.name}</div>
+                            <div className="text-xs text-gray-600">
+                                {stamp.country} • {stamp.year} • {stamp.denomination} • {stamp.color}
+                            </div>
+                        </div>
+                    </div>
+                ))}
+                {preview.stamps.length > 3 && (
+                    <div className="text-xs text-gray-500 text-center">
+                        And {preview.stamps.length - 3} more stamps...
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    )
 }
 
 function StampCardDisplay({ data }: StampCardDisplayProps) {
@@ -218,6 +272,7 @@ export function PhilaGuideChat() {
     const [messages, setMessages] = useState<Message[]>([])
     const [input, setInput] = useState('')
     const [isLoading, setIsLoading] = useState(false)
+    const [streamingStatus, setStreamingStatus] = useState<string>('')
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
     // Voice interaction
@@ -265,26 +320,137 @@ export function PhilaGuideChat() {
                 },
                 body: JSON.stringify({
                     message: userMessage.content,
-                    history: []
+                    history: [],
+                    stream: true
                 }),
             })
 
-            const data = await response.json()
-
-            if (data.error) {
-                throw new Error(data.error)
+            if (!response.ok) {
+                throw new Error('Failed to get response')
             }
 
-            const assistantMessage: Message = {
-                id: (Date.now() + 1).toString(),
-                content: data.response,
-                role: 'assistant',
-                timestamp: new Date(),
-                structuredData: data.structuredData,
-                foundStamps: data.foundStamps
+            const reader = response.body?.getReader()
+            if (!reader) {
+                throw new Error('No response body')
             }
 
-            setMessages(prev => [...prev, assistantMessage])
+            let accumulatedContent = ''
+            let structuredData: any = null
+            let foundStamps: number = 0
+            let assistantMessageId: string | null = null
+            let stampPreview: any = null
+
+            while (true) {
+                const { done, value } = await reader.read()
+                if (done) break
+
+                const chunk = new TextDecoder().decode(value)
+                const lines = chunk.split('\n')
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.slice(6))
+
+                            if (data.type === 'status') {
+                                // Update status for loading indicator
+                                setStreamingStatus(data.status === 'queued' ? 'Initializing...' :
+                                    data.status === 'in_progress' ? 'Processing...' : '')
+                                console.log('Status:', data.status)
+                            } else if (data.type === 'content') {
+                                // Create assistant message on first content
+                                if (!assistantMessageId) {
+                                    assistantMessageId = (Date.now() + 1).toString()
+                                    const assistantMessage: Message = {
+                                        id: assistantMessageId,
+                                        content: '',
+                                        role: 'assistant',
+                                        timestamp: new Date()
+                                    }
+                                    setMessages(prev => [...prev, assistantMessage])
+                                }
+
+                                // Accumulate content
+                                accumulatedContent += data.content
+
+                                // Update the message in real-time
+                                setMessages(prev => prev.map(msg =>
+                                    msg.id === assistantMessageId
+                                        ? { ...msg, content: accumulatedContent }
+                                        : msg
+                                ))
+                            } else if (data.type === 'stamp_preview') {
+                                // Handle stamp preview data
+                                stampPreview = data.data
+                                console.log('📋 Received stamp preview:', stampPreview)
+
+                                // Create assistant message if not exists
+                                if (!assistantMessageId) {
+                                    assistantMessageId = (Date.now() + 1).toString()
+                                    const assistantMessage: Message = {
+                                        id: assistantMessageId,
+                                        content: 'I found some stamps for you. Loading details...',
+                                        role: 'assistant',
+                                        timestamp: new Date(),
+                                        stampPreview: stampPreview
+                                    }
+                                    setMessages(prev => [...prev, assistantMessage])
+                                } else {
+                                    // Update existing message with preview
+                                    setMessages(prev => prev.map(msg =>
+                                        msg.id === assistantMessageId
+                                            ? { ...msg, stampPreview: stampPreview }
+                                            : msg
+                                    ))
+                                }
+                            } else if (data.type === 'structured_data') {
+                                // Handle structured data from function calls
+                                structuredData = data.data
+                                console.log('📊 Received structured data:', structuredData)
+                            } else if (data.type === 'complete') {
+                                // Streaming complete
+                                console.log('Streaming complete')
+                            } else if (data.type === 'error') {
+                                throw new Error(data.error)
+                            } else if (data.type === 'timeout') {
+                                if (!assistantMessageId) {
+                                    assistantMessageId = (Date.now() + 1).toString()
+                                    const assistantMessage: Message = {
+                                        id: assistantMessageId,
+                                        content: data.message,
+                                        role: 'assistant',
+                                        timestamp: new Date()
+                                    }
+                                    setMessages(prev => [...prev, assistantMessage])
+                                } else {
+                                    setMessages(prev => prev.map(msg =>
+                                        msg.id === assistantMessageId
+                                            ? { ...msg, content: data.message }
+                                            : msg
+                                    ))
+                                }
+                            }
+                        } catch (parseError) {
+                            console.error('Error parsing stream data:', parseError)
+                        }
+                    }
+                }
+            }
+
+            // Final update with any structured data
+            if (assistantMessageId) {
+                setMessages(prev => prev.map(msg =>
+                    msg.id === assistantMessageId
+                        ? {
+                            ...msg,
+                            content: accumulatedContent || msg.content,
+                            structuredData,
+                            foundStamps
+                        }
+                        : msg
+                ))
+            }
+
         } catch (error) {
             console.error('Error sending message:', error)
             const errorMessage: Message = {
@@ -296,6 +462,7 @@ export function PhilaGuideChat() {
             setMessages(prev => [...prev, errorMessage])
         } finally {
             setIsLoading(false)
+            setStreamingStatus('')
         }
     }
 
@@ -315,7 +482,8 @@ export function PhilaGuideChat() {
                 },
                 body: JSON.stringify({
                     message,
-                    history: []
+                    history: [],
+                    stream: false // Voice chat doesn't need streaming
                 }),
             })
 
@@ -448,6 +616,13 @@ export function PhilaGuideChat() {
                                         {message.content}
                                     </div>
 
+                                    {/* Stamp Preview Display */}
+                                    {message.stampPreview && !message.structuredData && (
+                                        <div className="mt-2 max-w-full">
+                                            <StampPreviewDisplay preview={message.stampPreview} />
+                                        </div>
+                                    )}
+
                                     {/* Structured Data Display */}
                                     {message.structuredData && (
                                         <div className="mt-2 max-w-full">
@@ -475,10 +650,17 @@ export function PhilaGuideChat() {
                                     <AvatarFallback className="bg-orange-100 text-orange-700 text-xs">PG</AvatarFallback>
                                 </Avatar>
                                 <div className="bg-gray-100 rounded-lg px-3 py-2">
-                                    <div className="flex gap-1">
-                                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                                    <div className="flex flex-col gap-1">
+                                        <div className="flex gap-1">
+                                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
+                                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                                        </div>
+                                        {streamingStatus && (
+                                            <div className="text-xs text-gray-500 mt-1">
+                                                {streamingStatus}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
