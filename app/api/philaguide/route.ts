@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 
+// Vercel configuration
+export const maxDuration = 10 // 10 seconds for Vercel hobby plan
+export const dynamic = 'force-dynamic'
+
 console.log('OPENAI_API_KEY (philaguide): ', process.env.OPENAI_API_KEY)
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
@@ -11,7 +15,7 @@ const openai = new OpenAI({
 const ASSISTANT_ID = 'asst_AfsiDbpnx2WjgZV7O97eHhyb'
 
 // Add timeout configuration for Vercel
-const TIMEOUT_MS = 25000 // 25 seconds to stay under Vercel's 30s limit
+const TIMEOUT_MS = 8000 // 8 seconds to stay well under Vercel's 10s limit
 
 // Timeout helper function
 function createTimeoutPromise(ms: number): Promise<never> {
@@ -183,11 +187,11 @@ export async function POST(request: NextRequest) {
                 console.log('⏳ Waiting for run to complete...')
                 let runStatus = run.status
                 let attempts = 0
-                const maxAttempts = 30 // 60 seconds max wait
+                const maxAttempts = 4 // 4 seconds max wait (4 attempts × 1 second)
 
                 while ((runStatus === 'queued' || runStatus === 'in_progress') && attempts < maxAttempts) {
                     console.log(`⏳ Run status: ${runStatus} (attempt ${attempts + 1}/${maxAttempts})`)
-                    await new Promise(resolve => setTimeout(resolve, 2000))
+                    await new Promise(resolve => setTimeout(resolve, 1000)) // Reduced to 1 second
 
                     try {
                         const runResult = await openai.beta.threads.runs.retrieve(run.id, { thread_id: thread.id })
@@ -220,6 +224,18 @@ export async function POST(request: NextRequest) {
                 if (runStatus === 'expired') {
                     console.error('❌ Run expired')
                     throw new Error('Assistant run expired')
+                }
+
+                // If still in progress after timeout, return a quick response
+                if (runStatus === 'queued' || runStatus === 'in_progress') {
+                    console.log('⏰ Run still in progress after timeout, returning quick response')
+                    return {
+                        response: "I'm processing your request about stamps. This might take a moment. Please try again with a more specific query or check back in a few seconds.",
+                        stampsFound: 0,
+                        hasStructuredData: false,
+                        stamps: [],
+                        structuredData: null
+                    }
                 }
 
                 // Handle requires_action (function calls)
@@ -409,7 +425,7 @@ export async function POST(request: NextRequest) {
             // Check if it's a timeout error
             if (error instanceof Error && error.message === 'Request timeout') {
                 return NextResponse.json({
-                    error: 'Request timed out. The assistant is taking too long to respond. Please try again with a simpler query.'
+                    error: 'The assistant is taking too long to respond. Please try again with a more specific query about stamps, or try asking about a particular country or year.'
                 }, { status: 408 })
             }
 

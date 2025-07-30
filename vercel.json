@@ -1,0 +1,20 @@
+{
+    "functions": {
+        "app/api/philaguide/route.ts": {
+            "maxDuration": 10
+        },
+        "app/api/search-by-image/route.ts": {
+            "maxDuration": 10
+        }
+    },
+    "routes": [
+        {
+            "src": "/api/philaguide",
+            "dest": "/api/philaguide/route.ts"
+        },
+        {
+            "src": "/api/search-by-image",
+            "dest": "/api/search-by-image/route.ts"
+        }
+    ]
+}

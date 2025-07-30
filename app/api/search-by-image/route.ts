@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 
+// Vercel configuration
+export const maxDuration = 10 // 10 seconds for Vercel hobby plan
+export const dynamic = 'force-dynamic'
+
 console.log('OPENAI_API_KEY (search-by-image): ', process.env.OPENAI_API_KEY)
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 })
 
 // Add timeout configuration for Vercel
-const TIMEOUT_MS = 25000 // 25 seconds to stay under Vercel's 30s limit
+const TIMEOUT_MS = 8000 // 8 seconds to stay well under Vercel's 10s limit
 
 // Timeout helper function
 function createTimeoutPromise(ms: number): Promise<never> {
