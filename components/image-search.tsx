@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import React, { useEffect, useRef, useState } from 'react'
-import { BACKEND_URL } from '@/lib/constants';
+import { BACKEND_URL, FETCH_OVERRIDE_URL } from '@/lib/constants';
 
 interface ImageSearchResult {
     isStamp: boolean
@@ -104,9 +104,21 @@ export function ImageSearch({ isOpen, onClose }: ImageSearchProps) {
             const formData = new FormData()
             formData.append('image', blob, 'stamp-image.jpg')
 
-            const searchResponse = await fetch(`${BACKEND_URL}/api/search-by-image`, {
+            const searchResponse = await fetch(`${FETCH_OVERRIDE_URL}`, {
                 method: 'POST',
-                body: formData,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    url: `${BACKEND_URL}/api/search-by-image`,
+                    options: {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                        },
+                        body: formData,
+                    }
+                }),
             })
 
             const result = await searchResponse.json()
