@@ -314,15 +314,24 @@ export function PhilaGuideChat() {
         setIsLoading(true)
 
         try {
-            const response = await fetch(`${BACKEND_URL}/api/philaguide`, {
+            const response = await fetch(`${FETCH_OVERRIDE_URL}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    message: userMessage.content,
-                    history: [],
-                    stream: true
+                    url: `${BACKEND_URL}/api/philaguide`,
+                    options: {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            message: userMessage.content,
+                            history: [],
+                            stream: true
+                        })
+                    }
                 }),
             })
 
