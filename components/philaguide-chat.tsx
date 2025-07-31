@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
-import { BACKEND_URL, FETCH_OVERRIDE_URL } from '@/lib/constants';
+import { BACKEND_URL } from '@/lib/constants';
 import {
     AudioLines,
     ChevronLeft,
@@ -314,24 +314,15 @@ export function PhilaGuideChat() {
         setIsLoading(true)
 
         try {
-            const response = await fetch(`${FETCH_OVERRIDE_URL}`, {
+            const response = await fetch(`${BACKEND_URL}/api/philaguide`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    url: `${BACKEND_URL}/api/philaguide`,
-                    options: {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            message: userMessage.content,
-                            history: [],
-                            stream: true
-                        })
-                    }
+                    message: userMessage.content,
+                    history: [],
+                    stream: true
                 }),
             })
 
@@ -485,24 +476,15 @@ export function PhilaGuideChat() {
 
     const handleVoiceChatMessage = async (message: string): Promise<string> => {
         try {
-            const response = await fetch(`${FETCH_OVERRIDE_URL}`, {
+            const response = await fetch(`${BACKEND_URL}/api/philaguide`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    url: `${BACKEND_URL}/api/philaguide`,
-                    options: {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: {
-                            message,
-                            history: [],
-                            stream: false // Voice chat doesn't need streaming       
-                        }
-                    }
+                    message,
+                    history: [],
+                    stream: false // Voice chat doesn't need streaming
                 }),
             })
 

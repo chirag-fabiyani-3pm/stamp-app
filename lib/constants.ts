@@ -22,5 +22,4 @@ export const isUserAdmin = (roleMasterId: string): boolean => {
   return roleMasterId === ADMIN_ROLE_ID;
 };
 
-export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3005"; 
-export const FETCH_OVERRIDE_URL = process.env.FETCHOVERRIDE_BACKEND_URL || "https://3pm-formbuilder-prod.azurewebsites.net/api/form-builder/fetch-override";
+export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://stamp-app-backend.onrender.com"; 
