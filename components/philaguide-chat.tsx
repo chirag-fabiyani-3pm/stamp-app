@@ -9,14 +9,13 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { BACKEND_URL } from '@/lib/constants'
 import { cn } from '@/lib/utils'
-import { BACKEND_URL } from '@/lib/constants';
 import {
     AudioLines,
     ChevronLeft,
     ChevronRight,
     ExternalLink,
-    Info,
     MessageSquare,
     Send,
     X
@@ -288,9 +287,9 @@ export function PhilaGuideChat() {
     useEffect(() => {
         if (transcript) {
             setInput(transcript)
-            clearTranscript()
+            // Don't clear transcript immediately - let handleSendMessage use it
         }
-    }, [transcript, clearTranscript])
+    }, [transcript])
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -314,7 +313,20 @@ export function PhilaGuideChat() {
         setInput('')
         setIsLoading(true)
 
+        // Clear transcript after setting the message
+        if (transcript) {
+            clearTranscript()
+        }
+
         try {
+            // Check if this message came from voice input
+            const isFromVoice = transcript && userMessage.content.toLowerCase().trim() === transcript.toLowerCase().trim()
+            console.log('🎤 Voice chat detection:', {
+                transcript,
+                userMessageContent: userMessage.content,
+                isFromVoice
+            })
+
             const response = await fetch(`${BACKEND_URL}/api/philaguide`, {
                 method: 'POST',
                 headers: {
@@ -323,7 +335,8 @@ export function PhilaGuideChat() {
                 body: JSON.stringify({
                     message: userMessage.content,
                     history: [],
-                    stream: true
+                    stream: true,
+                    voiceChat: isFromVoice // Enable voice chat mode if input came from voice
                 }),
             })
 
@@ -476,7 +489,9 @@ export function PhilaGuideChat() {
     }
 
     const handleVoiceChatMessage = async (message: string): Promise<string> => {
+        console.log('🎤 handleVoiceChatMessage called with:', message)
         try {
+            console.log('🎤 Making API request to:', `${BACKEND_URL}/api/philaguide`)
             const response = await fetch(`${BACKEND_URL}/api/philaguide`, {
                 method: 'POST',
                 headers: {
@@ -485,34 +500,52 @@ export function PhilaGuideChat() {
                 body: JSON.stringify({
                     message,
                     history: [],
-                    stream: false // Voice chat doesn't need streaming
+                    stream: true, // Use streaming for voice chat
+                    voiceChat: true // Enable voice chat mode
                 }),
             })
+            console.log('🎤 API response status:', response.status)
 
-            const data = await response.json()
-
-            if (data.error) {
-                throw new Error(data.error)
+            // For streaming voice chat, get the response directly
+            const reader = response.body?.getReader()
+            if (!reader) {
+                throw new Error('No response body')
             }
 
-            // For voice chat, provide more detailed responses
-            let voiceResponse = data.response
+            let accumulatedContent = ''
 
-            // If we have structured data (stamps found), enhance the voice response
-            if (data.structuredData && data.stampsFound > 0) {
-                const stamps = data.stamps || []
+            while (true) {
+                const { done, value } = await reader.read()
+                if (done) break
 
-                if (stamps.length === 1) {
-                    const stamp = stamps[0]
-                    voiceResponse = `I found a stamp for you: ${stamp.Name} from ${stamp.Country}. This is a ${stamp.DenominationValue}${stamp.DenominationSymbol || ''} stamp issued in ${stamp.IssueYear || 'unknown year'}. The color is ${stamp.Color || 'unknown'}. ${stamp.visualDescription ? 'Based on the visual description, this stamp features ' + stamp.visualDescription.substring(0, 200) + '...' : ''}`
-                } else if (stamps.length > 1) {
-                    const stampNames = stamps.slice(0, 3).map((s: any) => s.Name).join(', ')
-                    voiceResponse = `I found ${stamps.length} stamps for you. Here are some examples: ${stampNames}. ${stamps.length > 3 ? `And ${stamps.length - 3} more stamps.` : ''} Would you like me to provide more details about any specific stamp?`
+                const chunk = new TextDecoder().decode(value)
+                const lines = chunk.split('\n')
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.slice(6))
+
+                            if (data.type === 'content') {
+                                // Accumulate content for voice response
+                                accumulatedContent += data.content
+                            } else if (data.type === 'error') {
+                                throw new Error(data.error)
+                            } else if (data.type === 'timeout') {
+                                return 'I apologize, but the request is taking too long. Please try a more specific query about stamps.'
+                            }
+                        } catch (parseError) {
+                            console.error('Error parsing voice stream data:', parseError)
+                        }
+                    }
                 }
-            } else if (data.stampsFound === 0) {
-                voiceResponse = "I couldn't find any stamps matching your description. Could you try rephrasing your query or provide more specific details about the stamp you're looking for?"
             }
 
+            // For voice chat, use the accumulated content directly since the assistant generates conversational responses
+            const voiceResponse = accumulatedContent || "I couldn't generate a response for that query."
+
+            console.log('🎤 Voice response length:', voiceResponse.length)
+            console.log('🎤 Voice response preview:', voiceResponse.substring(0, 100) + '...')
             return voiceResponse
         } catch (error) {
             console.error('Error sending voice message:', error)

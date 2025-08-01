@@ -24,8 +24,90 @@ function createTimeoutPromise(ms: number): Promise<never> {
     })
 }
 
+// Handle voice chat with direct chat completion (no assistant API)
+async function handleVoiceChatDirect(message: string, controller: ReadableStreamDefaultController, encoder: TextEncoder) {
+    try {
+        console.log('🎤 Starting direct voice chat for:', message)
+
+        // Send initial status
+        const statusMessage = `data: ${JSON.stringify({ type: 'status', status: 'processing' })}\n\n`
+        controller.enqueue(encoder.encode(statusMessage))
+
+        // Create a streaming chat completion with enhanced system prompt
+        const stream = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+                {
+                    role: "system",
+                    content: `You are a helpful stamp expert assistant specializing in conversational responses for voice synthesis. 
+
+IMPORTANT GUIDELINES:
+- Provide natural, conversational responses suitable for speech
+- Use clear, descriptive language
+- Avoid abbreviations and technical jargon
+- Use complete sentences and natural speech patterns
+- Be informative but friendly and engaging
+- When describing stamps, include details like country, year, denomination, color, and interesting facts
+- Use natural language for denominations (e.g., "one-third penny" instead of "1/3d")
+- NEVER use function calls or structured data - provide direct conversational responses
+- Focus on descriptive, engaging content that sounds natural when spoken
+
+Example: Instead of "1/3d stamp from NZ", say "This is a beautiful one-third penny stamp from New Zealand, issued in 1935, featuring a stunning blue color that makes it highly collectible."
+
+You have access to stamp knowledge and can provide detailed, conversational information about stamps. Always respond in a natural, conversational manner suitable for voice synthesis.`
+                },
+                {
+                    role: "user",
+                    content: message
+                }
+            ],
+            stream: true,
+            max_tokens: 1500,
+            temperature: 0.7
+        })
+
+        let accumulatedContent = ""
+
+        for await (const chunk of stream) {
+            const content = chunk.choices[0]?.delta?.content
+            if (content) {
+                accumulatedContent += content
+
+                // Stream the content word by word
+                const contentMessage = `data: ${JSON.stringify({ type: 'content', content: content })}\n\n`
+                try {
+                    controller.enqueue(encoder.encode(contentMessage))
+                } catch (controllerError) {
+                    console.log('🎤 Controller closed, stopping stream')
+                    break
+                }
+            }
+        }
+
+        // Send complete signal
+        const completeMessage = `data: ${JSON.stringify({ type: 'complete', content: accumulatedContent })}\n\n`
+        try {
+            controller.enqueue(encoder.encode(completeMessage))
+            controller.close()
+        } catch (controllerError) {
+            console.log('🎤 Controller already closed')
+        }
+
+        console.log('🎤 Voice chat completed with content length:', accumulatedContent.length)
+
+    } catch (error) {
+        console.error('❌ Voice chat error:', error)
+        const errorMessage = `data: ${JSON.stringify({ type: 'error', error: 'Failed to process voice chat request' })}\n\n`
+        try {
+            controller.enqueue(encoder.encode(errorMessage))
+        } catch (controllerError) {
+            console.log('🎤 Controller closed, cannot send error message')
+        }
+    }
+}
+
 // Streaming response handler
-async function handleStreamingResponse(message: string, history: any[]) {
+async function handleStreamingResponse(message: string, history: any[], voiceChat: boolean = false) {
     const encoder = new TextEncoder()
 
     const stream = new ReadableStream({
@@ -37,23 +119,29 @@ async function handleStreamingResponse(message: string, history: any[]) {
                 const thread = await openai.beta.threads.create()
                 console.log('✅ Thread created:', thread.id)
 
-                // Step 2: Add the user's message to the thread
-                await openai.beta.threads.messages.create(thread.id, {
-                    role: 'user',
-                    content: message
-                })
-                console.log('✅ Message added to thread')
+                // Step 2: Handle voice chat differently - use direct chat completion
+                if (voiceChat) {
+                    console.log('🎤 Using direct chat completion for voice chat')
+                    await handleVoiceChatDirect(message, controller, encoder)
+                    // Voice chat handles its own controller lifecycle
+                } else {
+                    // Normal assistant run with function calls for structured data
+                    await openai.beta.threads.messages.create(thread.id, {
+                        role: 'user',
+                        content: message
+                    })
+                    console.log('✅ Message added to thread')
 
-                // Step 3: Create run with the assistant
-                const run = await openai.beta.threads.runs.create(thread.id, {
-                    assistant_id: ASSISTANT_ID
-                })
-                console.log('✅ Run created:', run.id)
+                    // Step 3: Create run with the assistant
+                    const run = await openai.beta.threads.runs.create(thread.id, {
+                        assistant_id: ASSISTANT_ID
+                    })
+                    console.log('✅ Run created:', run.id)
 
-                // Step 4: Stream the response
-                await streamRunResponse(thread.id, run.id, controller, encoder)
-
-                controller.close()
+                    // Step 4: Stream the response
+                    await streamRunResponse(thread.id, run.id, controller, encoder)
+                    // Don't close controller here - streamRunResponse handles it
+                }
 
             } catch (error) {
                 console.error('❌ Streaming error:', error)
@@ -377,7 +465,8 @@ function cleanResponseText(text: string): string {
 
 export async function POST(request: NextRequest) {
     try {
-        const { message, history = [], stream = false } = await request.json()
+        const { message, history = [], stream = false, voiceChat = false } = await request.json()
+        console.log('📨 API Request:', { message: message.substring(0, 50) + '...', stream, voiceChat })
 
         if (!message) {
             return NextResponse.json({ error: 'Message is required' }, { status: 400 })
@@ -385,13 +474,58 @@ export async function POST(request: NextRequest) {
 
         // Check if streaming is requested
         if (stream) {
-            return handleStreamingResponse(message, history)
+            return handleStreamingResponse(message, history, voiceChat)
         }
 
-        // Fallback for non-streaming requests (voice chat, etc.)
+        // Fallback for non-streaming requests
         console.log('Using non-streaming mode for:', message)
 
-        // Use OpenAI Assistant with file-based knowledge
+        // For voice chat, use direct chat completion even in non-streaming mode
+        if (voiceChat) {
+            console.log('🎤 Using direct chat completion for voice chat (non-streaming)')
+
+            try {
+                const completion = await openai.chat.completions.create({
+                    model: "gpt-4o",
+                    messages: [
+                        {
+                            role: "system",
+                            content: `You are a helpful stamp expert assistant specializing in conversational responses for voice synthesis. 
+
+IMPORTANT GUIDELINES:
+- Provide natural, conversational responses suitable for speech
+- Use clear, descriptive language
+- Avoid abbreviations and technical jargon
+- Use complete sentences and natural speech patterns
+- Be informative but friendly and engaging
+- When describing stamps, include details like country, year, denomination, color, and interesting facts
+- Use natural language for denominations (e.g., "one-third penny" instead of "1/3d")
+- NEVER use function calls or structured data - provide direct conversational responses
+- Focus on descriptive, engaging content that sounds natural when spoken
+
+Example: Instead of "1/3d stamp from NZ", say "This is a beautiful one-third penny stamp from New Zealand, issued in 1935, featuring a stunning blue color that makes it highly collectible."
+
+You have access to stamp knowledge and can provide detailed, conversational information about stamps. Always respond in a natural, conversational manner suitable for voice synthesis.`
+                        },
+                        {
+                            role: "user",
+                            content: message
+                        }
+                    ],
+                    max_tokens: 1500,
+                    temperature: 0.7
+                })
+
+                const response = completion.choices[0]?.message?.content || "I couldn't generate a response for that query."
+                return NextResponse.json({ response })
+
+            } catch (error) {
+                console.error('❌ Voice chat error:', error)
+                return NextResponse.json({ error: 'Failed to process voice chat request' }, { status: 500 })
+            }
+        }
+
+        // Use OpenAI Assistant with file-based knowledge for non-voice chat
         console.log('Using OpenAI Assistant for:', message)
 
         // Call the assistant API with timeout

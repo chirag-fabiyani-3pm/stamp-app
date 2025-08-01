@@ -144,8 +144,10 @@ export function VoiceChatPopup({
                 }
 
                 if (finalTranscript) {
+                    console.log('🎤 Final transcript received:', finalTranscript)
                     setTranscript(finalTranscript)
                     // Auto-send when final transcript is available
+                    console.log('🎤 Auto-sending voice message...')
                     handleSendVoiceMessage(finalTranscript)
                 } else {
                     setTranscript(interimTranscript)
@@ -205,11 +207,19 @@ export function VoiceChatPopup({
     }, [isOpen])
 
     const startListening = () => {
+        console.log('🎤 startListening called')
         if (!recognitionRef.current || !isMicEnabled || isSpeaking || isProcessing) {
+            console.log('🎤 Cannot start listening:', {
+                hasRecognition: !!recognitionRef.current,
+                isMicEnabled,
+                isSpeaking,
+                isProcessing
+            })
             return
         }
         setTranscript('')
         try {
+            console.log('🎤 Starting speech recognition...')
             recognitionRef.current.start()
         } catch (error) {
             console.log('Error starting recognition:', error)
@@ -246,9 +256,11 @@ export function VoiceChatPopup({
     }
 
     const handleSendVoiceMessage = async (messageText: string) => {
+        console.log('🎤 handleSendVoiceMessage called with:', messageText)
         if (!messageText.trim()) return
 
         const userMessage = messageText.trim()
+        console.log('🎤 Adding user message to conversation:', userMessage)
         setConversation(prev => [...prev, { role: 'user', content: userMessage }])
         setTranscript('')
 
@@ -257,28 +269,20 @@ export function VoiceChatPopup({
         setIsProcessing(true)
 
         try {
-            const apiResponse = await onSendMessage(messageText)
-
-            // Parse the API response to extract structured data
-            let response = apiResponse
-            let structuredData = null
-
-            try {
-                const parsedResponse = JSON.parse(apiResponse)
-                if (parsedResponse.structuredData) {
-                    structuredData = parsedResponse.structuredData
-                    response = parsedResponse.response || apiResponse
-                }
-            } catch (error) {
-                // If not JSON, use the response as-is
-                response = apiResponse
+            console.log('🎤 Voice popup: Calling onSendMessage with:', messageText)
+            // Add a simple alert to test if console is working
+            if (typeof window !== 'undefined') {
+                console.log('🎤 Browser console test - this should show up')
             }
+            const apiResponse = await onSendMessage(messageText)
+            console.log('🎤 Voice popup: Received response length:', apiResponse.length)
+            console.log('🎤 Voice popup: Response preview:', apiResponse.substring(0, 100) + '...')
 
-            // Convert response to conversational format for voice
-            const voiceResponse = convertToVoiceResponse(response, structuredData)
+            // For voice chat, the response is already conversational plain text
+            const voiceResponse = apiResponse
 
             // Clean response for display and add to conversation
-            const cleanResponse = cleanDisplayResponse(response)
+            const cleanResponse = cleanDisplayResponse(apiResponse)
             setConversation(prev => [...prev, {
                 role: 'assistant',
                 content: cleanResponse
@@ -287,7 +291,7 @@ export function VoiceChatPopup({
             // Debug: Check selected voice before speaking
             console.log('🎤 About to speak with voice:', selectedVoice?.name, '->', selectedVoice?.voice?.name)
 
-            // Speak the conversational version
+            // Speak the response directly (it's already conversational)
             speakResponse(voiceResponse)
         } catch (error) {
             console.error('Error sending voice message:', error)
