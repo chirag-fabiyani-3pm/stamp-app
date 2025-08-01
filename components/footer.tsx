@@ -1,16 +1,18 @@
 import React from "react"
 import Link from "next/link"
 import { Stamp } from "lucide-react"
+import Image from "next/image"
+import { useTheme } from "next-themes"
 
 export default function Footer() {
+  const { theme } = useTheme()
   return (
     <footer className="border-t bg-background">
       <div className="container py-8 md:py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <Stamp className="h-6 w-6 text-primary" />
-              <span className="text-xl font-bold">Stamps of Approval</span>
+              <Image src={theme === "dark" ? "/icons/logo-dark.png" : "/icons/logo-light.png"} alt="Stamps of Approval" width={220} height={220} />
             </div>
             <p className="text-sm text-muted-foreground">
               AI-powered platform for stamp collectors to catalog, identify, and trade stamps worldwide.
@@ -20,11 +22,6 @@ export default function Footer() {
           <div>
             <h3 className="font-medium mb-3">Platform</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>
-                <Link href="/list-catalogue" className="hover:text-primary">
-                  Stamp Catalog
-                </Link>
-              </li>
               <li>
                 <Link href="/scan" className="hover:text-primary">
                   AI Recognition

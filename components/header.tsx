@@ -7,7 +7,11 @@ import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
 
-export default function Header() {
+interface HeaderProps {
+  setIsOpen: (isOpen: boolean) => void;
+}
+
+export default function Header({ setIsOpen }: HeaderProps) {
   const pathname = usePathname()
   const isAdminRoute = pathname.startsWith('/admin')
   const { theme } = useTheme()
@@ -21,7 +25,7 @@ export default function Header() {
             {isAdminRoute ? "SOA Admin" : ""}
           </span>
         </Link>
-        <HeaderActions />
+        <HeaderActions setIsOpen={setIsOpen} />
       </div>
     </header>
   )

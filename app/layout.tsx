@@ -9,8 +9,9 @@ import { Toaster } from "@/components/ui/toaster"
 import { PWAProvider } from "@/components/pwa/PWAProvider"
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import { PhilaGuideChat } from "@/components/philaguide-chat"
-import { ChatProvider } from "@/components/chat-provider"
+import { ChatProvider, useChatContext } from "@/components/chat-provider"
 import { LayoutWrapper } from "@/components/layout-wrapper"
+import { AppContent } from "@/components/app-content"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -57,19 +58,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             enableSystem
             disableTransitionOnChange
           >
-            <PWAProvider>
               <ChatProvider>
-                <LayoutWrapper>
-                  <div className="flex min-h-screen flex-col">
-                    <Header />
-                    <main className="flex-1">{children}</main>
-                    <Footer />
-                    <Toaster />
-                  </div>
-                </LayoutWrapper>
+                <AppContent>{children}</AppContent>
                 <PhilaGuideChat />
               </ChatProvider>
-            </PWAProvider>
           </ThemeProvider>
         </GoogleOAuthProvider>
       </body>
