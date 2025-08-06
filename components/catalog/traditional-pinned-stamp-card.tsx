@@ -30,7 +30,7 @@ export function TraditionalPinnedStampCard({
         isMinimized
           ? "bottom-4 right-4 w-12 h-12"
           : imageZoomed
-            ? "top-4 right-4 w-[calc(100vw-2rem)] md:w-[450px] max-h-[calc(100vh-2rem)] overflow-y-auto"
+            ? "bottom-4 right-4 w-[calc(100vw-2rem)] md:w-[450px] max-h-[calc(100vh-2rem)] overflow-y-auto"
             : "bottom-4 right-4 w-[calc(100vw-2rem)] md:w-80"
       )}
       style={{
@@ -80,6 +80,12 @@ export function TraditionalPinnedStampCard({
                 width={20}
                 height={25}
                 className="rounded border border-border opacity-80 group-hover:opacity-100 transition-opacity"
+                onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                  const target = e.currentTarget;
+                  if (target.src !== '/images/stamps/no-image-available.png') {
+                    target.src = '/images/stamps/no-image-available.png';
+                  }
+                }}
               />
               <Badge variant="secondary" className="text-xs">REF</Badge>
             </div>
@@ -167,6 +173,12 @@ export function TraditionalPinnedStampCard({
                   fill
                   className="object-contain p-3"
                   sizes="(max-width: 768px) 100vw, 450px"
+                  onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                    const target = e.currentTarget;
+                    if (target.src !== '/images/stamps/no-image-available.png') {
+                      target.src = '/images/stamps/no-image-available.png';
+                    }
+                  }}
                 />
               </div>
 
@@ -209,7 +221,7 @@ export function TraditionalPinnedStampCard({
               {/* Stamp Image and Basic Info */}
               <div className="flex items-start space-x-2 mb-3">
                 <div
-                  className="relative w-12 h-15 flex-shrink-0 cursor-pointer group"
+                  className="relative w-12 h-14 flex-shrink-0 cursor-pointer group"
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
@@ -228,6 +240,12 @@ export function TraditionalPinnedStampCard({
                     fill
                     className="object-cover rounded border border-border group-hover:shadow-sm transition-shadow"
                     sizes="48px"
+                    onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                      const target = e.currentTarget;
+                      if (target.src !== '/images/stamps/no-image-available.png') {
+                        target.src = '/images/stamps/no-image-available.png';
+                      }
+                    }}
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 rounded transition-colors flex items-center justify-center">
                     <ImageIcon className="w-3 h-3 text-white opacity-0 group-hover:opacity-100 transition-opacity" />

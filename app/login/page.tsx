@@ -14,8 +14,8 @@ function LoginContent({ searchParams }: { searchParams: { redirect?: string } })
   const redirectPath = searchParams.redirect
 
   return (
-    <div className="container flex items-center justify-center py-12 md:py-24">
-      <Card className="w-full max-w-md">
+    <div className="container flex items-center justify-center py-6 sm:py-12 md:py-24">
+      <Card className="w-full max-w-xs sm:max-w-sm md:max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
           <CardDescription>Sign in to your Stamps of Approval account</CardDescription>
@@ -43,8 +43,8 @@ export default function LoginPage({
 }) {
   return (
     <Suspense fallback={
-      <div className="container flex items-center justify-center py-12 md:py-24">
-        <Card className="w-full max-w-md">
+      <div className="container flex items-center justify-center py-6 sm:py-12 md:py-24">
+        <Card className="w-full max-w-xs sm:max-w-sm md:max-w-md">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
             <CardDescription>Sign in to your Stamps of Approval account</CardDescription>

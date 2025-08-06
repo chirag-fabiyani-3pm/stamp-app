@@ -6,8 +6,6 @@ const STATIC_CACHE = `stamp-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `stamp-dynamic-${CACHE_VERSION}`;
 const API_CACHE = `stamp-api-${CACHE_VERSION}`;
 
-console.log(`[SW] Cache version: ${CACHE_VERSION}`);
-
 // Only cache essential static assets that rarely change
 const staticAssets = [
   '/manifest.json',
@@ -32,12 +30,10 @@ const apiPatterns = [
 ];
 
 self.addEventListener('install', (event) => {
-  console.log(`[SW] Installing version ${CACHE_VERSION}...`);
   event.waitUntil(
     Promise.all([
       // Cache static assets
       caches.open(STATIC_CACHE).then((cache) => {
-        console.log('[SW] Caching static assets');
         return cache.addAll(staticAssets).catch(err => {
           console.warn('[SW] Failed to cache some static assets:', err);
         });
@@ -106,7 +102,6 @@ async function networkFirstStrategy(request) {
     
     return networkResponse;
   } catch (error) {
-    console.log('[SW] Network failed, trying cache:', request.url);
     const cachedResponse = await cache.match(request);
     
     if (cachedResponse) {
@@ -202,7 +197,6 @@ async function handleApiRequest(request) {
 }
 
 self.addEventListener('activate', (event) => {
-  console.log(`[SW] Activating version ${CACHE_VERSION}...`);
   
   event.waitUntil(
     Promise.all([
@@ -212,7 +206,6 @@ self.addEventListener('activate', (event) => {
           cacheNames.map((cacheName) => {
             // Delete caches that don't match current version
             if (cacheName.startsWith('stamp-') && !cacheName.includes(CACHE_VERSION)) {
-              console.log('[SW] Deleting old cache:', cacheName);
               return caches.delete(cacheName);
             }
           })
@@ -238,7 +231,6 @@ self.addEventListener('activate', (event) => {
 // Handle messages from the main thread
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
-    console.log('[SW] Skip waiting requested');
     self.skipWaiting();
   }
   
@@ -254,7 +246,6 @@ self.addEventListener('message', (event) => {
 if ('sync' in self.registration) {
   self.addEventListener('sync', (event) => {
     if (event.tag === 'background-sync') {
-      console.log('[SW] Background sync triggered');
       // Handle background sync here
     }
   });

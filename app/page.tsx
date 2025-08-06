@@ -8,13 +8,28 @@ import FeatureCard from "@/components/feature-card"
 import { isUserLoggedIn } from "@/lib/client/auth-utils"
 import { ModernCatalogContent } from "@/components/catalog/modern-catalog-content"
 import { Suspense, useState, useEffect } from "react"
+import { Spinner } from "@/components/ui/spinner"
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setIsLoggedIn(isUserLoggedIn());
+    const checkLoginStatus = async () => {
+      const loggedIn = isUserLoggedIn();
+      setIsLoggedIn(loggedIn);
+      setLoading(false);
+    };
+    checkLoginStatus();
   }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <>

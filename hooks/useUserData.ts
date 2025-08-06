@@ -49,17 +49,14 @@ export const useUserData = () => {
 
   const fetchUserData = useCallback(async () => {
     try {
-      console.log("Starting fetchUserData")
       setLoading(true)
       setError(null)
       
       // Get JWT from cookie
       const jwt = getAuthToken()
-      console.log("JWT from cookie:", jwt ? "found" : "not found")
       
       // Get user data from localStorage
       const storedData = localStorage.getItem('stamp_user_data')
-      console.log("storedData", storedData ? "exists" : "missing")
       
       if (!storedData) {
         throw new Error('No user data found in localStorage. Please log in again.')
@@ -76,12 +73,8 @@ export const useUserData = () => {
         throw new Error('No user ID found in localStorage. Please log in again.')
       }
       
-      console.log("jwt", jwt ? "present" : "missing")
-      console.log("userId", userId)
-      
       // Construct the API URL
       const apiUrl = `https://3pm-stampapp-prod.azurewebsites.net/api/v1/User/${userId}?id=${userId}`
-      console.log("Making API call to:", apiUrl)
       
       // Fetch user data from API
       const response = await fetch(apiUrl, {
@@ -91,9 +84,6 @@ export const useUserData = () => {
           'Content-Type': 'application/json',
         },
       })
-      
-      console.log("response status:", response.status)
-      console.log("response.url", response.url)
       
       if (!response.ok) {
         if (response.status === 401) {
@@ -109,7 +99,6 @@ export const useUserData = () => {
       }
 
       const data = await response.json()
-      console.log("API data received:", data)
       
       if (!data) {
         throw new Error('No user data received from server.')
@@ -127,12 +116,10 @@ export const useUserData = () => {
   }, [])
 
   useEffect(() => {
-    console.log("useUserData hook - useEffect called")
     fetchUserData()
   }, [fetchUserData])
 
   const refetch = useCallback(() => {
-    console.log("Refetching user data...")
     fetchUserData()
   }, [fetchUserData])
 

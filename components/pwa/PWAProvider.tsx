@@ -30,7 +30,6 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
         // Check if the app is already installed
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
         if (isStandalone) {
-            console.log('PWA is already installed');
             setIsInstallable(false);
         }
 
@@ -39,7 +38,6 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js')
                     .then((registration) => {
-                        console.log('ServiceWorker registration successful:', registration);
                         setSwRegistration(registration);
 
                         // Check for updates every 30 seconds
@@ -54,7 +52,6 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
                                 newWorker.addEventListener('statechange', () => {
                                     if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                                         // New version available
-                                        console.log('New version available');
                                         setUpdateAvailable(true);
                                         setShowUpdatePrompt(true);
                                     }
@@ -69,7 +66,6 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
                 // Listen for service worker messages
                 navigator.serviceWorker.addEventListener('message', (event) => {
                     if (event.data && event.data.type === 'SW_UPDATED') {
-                        console.log('SW Update message received:', event.data.message);
                         setUpdateAvailable(true);
                         setShowUpdatePrompt(true);
                     }
@@ -87,7 +83,6 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
 
         // Handle PWA installation
         window.addEventListener('beforeinstallprompt', (e) => {
-            console.log('beforeinstallprompt event fired');
             e.preventDefault();
             setDeferredPrompt(e);
             setIsInstallable(true);
@@ -97,7 +92,6 @@ export function PWAProvider({ children }: { children: React.ReactNode }) {
 
         // Handle successful installation
         window.addEventListener('appinstalled', () => {
-            console.log('PWA was installed');
             setIsInstallable(false);
             setShowInstallPrompt(false);
         });

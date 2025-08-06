@@ -385,18 +385,14 @@ export function CatalogContent() {
   const initializeIndexedDB = async () => {
     try {
       const isEmpty = await checkIndexedDBEmpty()
-      console.log('IndexedDB isEmpty:', isEmpty)
       
       if (isEmpty) {
-        console.log('IndexedDB is empty, checking authentication...')
         
         // Check if user is logged in
         const userDataStr = localStorage.getItem('stamp_user_data')
-        console.log('User data from localStorage:', userDataStr ? 'Found' : 'Not found')
         
         if (!userDataStr) {
           // No logged in user - show error that authentication is required
-          console.log('User not logged in, no data available')
           toast({
             title: "Authentication Required",
             description: "Please log in to access the stamp catalog",
@@ -407,15 +403,12 @@ export function CatalogContent() {
 
         try {
           const userData = JSON.parse(userDataStr)
-          console.log('Parsed user data:', { hasJwt: !!userData.jwt, userId: userData.id || 'N/A' })
           const jwt = userData.jwt
 
           if (!jwt) {
-            console.log('No JWT token found in user data')
             throw new Error('No JWT token found')
           }
 
-          console.log('JWT token found, fetching data from API...')
           toast({
             title: "Loading Catalog",
             description: "Fetching stamp data from server...",
@@ -423,10 +416,8 @@ export function CatalogContent() {
 
           // Fetch all stamps from API
           const apiStamps = await fetchAllStampsFromAPI(jwt)
-          console.log(`API returned ${apiStamps.length} stamps`)
           
           if (apiStamps.length > 0) {
-            console.log('Saving API stamps to IndexedDB...')
             await saveStampsToIndexedDB(apiStamps)
             toast({
               title: "Database Initialized",
@@ -434,7 +425,6 @@ export function CatalogContent() {
             })
           } else {
             // No stamps available from API
-            console.log('API returned no stamps')
             toast({
               title: "No Data Available", 
               description: "No stamps found on server",
@@ -447,7 +437,6 @@ export function CatalogContent() {
           
           // Check if it's a constraint error (schema issue)
           if (errorMessage.includes('ConstraintError') || errorMessage.includes('uniqueness requirements')) {
-            console.log('Detected schema conflict, recreating database...')
             try {
               await recreateIndexedDB()
               // Try API fetch again with fresh database
@@ -475,8 +464,6 @@ export function CatalogContent() {
             variant: "destructive"
           })
         }
-      } else {
-        console.log('IndexedDB already has data, skipping initialization')
       }
     } catch (error) {
       console.error('Error initializing IndexedDB:', error)
@@ -547,7 +534,6 @@ export function CatalogContent() {
         setStamps(initialStamps)
         setCurrentOffset(INDEXEDDB_PAGE_SIZE)
         setAllStampsLoaded(!hasMore)
-        console.log(`Loaded ${initialStamps.length} stamps from IndexedDB (page 1)`)
       } else {
         // Fallback to API or mock data
         await loadFromAPIOrData()
@@ -574,7 +560,6 @@ export function CatalogContent() {
         setStamps(prevStamps => [...prevStamps, ...moreStamps])
         setCurrentOffset(prev => prev + INDEXEDDB_PAGE_SIZE)
         setAllStampsLoaded(!hasMore)
-        console.log(`Loaded ${moreStamps.length} more stamps from IndexedDB`)
       } else {
         setAllStampsLoaded(true)
       }
@@ -830,7 +815,6 @@ export function CatalogContent() {
       if (needsAllStamps && !allStampsLoaded) {
         try {
           setLoading(true)
-          console.log('Loading all stamps for search/grouping...')
           
           // Load all stamps from IndexedDB
           const allStamps = await getStampsFromIndexedDB()
@@ -839,7 +823,6 @@ export function CatalogContent() {
             setAllStampsLoaded(true)
             setCurrentOffset(allStamps.length)
             setTotalStampsCount(allStamps.length)
-            console.log(`Loaded all ${allStamps.length} stamps for complete search/grouping`)
             
             toast({
               title: "Complete Dataset Loaded",
@@ -1101,9 +1084,6 @@ export function CatalogContent() {
 
   // Function to create tree layout using dagre
   const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
-    console.log('getLayoutedElements input:')
-    console.log('- Nodes:', nodes.length, nodes.map(n => n.id))
-    console.log('- Edges:', edges.length, edges.map(e => `${e.source} -> ${e.target}`))
     
     const g = new dagre.graphlib.Graph()
     g.setDefaultEdgeLabel(() => ({}))
@@ -1137,10 +1117,6 @@ export function CatalogContent() {
         },
       }
     })
-
-    console.log('getLayoutedElements output:')
-    console.log('- Layouted nodes:', layoutedNodes.map(n => ({ id: n.id, pos: n.position })))
-    console.log('- Edges (unchanged):', edges.map(e => ({ id: e.id, source: e.source, target: e.target, style: e.style })))
 
     return { nodes: layoutedNodes, edges }
   }
@@ -1377,16 +1353,6 @@ export function CatalogContent() {
       )
     }
     
-    // Debug: Log all data for debugging
-    console.log('=== DEBUGGING EDGES ===')
-    console.log('Group name:', groupName)
-    console.log('Root node ID:', rootNodeId)
-    console.log('Tree nodes:', treeData.nodes.map(n => ({ id: n.id, type: n.type, data: n.data.name || n.data.stamp?.name })))
-    console.log('Tree edges:', treeData.edges.map(e => ({ id: e.id, source: e.source, target: e.target, style: e.style })))
-    console.log('All nodes (including root):', [rootNode, ...treeData.nodes].map(n => ({ id: n.id, type: n.type })))
-    console.log('All edges:', treeData.edges)
-    console.log('========================')
-    
     // If no sub-structure, just show stamps
     if (Array.isArray(groupData)) {
       return (
@@ -1435,8 +1401,6 @@ export function CatalogContent() {
     const allNodes = [rootNode, ...treeData.nodes]
     const allEdges = treeData.edges
     
-    console.log('Edges to layout:', allEdges)
-    
     const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(allNodes, allEdges)
 
     return (
@@ -1460,9 +1424,6 @@ export function CatalogContent() {
             },
             type: 'smoothstep'
           }}
-          onInit={() => console.log('ReactFlow initialized')}
-          onNodesChange={(changes) => console.log('Nodes changed:', changes)}
-          onEdgesChange={(changes) => console.log('Edges changed:', changes)}
         >
           {/* SVG Gradient Definitions */}
           <svg style={{ position: 'absolute', width: 0, height: 0 }}>

@@ -69,7 +69,6 @@ function StampDetailContent() {
           const jwtFromQuery = searchParams.get('jwt')
           if (jwtFromQuery) {
             jwt = decodeURIComponent(jwtFromQuery)
-            console.log('Using JWT from query parameters')
           }
         }
 
