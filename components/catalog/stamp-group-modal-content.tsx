@@ -2,30 +2,23 @@ import React from "react"
 import { StampGroupData, StampData } from "@/types/catalog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import Image from "next/image"
-import { generateStampsData } from "@/lib/data/list-catalog-data"
+import { getStampsForStampGroup } from "@/lib/data/list-catalog-data"
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface StampGroupModalContentProps {
   stampGroupData: StampGroupData
+  stamps: StampData[]
   onStampClick: (stamp: StampData) => void
   isLoading: boolean;
 }
 
 export function StampGroupModalContent({
   stampGroupData,
+  stamps,
   onStampClick,
   isLoading
 }: StampGroupModalContentProps) {
-  const [stamps, setStamps] = React.useState<StampData[]>([])
   
-  React.useEffect(() => {
-    if (!isLoading) {
-      generateStampsData(stampGroupData.id, stampGroupData.totalStamps, 'stampGroup').then(data => {
-        setStamps(data)
-      }).catch(console.error)
-    }
-  }, [stampGroupData.id, isLoading])
-
   if (isLoading) {
     return (
       <div className="p-4">
@@ -74,10 +67,6 @@ export function StampGroupModalContent({
     );
   }
 
-  const filteredStamps = stamps.filter(stamp =>
-    stamp.stampGroupId === stampGroupData.id
-  )
-
   return (
     <div className="p-4">
       <p className="text-gray-700 dark:text-gray-300 mb-4">{stampGroupData.description}</p>
@@ -97,7 +86,7 @@ export function StampGroupModalContent({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredStamps.map((stamp) => (
+            {stamps.map((stamp) => (
               <React.Fragment key={stamp.id}>
                 {/* Main stamp entry */}
                 <TableRow 
@@ -122,12 +111,12 @@ export function StampGroupModalContent({
                   </TableCell>
                   <TableCell className="py-3 px-4 text-center hidden sm:table-cell">
                     <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
-                      {stamp.instances.find(i => i.mintValue && !i.code)?.mintValue || '-'}
+                      {stamp.estimatedMarketValue ? `$${stamp.estimatedMarketValue.toFixed(2)}` : '-'}
                     </span>
                   </TableCell>
                   <TableCell className="py-3 px-4 text-center hidden sm:table-cell">
                     <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
-                      {stamp.instances.find(i => i.usedValue && !i.code)?.usedValue || '-'}
+                      {stamp.actualPrice ? `$${stamp.actualPrice.toFixed(2)}` : '-'}
                     </span>
                   </TableCell>
                   <TableCell className="py-3 px-4 sm:hidden w-1/2">
@@ -151,19 +140,19 @@ export function StampGroupModalContent({
                   <TableCell className="py-3 px-4 sm:hidden w-1/2 text-right">
                     <div className="text-sm mb-1">
                       <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
-                        Mint: {stamp.instances.find(i => i.mintValue && !i.code)?.mintValue || '-'}
+                        Mint: {stamp.estimatedMarketValue ? `$${stamp.estimatedMarketValue.toFixed(2)}` : '-'}
                       </span>
                     </div>
                     <div className="text-sm">
                       <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
-                        Used: {stamp.instances.find(i => i.usedValue && !i.code)?.usedValue || '-'}
+                        Used: {stamp.actualPrice ? `$${stamp.actualPrice.toFixed(2)}` : '-'}
                       </span>
                     </div>
                   </TableCell>
                 </TableRow>
                 
                 {/* Varieties/instances listed as separate rows with indentation */}
-                {stamp.instances.filter(instance => instance.code).map((instance) => (
+                {stamp.instances && stamp.instances.map((instance) => (
                   <TableRow 
                     key={instance.id}
                     className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
@@ -171,7 +160,8 @@ export function StampGroupModalContent({
                   >
                     <TableCell className="py-2 px-4 text-xs text-gray-600 dark:text-gray-400 hidden sm:table-cell"></TableCell>
                     <TableCell className="py-2 px-4 text-xs text-gray-700 dark:text-gray-300 pl-8 hidden sm:table-cell">
-                      {instance.code && `${instance.code}. `}{instance.description}
+                      {instance.name && `${instance.name}. `}
+                      {instance.description}
                     </TableCell>
                     <TableCell className="py-2 px-4 text-center text-xs hidden sm:table-cell">
                       {instance.mintValue ? (
@@ -216,7 +206,7 @@ export function StampGroupModalContent({
         </Table>
       </div>
 
-      {filteredStamps.length === 0 && (
+      {stamps.length === 0 && (
         <div className="text-center py-8">
           <p className="text-gray-600 dark:text-gray-400">No stamps found for this stamp group.</p>
         </div>

@@ -3,11 +3,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { BookOpen, ChevronRight, Search } from "lucide-react"
 import { CategoryData, PaperTypeData, ReleaseData } from "@/types/catalog"
-import { generateCategoriesData, generatePaperTypesData } from "@/lib/data/list-catalog-data"
+import { getCategoriesForRelease, getPaperTypesForCategory } from "@/lib/data/list-catalog-data"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface ReleaseModalContentProps {
   releaseData: ReleaseData
+  categories: CategoryData[]
   onCategoryClick: (category: CategoryData) => void
   onPaperTypeClick: (paperType: PaperTypeData) => void
   isLoading: boolean;
@@ -15,28 +16,31 @@ interface ReleaseModalContentProps {
 
 export function ReleaseModalContent({
   releaseData,
+  categories,
   onCategoryClick,
   onPaperTypeClick,
   isLoading
 }: ReleaseModalContentProps) {
-  const [categories, setCategories] = useState<CategoryData[]>([])
-  const [paperTypes, setPaperTypes] = useState<PaperTypeData[]>([])
+  const [paperTypes, setPaperTypes] = useState<PaperTypeData[]>([]) // Keep paperTypes local if fetched when hasCategories is false
   const [searchTerm, setSearchTerm] = useState("")
 
   useEffect(() => {
-    const loadData = async () => {
-      if (releaseData.hasCategories) {
-        const data = await generateCategoriesData(releaseData)
-        setCategories(data)
-      } else {
-        const data = await generatePaperTypesData(releaseData.id, releaseData.totalCategories)
-        setPaperTypes(data)
-      }
-    }
+    const loadPaperTypes = async () => {
+        if (!releaseData.hasCategories) {
+            // Only load paper types if there are no categories
+            const data = await getPaperTypesForCategory(
+                releaseData.yearId.split('-')[0], 
+                parseInt(releaseData.yearId.split('-')[1]), 
+                releaseData.id, 
+                'unknown_category'
+            );
+            setPaperTypes(data);
+        }
+    };
     if (!isLoading) {
-      loadData()
+        loadPaperTypes();
     }
-  }, [releaseData, isLoading])
+}, [releaseData, isLoading]);
 
   const filteredCategories = useMemo(() => {
     if (!searchTerm) return categories

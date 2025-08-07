@@ -14,7 +14,6 @@ interface StampModalContentProps {
 }
 
 export function StampModalContent({ stampData, isLoading }: StampModalContentProps) {
-
   const stampDetailData = createStampDetailData(stampData)
   const selectedImage = stampData.stampImageUrl
   const details = stampData.stampDetailsJson ? JSON.parse(stampData.stampDetailsJson) : {}

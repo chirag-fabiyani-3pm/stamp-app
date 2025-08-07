@@ -3,32 +3,23 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { BookOpen, ChevronRight, Search } from "lucide-react"
 import { CategoryData, PaperTypeData } from "@/types/catalog"
-import { generatePaperTypesData } from "@/lib/data/list-catalog-data"
+import { getPaperTypesForCategory } from "@/lib/data/list-catalog-data"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface CategoryModalContentProps {
   categoryData: CategoryData
+  paperTypes: PaperTypeData[]
   onPaperTypeClick: (paperType: PaperTypeData) => void
   isLoading: boolean;
 }
 
 export function CategoryModalContent({
   categoryData,
+  paperTypes,
   onPaperTypeClick,
   isLoading
 }: CategoryModalContentProps) {
-  const [paperTypes, setPaperTypes] = useState<PaperTypeData[]>([])
   const [searchTerm, setSearchTerm] = useState("")
-
-  useEffect(() => {
-    const loadPaperTypes = async () => {
-      const data = await generatePaperTypesData(categoryData.id, categoryData.totalPaperTypes)
-      setPaperTypes(data)
-    }
-    if (!isLoading) {
-      loadPaperTypes()
-    }
-  }, [categoryData, isLoading])
 
   const filteredPaperTypes = useMemo(() => {
     if (!searchTerm) return paperTypes

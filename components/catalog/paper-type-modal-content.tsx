@@ -3,32 +3,23 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { BookOpen, ChevronRight, Search } from "lucide-react"
 import { PaperTypeData, StampData } from "@/types/catalog"
-import { generateStampsData } from "@/lib/data/list-catalog-data"
+import { getStampsForPaperType } from "@/lib/data/list-catalog-data"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface PaperTypeModalContentProps {
   paperTypeData: PaperTypeData
+  stamps: StampData[]
   onStampClick: (stamp: StampData) => void
   isLoading: boolean;
 }
 
 export function PaperTypeModalContent({
   paperTypeData,
+  stamps,
   onStampClick,
   isLoading
 }: PaperTypeModalContentProps) {
-  const [stamps, setStamps] = useState<StampData[]>([])
   const [searchTerm, setSearchTerm] = useState("")
-
-  useEffect(() => {
-    const loadStamps = async () => {
-      const data = await generateStampsData(paperTypeData.id, paperTypeData.totalStamps, 'paperType')
-      setStamps(data)
-    }
-    if (!isLoading) {
-      loadStamps()
-    }
-  }, [paperTypeData, isLoading])
 
   const filteredStamps = useMemo(() => {
     if (!searchTerm) return stamps
@@ -129,18 +120,18 @@ export function PaperTypeModalContent({
                       </td>
                       <td className="py-3 px-4 text-center">
                         <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
-                          {stamp.instances.find(i => i.mintValue)?.mintValue || '-'}
+                          {stamp.estimatedMarketValue ? `$${stamp.estimatedMarketValue.toFixed(2)}` : '-'}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-center">
                         <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
-                          {stamp.instances.find(i => i.usedValue)?.usedValue || '-'}
+                          {stamp.actualPrice ? `$${stamp.actualPrice.toFixed(2)}` : '-'}
                         </span>
                       </td>
                     </tr>
                     
                     {/* Varieties/instances listed as separate rows with indentation */}
-                    {stamp.instances.filter(instance => instance.code).map((instance) => (
+                    {stamp.instances && stamp.instances.map((instance) => (
                       <tr 
                         key={instance.id}
                         className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"

@@ -9,7 +9,11 @@ import { Search, Calendar, BookOpen, Archive, Eye, ChevronRight, X, Grid, AlertC
 import Image from "next/image"
 import Link from "next/link"
 import { CatalogLayout, SeriesData, CountryData, ListModalStackItem, TypeData, StampGroupData, YearData, ReleaseData, CategoryData, PaperTypeData, StampData } from "@/types/catalog"
-import { generateSeriesData, generateCountryData, generateYearData, generateTypeData, generateReleasesData, generateCategoriesData, generatePaperTypesData, generateStampsData } from "@/lib/data/list-catalog-data"
+import {
+    getCampbellPatersonSeries, getStanleyGibbonsCountries, getTypesForSeries,
+    getStampGroupsForType, getYearsForCountry, getReleasesForYear,
+    getCategoriesForRelease, getPaperTypesForCategory, getStampsForPaperType, getStampsForStampGroup
+} from "@/lib/data/list-catalog-data"
 import { CountryModalContent } from "@/components/catalog/country-modal-content"
 import { YearModalContent } from "@/components/catalog/year-modal-content"
 import { ReleaseModalContent } from "@/components/catalog/release-modal-content"
@@ -39,18 +43,32 @@ export function ListCatalogContent() {
   const [modalStack, setModalStack] = useState<ListModalStackItem[]>([])
 
   useEffect(() => {
-    setLoading(true);
-    if (catalogLayout === 'campbell-paterson') {
-      generateSeriesData().then(setSeriesData).catch(console.error).finally(() => setLoading(false))
-    } else {
-      generateCountryData().then(setCountryData).catch(console.error).finally(() => setLoading(false))
-    }
+    const loadData = async () => {
+      setLoading(true);
+      if (catalogLayout === 'campbell-paterson') {
+        try {
+          const data = await getCampbellPatersonSeries();
+          setSeriesData(data);
+        } catch (error) {
+          console.error("Error loading Campbell Paterson series:", error);
+        }
+      } else {
+        try {
+          const data = await getStanleyGibbonsCountries();
+          setCountryData(data);
+        } catch (error) {
+          console.error("Error loading Stanley Gibbons countries:", error);
+        }
+      }
+      setLoading(false);
+    };
+    loadData();
   }, [catalogLayout])
 
   const handleSeriesClick = async (series: SeriesData) => {
     setLoadingModalContent(true);
     try {
-      const typeData = await generateTypeData(series)
+      const typeData = await getTypesForSeries(series.name);
       setModalStack(prev => [...prev, {
         type: 'series',
         data: { series, types: typeData },
@@ -64,7 +82,7 @@ export function ListCatalogContent() {
   const handleCountryClick = async (country: CountryData) => {
     setLoadingModalContent(true);
     try {
-      const yearData = await generateYearData(country)
+      const yearData = await getYearsForCountry(country.code);
       setModalStack(prev => [...prev, {
         type: 'country',
         data: { country, years: yearData },
@@ -136,7 +154,7 @@ export function ListCatalogContent() {
               </div>
             </div>
 
-            <hr className="border-gray-300 dark:border-gray-700 mb-4 sm:mb-6" />
+            <hr className="border-gray-300 dark:border-700 mb-4 sm:mb-6" />
 
             {/* Search and Filter Controls */}
             <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -190,7 +208,7 @@ export function ListCatalogContent() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -358,7 +376,7 @@ export function ListCatalogContent() {
                       className="cursor-pointer px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                       onClick={() => handleSeriesClick(series)}
                     >
-                      <div className="hidden sm:grid grid-cols-12 gap-4 items-center text-sm">
+                      <div className="grid grid-cols-12 gap-4 items-center text-sm">
                         <div className="col-span-4 font-bold text-gray-900 dark:text-gray-100">
                           {series.name}
                         </div>
@@ -375,7 +393,7 @@ export function ListCatalogContent() {
                           <ChevronRight className="h-4 w-4 text-gray-400" />
                         </div>
                       </div>
-                      <div className="block sm:hidden grid grid-cols-2 gap-4 items-center text-sm">
+                      <div className="grid sm:hidden grid-cols-2 gap-4 items-center text-sm">
                         <div>
                           <div className="font-bold text-gray-900 dark:text-gray-100">{series.name}</div>
                           <div className="text-xs text-gray-600 dark:text-gray-400">{series.description}</div>
@@ -403,7 +421,7 @@ export function ListCatalogContent() {
                     <div className="col-span-1"></div>
                   </div>
                 </div>
-                <div className="block sm:hidden border-b border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2">
+                <div className="grid sm:hidden border-b border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2">
                   <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-gray-700 uppercase tracking-wide">
                     <div className="text-gray-700 dark:text-gray-300">Country</div>
                     <div className="text-center text-gray-700 dark:text-gray-300">Years</div>
@@ -438,7 +456,7 @@ export function ListCatalogContent() {
                           <ChevronRight className="h-4 w-4 text-gray-400" />
                         </div>
                       </div>
-                      <div className="block sm:hidden grid grid-cols-2 gap-4 items-center text-sm">
+                      <div className="grid sm:hidden grid-cols-2 gap-4 items-center text-sm">
                         <div>
                           <div className="font-bold text-gray-900 dark:text-gray-100">{country.name}</div>
                           <div className="text-xs text-gray-600 dark:text-gray-400">{country.description}</div>
@@ -514,12 +532,18 @@ export function ListCatalogContent() {
                   <SeriesModalContent 
                     series={modal.data.series} 
                     types={modal.data.types}
-                    onTypeClick={(typeData: TypeData) => {
-                      setModalStack(prev => [...prev, {
-                        type: 'type',
-                        data: typeData,
-                        title: `${modal.data.series.name} - ${typeData.name}`
-                      }])
+                    onTypeClick={async (typeData: TypeData) => {
+                      setLoadingModalContent(true);
+                      try {
+                        const stampGroupData = await getStampGroupsForType(modal.data.series.name, typeData.id);
+                        setModalStack(prev => [...prev, {
+                          type: 'type',
+                          data: { typeData, stampGroups: stampGroupData, series: modal.data.series },
+                          title: `${modal.data.series.name} - ${typeData.name}`
+                        }])
+                      } finally {
+                        setLoadingModalContent(false);
+                      }
                     }}
                     isLoading={loadingModalContent}
                   />
@@ -527,13 +551,20 @@ export function ListCatalogContent() {
                 
                 {modal.type === 'type' && (
                   <TypeModalContent 
-                    typeData={modal.data}
-                    onStampGroupClick={(stampGroupData: StampGroupData) => {
-                      setModalStack(prev => [...prev, {
-                        type: 'stampGroup',
-                        data: stampGroupData,
-                        title: stampGroupData.name
-                      }])
+                    typeData={modal.data.typeData}
+                    stampGroups={modal.data.stampGroups}
+                    onStampGroupClick={async (stampGroupData: StampGroupData) => {
+                      setLoadingModalContent(true);
+                      try {
+                        const stampsData = await getStampsForStampGroup(stampGroupData.id, modal.data.typeData.id, modal.data.series.name);
+                        setModalStack(prev => [...prev, {
+                          type: 'stampGroup',
+                          data: { stampGroupData, stamps: stampsData },
+                          title: stampGroupData.name
+                        }])
+                      } finally {
+                        setLoadingModalContent(false);
+                      }
                     }}
                     isLoading={loadingModalContent}
                   />
@@ -541,7 +572,8 @@ export function ListCatalogContent() {
                 
                 {modal.type === 'stampGroup' && (
                   <StampGroupModalContent 
-                    stampGroupData={modal.data}
+                    stampGroupData={modal.data.stampGroupData}
+                    stamps={modal.data.stamps}
                     onStampClick={(stampData: StampData) => {
                       setModalStack(prev => [...prev, {
                         type: 'stamps',
@@ -558,12 +590,18 @@ export function ListCatalogContent() {
                   <CountryModalContent 
                     country={modal.data.country} 
                     years={modal.data.years}
-                    onYearClick={(yearData: YearData) => {
-                      setModalStack(prev => [...prev, {
-                        type: 'year',
-                        data: yearData,
-                        title: `${modal.data.country.name} - ${yearData.year}`
-                      }])
+                    onYearClick={async (yearData: YearData) => {
+                      setLoadingModalContent(true);
+                      try {
+                        const releaseData = await getReleasesForYear(modal.data.country.code, yearData.year);
+                        setModalStack(prev => [...prev, {
+                          type: 'year',
+                          data: { yearData, releases: releaseData },
+                          title: `${modal.data.country.name} - ${yearData.year}`
+                        }])
+                      } finally {
+                        setLoadingModalContent(false);
+                      }
                     }}
                     isLoading={loadingModalContent}
                   />
@@ -571,13 +609,20 @@ export function ListCatalogContent() {
                 
                 {modal.type === 'year' && (
                   <YearModalContent 
-                    yearData={modal.data}
-                    onReleaseClick={(releaseData: ReleaseData) => {
-                      setModalStack(prev => [...prev, {
-                        type: 'release',
-                        data: releaseData,
-                        title: releaseData.name
-                      }])
+                    yearData={modal.data.yearData}
+                    releases={modal.data.releases}
+                    onReleaseClick={async (releaseData: ReleaseData) => {
+                      setLoadingModalContent(true);
+                      try {
+                        const categoryData = await getCategoriesForRelease(modal.data.yearData.countryId, modal.data.yearData.year, releaseData.id);
+                        setModalStack(prev => [...prev, {
+                          type: 'release',
+                          data: { releaseData, categories: categoryData },
+                          title: releaseData.name
+                        }])
+                      } finally {
+                        setLoadingModalContent(false);
+                      }
                     }}
                     isLoading={loadingModalContent}
                   />
@@ -585,20 +630,33 @@ export function ListCatalogContent() {
                 
                 {modal.type === 'release' && (
                   <ReleaseModalContent 
-                    releaseData={modal.data}
-                    onCategoryClick={(categoryData: CategoryData) => {
-                      setModalStack(prev => [...prev, {
-                        type: 'category',
-                        data: categoryData,
-                        title: categoryData.name
-                      }])
+                    releaseData={modal.data.releaseData}
+                    categories={modal.data.categories}
+                    onCategoryClick={async (categoryData: CategoryData) => {
+                      setLoadingModalContent(true);
+                      try {
+                        const paperTypeData = await getPaperTypesForCategory(modal.data.releaseData.yearId.split('-')[0], parseInt(modal.data.releaseData.yearId.split('-')[1]), modal.data.releaseData.id, categoryData.id);
+                        setModalStack(prev => [...prev, {
+                          type: 'category',
+                          data: { categoryData, paperTypes: paperTypeData },
+                          title: categoryData.name
+                        }])
+                      } finally {
+                        setLoadingModalContent(false);
+                      }
                     }}
-                    onPaperTypeClick={(paperTypeData: PaperTypeData) => {
-                      setModalStack(prev => [...prev, {
-                        type: 'paperType',
-                        data: paperTypeData,
-                        title: paperTypeData.name
-                      }])
+                    onPaperTypeClick={async (paperTypeData: PaperTypeData) => {
+                      setLoadingModalContent(true);
+                      try {
+                        const stampsData = await getStampsForPaperType(modal.data.releaseData.yearId.split('-')[0], parseInt(modal.data.releaseData.yearId.split('-')[1]), modal.data.releaseData.id, 'unknown_category', paperTypeData.code); // Assuming unknown_category if coming directly from release
+                        setModalStack(prev => [...prev, {
+                          type: 'paperType',
+                          data: { paperTypeData, stamps: stampsData },
+                          title: paperTypeData.name
+                        }])
+                      } finally {
+                        setLoadingModalContent(false);
+                      }
                     }}
                     isLoading={loadingModalContent}
                   />
@@ -606,13 +664,20 @@ export function ListCatalogContent() {
                 
                 {modal.type === 'category' && (
                   <CategoryModalContent 
-                    categoryData={modal.data}
-                    onPaperTypeClick={(paperTypeData: PaperTypeData) => {
-                      setModalStack(prev => [...prev, {
-                        type: 'paperType',
-                        data: paperTypeData,
-                        title: paperTypeData.name
-                      }])
+                    categoryData={modal.data.categoryData}
+                    paperTypes={modal.data.paperTypes}
+                    onPaperTypeClick={async (paperTypeData: PaperTypeData) => {
+                      setLoadingModalContent(true);
+                      try {
+                        const stampsData = await getStampsForPaperType(modal.data.categoryData.releaseId.split('-')[0], parseInt(modal.data.categoryData.releaseId.split('-')[1]), modal.data.categoryData.releaseId, modal.data.categoryData.id, paperTypeData.code);
+                        setModalStack(prev => [...prev, {
+                          type: 'paperType',
+                          data: { paperTypeData, stamps: stampsData },
+                          title: paperTypeData.name
+                        }])
+                      } finally {
+                        setLoadingModalContent(false);
+                      }
                     }}
                     isLoading={loadingModalContent}
                   />
@@ -620,7 +685,8 @@ export function ListCatalogContent() {
                 
                 {modal.type === 'paperType' && (
                   <PaperTypeModalContent 
-                    paperTypeData={modal.data}
+                    paperTypeData={modal.data.paperTypeData}
+                    stamps={modal.data.stamps}
                     onStampClick={(stampData: StampData) => {
                       setModalStack(prev => [...prev, {
                         type: 'stamps',
