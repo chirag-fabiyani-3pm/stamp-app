@@ -196,7 +196,6 @@ export default function StampScanner() {
   }
 
   const handleCompleteEdit = (editedData: Record<string, unknown>) => {
-    console.log("Edited stamp data:", editedData);
     // In a real app, you would save this data to your database
     setShowEditableResults(false);
     // Show success message or redirect
@@ -211,7 +210,6 @@ export default function StampScanner() {
   }
 
   const handleRefinementComplete = (refinedData: Record<string, unknown>) => {
-    console.log("Refined stamp identification:", refinedData);
     setIsRefinementOpen(false);
     
     // In a real app, you would update the identified stamp with the refined data

@@ -375,9 +375,6 @@ export default function ProfileCollection() {
       setIsEditDialogOpen(false)
       setSelectedStamp(null)
 
-      // You could add a success message here if needed
-      console.log('Stamp updated successfully')
-
     } catch (error) {
       console.error('Error updating stamp:', error)
       // You could add error handling UI here if needed

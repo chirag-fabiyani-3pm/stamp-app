@@ -2,35 +2,35 @@ import React from "react"
 import Image from "next/image"
 import { Card, CardContent } from "@/components/ui/card"
 import { ChevronRight } from "lucide-react"
-import { PerforationOption, WatermarkOption } from "@/types/catalog"
+import { ColorOption, PaperOption } from "@/types/catalog"
 import { Skeleton } from "@/components/ui/skeleton";
 
-interface VisualWatermarkModalContentProps {
-  data: { paper: any, watermarks: WatermarkOption[] } // Assuming paper is passed for context
-  onWatermarkClick: (watermark: WatermarkOption) => void
+interface PaperTypeModalContentProps {
+  data: { color: ColorOption, papers: PaperOption[] }
+  onPaperClick: (paper: PaperOption) => void
   isLoading: boolean;
 }
 
-export function VisualWatermarkModalContent({
+export function PaperTypeModalContent({
   data,
-  onWatermarkClick,
+  onPaperClick,
   isLoading
-}: VisualWatermarkModalContentProps) {
+}: PaperTypeModalContentProps) {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
             <Card key={i} className="cursor-pointer bg-card text-card-foreground border border-border">
               <CardContent className="p-4">
                 <div className="flex items-center space-x-3">
                   <Skeleton className="w-16 h-20 rounded border" />
-                  <div className="flex-1 min-w-0 space-y-1">
+                  <div className="flex-1 space-y-1">
                     <Skeleton className="h-5 w-3/4" />
                     <Skeleton className="h-3 w-full" />
                     <Skeleton className="h-3 w-1/2" />
                   </div>
-                  <Skeleton className="h-4 w-4 flex-shrink-0" />
+                  <Skeleton className="h-4 w-4" />
                 </div>
               </CardContent>
             </Card>
@@ -42,21 +42,21 @@ export function VisualWatermarkModalContent({
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {data.watermarks.map((watermark) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {data.papers.map((paper) => (
           <Card
-            key={watermark.code}
+            key={paper.code}
             className="cursor-pointer hover:shadow-lg transition-shadow bg-card text-card-foreground border border-border"
-            onClick={() => onWatermarkClick(watermark)}
+            onClick={() => onPaperClick(paper)}
           >
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
                 <Image
-                  src={watermark.stampImageUrl}
-                  alt={watermark.name}
+                  src={paper.stampImageUrl}
+                  alt={paper.name}
                   width={60}
                   height={80}
-                  className="rounded border border-border flex-shrink-0"
+                  className="rounded border border-border"
                   onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                     const target = e.currentTarget;
                     if (target.src !== '/images/stamps/no-image-available.png') {
@@ -64,12 +64,12 @@ export function VisualWatermarkModalContent({
                     }
                   }}
                 />
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold break-words">{watermark.name}</h3>
-                  <p className="text-sm text-muted-foreground break-words">{watermark.description}</p>
-                  <p className="text-xs text-muted-foreground break-words">{watermark.totalStamps} stamps</p>
+                <div className="flex-1">
+                  <h3 className="font-semibold">{paper.name}</h3>
+                  <p className="text-sm text-muted-foreground">{paper.description}</p>
+                  <p className="text-xs text-muted-foreground">{paper.totalStamps} stamps</p>
                 </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>

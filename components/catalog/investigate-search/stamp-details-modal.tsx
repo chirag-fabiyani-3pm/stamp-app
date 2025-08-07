@@ -7,6 +7,15 @@ import { X, Tag, Calendar, MapPin, Palette, FileText, DollarSign } from "lucide-
 import { StampData } from "@/types/catalog"
 import { Card } from "@/components/ui/card"
 
+const formatStampCode = (stampCode: string): string => {
+  // Assuming the watermark is the 8th part (index 7) of the stampCode if it's null
+  const parts = stampCode.split('.');
+  if (parts.length > 7 && parts[7] === 'null') {
+    parts[7] = 'NoWmk';
+  }
+  return parts.join('.');
+};
+
 interface StampDetailsModalProps {
   selectedStamp: StampData | null
   isModalOpen: boolean
@@ -156,7 +165,7 @@ export function StampDetailsModal({ selectedStamp, isModalOpen, setIsModalOpen }
                   <div className="flex justify-between items-start gap-3">
                     <span className="text-xs text-muted-foreground">Stamp Code:</span>
                     <span className="text-xs font-medium text-right font-mono">
-                      {selectedStamp.stampCode}
+                      {formatStampCode(selectedStamp.stampCode)}
                     </span>
                   </div>
 

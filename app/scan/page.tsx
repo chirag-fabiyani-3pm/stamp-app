@@ -646,7 +646,6 @@ function ScanPage() {
     // Desktop camera logic (existing code)
     try {
       setCameraError(null);
-      console.log("Starting camera...");
 
       // Check if running in a secure context
       if (window.isSecureContext === false) {
@@ -683,8 +682,6 @@ function ScanPage() {
         console.warn("Detailed constraints not supported, using basic video: true");
       }
 
-      console.log("Requesting camera with constraints:", constraints);
-
       // Request camera access with appropriate error handling
       let stream;
       try {
@@ -694,14 +691,11 @@ function ScanPage() {
 
         // Fallback to simplest possible constraints as last resort
         if (err.name === "OverconstrainedError" || err.name === "ConstraintNotSatisfiedError") {
-          console.log("Trying fallback with minimal constraints");
           stream = await mediaDevices.getUserMedia({ video: true, audio: false });
         } else {
           throw err; // Re-throw if it's not a constraints issue
         }
       }
-
-      console.log("Camera stream obtained successfully");
 
       // Make sure the video element exists
       if (!videoRef.current) {
@@ -712,7 +706,6 @@ function ScanPage() {
       // Set up the video element with the stream
       videoRef.current.srcObject = stream;
 
-      console.log("Setting up event listeners");
       // Create a promise to handle video loading
       const videoLoadPromise = new Promise<void>((resolve, reject) => {
         if (!videoRef.current) return reject("Video element not found");
@@ -725,7 +718,6 @@ function ScanPage() {
 
         // Set up event listeners
         videoRef.current.onloadedmetadata = () => {
-          console.log("Video metadata loaded");
           clearTimeout(timeoutId);
           resolve();
         };
@@ -741,10 +733,8 @@ function ScanPage() {
       await videoLoadPromise;
 
       if (videoRef.current) {
-        console.log("Playing video");
         try {
           await videoRef.current.play();
-          console.log("Camera started successfully");
           setCameraActive(true);
         } catch (e) {
           console.error("Error playing video:", e);
@@ -778,10 +768,7 @@ function ScanPage() {
 
   const stopCamera = () => {
     try {
-      console.log("Stopping camera...");
-
       if (!videoRef.current || !videoRef.current.srcObject) {
-        console.log("No active camera to stop");
         return;
       }
 
@@ -789,20 +776,15 @@ function ScanPage() {
       const stream = videoRef.current.srcObject as MediaStream;
       const tracks = stream.getTracks();
 
-      if (tracks.length === 0) {
-        console.log("No tracks found in the stream");
-      } else {
-        console.log(`Stopping ${tracks.length} media tracks`);
+      if (tracks.length !== 0) {
         tracks.forEach(track => {
           track.stop();
-          console.log(`Stopped track: ${track.kind}`);
         });
       }
 
       // Clean up video element
       videoRef.current.srcObject = null;
       setCameraActive(false);
-      console.log("Camera stopped successfully");
     } catch (error) {
       console.error("Error stopping camera:", error);
       // Even if there's an error, ensure we mark the camera as inactive
@@ -812,8 +794,6 @@ function ScanPage() {
 
   const captureImage = () => {
     try {
-      console.log("Capturing image from camera...");
-
       if (!canvasRef.current) {
         console.error("Canvas reference is null");
         setCameraError("Cannot capture image: canvas not available");
@@ -844,8 +824,6 @@ function ScanPage() {
         return;
       }
 
-      console.log(`Video dimensions: ${videoToCapture.videoWidth}x${videoToCapture.videoHeight}`);
-
       // Set canvas dimensions to match video
       canvasRef.current.width = videoToCapture.videoWidth || 640;
       canvasRef.current.height = videoToCapture.videoHeight || 480;
@@ -855,11 +833,9 @@ function ScanPage() {
 
       // Draw the video frame to the canvas
       context.drawImage(videoToCapture, 0, 0, canvasRef.current.width, canvasRef.current.height);
-      console.log("Image drawn to canvas");
 
       // Convert to image and display
       const imageDataUrl = canvasRef.current.toDataURL('image/png');
-      console.log("Image captured successfully");
 
       // Clean up camera resources
       stopCamera();
@@ -1032,9 +1008,6 @@ function ScanPage() {
     if (selectedMatch.apiData) {
       const formData = mapApiStampToFormData(selectedMatch.apiData);
       setStampObservations(formData);
-    } else {
-      // Fallback to basic pre-population for legacy stamps
-      console.log("Using reference stamp defaults for:", selectedMatch.name);
     }
   };
 
@@ -1136,10 +1109,6 @@ function ScanPage() {
 
   const applyObservations = () => {
     // After recording observations, save and complete the process
-    console.log("Saving all stamp data for stamp ID:", scanID);
-    console.log("Reference stamp:", selectedStamp?.name);
-    console.log("Observations:", stampObservations);
-
     // Show success message
     setCurrentView("scan");
     setCapturedImage(null);

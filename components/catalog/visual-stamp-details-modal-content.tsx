@@ -8,9 +8,9 @@ import { StampData, ModalType, AdditionalCategoryOption, ParsedStampDetails } fr
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface StampDetailsModalContentProps {
-  data: { stamp?: StampData, stamps?: StampData[], partialCode?: string, missingFrom?: ModalType, categoryFilter?: AdditionalCategoryOption, baseStampCode?: string, showAsIndividualCards?: boolean, selectedAdditionalCategories?: string[] }
+  data: { stamp?: StampData, stamps?: StampData[], partialCode?: string, missingFrom?: ModalType, categoryFilter?: AdditionalCategoryOption, baseStampCode?: string, showAsIndividualCards?: boolean, selectedAdditionalCategories?: string[], stampCode: string }
   onAdditionalCategoryClick?: (categoryType: string, stampCode: string) => void
-  onStampClick?: (stamp: StampData) => void
+  onStampClick?: (stamp: StampData, currentStampCode: string) => void
   isLoading: boolean;
 }
 
@@ -20,7 +20,7 @@ export function StampDetailsModalContent({
   onStampClick,
   isLoading
 }: StampDetailsModalContentProps) {
-  const { stamp, stamps, showAsIndividualCards, selectedAdditionalCategories } = data;
+  const { stamp, stamps, showAsIndividualCards, selectedAdditionalCategories, stampCode } = data;
 
   if (isLoading) {
     return (
@@ -100,13 +100,13 @@ export function StampDetailsModalContent({
               Choose from these exceptional specimens to view detailed information.
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {stamps.map((stampItem: StampData) => (
               <Card
                 key={stampItem.id}
                 className="hover:shadow-lg transition-shadow cursor-pointer bg-card text-card-foreground border border-border"
-                onClick={() => onStampClick?.(stampItem)}
+                onClick={() => onStampClick?.(stampItem, stampCode)}
               >
                 <CardContent className="p-4">
                   <div className="space-y-3">
@@ -118,7 +118,10 @@ export function StampDetailsModalContent({
                         height={160}
                         className="rounded border border-border"
                         onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                          e.currentTarget.src = '/images/stamps/no-image-available.png'
+                          const target = e.currentTarget;
+                          if (target.src !== '/images/stamps/no-image-available.png') {
+                            target.src = '/images/stamps/no-image-available.png';
+                          }
                         }}
                       />
                     </div>
@@ -131,7 +134,7 @@ export function StampDetailsModalContent({
                       <p className="text-xs text-muted-foreground break-words">{stampItem.issueDate}</p>
                       <div className="mt-2 overflow-hidden">
                         <code className="bg-muted px-2 py-1 rounded text-xs break-all whitespace-pre-wrap word-break overflow-wrap-break-word max-w-full block text-foreground">
-                          {stampItem.stampCode}
+                          {decodeURIComponent(stampCode)}
                         </code>
                       </div>
                       <Button variant="outline" size="sm" className="mt-2">
@@ -154,13 +157,13 @@ export function StampDetailsModalContent({
               Multiple specimens found in this category.
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             {stamps.map((stampItem: StampData) => (
               <Card
                 key={stampItem.id}
                 className="hover:shadow-lg transition-shadow cursor-pointer bg-card text-card-foreground border border-border"
-                onClick={() => onStampClick?.(stampItem)}
+                onClick={() => onStampClick?.(stampItem, stampCode)}
               >
                 <CardContent className="p-4">
                   <div className="flex items-center space-x-4">
@@ -171,7 +174,10 @@ export function StampDetailsModalContent({
                       height={100}
                       className="rounded border border-border"
                       onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                        e.currentTarget.src = '/images/stamps/no-image-available.png'
+                        const target = e.currentTarget;
+                        if (target.src !== '/images/stamps/no-image-available.png') {
+                          target.src = '/images/stamps/no-image-available.png';
+                        }
                       }}
                     />
                     <div className="flex-1">
@@ -225,7 +231,10 @@ export function StampDetailsModalContent({
               fill
               className="object-contain rounded-lg border border-border shadow-lg"
               onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                e.currentTarget.src = '/images/stamps/no-image-available.png';
+                const target = e.currentTarget;
+                if (target.src !== '/images/stamps/no-image-available.png') {
+                  target.src = '/images/stamps/no-image-available.png';
+                };
               }}
               sizes="(max-width: 768px) 100vw, 33vw"
             />
@@ -247,7 +256,7 @@ export function StampDetailsModalContent({
                 {!selectedAdditionalCategories?.includes('postalHistory') && (
                   <button
                     className="p-2 text-xs bg-accent/20 hover:bg-accent/40 rounded border border-border text-left transition-colors text-foreground"
-                    onClick={() => onAdditionalCategoryClick?.('postalHistory', stamp.stampCode || '')}
+                    onClick={() => onAdditionalCategoryClick?.('postalHistory', stampCode)}
                   >
                     <div className="font-medium">Postal History</div>
                   </button>
@@ -255,7 +264,7 @@ export function StampDetailsModalContent({
                 {!selectedAdditionalCategories?.includes('postmarks') && (
                   <button
                     className="p-2 text-xs bg-accent/20 hover:bg-accent/40 rounded border border-border text-left transition-colors text-foreground"
-                    onClick={() => onAdditionalCategoryClick?.('postmarks', stamp.stampCode || '')}
+                    onClick={() => onAdditionalCategoryClick?.('postmarks', stampCode)}
                   >
                     <div className="font-medium">Postmarks</div>
                   </button>
@@ -263,7 +272,7 @@ export function StampDetailsModalContent({
                 {!selectedAdditionalCategories?.includes('proofs') && (
                   <button
                     className="p-2 text-xs bg-accent/20 hover:bg-accent/40 rounded border border-border text-left transition-colors text-foreground"
-                    onClick={() => onAdditionalCategoryClick?.('proofs', stamp.stampCode || '')}
+                    onClick={() => onAdditionalCategoryClick?.('proofs', stampCode)}
                   >
                     <div className="font-medium">Proofs</div>
                   </button>
@@ -271,7 +280,7 @@ export function StampDetailsModalContent({
                 {!selectedAdditionalCategories?.includes('essays') && (
                   <button
                     className="p-2 text-xs bg-accent/20 hover:bg-accent/40 rounded border border-border text-left transition-colors text-foreground"
-                    onClick={() => onAdditionalCategoryClick?.('essays', stamp.stampCode || '')}
+                    onClick={() => onAdditionalCategoryClick?.('essays', stampCode)}
                   >
                     <div className="font-medium">Essays</div>
                   </button>
@@ -279,7 +288,7 @@ export function StampDetailsModalContent({
                 {!selectedAdditionalCategories?.includes('onPiece') && (
                   <button
                     className="p-2 text-xs bg-accent/20 hover:bg-accent/40 rounded border border-border text-left transition-colors text-foreground"
-                    onClick={() => onAdditionalCategoryClick?.('onPiece', stamp.stampCode || '')}
+                    onClick={() => onAdditionalCategoryClick?.('onPiece', stampCode)}
                   >
                     <div className="font-medium">On Piece</div>
                   </button>
@@ -287,7 +296,7 @@ export function StampDetailsModalContent({
                 {!selectedAdditionalCategories?.includes('errors') && (
                   <button
                     className="p-2 text-xs bg-accent/20 hover:bg-accent/40 rounded border border-border text-left transition-colors text-foreground"
-                    onClick={() => onAdditionalCategoryClick?.('errors', stamp.stampCode || '')}
+                    onClick={() => onAdditionalCategoryClick?.('errors', stampCode)}
                   >
                     <div className="font-medium">Errors</div>
                   </button>
@@ -295,7 +304,7 @@ export function StampDetailsModalContent({
                 {!selectedAdditionalCategories?.includes('other') && (
                   <button
                     className="p-2 text-xs bg-accent/20 hover:bg-accent/40 rounded border border-border text-left transition-colors text-foreground"
-                    onClick={() => onAdditionalCategoryClick?.('other', stamp.stampCode || '')}
+                    onClick={() => onAdditionalCategoryClick?.('other', stampCode)}
                   >
                     <div className="font-medium">Other</div>
                   </button>

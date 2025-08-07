@@ -916,7 +916,6 @@ export default function StampEditForm({ stamp, onClose, onSave }: StampEditFormP
             }
 
             const result = await apiResponse.json();
-            console.log('Stamp updated successfully:', result);
             
             // Create the updated stamp object for local state using new structure
             const updatedStamp = {

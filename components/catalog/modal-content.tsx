@@ -3,13 +3,21 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { AlertCircle, Award, BookOpen, Calendar, ChevronRight, Clock, Coins, ExternalLink, FileText, Gem, Globe, Palette, Package, Quote, Star, Stamp, Zap, Menu, Layers, Share2 } from "lucide-react"
-import { AdditionalCategoryOption, ColorOption, CurrencyOption, DenominationOption, ItemTypeOption, ModalStackItem, PaperOption, PerforationOption, StampData, StampGroupOption, WatermarkOption, YearOption, ParsedStampDetails } from "@/types/catalog"
+import { AdditionalCategoryOption, ColorOption, CurrencyOption, DenominationOption, ItemTypeOption, ModalStackItem, PaperOption, PerforationOption, StampData, WatermarkOption, YearOption, ParsedStampDetails, SeriesOption } from "@/types/catalog"
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import ReactCountryFlag from "react-country-flag"
+
+const formatStampCode = (stampCode: string, watermarkCode: string | null | undefined): string => {
+  if (watermarkCode === null) {
+    return stampCode.replace('.null.', '.NoWmk.');
+  }
+  return stampCode;
+};
 
 interface ModalContentProps {
     modalItem: ModalStackItem
-    onStampGroupClick: (group: StampGroupOption, stampCode: string) => void
+    onSeriesClick: (series: SeriesOption, stampCode: string) => void
     onYearClick: (year: YearOption, stampCode: string) => void
     onCurrencyClick: (currency: CurrencyOption, stampCode: string) => void
     onDenominationClick: (denomination: DenominationOption, stampCode: string) => void
@@ -26,7 +34,7 @@ interface ModalContentProps {
 
 export default function ModalContent({
     modalItem,
-    onStampGroupClick,
+    onSeriesClick,
     onYearClick,
     onCurrencyClick,
     onDenominationClick,
@@ -41,6 +49,7 @@ export default function ModalContent({
     isLoading
 }: ModalContentProps) {
     const { type, data, stampCode } = modalItem
+    const decodedStampCode = decodeURIComponent(stampCode);
 
     if (isLoading) {
         return (
@@ -65,7 +74,7 @@ export default function ModalContent({
 
     switch (type) {
         case 'country':
-            const countryData = data as { country: any, stampGroups: StampGroupOption[] };
+            const countryData = data as { country: any, series: SeriesOption[] };
             return (
                 <div className="space-y-6 md:space-y-8">
                     {/* Hero Section */}
@@ -75,69 +84,37 @@ export default function ModalContent({
                         </p>
                     </div>
 
-                    {/* Featured Series */}
-                    <div className="mb-6 md:mb-8">
-                        <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 md:mb-6">Premium Series</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                            {countryData.stampGroups.filter((group: StampGroupOption) => group.featured).map((group: StampGroupOption) => (
-                                <div
-                                    key={group.id}
-                                    className="group cursor-pointer bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden"
-                                    onClick={() => onStampGroupClick(group, stampCode)}
-                                >
-                                    <div className="relative h-40 md:h-48 overflow-hidden">
-                                        <Image
-                                            src={group.stampImageUrl}
-                                            alt={group.name}
-                                            fill
-                                            className="object-cover transition-transform duration-500 group-hover:scale-110"
-                                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                                        <div className="absolute bottom-4 left-4 right-4">
-                                            <h4 className="font-bold text-white text-base md:text-lg mb-1">{group.name}</h4>
-                                            <p className="text-gray-200 text-xs md:text-sm">{group.period}</p>
-                                        </div>
-                                    </div>
-                                    <div className="p-4 md:p-6">
-                                        <p className="text-gray-600 dark:text-gray-300 text-sm mb-3">{group.description}</p>
-                                        <div className="flex items-center justify-between">
-                                            <Badge variant="outline" className="text-primary border-primary/30 dark:text-amber-300 dark:border-amber-600">
-                                                {group.totalStamps} stamps
-                                            </Badge>
-                                            <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-primary transition-colors" />
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
                     {/* All Series Grid */}
                     <div>
-                        <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 md:mb-6">Complete Catalog</h3>
+                        <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 md:mb-6">Series</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-                            {countryData.stampGroups.map((group: StampGroupOption) => (
+                            {countryData.series.map((series: SeriesOption) => (
                                 <div
-                                    key={group.id}
+                                    key={series.id}
                                     className="group cursor-pointer bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-all duration-200 p-3 md:p-4 border border-gray-100 dark:border-gray-700 hover:border-primary/30 dark:hover:border-amber-600"
-                                    onClick={() => onStampGroupClick(group, stampCode)}
+                                    onClick={() => onSeriesClick(series, stampCode)}
                                 >
                                     <div className="flex items-start space-x-3">
                                         <Image
-                                            src={group.stampImageUrl}
-                                            alt={group.name}
+                                            src={series.stampImageUrl || '/images/stamps/no-image-available.png'}
+                                            alt={series.name}
                                             width={40}
                                             height={50}
                                             className="rounded border"
+                                            onError={(e) => {
+                                                const target = e.currentTarget;
+                                                if (target.src !== '/images/stamps/no-image-available.png') {
+                                                    target.src = '/images/stamps/no-image-available.png';
+                                                }
+                                            }}
                                         />
                                         <div className="flex-1 min-w-0">
                                             <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate group-hover:text-primary transition-colors">
-                                                {group.name}
+                                                {series.name}
                                             </h4>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{group.catalogNumber}</p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{series.catalogNumber}</p>
                                             <Badge variant="secondary" className="mt-2 text-xs">
-                                                {group.totalStamps}
+                                                {series.totalStamps}
                                             </Badge>
                                         </div>
                                     </div>
@@ -148,8 +125,8 @@ export default function ModalContent({
                 </div>
             )
 
-        case 'stampGroup':
-            const stampGroupData = data as { group: any, years: YearOption[] };
+        case 'series':
+            const seriesData = data as { series: any, years: YearOption[] };
             return (
                 <div className="space-y-6 md:space-y-8">
                     <div className="text-center max-w-3xl mx-auto px-4">
@@ -159,7 +136,7 @@ export default function ModalContent({
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
-                        {stampGroupData.years.map((year: YearOption) => (
+                        {seriesData.years.map((year: YearOption) => (
                             <div
                                 key={year.year}
                                 className="group cursor-pointer text-center"
@@ -245,39 +222,6 @@ export default function ModalContent({
                         </p>
                     </div>
 
-                    {/* Featured Denominations */}
-                    <div className="mb-6 md:mb-8">
-                        <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 md:mb-6">Most Sought After</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                            {currencyData.denominations.filter((denom: DenominationOption) => denom.featured).map((denomination: DenominationOption) => (
-                                <div
-                                    key={denomination.value}
-                                    className="group cursor-pointer bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden"
-                                    onClick={() => onDenominationClick(denomination, stampCode)}
-                                >
-                                    <div className="relative h-32 md:h-40 overflow-hidden">
-                                        <Image
-                                            src={denomination.stampImageUrl}
-                                            alt={denomination.displayName}
-                                            fill
-                                            className="object-cover transition-transform duration-500 group-hover:scale-110"
-                                            sizes="(max-width: 768px) 100vw, 50vw"
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                                        <div className="absolute bottom-4 left-4 right-4">
-                                            <h4 className="text-xl md:text-2xl font-bold text-white">{denomination.displayName}</h4>
-                                        </div>
-                                    </div>
-                                    <div className="p-4 md:p-6">
-                                        <Badge variant="outline" className="text-blue-600 border-blue-300 dark:text-blue-400 dark:border-blue-600">
-                                            {denomination.totalStamps} approved variants
-                                        </Badge>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
                     {/* All Denominations */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
                         {currencyData.denominations.map((denomination: DenominationOption) => (
@@ -288,11 +232,17 @@ export default function ModalContent({
                             >
                                 <div className="relative w-14 h-16 md:w-16 md:h-20 mx-auto mb-3">
                                     <Image
-                                        src={denomination.stampImageUrl}
+                                        src={denomination.stampImageUrl || '/images/stamps/no-image-available.png'}
                                         alt={denomination.displayName}
                                         fill
                                         className="object-cover rounded border"
                                         sizes="64px"
+                                        onError={(e) => {
+                                            const target = e.currentTarget;
+                                            if (target.src !== '/images/stamps/no-image-available.png') {
+                                                target.src = '/images/stamps/no-image-available.png';
+                                            }
+                                        }}
                                     />
                                 </div>
                                 <h4 className="font-bold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
@@ -322,7 +272,7 @@ export default function ModalContent({
                                 className="group cursor-pointer bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden"
                                 onClick={() => onColorClick(color, stampCode)}
                             >
-                                <div className="relative h-28 md:h-32 flex items-center justify-center" style={{ backgroundColor: color.hexColor }}>
+                                <div className="relative h-28 md:h-32 flex items-center justify-center" style={{ backgroundColor: color.hex }}>
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
                                     <h3 className="relative text-xl md:text-2xl font-bold text-white drop-shadow-lg">{color.name}</h3>
                                 </div>
@@ -331,7 +281,7 @@ export default function ModalContent({
                                     <p className="text-gray-600 dark:text-gray-300 text-sm mb-3 leading-relaxed">{color.description}</p>
 
                                     <div className="flex items-center justify-between mb-3">
-                                        <Badge variant="outline" style={{ borderColor: color.hexColor, color: color.hexColor }}>
+                                        <Badge variant="outline" style={{ borderColor: color.hex, color: color.hex }}>
                                             {color.totalStamps} approved
                                         </Badge>
 
@@ -378,11 +328,17 @@ export default function ModalContent({
                                     <div className="flex items-start space-x-4 mb-4">
                                         <div className="relative w-16 h-20 md:w-20 md:h-24 flex-shrink-0">
                                             <Image
-                                                src={paper.stampImageUrl}
+                                                src={paper.stampImageUrl || '/images/stamps/no-image-available.png'}
                                                 alt={paper.name}
                                                 fill
                                                 className="object-cover rounded border shadow-sm"
                                                 sizes="80px"
+                                                onError={(e) => {
+                                                    const target = e.currentTarget;
+                                                    if (target.src !== '/images/stamps/no-image-available.png') {
+                                                        target.src = '/images/stamps/no-image-available.png';
+                                                    }
+                                                }}
                                             />
                                         </div>
                                         <div className="flex-1">
@@ -546,11 +502,17 @@ export default function ModalContent({
                                     <div className="flex items-start space-x-4 mb-4">
                                         <div className="relative w-16 h-20 md:w-20 md:h-24 flex-shrink-0">
                                             <Image
-                                                src={itemType.stampImageUrl}
+                                                src={itemType.stampImageUrl || '/images/stamps/no-image-available.png'}
                                                 alt={itemType.name}
                                                 fill
                                                 className="object-cover rounded border shadow-sm"
                                                 sizes="80px"
+                                                onError={(e) => {
+                                                    const target = e.currentTarget;
+                                                    if (target.src !== '/images/stamps/no-image-available.png') {
+                                                        target.src = '/images/stamps/no-image-available.png';
+                                                    }
+                                                }}
                                             />
                                         </div>
                                         <div className="flex-1">
@@ -606,7 +568,7 @@ export default function ModalContent({
                             </div>
                         </div>
                         <code className="bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-700 rounded-lg px-2 py-0.5 md:px-4 md:py-2 text-green-800 dark:text-green-200 font-mono text-xs break-all">
-                            SOA-{stampCode}
+                            SOA-{formatStampCode(decodeURIComponent(stampCode), decodedStampCode.split('.')[7])}
                         </code>
                         <p className="text-green-700 dark:text-green-300 text-xs mt-2">
                             This unique identifier confirms authentication and approval in our premium catalog system.
@@ -622,11 +584,17 @@ export default function ModalContent({
                             >
                                 <div className="relative h-56 md:h-64 overflow-hidden">
                                     <Image
-                                        src={stamp.stampImageUrl}
+                                        src={stamp.stampImageUrl || '/images/stamps/no-image-available.png'}
                                         alt={stamp.name}
                                         fill
                                         className="object-cover transition-transform duration-700 group-hover:scale-110"
                                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                        onError={(e) => {
+                                            const target = e.currentTarget;
+                                            if (target.src !== '/images/stamps/no-image-available.png') {
+                                                target.src = '/images/stamps/no-image-available.png';
+                                            }
+                                        }}
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
 
@@ -711,11 +679,17 @@ export default function ModalContent({
                                     >
                                         <div className="relative h-56 md:h-64 overflow-hidden">
                                             <Image
-                                                src={stampItem.stampImageUrl}
+                                                src={stampItem.stampImageUrl || '/images/stamps/no-image-available.png'}
                                                 alt={stampItem.name}
                                                 fill
                                                 className="object-cover transition-transform duration-700 group-hover:scale-110"
                                                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                                onError={(e) => {
+                                                    const target = e.currentTarget;
+                                                    if (target.src !== '/images/stamps/no-image-available.png') {
+                                                        target.src = '/images/stamps/no-image-available.png';
+                                                    }
+                                                }}
                                             />
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
 
@@ -793,11 +767,17 @@ export default function ModalContent({
                                     >
                                         <div className="flex items-center space-x-4">
                                             <Image
-                                                src={stampItem.stampImageUrl}
+                                                src={stampItem.stampImageUrl || '/images/stamps/no-image-available.png'}
                                                 alt={stampItem.name}
                                                 width={80}
                                                 height={100}
                                                 className="rounded border shadow-sm"
+                                                onError={(e) => {
+                                                    const target = e.currentTarget;
+                                                    if (target.src !== '/images/stamps/no-image-available.png') {
+                                                        target.src = '/images/stamps/no-image-available.png';
+                                                    }
+                                                }}
                                             />
                                             <div className="flex-1">
                                                 <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 group-hover:text-primary transition-colors">
@@ -836,17 +816,23 @@ export default function ModalContent({
             const details = stamp.stampDetailsJson ? JSON.parse(stamp.stampDetailsJson) : {}
 
             return (
-                <article className="max-w-6xl mx-auto px-2">
+                <article className="max-w-6xl mx-auto px-2 pb-12">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-12">
                         {/* Stamp Image */}
                         <div className="space-y-4">
-                            <div className="relative aspect-[3/4] bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-900 rounded-xl overflow-hidden shadow-xl">
+                            <div className="mx-auto relative w-full md:w-80 h-96 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-900 rounded-xl overflow-hidden shadow-xl">
                                 <Image
-                                    src={stamp.stampImageUrl}
+                                    src={stamp.stampImageUrl || '/images/stamps/no-image-available.png'}
                                     alt={stamp.name}
                                     fill
-                                    className="object-cover"
-                                    sizes="(max-width: 1024px) 100vw, 50vw"
+                                    className="object-contain"
+                                    sizes="(max-width: 768px) 100vw, 33vw"
+                                    onError={(e) => {
+                                        const target = e.currentTarget;
+                                        if (target.src !== '/images/stamps/no-image-available.png') {
+                                            target.src = '/images/stamps/no-image-available.png';
+                                        }
+                                    }}
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
                             </div>
@@ -855,16 +841,6 @@ export default function ModalContent({
                                 <Badge className="bg-primary/10 text-primary text-sm px-2 py-0.5 dark:bg-primary/20 dark:text-amber-300">
                                     {stamp.catalogNumber}
                                 </Badge>
-                                <div className="flex flex-wrap items-center justify-center gap-2">
-                                    <Button variant="outline" size="sm" className="text-xs h-8">
-                                        <BookOpen className="w-3 h-3 mr-1" />
-                                        View Authentication
-                                    </Button>
-                                    <Button variant="outline" size="sm" className="text-xs h-8">
-                                        <Share2 className="w-3 h-3 mr-1" />
-                                        Share
-                                    </Button>
-                                </div>
                             </div>
 
                             {/* Additional Categories */}
@@ -998,6 +974,7 @@ export default function ModalContent({
                                         {stamp.issueYear}
                                     </span>
                                     <span className="flex items-center">
+                                        <ReactCountryFlag countryCode={stamp.stampCode.split('.')[0]} svg className="mr-1" />
                                         {stamp.country}
                                     </span>
                                     <span className="flex items-center">
@@ -1071,13 +1048,13 @@ export default function ModalContent({
                                         <Badge
                                             className={cn(
                                                 "text-sm px-2 py-0.5",
-                                                (JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).rarityRating === 'Collector Approved' && "bg-primary/10 text-primary",
-                                                (JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).rarityRating === 'Rare' && "bg-orange-100 text-orange-800",
-                                                (JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).rarityRating === 'Uncommon' && "bg-yellow-100 text-yellow-800",
-                                                (JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).rarityRating === 'Common' && "bg-green-100 text-green-800"
+                                                (JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).rarity?.toLowerCase().includes('collector approved') && "bg-primary/10 text-primary",
+                                                (JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).rarity?.toLowerCase().includes('rare') && "bg-orange-100 text-orange-800",
+                                                (JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).rarity?.toLowerCase().includes('uncommon') && "bg-yellow-100 text-yellow-800",
+                                                (JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).rarity?.toLowerCase().includes('common') && "bg-green-100 text-green-800"
                                             )}
                                         >
-                                            {(JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).rarityRating}
+                                            {(JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).rarity}
                                         </Badge>
                                         <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Status</div>
                                     </div>
@@ -1088,7 +1065,7 @@ export default function ModalContent({
                             <section className="bg-primary/5 dark:bg-primary/10 rounded-xl p-4">
                                 <h2 className="text-lg md:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">Stamps of Approval ID</h2>
                                 <code className="bg-white dark:bg-gray-800 border border-primary/20 dark:border-primary/30 rounded-lg p-3 text-xs font-mono block break-all text-primary dark:text-amber-300">
-                                    SOA-{stamp.stampCode}
+                                    SOA-{formatStampCode(decodeURIComponent(modalItem.stampCode), decodedStampCode.split('.')[7])}
                                 </code>
                                 <p className="text-primary/70 dark:text-amber-400 text-xs mt-2">
                                     This unique identifier confirms authentication and approval in our premium catalog system.
@@ -1129,11 +1106,17 @@ export default function ModalContent({
                                     <div className="flex items-start space-x-4 mb-4">
                                         <div className="relative w-16 h-20 md:w-20 md:h-24 flex-shrink-0">
                                             <Image
-                                                src={category.stampImageUrl}
+                                                src={category.stampImageUrl || '/images/stamps/no-image-available.png'}
                                                 alt={category.name}
                                                 fill
                                                 className="object-cover rounded border shadow-sm"
                                                 sizes="80px"
+                                                onError={(e) => {
+                                                    const target = e.currentTarget;
+                                                    if (target.src !== '/images/stamps/no-image-available.png') {
+                                                        target.src = '/images/stamps/no-image-available.png';
+                                                    }
+                                                }}
                                             />
                                         </div>
                                         <div className="flex-1">
