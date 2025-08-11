@@ -3415,7 +3415,7 @@ export const convertApiStampToStampData = (apiStamp: any) => {
     id: apiStamp.id,
     stampId: apiStamp.StampId,
     parentStampId: apiStamp.ParentStampId,
-    stampCode: `${apiStamp.country}.${apiStamp.catalogNumber}`,
+    stampCode: apiStamp.stampCode,
     status: 1,
     userId: "user123",
     stampCatalogId: apiStamp.catalogNumber,

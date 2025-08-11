@@ -596,7 +596,7 @@ export function ListCatalogContent() {
                         const releaseData = await getReleasesForYear(modal.data.country.code, yearData.year);
                         setModalStack(prev => [...prev, {
                           type: 'year',
-                          data: { yearData, releases: releaseData },
+                          data: { countryId: modal.data.country.code, yearData, releases: releaseData },
                           title: `${modal.data.country.name} - ${yearData.year}`
                         }])
                       } finally {
@@ -614,10 +614,10 @@ export function ListCatalogContent() {
                     onReleaseClick={async (releaseData: ReleaseData) => {
                       setLoadingModalContent(true);
                       try {
-                        const categoryData = await getCategoriesForRelease(modal.data.yearData.countryId, modal.data.yearData.year, releaseData.id);
+                        const categoryData = await getCategoriesForRelease(modal.data.countryId, modal.data.yearData.year, releaseData.id);
                         setModalStack(prev => [...prev, {
                           type: 'release',
-                          data: { releaseData, categories: categoryData },
+                          data: { countryId: modal.data.countryId, year: modal.data.yearData.year, releaseData, categories: categoryData },
                           title: releaseData.name
                         }])
                       } finally {
@@ -635,10 +635,10 @@ export function ListCatalogContent() {
                     onCategoryClick={async (categoryData: CategoryData) => {
                       setLoadingModalContent(true);
                       try {
-                        const paperTypeData = await getPaperTypesForCategory(modal.data.releaseData.yearId.split('-')[0], parseInt(modal.data.releaseData.yearId.split('-')[1]), modal.data.releaseData.id, categoryData.id);
+                        const paperTypeData = await getPaperTypesForCategory(modal.data.countryId, modal.data.year, modal.data.releaseData.id, categoryData.id);
                         setModalStack(prev => [...prev, {
                           type: 'category',
-                          data: { categoryData, paperTypes: paperTypeData },
+                          data: { countryId: modal.data.countryId, year: modal.data.year, releaseId: modal.data.releaseData.id, categoryData, paperTypes: paperTypeData },
                           title: categoryData.name
                         }])
                       } finally {
@@ -648,10 +648,10 @@ export function ListCatalogContent() {
                     onPaperTypeClick={async (paperTypeData: PaperTypeData) => {
                       setLoadingModalContent(true);
                       try {
-                        const stampsData = await getStampsForPaperType(modal.data.releaseData.yearId.split('-')[0], parseInt(modal.data.releaseData.yearId.split('-')[1]), modal.data.releaseData.id, 'unknown_category', paperTypeData.code); // Assuming unknown_category if coming directly from release
+                        const stampsData = await getStampsForPaperType(modal.data.countryId, modal.data.year, modal.data.releaseId, modal.data.categoryDate.id, paperTypeData.code); // Assuming unknown_category if coming directly from release
                         setModalStack(prev => [...prev, {
                           type: 'paperType',
-                          data: { paperTypeData, stamps: stampsData },
+                          data: { countryId: modal.data.countryId, year: modal.data.year, releaseId: modal.data.releaseId, categoryId: modal.data.categoryData.id, paperTypeData, stamps: stampsData },
                           title: paperTypeData.name
                         }])
                       } finally {
@@ -669,10 +669,10 @@ export function ListCatalogContent() {
                     onPaperTypeClick={async (paperTypeData: PaperTypeData) => {
                       setLoadingModalContent(true);
                       try {
-                        const stampsData = await getStampsForPaperType(modal.data.categoryData.releaseId.split('-')[0], parseInt(modal.data.categoryData.releaseId.split('-')[1]), modal.data.categoryData.releaseId, modal.data.categoryData.id, paperTypeData.code);
+                        const stampsData = await getStampsForPaperType(modal.data.countryId, modal.data.year, modal.data.releaseId, modal.data.categoryData.id, paperTypeData.code);
                         setModalStack(prev => [...prev, {
                           type: 'paperType',
-                          data: { paperTypeData, stamps: stampsData },
+                          data: { countryId: modal.data.countryId, year: modal.data.year, releaseId: modal.data.releaseId, categoryId: modal.data.categoryData.id, paperTypeData, stamps: stampsData },
                           title: paperTypeData.name
                         }])
                       } finally {

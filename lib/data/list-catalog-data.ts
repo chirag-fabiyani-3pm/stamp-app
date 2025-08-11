@@ -140,7 +140,7 @@ export const getYearsForCountry = async (countryCode: string): Promise<YearData[
     return acc;
   }, {});
 
-  return Object.values(groupedByYear).sort((a: any, b: any) => a.year - b.year);
+  return( Object.values(groupedByYear).sort((a: any, b: any) => a.year - b.year) as YearData[]);
 }
 
 export const getReleasesForYear = async (countryCode: string, year: number): Promise<ReleaseData[]> => {
@@ -148,7 +148,7 @@ export const getReleasesForYear = async (countryCode: string, year: number): Pro
 
   const yearStamps = apiStampData.filter(s => s.country === countryCode && s.issueYear === year);
   const groupedByRelease = yearStamps.reduce((acc: any, stamp: any) => {
-    const key = stamp.releaseId || 'unknown_release';
+    const key = stamp.releaseName || 'unknown_release';
     if (!acc[key]) {
       acc[key] = {
         id: key,
@@ -172,9 +172,9 @@ export const getReleasesForYear = async (countryCode: string, year: number): Pro
 export const getCategoriesForRelease = async (countryCode: string, year: number, releaseId: string): Promise<CategoryData[]> => {
   await new Promise(resolve => setTimeout(resolve, 300)) // Simulate API delay
 
-  const releaseStamps = apiStampData.filter(s => s.country === countryCode && s.issueYear === year && (s.releaseId === releaseId || (!s.releaseId && releaseId === 'unknown_release')));
+  const releaseStamps = apiStampData.filter(s => s.country === countryCode && s.issueYear === year && (s.releaseName === releaseId || (!s.releaseName && releaseId === 'unknown_release')));
   const groupedByCategory = releaseStamps.reduce((acc: any, stamp: any) => {
-    const key = stamp.categoryId || 'unknown_category';
+    const key = stamp.categoryName || 'unknown_category';
     if (!acc[key]) {
       acc[key] = {
         id: key,
@@ -200,12 +200,14 @@ export const getPaperTypesForCategory = async (countryCode: string, year: number
   const categoryStamps = apiStampData.filter(s => 
     s.country === countryCode && 
     s.issueYear === year && 
-    (s.releaseId === releaseId || (!s.releaseId && releaseId === 'unknown_release')) && 
-    (s.categoryId === categoryId || (!s.categoryId && categoryId === 'unknown_category'))
+    (s.releaseName === releaseId || (!s.releaseName && releaseId === 'unknown_release')) && 
+    (s.categoryName === categoryId || (!s.categoryName && categoryId === 'unknown_category'))
   );
+
+  console.log(`Found ${categoryStamps.length} stamps for category ${categoryStamps}`)
   
   const groupedByPaperType = categoryStamps.reduce((acc: any, stamp: any) => {
-    const key = stamp.paperTypeCode || 'unknown_paper_type';
+    const key = stamp.paperTypeName || 'unknown_paper_type';
     if (!acc[key]) {
       acc[key] = {
         id: key,
@@ -229,12 +231,20 @@ export const getStampsForPaperType = async (countryCode: string, year: number, r
   const stamps = apiStampData.filter(s =>
     s.country === countryCode &&
     s.issueYear === year &&
-    (s.releaseId === releaseId || (!s.releaseId && releaseId === 'unknown_release')) &&
-    (s.categoryId === categoryId || (!s.categoryId && categoryId === 'unknown_category')) &&
-    (s.paperTypeCode === paperTypeCode || (!s.paperTypeCode && paperTypeCode === 'unknown_paper_type'))
+    (s.releaseName === releaseId || (!s.releaseName && releaseId === 'unknown_release')) &&
+    (s.categoryName === categoryId || (!s.categoryName && categoryId === 'unknown_category')) &&
+    (s.paperTypeName === paperTypeCode || (!s.paperTypeName && paperTypeCode === 'unknown_paper_type'))
   ).map(convertApiStampToStampData);
 
-  return stamps;
+  const stampIds = stamps.map(s => s.stampId);
+  const stampInstances = apiStampData.filter(s => stampIds.includes(s.ParentStampId)).map(convertApiStampToStampData);
+
+  stamps.forEach(stamp => {
+    const instances = stampInstances.filter(s => s.parentStampId === stamp.stampId);
+    stamp.instances = instances as never;
+  });
+
+  return stamps as unknown as StampData[];
 }
 
 export const getStampsForStampGroup = async (stampGroupId: string, typeId: string, seriesName: string): Promise<StampData[]> => {
@@ -256,7 +266,7 @@ export const getStampsForStampGroup = async (stampGroupId: string, typeId: strin
     stamp.instances = instances as never;
   })
 
-  return stamps;
+  return stamps as unknown as StampData[];
 }
 
 export const parseStampDetails = (stampDetailsJson: string): ParsedStampDetails => {
@@ -281,7 +291,7 @@ export const parseStampDetails = (stampDetailsJson: string): ParsedStampDetails 
       condition: details.conditionNotes || 'Unknown',
       usage: 'Unknown', // No direct mapping in apiStampData
       postalHistoryType: details.postalHistoryType,
-      errorType: details.errorType,
+      errorType: details.errorType as string || 'None',
       specialNotes: details.specialNotes,
       rarity: details.rarityRating,
       varieties: details.varietyType ? details.varietyType.split(',').map((v: string) => v.trim()) : [],

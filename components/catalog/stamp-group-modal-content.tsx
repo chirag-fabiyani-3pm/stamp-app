@@ -106,8 +106,9 @@ export function StampGroupModalContent({
                       }}
                     />
                   </TableCell>
-                  <TableCell className="py-3 px-4 font-medium text-black dark:text-gray-100 hidden sm:table-cell">
-                    {stamp.denominationValue}{stamp.denominationSymbol} {stamp.color}
+                  <TableCell className="py-3 px-4 font-medium text-black dark:text-gray-100 flex flex-col gap-2">
+                    <span className="font-medium">{stamp.name}</span>
+                    <span className="text-gray-500 dark:text-gray-400"> {(stamp as any).description}</span>
                   </TableCell>
                   <TableCell className="py-3 px-4 text-center hidden sm:table-cell">
                     <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
@@ -156,12 +157,12 @@ export function StampGroupModalContent({
                   <TableRow 
                     key={instance.id}
                     className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
-                    onClick={() => onStampClick(stamp)}
+                    onClick={() => onStampClick(instance as unknown as StampData)}
                   >
                     <TableCell className="py-2 px-4 text-xs text-gray-600 dark:text-gray-400 hidden sm:table-cell"></TableCell>
-                    <TableCell className="py-2 px-4 text-xs text-gray-700 dark:text-gray-300 pl-8 hidden sm:table-cell">
-                      {instance.name && `${instance.name}. `}
-                      {instance.description}
+                    <TableCell className="py-2 px-4 text-xs text-gray-700 dark:text-gray-300 pl-8 flex flex-col gap-2">
+                      <span>{(instance as any).name && `${(instance as any).name}`}</span>
+                      <span className="text-gray-500 dark:text-gray-400"> {instance.description}</span>
                     </TableCell>
                     <TableCell className="py-2 px-4 text-center text-xs hidden sm:table-cell">
                       {instance.mintValue ? (

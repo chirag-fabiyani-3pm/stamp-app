@@ -115,8 +115,11 @@ export function PaperTypeModalContent({
                       <td className="py-3 px-4 font-medium text-black dark:text-gray-100">
                         {index + 1}
                       </td>
-                      <td className="py-3 px-4 text-black dark:text-gray-100">
-                        {stamp.denominationValue}{stamp.denominationSymbol} {stamp.color}
+                      <td className="py-3 px-4 text-black dark:text-gray-100 flex flex-col gap-2">
+                        <span className="font-medium">{stamp.name}</span>
+                        <span className="text-gray-600 dark:text-gray-400 block">
+                          {(stamp as any).description}
+                        </span>
                       </td>
                       <td className="py-3 px-4 text-center">
                         <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
@@ -135,11 +138,16 @@ export function PaperTypeModalContent({
                       <tr 
                         key={instance.id}
                         className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
-                        onClick={() => onStampClick(stamp)}
+                        onClick={() => onStampClick(instance as unknown as StampData)}
                       >
                         <td className="py-2 px-4 text-xs text-gray-600 dark:text-gray-400"></td>
-                        <td className="py-2 px-4 text-xs text-gray-700 dark:text-gray-300 pl-8">
-                          {instance.code && `${instance.code}. `}{instance.description}
+                        <td className="py-2 px-4 text-xs text-gray-700 dark:text-gray-300 pl-8 flex flex-col gap-2">
+                          <span className="font-medium text-gray-900 dark:text-gray-100">
+                            {(instance as any).name}
+                          </span>
+                          <span>
+                            {instance.description}
+                          </span>
                         </td>
                         <td className="py-2 px-4 text-center text-xs">
                           {instance.mintValue ? (

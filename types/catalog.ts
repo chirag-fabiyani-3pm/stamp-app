@@ -223,6 +223,7 @@ export interface ParsedStampDetails {
   demandLevel?: string
   specialNotes?: string
   bibliography?: string
+  errorType?: string
 }
 
 export interface StampDetailData extends StampData {
