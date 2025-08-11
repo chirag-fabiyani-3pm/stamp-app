@@ -174,7 +174,8 @@ export interface NavigationState {
   level: number
 }
 
-export type GroupingField = 'seriesName' | 'issueYear' | 'country' | 'color' | 'paperType' | 'denominationValue' | 'publisher'
+// GroupingField is intentionally broad to allow grouping by any available or computed field
+export type GroupingField = string
 
 export interface StampInstance {
   id: string

@@ -26,6 +26,7 @@ import {
     getStampDetails, 
     convertApiStampToStampData
 } from "@/lib/data/catalog-data"
+import { checkIndexedDBEmpty, saveStampsToIndexedDB } from "@/lib/data/investigate-search-db"
 import PinnedStampCard from "@/components/catalog/pinned-stamp-card"
 import ModalContent from "@/components/catalog/modal-content"
 import { VisualCatalogContent } from "@/components/catalog/visual-catalog-content"
@@ -116,6 +117,22 @@ export function ModernCatalogContent() {
             itemTypeCode: remainingParts[4] || ''
         }
     }
+
+    // Ensure IndexedDB (StampCatalogDB) exists and is populated at app start
+    useEffect(() => {
+        const ensureStampCatalogDB = async () => {
+            try {
+                const isEmpty = await checkIndexedDBEmpty()
+                if (isEmpty) {
+                    const seeded = apiStampData.map(convertApiStampToStampData)
+                    await saveStampsToIndexedDB(seeded)
+                }
+            } catch (e) {
+                console.warn('StampCatalogDB init skipped:', e)
+            }
+        }
+        ensureStampCatalogDB()
+    }, [])
 
     // Initialize component with API data
     useEffect(() => {
