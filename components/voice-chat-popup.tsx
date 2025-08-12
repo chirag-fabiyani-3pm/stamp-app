@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { BACKEND_URL } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { AudioLines, Loader2, Mic, MicIcon, MicOff, Settings, Volume2, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
@@ -17,26 +18,39 @@ declare global {
 interface VoiceChatPopupProps {
     isOpen: boolean
     onClose: () => void
-    onSendMessage: (message: string) => Promise<string>
 }
 
 interface VoiceOption {
     id: string
     name: string
-    voice: SpeechSynthesisVoice | null
+    description: string
+}
+
+interface StampDetails {
+    type: 'single_stamp' | 'multiple_stamps'
+    stamp?: any
+    stamps?: any[]
+    imageUrl?: string
+    count?: number
+}
+
+interface ConversationMessage {
+    role: 'user' | 'assistant'
+    content: string
+    stampDetails?: StampDetails
+    source?: 'stamp_knowledge_base' | 'general_knowledge'
 }
 
 export function VoiceChatPopup({
     isOpen,
-    onClose,
-    onSendMessage
+    onClose
 }: VoiceChatPopupProps) {
     const [isListening, setIsListening] = useState(false)
     const [isSpeaking, setIsSpeaking] = useState(false)
     const [isProcessing, setIsProcessing] = useState(false)
     const [isMicEnabled, setIsMicEnabled] = useState(true)
     const [transcript, setTranscript] = useState('')
-    const [conversation, setConversation] = useState<{ role: 'user' | 'assistant'; content: string }[]>([])
+    const [conversation, setConversation] = useState<ConversationMessage[]>([])
     const [isSupported, setIsSupported] = useState(false)
     const [showVoiceSettings, setShowVoiceSettings] = useState(false)
     const [selectedVoice, setSelectedVoice] = useState<VoiceOption | null>(null)
@@ -45,71 +59,49 @@ export function VoiceChatPopup({
     // Use ref to persist selected voice across renders
     const selectedVoiceRef = useRef<VoiceOption | null>(null)
 
+    // Generate a consistent session ID for the entire conversation
+    const sessionIdRef = useRef<string>(`voice-chat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
+
     const recognitionRef = useRef<any>(null)
     const synthesisRef = useRef<any>(null)
+    const abortControllerRef = useRef<AbortController | null>(null)
 
     // Simple function to get default voice
-    const getDefaultVoice = (): SpeechSynthesisVoice | null => {
-        const voices = window.speechSynthesis.getVoices()
-        return voices.find(voice => voice.lang.startsWith('en')) || voices[0] || null
+    const getDefaultVoice = (): string => {
+        return 'alloy' // Default OpenAI voice
     }
 
-    // Load voices when component mounts
+    // Load OpenAI voices when component mounts
     useEffect(() => {
-        const loadVoices = () => {
-            console.log('🎤 Loading voices...')
+        const loadOpenAIVoices = async () => {
+            console.log('🎤 Loading OpenAI voices...')
 
-            // Force refresh voices
-            window.speechSynthesis.getVoices()
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/voice-synthesis`)
+                if (response.ok) {
+                    const data = await response.json()
+                    const voiceOptions: VoiceOption[] = data.voices || []
 
-            // Wait a bit for voices to load
-            setTimeout(() => {
-                const voices = window.speechSynthesis.getVoices()
-                console.log('🎤 Total system voices available:', voices.length)
-                console.log('🎤 All system voices:', voices.map(v => v.name))
+                    setAvailableVoices(voiceOptions)
+                    console.log('🎤 OpenAI voices loaded:', voiceOptions.map(v => `${v.name} - ${v.description}`))
 
-                // Filter English voices
-                const englishVoices = voices.filter(voice =>
-                    voice.lang.startsWith('en') && voice.default === false
-                )
-                console.log('🎤 English voices found:', englishVoices.length)
-                console.log('🎤 English voice names:', englishVoices.map(v => v.name))
-
-                // Take first 4 English voices
-                const selectedVoices = englishVoices.slice(0, 4)
-
-                const voiceOptions: VoiceOption[] = selectedVoices.map((voice, index) => ({
-                    id: `voice-${index}`,
-                    name: `Voice ${index + 1}`,
-                    voice: voice
-                }))
-
-                setAvailableVoices(voiceOptions)
-                console.log('🎤 Available voice options:', voiceOptions.map(v => `${v.name} -> ${v.voice?.name || 'unknown'}`))
-
-                // Set default voice if none selected
-                if (!selectedVoice && voiceOptions.length > 0) {
-                    setSelectedVoice(voiceOptions[0])
-                    console.log('🎤 Set default voice:', voiceOptions[0].name, '->', voiceOptions[0].voice?.name || 'unknown')
+                    // Set default voice if none selected
+                    if (!selectedVoice && voiceOptions.length > 0) {
+                        const defaultVoice = voiceOptions[0]
+                        setSelectedVoice(defaultVoice)
+                        selectedVoiceRef.current = defaultVoice
+                        console.log('🎤 Set default OpenAI voice:', defaultVoice.name)
+                    }
+                } else {
+                    console.error('🎤 Failed to load OpenAI voices')
                 }
-            }, 100)
+            } catch (error) {
+                console.error('🎤 Error loading OpenAI voices:', error)
+            }
         }
 
-        // Try loading voices multiple times
-        loadVoices()
-
-        // Also try after a longer delay
-        setTimeout(loadVoices, 500)
-        setTimeout(loadVoices, 1000)
-
-        // Listen for voices changed event
-        window.speechSynthesis.onvoiceschanged = loadVoices
-
-        // Cleanup
-        return () => {
-            window.speechSynthesis.onvoiceschanged = null
-        }
-    }, [])
+        loadOpenAIVoices()
+    }, []) // Remove selectedVoice dependency to prevent infinite loop
 
     // Ensure selectedVoice is set when availableVoices changes
     useEffect(() => {
@@ -174,6 +166,12 @@ export function VoiceChatPopup({
 
     // Cleanup function to stop all voice activities
     const cleanupVoiceActivities = () => {
+        // Abort ongoing API request
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort()
+            abortControllerRef.current = null
+        }
+
         // Stop speech recognition
         if (recognitionRef.current) {
             try {
@@ -244,6 +242,12 @@ export function VoiceChatPopup({
     }
 
     const interruptAI = () => {
+        // Abort ongoing API request
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort()
+            abortControllerRef.current = null
+        }
+
         if (synthesisRef.current) {
             try {
                 synthesisRef.current.cancel()
@@ -252,6 +256,8 @@ export function VoiceChatPopup({
             }
             setIsSpeaking(false)
         }
+
+        setIsProcessing(false)
         // Don't auto-start listening - user must click microphone button
     }
 
@@ -269,34 +275,77 @@ export function VoiceChatPopup({
         setIsProcessing(true)
 
         try {
-            console.log('🎤 Voice popup: Calling onSendMessage with:', messageText)
-            // Add a simple alert to test if console is working
-            if (typeof window !== 'undefined') {
-                console.log('🎤 Browser console test - this should show up')
+            console.log('🎤 Making conversational voice chat request...')
+
+            // Create abort controller for this request
+            const controller = new AbortController()
+            abortControllerRef.current = controller
+
+            // Prepare conversation history for the API
+            const conversationHistory = conversation.map(msg => ({
+                role: msg.role,
+                content: msg.content
+            }))
+
+            const response = await fetch(`${BACKEND_URL}/api/voice-chat`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: messageText,
+                    conversationHistory: conversationHistory,
+                    sessionId: sessionIdRef.current // Use consistent session ID
+                }),
+                signal: controller.signal
+            })
+
+            if (!response.ok) {
+                throw new Error('Failed to get conversational response')
             }
-            const apiResponse = await onSendMessage(messageText)
-            console.log('🎤 Voice popup: Received response length:', apiResponse.length)
-            console.log('🎤 Voice popup: Response preview:', apiResponse.substring(0, 100) + '...')
 
-            // For voice chat, the response is already conversational plain text
-            const voiceResponse = apiResponse
+            // Handle JSON response
+            const data = await response.json()
 
-            // Clean response for display and add to conversation
-            const cleanResponse = cleanDisplayResponse(apiResponse)
-            setConversation(prev => [...prev, {
+            if (data.error) {
+                throw new Error(data.error)
+            }
+
+            // Get the conversational response
+            const voiceResponse = data.response || "I'm sorry, I didn't catch that. Could you repeat it?"
+
+            console.log('🎤 Conversational response received:', voiceResponse.length, 'characters')
+            console.log('🎤 Response source:', data.source)
+            console.log('🎤 Has stamps:', data.hasStamps)
+
+            // Add assistant response to conversation with stamp details if available
+            const assistantMessage: ConversationMessage = {
                 role: 'assistant',
-                content: cleanResponse
-            }])
+                content: voiceResponse,
+                source: data.source,
+                stampDetails: data.stampDetails
+            }
+
+            setConversation(prev => [...prev, assistantMessage])
 
             // Debug: Check selected voice before speaking
-            console.log('🎤 About to speak with voice:', selectedVoice?.name, '->', selectedVoice?.voice?.name)
+            console.log('🎤 About to speak with OpenAI voice:', selectedVoice?.name)
 
-            // Speak the response directly (it's already conversational)
+            // Speak the conversational response
             speakResponse(voiceResponse)
         } catch (error) {
             console.error('Error sending voice message:', error)
-            setConversation(prev => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' }])
+
+            // Check if the request was aborted
+            if (error instanceof Error && error.name === 'AbortError') {
+                console.log('🛑 Voice chat request was aborted by user')
+                // Don't add error message for aborted requests
+            } else {
+                setConversation(prev => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' }])
+            }
             setIsProcessing(false)
+        } finally {
+            abortControllerRef.current = null // Clear the abort controller
         }
     }
 
@@ -305,113 +354,65 @@ export function VoiceChatPopup({
         return true
     }
 
-    const speakResponse = (text: string) => {
+    const speakResponse = async (text: string) => {
         console.log('🎤 speakResponse called with text:', text.substring(0, 50) + '...')
-        console.log('🎤 selectedVoice state:', selectedVoice)
-        console.log('🎤 selectedVoiceRef current:', selectedVoiceRef.current)
-        console.log('🎤 availableVoices:', availableVoices)
 
-        if (!synthesisRef.current) {
-            console.log('❌ synthesisRef is null')
-            return
-        }
-
-        // If no voices are loaded, try to load them first
-        if (availableVoices.length === 0) {
-            console.log('🎤 No voices loaded, attempting to load voices...')
-            const voices = window.speechSynthesis.getVoices()
-            console.log('🎤 Immediate voices check:', voices.length, 'voices found')
-
-            if (voices.length > 0) {
-                const englishVoices = voices.filter(voice =>
-                    voice.lang.startsWith('en') && voice.default === false
-                )
-                const voiceOptions: VoiceOption[] = englishVoices.slice(0, 4).map((voice, index) => ({
-                    id: `voice-${index}`,
-                    name: `Voice ${index + 1}`,
-                    voice: voice
-                }))
-                setAvailableVoices(voiceOptions)
-                console.log('🎤 Loaded voices on demand:', voiceOptions.length, 'voices')
-            }
-        }
-
+        // Start speaking immediately without delay
         setIsSpeaking(true)
         setIsProcessing(false)
 
-        // Stop any current speech
-        window.speechSynthesis.cancel()
-
-        // Create utterance
-        const utterance = new SpeechSynthesisUtterance(text)
-        console.log('🎤 Created utterance')
-
-        // Enhanced voice application with fallback to first available voice
-        let voiceToUse = selectedVoiceRef.current || selectedVoice
-
-        // If no voice is selected, use the first available voice
-        if (!voiceToUse && availableVoices.length > 0) {
-            voiceToUse = availableVoices[0]
-            console.log('🎤 No voice selected, using first available:', voiceToUse.name, '->', voiceToUse.voice?.name)
-        }
-
-        if (voiceToUse && voiceToUse.voice) {
-            console.log('🎤 Attempting to apply voice:', voiceToUse.name, '->', voiceToUse.voice.name)
-
-            // Method 1: Direct assignment
-            utterance.voice = voiceToUse.voice
-
-            // Method 2: Force refresh voices and try again
-            window.speechSynthesis.getVoices()
-
-            // Method 3: Try to find the voice by name
-            const voices = window.speechSynthesis.getVoices()
-            const voiceByName = voices.find(v => v.name === voiceToUse.voice?.name)
-            if (voiceByName) {
-                utterance.voice = voiceByName
-                console.log('✅ Found voice by name:', voiceByName.name)
-            }
-
-            // Method 4: Try to find voice by index (if availableVoices has the same index)
-            const voiceIndex = availableVoices.findIndex(v => v.id === voiceToUse.id)
-            if (voiceIndex >= 0 && voices[voiceIndex]) {
-                utterance.voice = voices[voiceIndex]
-                console.log('✅ Found voice by index:', voices[voiceIndex].name)
-            }
-
-            console.log('✅ Final voice applied:', utterance.voice?.name)
-        } else {
-            console.log('❌ No voice available, using system default')
-        }
-
-        // Set basic properties
-        utterance.rate = 0.9
-        utterance.pitch = 1.0
-        utterance.volume = 0.8
-
-        // Event handlers
-        utterance.onstart = () => {
-            console.log('🎤 Speech started with voice:', utterance.voice?.name || 'default')
-            console.log('🎤 Actual voice being used:', utterance.voice)
-        }
-
-        utterance.onend = () => {
-            console.log('🎤 Speech ended')
-            setIsSpeaking(false)
-        }
-
-        utterance.onerror = (event) => {
-            console.log('❌ Speech error:', event)
-            setIsSpeaking(false)
-        }
-
-        // Speak immediately
         try {
-            window.speechSynthesis.speak(utterance)
-            console.log('🎤 Speech synthesis started')
+            // Use OpenAI voice synthesis with selected voice
+            const voiceToUse = selectedVoice?.id || selectedVoiceRef.current?.id || 'alloy'
+            console.log('🎤 Using voice:', voiceToUse, 'for text:', text.substring(0, 30) + '...')
+
+            const response = await fetch(`${BACKEND_URL}/api/voice-synthesis`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    text: text,
+                    voice: voiceToUse
+                }),
+            })
+
+            if (!response.ok) {
+                throw new Error('Failed to synthesize speech')
+            }
+
+            // Get audio blob
+            const audioBlob = await response.blob()
+            const audioUrl = URL.createObjectURL(audioBlob)
+
+            // Create audio element and play
+            const audio = new Audio(audioUrl)
+
+            audio.onended = () => {
+                console.log('🎤 OpenAI speech ended')
+                setIsSpeaking(false)
+                URL.revokeObjectURL(audioUrl) // Clean up
+            }
+
+            audio.onerror = (error) => {
+                console.error('🎤 OpenAI speech error:', error)
+                setIsSpeaking(false)
+                URL.revokeObjectURL(audioUrl) // Clean up
+            }
+
+            console.log('🎤 Playing OpenAI voice synthesis...')
+            await audio.play()
+
         } catch (error) {
-            console.log('❌ Error starting speech:', error)
+            console.error('🎤 Voice synthesis error:', error)
             setIsSpeaking(false)
+
+            // Fallback to browser speech synthesis
+            console.log('🎤 Falling back to browser speech synthesis...')
+            const utterance = new SpeechSynthesisUtterance(text)
+            utterance.onend = () => setIsSpeaking(false)
+            utterance.onerror = () => setIsSpeaking(false)
+            window.speechSynthesis.speak(utterance)
         }
     }
 
@@ -423,6 +424,9 @@ export function VoiceChatPopup({
     const clearConversation = () => {
         setConversation([])
         setTranscript('')
+        // Generate new session ID for fresh conversation context
+        sessionIdRef.current = `voice-chat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        console.log('🎤 New session ID generated for fresh conversation:', sessionIdRef.current)
     }
 
     const testVoice = () => {
@@ -514,6 +518,107 @@ export function VoiceChatPopup({
         )
     }
 
+    // Render stamp image component
+    const renderStampImage = (stampDetails: StampDetails) => {
+        if (stampDetails.type === 'single_stamp' && stampDetails.imageUrl) {
+            return (
+                <div className="mt-3 p-3 bg-gray-800 rounded-lg border border-gray-700">
+                    <div className="flex items-start gap-3">
+                        <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-700 flex-shrink-0">
+                            <img
+                                src={stampDetails.imageUrl}
+                                alt="Stamp"
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    const target = e.target as HTMLImageElement
+                                    target.src = '/images/stamps/no-image-available.png'
+                                }}
+                            />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm text-gray-200 font-medium mb-1">
+                                {stampDetails.stamp?.name || stampDetails.stamp?.title || 'Stamp'}
+                            </p>
+                            <div className="space-y-1 text-xs text-gray-400">
+                                <div className="flex items-center gap-2">
+                                    <span className="font-medium">Country:</span>
+                                    <span>{stampDetails.stamp?.country || 'Unknown'}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="font-medium">Year:</span>
+                                    <span>{stampDetails.stamp?.issueYear || 'Unknown'}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="font-medium">Color:</span>
+                                    <span>{stampDetails.stamp?.color || 'Unknown'}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="font-medium">Denomination:</span>
+                                    <span>
+                                        {stampDetails.stamp?.denominationValue || ''}
+                                        {stampDetails.stamp?.denominationSymbol || ''}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )
+        } else if (stampDetails.type === 'multiple_stamps' && stampDetails.stamps) {
+            return (
+                <div className="mt-3 p-3 bg-gray-800 rounded-lg border border-gray-700">
+                    <p className="text-xs text-gray-400 mb-3">
+                        Found {stampDetails.count} stamps
+                    </p>
+                    <div className="space-y-3">
+                        {stampDetails.stamps.slice(0, 3).map((stamp, index) => (
+                            <div key={index} className="flex items-start gap-3">
+                                <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-700 flex-shrink-0">
+                                    <img
+                                        src={stamp.image || '/images/stamps/no-image-available.png'}
+                                        alt={stamp.name || stamp.title}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            const target = e.target as HTMLImageElement
+                                            target.src = '/images/stamps/no-image-available.png'
+                                        }}
+                                    />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs text-gray-200 font-medium mb-1">
+                                        {stamp.name || stamp.title}
+                                    </p>
+                                    <div className="space-y-0.5 text-xs text-gray-400">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-medium">Country:</span>
+                                            <span>{stamp.country || 'Unknown'}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-medium">Year:</span>
+                                            <span>{stamp.issueYear || 'Unknown'}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-medium">Color:</span>
+                                            <span>{stamp.color || 'Unknown'}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-medium">Denomination:</span>
+                                            <span>
+                                                {stamp.denominationValue || ''}
+                                                {stamp.denominationSymbol || ''}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )
+        }
+        return null
+    }
+
     return (
         <>
             <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -538,16 +643,24 @@ export function VoiceChatPopup({
                         {/* Conversation History */}
                         <div className="flex-1 overflow-y-auto p-4 space-y-3">
                             {conversation.map((message, index) => (
-                                <div
-                                    key={index}
-                                    className={cn(
-                                        "p-3 rounded-lg text-sm max-w-[80%]",
-                                        message.role === 'user'
-                                            ? "bg-orange-600 text-white ml-auto"
-                                            : "bg-gray-700 text-white"
+                                <div key={index}>
+                                    <div
+                                        className={cn(
+                                            "p-3 rounded-lg text-sm max-w-[80%]",
+                                            message.role === 'user'
+                                                ? "bg-orange-600 text-white ml-auto"
+                                                : "bg-gray-700 text-white"
+                                        )}
+                                    >
+                                        {message.content}
+                                    </div>
+
+                                    {/* Show stamp details if available */}
+                                    {message.role === 'assistant' && message.stampDetails && (
+                                        <div className="mt-2 ml-0">
+                                            {renderStampImage(message.stampDetails)}
+                                        </div>
                                     )}
-                                >
-                                    {message.content}
                                 </div>
                             ))}
                         </div>
@@ -595,7 +708,27 @@ export function VoiceChatPopup({
                                         <div className="w-1 h-6 bg-yellow-400 rounded-full animate-pulse" style={{ animationDelay: '0.3s' }}></div>
                                         <div className="w-1 h-4 bg-yellow-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
                                     </div>
-                                    <p className="text-sm text-yellow-400 font-medium">Processing your request...</p>
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-sm text-yellow-400 font-medium">Processing your request...</p>
+                                        <Button
+                                            onClick={() => {
+                                                // Abort ongoing API request
+                                                if (abortControllerRef.current) {
+                                                    abortControllerRef.current.abort()
+                                                    abortControllerRef.current = null
+                                                }
+                                                setIsProcessing(false)
+                                                setIsSpeaking(false)
+                                                // Stop any ongoing speech
+                                                window.speechSynthesis.cancel()
+                                            }}
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-6 w-6 p-0 text-yellow-400 hover:text-red-400"
+                                        >
+                                            <div className="h-2.5 w-2.5 bg-yellow-400 rounded-sm" />
+                                        </Button>
+                                    </div>
                                 </div>
                             )}
 
@@ -720,9 +853,11 @@ export function VoiceChatPopup({
                                     onClick={() => {
                                         setSelectedVoice(voiceOption)
                                         selectedVoiceRef.current = voiceOption
-                                        console.log('🎤 Voice selected and set:', voiceOption.name, '->', voiceOption.voice?.name)
+                                        console.log('🎤 OpenAI voice selected:', voiceOption.name)
                                         console.log('🎤 Full voiceOption:', voiceOption)
                                         console.log('🎤 Ref updated:', selectedVoiceRef.current?.name)
+                                        // Close settings modal after selection
+                                        setShowVoiceSettings(false)
                                     }}
                                 >
                                     <div className="flex-1">
@@ -730,22 +865,16 @@ export function VoiceChatPopup({
                                             {voiceOption.name}
                                         </p>
                                         <p className="text-xs text-gray-400">
-                                            {voiceOption.voice?.name || 'No voice available'}
+                                            {voiceOption.description}
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Button
                                             onClick={(e) => {
                                                 e.stopPropagation()
-                                                if (voiceOption.voice) {
-                                                    const utterance = new SpeechSynthesisUtterance("Hello, this is a test.")
-                                                    utterance.voice = voiceOption.voice
-                                                    utterance.rate = 0.9
-                                                    utterance.pitch = 1.0
-                                                    utterance.volume = 0.8
-                                                    window.speechSynthesis.speak(utterance)
-                                                    console.log('🧪 Testing voice:', voiceOption.name)
-                                                }
+                                                // Test OpenAI voice synthesis
+                                                speakResponse("Hello, this is a test of the voice.")
+                                                console.log('🧪 Testing OpenAI voice:', voiceOption.name)
                                             }}
                                             variant="ghost"
                                             size="sm"

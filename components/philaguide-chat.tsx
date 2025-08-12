@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { BACKEND_URL } from '@/lib/constants'
+import { BACKEND_URL, FRONTEND_URL } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import {
     AudioLines,
@@ -22,6 +22,8 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import React, { useEffect, useRef, useState } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { useChatContext } from './chat-provider'
 import { ImageSearch } from './image-search'
 import { VoiceChatPopup } from './voice-chat-popup'
@@ -93,6 +95,39 @@ interface StampPreviewDisplayProps {
             color: string
         }>
     }
+}
+
+// Markdown message component for clean, organized formatting
+function MarkdownMessage({ content }: { content: string }) {
+    return (
+        <div className="max-w-none">
+            <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                    // Clean, minimal styling for better readability
+                    h1: ({ children }) => <h1 className="text-lg font-semibold mb-4 text-foreground border-b border-border pb-2">{children}</h1>,
+                    h2: ({ children }) => <h2 className="text-base font-medium mb-3 text-foreground mt-4">{children}</h2>,
+                    h3: ({ children }) => <h3 className="text-sm font-medium mb-2 text-foreground/90 mt-3">{children}</h3>,
+                    p: ({ children }) => <p className="mb-3 leading-relaxed text-sm text-foreground/90">{children}</p>,
+                    ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-1 ml-3 text-sm">{children}</ul>,
+                    ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-1 ml-3 text-sm">{children}</ol>,
+                    li: ({ children }) => <li className="text-sm leading-relaxed text-foreground/90">{children}</li>,
+                    strong: ({ children }) => <strong className="font-medium text-foreground">{children}</strong>,
+                    em: ({ children }) => <em className="italic text-foreground/80">{children}</em>,
+                    code: ({ children }) => <code className="bg-muted/50 px-1.5 py-0.5 rounded text-xs font-mono border border-border">{children}</code>,
+                    pre: ({ children }) => <pre className="bg-muted/50 p-3 rounded-md text-xs overflow-x-auto border border-border my-3">{children}</pre>,
+                    blockquote: ({ children }) => <blockquote className="border-l-3 border-primary/20 pl-3 italic text-muted-foreground bg-muted/20 py-2 rounded-r-md my-3">{children}</blockquote>,
+                    a: ({ href, children }) => <a href={href} className="text-primary hover:underline hover:text-primary/80 transition-colors" target="_blank" rel="noopener noreferrer">{children}</a>,
+                    hr: () => <hr className="border-border my-4" />,
+                    table: ({ children }) => <div className="overflow-x-auto my-3"><table className="min-w-full border border-border rounded-md">{children}</table></div>,
+                    th: ({ children }) => <th className="border border-border px-3 py-2 text-left font-semibold bg-muted/50">{children}</th>,
+                    td: ({ children }) => <td className="border border-border px-3 py-2 text-sm">{children}</td>,
+                }}
+            >
+                {content}
+            </ReactMarkdown>
+        </div>
+    )
 }
 
 function StampPreviewDisplay({ preview }: StampPreviewDisplayProps) {
@@ -173,7 +208,7 @@ function StampCardDisplay({ data }: StampCardDisplayProps) {
                     <Button
                         variant="default"
                         size="sm"
-                        onClick={() => window.open(`https://stamp-app-sand.vercel.app/catalog-2/${data.id}`, '_blank')}
+                        onClick={() => window.open(`${FRONTEND_URL}/stamp-details/${data.id}`, '_blank')}
                         className="h-8 px-4 text-xs rounded-lg shadow-sm"
                     >
                         <ExternalLink className="w-3.5 h-3.5 mr-1" />
@@ -223,20 +258,28 @@ function StampCarouselDisplay({ data }: StampCarouselDisplayProps) {
             </CardHeader>
             <CardContent className="pt-0 space-y-3">
                 <div>
-                    <h4 className="font-medium text-xs text-foreground mb-1">Summary</h4>
+                    <h4 className="font-medium text-xs text-foreground mb-1">Overview</h4>
                     <p className="text-xs text-muted-foreground leading-relaxed break-words">{currentItem.summary}</p>
                 </div>
                 <div>
-                    <h4 className="font-medium text-xs text-foreground mb-1">Market Value</h4>
-                    <p className="text-xs text-muted-foreground break-words">{currentItem.marketValue}</p>
-                </div>
-                <div>
-                    <h4 className="font-medium text-xs text-foreground mb-1">Quick Facts</h4>
+                    <h4 className="font-medium text-xs text-foreground mb-1">Details</h4>
                     <div className="space-y-1">
+                        <div className="text-xs text-muted-foreground break-words">• Market Value: {currentItem.marketValue}</div>
                         {currentItem.quickFacts.map((fact, index) => (
                             <div key={index} className="text-xs text-muted-foreground break-words">• {fact}</div>
                         ))}
                     </div>
+                </div>
+                <div className="flex gap-2 pt-2">
+                    <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => window.open(`${FRONTEND_URL}/stamp-details/${currentItem.id}`, '_blank')}
+                        className="h-8 px-4 text-xs rounded-lg shadow-sm"
+                    >
+                        <ExternalLink className="w-3.5 h-3.5 mr-1" />
+                        View Details
+                    </Button>
                 </div>
                 <div className="flex gap-2 pt-2">
                     <Button
@@ -274,6 +317,8 @@ export function PhilaGuideChat() {
     const [input, setInput] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const [streamingStatus, setStreamingStatus] = useState<string>('')
+    const [abortController, setAbortController] = useState<AbortController | null>(null)
+    const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`)
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
     // Voice interaction
@@ -299,6 +344,16 @@ export function PhilaGuideChat() {
         scrollToBottom()
     }, [messages])
 
+    // Cleanup effect to handle component unmounting
+    useEffect(() => {
+        return () => {
+            // Clean up any ongoing requests when component unmounts
+            if (abortController) {
+                abortController.abort()
+            }
+        }
+    }, [abortController])
+
     const handleSendMessage = async () => {
         if (!input.trim() || isLoading) return
 
@@ -319,6 +374,10 @@ export function PhilaGuideChat() {
         }
 
         try {
+            // Create abort controller for this request
+            const controller = new AbortController()
+            setAbortController(controller)
+
             // Check if this message came from voice input
             const isFromVoice = transcript && userMessage.content.toLowerCase().trim() === transcript.toLowerCase().trim()
             console.log('🎤 Voice chat detection:', {
@@ -327,21 +386,64 @@ export function PhilaGuideChat() {
                 isFromVoice
             })
 
-            const response = await fetch(`${BACKEND_URL}/api/philaguide`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    message: userMessage.content,
-                    history: [],
-                    stream: true,
-                    voiceChat: isFromVoice // Enable voice chat mode if input came from voice
-                }),
-            })
+            // Quick health check before making the main request
+            try {
+                const healthCheck = await fetch(`${BACKEND_URL}/api/philaguide`, {
+                    method: 'GET',
+                    signal: AbortSignal.timeout(5000) // 5 second timeout for health check
+                })
+                if (!healthCheck.ok) {
+                    throw new Error('Backend health check failed')
+                }
+                console.log('✅ Backend health check passed')
+            } catch (healthError) {
+                console.warn('⚠️ Backend health check failed, proceeding anyway:', healthError)
+            }
 
-            if (!response.ok) {
-                throw new Error('Failed to get response')
+            // Add a small delay to prevent rapid successive requests
+            await new Promise(resolve => setTimeout(resolve, 100))
+
+            // Retry mechanism for failed requests
+            let response: Response | undefined
+            let retryCount = 0
+            const maxRetries = 2
+
+            while (retryCount <= maxRetries) {
+                try {
+                    response = await fetch(`${BACKEND_URL}/api/philaguide`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            message: userMessage.content,
+                            stream: true,
+                            voiceChat: isFromVoice, // Enable voice chat mode if input came from voice
+                            sessionId: sessionId
+                        }),
+                        signal: AbortSignal.any([controller.signal, AbortSignal.timeout(30000)]) // 30 second timeout
+                    })
+
+                    if (response.ok) {
+                        break // Success, exit retry loop
+                    } else {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+                    }
+                } catch (fetchError) {
+                    retryCount++
+                    console.log(`🔄 Request attempt ${retryCount} failed:`, fetchError)
+
+                    if (retryCount > maxRetries) {
+                        throw fetchError // Re-throw if max retries reached
+                    }
+
+                    // Wait before retrying (exponential backoff)
+                    await new Promise(resolve => setTimeout(resolve, 1000 * retryCount))
+                }
+            }
+
+            if (!response) {
+                throw new Error('Failed to get response after retries')
             }
 
             const reader = response.body?.getReader()
@@ -422,9 +524,28 @@ export function PhilaGuideChat() {
                                 // Handle structured data from function calls
                                 structuredData = data.data
                                 console.log('📊 Received structured data:', structuredData)
+
+                                // Update the message to remove "Loading details..." and show the actual content
+                                if (assistantMessageId) {
+                                    console.log('🔄 Updating message with structured data:', structuredData)
+                                    setMessages(prev => prev.map(msg =>
+                                        msg.id === assistantMessageId
+                                            ? {
+                                                ...msg,
+                                                content: accumulatedContent || msg.content.replace('Loading details...', ''),
+                                                structuredData: structuredData
+                                            }
+                                            : msg
+                                    ))
+                                }
                             } else if (data.type === 'complete') {
                                 // Streaming complete
-                                console.log('Streaming complete')
+                                console.log('✅ Streaming complete - resetting loading state')
+                                setIsLoading(false)
+                                setStreamingStatus('')
+                            } else if (data.type === 'keep-alive') {
+                                // Keep-alive signal received, connection is still active
+                                console.log('💓 Keep-alive signal received')
                             } else if (data.type === 'error') {
                                 throw new Error(data.error)
                             } else if (data.type === 'timeout') {
@@ -468,23 +589,73 @@ export function PhilaGuideChat() {
 
         } catch (error) {
             console.error('Error sending message:', error)
-            const errorMessage: Message = {
-                id: (Date.now() + 1).toString(),
-                content: 'I apologize, but I encountered an error while processing your request. Please try again.',
-                role: 'assistant',
-                timestamp: new Date()
+
+            // Check if the request was aborted
+            if (error instanceof Error && error.name === 'AbortError') {
+                console.log('🛑 Request was aborted by user')
+                // Don't add error message for aborted requests
+            } else if (error instanceof Error && error.message.includes('timeout')) {
+                console.log('⏰ Request timed out')
+                const errorMessage: Message = {
+                    id: (Date.now() + 1).toString(),
+                    content: 'The request took too long to process. This might happen if the chat has been idle for a while. Please try again with a fresh query.',
+                    role: 'assistant',
+                    timestamp: new Date()
+                }
+                setMessages(prev => [...prev, errorMessage])
+            } else if (error instanceof Error && error.message.includes('fetch')) {
+                console.log('🌐 Network connection error')
+                const errorMessage: Message = {
+                    id: (Date.now() + 1).toString(),
+                    content: 'Connection error. Please check your internet connection and try again.',
+                    role: 'assistant',
+                    timestamp: new Date()
+                }
+                setMessages(prev => [...prev, errorMessage])
+            } else {
+                // Check if this might be an idle connection issue
+                const isIdleError = error instanceof Error && (
+                    error.message.includes('Failed to fetch') ||
+                    error.message.includes('NetworkError') ||
+                    error.message.includes('connection') ||
+                    error.message.includes('aborted')
+                )
+
+                const errorMessage: Message = {
+                    id: (Date.now() + 1).toString(),
+                    content: isIdleError
+                        ? 'The connection was interrupted, possibly due to inactivity. Please try your request again.'
+                        : 'I apologize, but I encountered an error while processing your request. Please try again.',
+                    role: 'assistant',
+                    timestamp: new Date()
+                }
+                setMessages(prev => [...prev, errorMessage])
             }
-            setMessages(prev => [...prev, errorMessage])
         } finally {
             setIsLoading(false)
             setStreamingStatus('')
+            setAbortController(null) // Clear the abort controller
         }
+    }
+
+    const handleStopGeneration = () => {
+        console.log('🛑 Stopping generation...')
+        if (abortController) {
+            abortController.abort()
+            setAbortController(null)
+        }
+        setIsLoading(false)
+        setStreamingStatus('')
     }
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault()
             handleSendMessage()
+        }
+        if (e.key === 'Escape' && isLoading) {
+            e.preventDefault()
+            handleStopGeneration()
         }
     }
 
@@ -651,10 +822,14 @@ export function PhilaGuideChat() {
                                             ? "bg-primary text-primary-foreground rounded-tl-xl rounded-br-xl rounded-tr-sm rounded-bl-sm ml-auto"
                                             : "bg-muted text-foreground rounded-tr-xl rounded-bl-xl rounded-tl-sm rounded-br-sm mr-auto border border-input"
                                     )}>
-                                        {message.content}
+                                        {message.role === 'assistant' ? (
+                                            <MarkdownMessage content={message.content} />
+                                        ) : (
+                                            message.content
+                                        )}
                                     </div>
 
-                                    {/* Stamp Preview Display */}
+                                    {/* Stamp Preview Display - Only show when no structured data is available */}
                                     {message.stampPreview && !message.structuredData && (
                                         <div className="mt-2 max-w-full">
                                             <StampPreviewDisplay preview={message.stampPreview} />
@@ -712,7 +887,7 @@ export function PhilaGuideChat() {
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            placeholder="Ask PhilaGuide AI..."
+                            placeholder={isLoading ? "AI is processing..." : "Ask PhilaGuide AI..."}
                             disabled={isLoading}
                             className="flex-1 text-sm bg-background border-input px-4 py-2.5 rounded-full focus-visible:ring-offset-0 focus-visible:ring-primary"
                         />
@@ -725,17 +900,21 @@ export function PhilaGuideChat() {
                             disabled={isLoading}
                         />
                         <Button
-                            onClick={input.trim() ? handleSendMessage : () => setIsVoiceChatOpen(true)}
-                            disabled={isLoading}
+                            onClick={isLoading ? handleStopGeneration : (input.trim() ? handleSendMessage : () => setIsVoiceChatOpen(true))}
+                            disabled={false}
                             size="icon"
                             className={cn(
                                 "transition-all duration-200 flex-shrink-0 rounded-full",
-                                input.trim()
-                                    ? "bg-primary hover:bg-primary/90"
-                                    : "bg-accent/50 hover:bg-accent text-primary-foreground"
+                                isLoading
+                                    ? "bg-destructive hover:bg-destructive/90"
+                                    : input.trim()
+                                        ? "bg-primary hover:bg-primary/90"
+                                        : "bg-accent/50 hover:bg-accent text-primary-foreground"
                             )}
                         >
-                            {input.trim() ? (
+                            {isLoading ? (
+                                <div className="w-4 h-4 bg-yellow-400 rounded-sm" />
+                            ) : input.trim() ? (
                                 <Send className="w-5 h-5" />
                             ) : (
                                 <AudioLines className="w-5 h-5" />
@@ -752,7 +931,6 @@ export function PhilaGuideChat() {
             <VoiceChatPopup
                 isOpen={isVoiceChatOpen}
                 onClose={() => setIsVoiceChatOpen(false)}
-                onSendMessage={handleVoiceChatMessage}
             />
 
             {/* Image Search Popup */}

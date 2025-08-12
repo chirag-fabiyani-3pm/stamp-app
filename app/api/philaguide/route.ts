@@ -10,9 +10,12 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 })
 
-//test
-
 const ASSISTANT_ID = 'asst_AfsiDbpnx2WjgZV7O97eHhyb'
+
+// Thread management - store active threads (in production, use a proper database)
+const activeThreads = new Map<string, string>() // sessionId -> threadId
+
+
 
 // Add timeout configuration for Vercel
 const TIMEOUT_MS = 12000 // 12 seconds to allow for function calls while staying under Vercel's limit
@@ -25,21 +28,20 @@ function createTimeoutPromise(ms: number): Promise<never> {
 }
 
 // Handle voice chat with direct chat completion (no assistant API)
-async function handleVoiceChatDirect(message: string, controller: ReadableStreamDefaultController, encoder: TextEncoder) {
+async function handleVoiceChatDirect(message: string, conversationHistory: any[] = [], controller: ReadableStreamDefaultController, encoder: TextEncoder) {
     try {
         console.log('🎤 Starting direct voice chat for:', message)
+        console.log('🎤 Conversation history length:', conversationHistory.length)
 
         // Send initial status
         const statusMessage = `data: ${JSON.stringify({ type: 'status', status: 'processing' })}\n\n`
         controller.enqueue(encoder.encode(statusMessage))
 
-        // Create a streaming chat completion with enhanced system prompt
-        const stream = await openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: [
-                {
-                    role: "system",
-                    content: `You are a helpful stamp expert assistant specializing in conversational responses for voice synthesis. 
+        // Build conversation context with history
+        const messages = [
+            {
+                role: "system" as const,
+                content: `You are a helpful stamp expert assistant specializing in conversational responses for voice synthesis. 
 
 IMPORTANT GUIDELINES:
 - Provide natural, conversational responses suitable for speech
@@ -51,16 +53,26 @@ IMPORTANT GUIDELINES:
 - Use natural language for denominations (e.g., "one-third penny" instead of "1/3d")
 - NEVER use function calls or structured data - provide direct conversational responses
 - Focus on descriptive, engaging content that sounds natural when spoken
+- Maintain conversation context from previous messages
+- Reference previous topics when relevant to show continuity
 
 Example: Instead of "1/3d stamp from NZ", say "This is a beautiful one-third penny stamp from New Zealand, issued in 1935, featuring a stunning blue color that makes it highly collectible."
 
 You have access to stamp knowledge and can provide detailed, conversational information about stamps. Always respond in a natural, conversational manner suitable for voice synthesis.`
-                },
-                {
-                    role: "user",
-                    content: message
-                }
-            ],
+            },
+            ...conversationHistory, // Include conversation history for context
+            {
+                role: "user" as const,
+                content: message
+            }
+        ]
+
+        console.log('🎤 Messages being sent to OpenAI:', messages.length, 'total messages')
+
+        // Create a streaming chat completion with enhanced system prompt and conversation history
+        const stream = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages,
             stream: true,
             max_tokens: 1500,
             temperature: 0.7
@@ -107,39 +119,100 @@ You have access to stamp knowledge and can provide detailed, conversational info
 }
 
 // Streaming response handler
-async function handleStreamingResponse(message: string, history: any[], voiceChat: boolean = false) {
+async function handleStreamingResponse(message: string, voiceChat: boolean = false, sessionId?: string, conversationHistory: any[] = []) {
     const encoder = new TextEncoder()
 
     const stream = new ReadableStream({
         async start(controller) {
             try {
                 console.log('🔄 Starting streaming response for:', message)
+                console.log('🔄 Conversation history length:', conversationHistory.length)
 
-                // Step 1: Create a thread
-                const thread = await openai.beta.threads.create()
-                console.log('✅ Thread created:', thread.id)
+                // Step 1: Get or create thread based on session
+                let threadId: string
+                if (sessionId && activeThreads.has(sessionId)) {
+                    // Use existing thread for conversation continuity
+                    threadId = activeThreads.get(sessionId)!
+                    console.log('🔄 Using existing thread:', threadId)
+
+                    // Check if there are any runs in progress and wait for them to complete
+                    try {
+                        const runs = await openai.beta.threads.runs.list(threadId)
+                        const activeRuns = runs.data.filter(run =>
+                            run.status === 'queued' || run.status === 'in_progress' || run.status === 'requires_action'
+                        )
+
+                        if (activeRuns.length > 0) {
+                            console.log(`⏳ Found ${activeRuns.length} active runs, waiting for completion...`)
+                            for (const activeRun of activeRuns) {
+                                console.log(`⏳ Waiting for run ${activeRun.id} (status: ${activeRun.status}) to complete...`)
+
+                                // If run requires action, we need to handle it
+                                if (activeRun.status === 'requires_action') {
+                                    console.log('🔧 Run requires action, handling it...')
+                                    // For now, just wait for it to complete - the main flow will handle it
+                                    console.log('⏳ Waiting for requires_action run to complete...')
+                                } else {
+                                    // Wait for other runs to complete
+                                    let runStatus: any = activeRun.status
+                                    let attempts = 0
+                                    const maxAttempts = 30 // Wait up to 30 seconds
+
+                                    while ((runStatus === 'queued' || runStatus === 'in_progress') && attempts < maxAttempts) {
+                                        await new Promise(resolve => setTimeout(resolve, 1000))
+                                        try {
+                                            const runResult = await openai.beta.threads.runs.retrieve(activeRun.id, { thread_id: threadId })
+                                            runStatus = runResult.status
+                                            attempts++
+                                            console.log(`⏳ Active run status: ${runStatus} (attempt ${attempts}/${maxAttempts})`)
+
+                                            if (runStatus === 'completed' || runStatus === 'failed' || runStatus === 'cancelled' || runStatus === 'requires_action') {
+                                                break
+                                            }
+                                        } catch (error) {
+                                            console.error('❌ Error checking active run status:', error)
+                                            break
+                                        }
+                                    }
+                                }
+                            }
+                            console.log('✅ All active runs completed')
+                        }
+                    } catch (error) {
+                        console.error('❌ Error checking active runs:', error)
+                        // Continue anyway, don't fail the request
+                    }
+                } else {
+                    // Create new thread for new conversation
+                    const thread = await openai.beta.threads.create()
+                    threadId = thread.id
+                    if (sessionId) {
+                        activeThreads.set(sessionId, threadId)
+                    }
+                    console.log('✅ New thread created:', threadId)
+                }
 
                 // Step 2: Handle voice chat differently - use direct chat completion
                 if (voiceChat) {
-                    console.log('🎤 Using direct chat completion for voice chat')
-                    await handleVoiceChatDirect(message, controller, encoder)
+                    console.log('🎤 Using direct chat completion for voice chat with history length:', conversationHistory.length)
+                    await handleVoiceChatDirect(message, conversationHistory, controller, encoder)
                     // Voice chat handles its own controller lifecycle
                 } else {
-                    // Normal assistant run with function calls for structured data
-                    await openai.beta.threads.messages.create(thread.id, {
+                    // Add current message to thread (OpenAI manages history automatically)
+                    await openai.beta.threads.messages.create(threadId, {
                         role: 'user',
                         content: message
                     })
                     console.log('✅ Message added to thread')
 
                     // Step 3: Create run with the assistant
-                    const run = await openai.beta.threads.runs.create(thread.id, {
+                    const run = await openai.beta.threads.runs.create(threadId, {
                         assistant_id: ASSISTANT_ID
                     })
                     console.log('✅ Run created:', run.id)
 
                     // Step 4: Stream the response
-                    await streamRunResponse(thread.id, run.id, controller, encoder)
+                    await streamRunResponse(threadId, run.id, controller, encoder)
                     // Don't close controller here - streamRunResponse handles it
                 }
 
@@ -157,6 +230,7 @@ async function handleStreamingResponse(message: string, history: any[], voiceCha
             'Content-Type': 'text/plain; charset=utf-8',
             'Cache-Control': 'no-cache',
             'Connection': 'keep-alive',
+            'Keep-Alive': 'timeout=30, max=1000',
         },
     })
 }
@@ -173,6 +247,17 @@ async function streamRunResponse(threadId: string, runId: string, controller: Re
         // Send status update
         const statusMessage = `data: ${JSON.stringify({ type: 'status', status: runStatus })}\n\n`
         controller.enqueue(encoder.encode(statusMessage))
+
+        // Send keep-alive signal every 5 seconds to prevent idle timeout
+        if (attempts % 5 === 0) {
+            const keepAliveMessage = `data: ${JSON.stringify({ type: 'keep-alive', timestamp: Date.now() })}\n\n`
+            try {
+                controller.enqueue(encoder.encode(keepAliveMessage))
+            } catch (error) {
+                console.log('Keep-alive signal failed, connection may be closed')
+                break
+            }
+        }
 
         await new Promise(resolve => setTimeout(resolve, 1000))
 
@@ -252,6 +337,16 @@ async function streamRunResponse(threadId: string, runId: string, controller: Re
 
                             const previewMessage = `data: ${JSON.stringify({ type: 'stamp_preview', data: stampPreview })}\n\n`
                             controller.enqueue(encoder.encode(previewMessage))
+
+                            // Also send raw stamp data for voice chat
+                            const rawStampData = {
+                                count: stamps.length,
+                                stamps: stamps.slice(0, 5) // Send the raw stamp objects
+                            }
+
+                            console.log('📤 Sending raw stamp data for voice chat:', rawStampData)
+                            const rawDataMessage = `data: ${JSON.stringify({ type: 'raw_stamp_data', data: rawStampData })}\n\n`
+                            controller.enqueue(encoder.encode(rawDataMessage))
                         } else {
                             console.log('⚠️ No stamps array found in function call data')
                         }
@@ -280,6 +375,15 @@ async function streamRunResponse(threadId: string, runId: string, controller: Re
                 console.log('⚠️ No stamps found in function call data')
             }
 
+            // Send structured data
+            if (immediateStructuredData) {
+                console.log('📤 Sending structured data to frontend:', immediateStructuredData.type)
+                const structuredMessage = `data: ${JSON.stringify({ type: 'structured_data', data: immediateStructuredData })}\n\n`
+                controller.enqueue(encoder.encode(structuredMessage))
+            } else {
+                console.log('⚠️ No structured data to send')
+            }
+
             // Stream the immediate response
             let responseText = ''
             if (stamps.length > 0) {
@@ -297,24 +401,75 @@ async function streamRunResponse(threadId: string, runId: string, controller: Re
                 await new Promise(resolve => setTimeout(resolve, 50))
             }
 
-            // Send structured data
-            if (immediateStructuredData) {
-                const structuredMessage = `data: ${JSON.stringify({ type: 'structured_data', data: immediateStructuredData })}\n\n`
-                controller.enqueue(encoder.encode(structuredMessage))
-            }
+
 
             // Send completion signal
             const completeMessage = `data: ${JSON.stringify({ type: 'complete' })}\n\n`
             controller.enqueue(encoder.encode(completeMessage))
 
+            // CRITICAL: Submit tool outputs back to the thread to complete the conversation
+            if (toolOutputs.length > 0) {
+                try {
+                    console.log('📤 Submitting tool outputs back to thread:', toolOutputs.length, 'outputs')
+                    await openai.beta.threads.runs.submitToolOutputs(runId, {
+                        thread_id: threadId,
+                        tool_outputs: toolOutputs
+                    })
+                    console.log('✅ Tool outputs submitted successfully')
+
+                    // Wait for the run to complete after submitting tool outputs
+                    console.log('⏳ Waiting for run to complete after tool output submission...')
+                    let finalRunStatus = 'in_progress'
+                    let finalAttempts = 0
+                    const maxFinalAttempts = 10 // Wait up to 10 seconds for completion
+
+                    while (finalRunStatus === 'in_progress' && finalAttempts < maxFinalAttempts) {
+                        await new Promise(resolve => setTimeout(resolve, 1000))
+                        try {
+                            const finalRunResult = await openai.beta.threads.runs.retrieve(runId, { thread_id: threadId })
+                            finalRunStatus = finalRunResult.status
+                            finalAttempts++
+                            console.log(`⏳ Final run status: ${finalRunStatus} (attempt ${finalAttempts}/${maxFinalAttempts})`)
+
+                            if (finalRunStatus === 'completed') {
+                                console.log('✅ Run completed successfully after tool output submission')
+                                break
+                            } else if (finalRunStatus === 'failed' || finalRunStatus === 'cancelled') {
+                                console.log(`❌ Run ${finalRunStatus} after tool output submission`)
+                                break
+                            }
+                        } catch (error) {
+                            console.error('❌ Error checking final run status:', error)
+                            break
+                        }
+                    }
+
+                    // If the run completed, stream the final response
+                    if (finalRunStatus === 'completed') {
+                        console.log('📤 Streaming final response after tool output submission')
+                        await streamMessages(threadId, controller, encoder)
+                        console.log('✅ Final response streamed, exiting early')
+                        return // Exit early since we've already handled the response
+                    }
+
+                } catch (submitError) {
+                    console.error('❌ Error submitting tool outputs:', submitError)
+                    // Don't fail the request, but log the error
+                }
+            }
+
             return
         }
     }
 
-    // Get the messages and stream the response
+    // Get the messages and stream the response (only if we didn't handle it above)
     if (runStatus === 'completed') {
+        console.log('📤 Streaming response for completed run (no tool outputs)')
         await streamMessages(threadId, controller, encoder)
+    } else {
+        console.log(`📤 Run ended with status: ${runStatus}, no response to stream`)
     }
+    // Note: streamMessages will handle closing the controller
 }
 
 // Stream messages from thread
@@ -355,13 +510,23 @@ async function streamMessages(threadId: string, controller: ReadableStreamDefaul
         const errorMessage = `data: ${JSON.stringify({ type: 'error', error: 'Failed to get response' })}\n\n`
         controller.enqueue(encoder.encode(errorMessage))
     }
+
+    // Ensure controller is closed
+    try {
+        console.log('🔒 Closing stream controller...')
+        controller.close()
+        console.log('✅ Stream controller closed successfully')
+    } catch (error) {
+        console.log('⚠️ Controller already closed or error closing:', error)
+    }
 }
 
 // Generate card format for single stamp
 function generateStampCard(stamp: any) {
     // Map the vector store fields to card display format
     const year = stamp.IssueYear || (stamp.IssueDate ? stamp.IssueDate.split('-')[0] : 'Unknown')
-    const denomination = `${stamp.DenominationValue}${stamp.DenominationSymbol}`
+    // Use DenominationSymbol if available, otherwise construct from DenominationValue
+    const denomination = stamp.DenominationSymbol || `${stamp.DenominationValue}`
     const subtitle = `${stamp.Country} • ${year} • ${denomination}`
 
     // Handle different possible image URL field names
@@ -400,7 +565,8 @@ function generateStampCarousel(stamps: any[]) {
         title: `Found ${stamps.length} stamp${stamps.length !== 1 ? 's' : ''}`,
         items: stamps.map(stamp => {
             const year = stamp.IssueYear || (stamp.IssueDate ? stamp.IssueDate.split('-')[0] : 'Unknown')
-            const denomination = `${stamp.DenominationValue}${stamp.DenominationSymbol}`
+            // Use DenominationSymbol if available, otherwise construct from DenominationValue
+            const denomination = stamp.DenominationSymbol || `${stamp.DenominationValue}`
 
             // Handle different possible image URL field names
             const imageUrl = stamp.StampImageUrl || stamp.image || stamp.StampImage || '/images/stamps/no-image-available.png'
@@ -422,10 +588,10 @@ function generateStampCarousel(stamps: any[]) {
     }
 }
 
-// Clean response text to remove technical references
+// Simple text cleaning - only remove technical references, preserve AI formatting
 function cleanResponseText(text: string): string {
-    // Remove technical references
-    let cleaned = text
+    // Only remove technical references and URLs, preserve AI's markdown formatting
+    return text
         .replace(/download\.json/g, 'stamp database')
         .replace(/vector store/g, 'stamp collection')
         .replace(/file_search/g, 'search')
@@ -434,39 +600,25 @@ function cleanResponseText(text: string): string {
         .replace(/catalog number [A-Z0-9]+/gi, '')
         .replace(/Campbell Paterson Catalogue/g, 'stamp catalog')
         .replace(/catalog number/g, 'catalog')
-
-    // Remove markdown syntax and raw data
-    cleaned = cleaned
-        .replace(/!\[[^\]]*\]\([^)]*\)/g, '') // Remove markdown image syntax
-        .replace(/\*\*([^*]+)\*\*/g, '$1') // Remove bold markdown
-        .replace(/`([^`]+)`/g, '$1') // Remove code markdown
-        .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // Remove link markdown
-        .replace(/\{[\s\S]*?\}/g, '') // Remove JSON objects
-        .replace(/```[\s\S]*?```/g, '') // Remove code blocks
-
-    // Remove any remaining technical jargon
-    cleaned = cleaned
-        .replace(/technical details[^.]*\./g, '')
-        .replace(/file reference[^.]*\./g, '')
-        .replace(/database entry[^.]*\./g, '')
-        .replace(/raw data[^.]*\./g, '')
-        .replace(/function call[^.]*\./g, '')
-
-    // Clean up extra spaces and punctuation
-    cleaned = cleaned
-        .replace(/\s+/g, ' ')
-        .replace(/\s+\./g, '.')
-        .replace(/\s+,/g, ',')
-        .replace(/\s+-/g, ' - ')
         .trim()
+}
 
-    return cleaned
+// Health check endpoint
+export async function GET() {
+    return NextResponse.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        assistantId: ASSISTANT_ID,
+        timeout: TIMEOUT_MS
+    })
 }
 
 export async function POST(request: NextRequest) {
     try {
-        const { message, history = [], stream = false, voiceChat = false } = await request.json()
-        console.log('📨 API Request:', { message: message.substring(0, 50) + '...', stream, voiceChat })
+        const { message, stream = false, voiceChat = false, sessionId, history = [], conversationHistory = [] } = await request.json()
+        // Use conversationHistory if available, otherwise fall back to history for backward compatibility
+        const finalHistory = conversationHistory.length > 0 ? conversationHistory : history
+        console.log('📨 API Request:', { message: message.substring(0, 50) + '...', stream, voiceChat, sessionId, historyLength: finalHistory.length })
 
         if (!message) {
             return NextResponse.json({ error: 'Message is required' }, { status: 400 })
@@ -474,7 +626,7 @@ export async function POST(request: NextRequest) {
 
         // Check if streaming is requested
         if (stream) {
-            return handleStreamingResponse(message, history, voiceChat)
+            return handleStreamingResponse(message, voiceChat, sessionId, finalHistory)
         }
 
         // Fallback for non-streaming requests
@@ -482,15 +634,14 @@ export async function POST(request: NextRequest) {
 
         // For voice chat, use direct chat completion even in non-streaming mode
         if (voiceChat) {
-            console.log('🎤 Using direct chat completion for voice chat (non-streaming)')
+            console.log('🎤 Using direct chat completion for voice chat (non-streaming) with history length:', finalHistory.length)
 
             try {
-                const completion = await openai.chat.completions.create({
-                    model: "gpt-4o",
-                    messages: [
-                        {
-                            role: "system",
-                            content: `You are a helpful stamp expert assistant specializing in conversational responses for voice synthesis. 
+                // Build conversation context with history for non-streaming voice chat
+                const messages = [
+                    {
+                        role: "system" as const,
+                        content: `You are a helpful stamp expert assistant specializing in conversational responses for voice synthesis. 
 
 IMPORTANT GUIDELINES:
 - Provide natural, conversational responses suitable for speech
@@ -502,16 +653,23 @@ IMPORTANT GUIDELINES:
 - Use natural language for denominations (e.g., "one-third penny" instead of "1/3d")
 - NEVER use function calls or structured data - provide direct conversational responses
 - Focus on descriptive, engaging content that sounds natural when spoken
+- Maintain conversation context from previous messages
+- Reference previous topics when relevant to show continuity
 
 Example: Instead of "1/3d stamp from NZ", say "This is a beautiful one-third penny stamp from New Zealand, issued in 1935, featuring a stunning blue color that makes it highly collectible."
 
 You have access to stamp knowledge and can provide detailed, conversational information about stamps. Always respond in a natural, conversational manner suitable for voice synthesis.`
-                        },
-                        {
-                            role: "user",
-                            content: message
-                        }
-                    ],
+                    },
+                    ...finalHistory, // Include conversation history for context
+                    {
+                        role: "user" as const,
+                        content: message
+                    }
+                ]
+
+                const completion = await openai.chat.completions.create({
+                    model: "gpt-4o",
+                    messages,
                     max_tokens: 1500,
                     temperature: 0.7
                 })
@@ -540,28 +698,34 @@ You have access to stamp knowledge and can provide detailed, conversational info
                 const assistant = await openai.beta.assistants.retrieve(ASSISTANT_ID)
                 console.log('✅ Assistant fetched:', assistant.id)
 
-                // Step 2: Create a new thread
-                console.log('🔄 Creating new thread...')
-                const thread = await openai.beta.threads.create()
-                console.log('✅ Thread created:', thread)
-                console.log('✅ Thread ID:', thread.id)
-                console.log('✅ Thread object keys:', Object.keys(thread))
+                // Step 2: Get or create thread based on session
+                let threadId: string
+                if (sessionId && activeThreads.has(sessionId)) {
+                    // Use existing thread for conversation continuity
+                    threadId = activeThreads.get(sessionId)!
+                    console.log('🔄 Using existing thread:', threadId)
 
-                if (!thread.id) {
-                    console.error('❌ Thread creation failed - no ID returned')
-                    console.error('❌ Thread object:', JSON.stringify(thread, null, 2))
-                    throw new Error('Failed to create thread - no thread ID returned')
+                    // OpenAI threads handle conversation history automatically
+                    // await waitForThreadCompletion(threadId)
+                } else {
+                    // Create new thread for new conversation
+                    const thread = await openai.beta.threads.create()
+                    threadId = thread.id
+                    if (sessionId) {
+                        activeThreads.set(sessionId, threadId)
+                    }
+                    console.log('✅ New thread created:', threadId)
                 }
 
-                // Step 3: Add the user's message to the thread
-                const threadMessage = await openai.beta.threads.messages.create(thread.id, {
+                // Step 3: Add the user's message to the thread (OpenAI manages history automatically)
+                const threadMessage = await openai.beta.threads.messages.create(threadId, {
                     role: 'user',
                     content: message
                 })
                 console.log('✅ Message created:', threadMessage.id)
 
-                // Step 4: Create run with the assistant
-                const run = await openai.beta.threads.runs.create(thread.id, {
+                // Step 5: Create run with the assistant
+                const run = await openai.beta.threads.runs.create(threadId, {
                     assistant_id: assistant.id
                 })
                 console.log('✅ Run created:', run.id)
@@ -581,7 +745,7 @@ You have access to stamp knowledge and can provide detailed, conversational info
                     await new Promise(resolve => setTimeout(resolve, 1000)) // Reduced to 1 second
 
                     try {
-                        const runResult = await openai.beta.threads.runs.retrieve(run.id, { thread_id: thread.id })
+                        const runResult = await openai.beta.threads.runs.retrieve(run.id, { thread_id: threadId })
                         runStatus = runResult.status
                         attempts++
 
@@ -629,7 +793,7 @@ You have access to stamp knowledge and can provide detailed, conversational info
                 if (runStatus === 'requires_action') {
                     console.log('🔧 Run requires action - handling function calls...')
 
-                    const runResult = await openai.beta.threads.runs.retrieve(run.id, { thread_id: thread.id })
+                    const runResult = await openai.beta.threads.runs.retrieve(run.id, { thread_id: threadId })
                     console.log('📊 Run result:', runResult)
 
                     if (runResult.required_action && runResult.required_action.type === 'submit_tool_outputs') {
@@ -677,7 +841,50 @@ You have access to stamp knowledge and can provide detailed, conversational info
                             console.log('🎠 Generated carousel data:', immediateStructuredData)
                         }
 
-                        // Return immediately with function call data
+                        // CRITICAL: Submit tool outputs back to the thread to complete the conversation
+                        if (toolOutputs.length > 0) {
+                            try {
+                                console.log('📤 Submitting tool outputs back to thread (non-streaming):', toolOutputs.length, 'outputs')
+                                await openai.beta.threads.runs.submitToolOutputs(run.id, {
+                                    thread_id: threadId,
+                                    tool_outputs: toolOutputs
+                                })
+                                console.log('✅ Tool outputs submitted successfully (non-streaming)')
+
+                                // Wait for the run to complete after submitting tool outputs
+                                console.log('⏳ Waiting for run to complete after tool output submission (non-streaming)...')
+                                let finalRunStatus = 'in_progress'
+                                let finalAttempts = 0
+                                const maxFinalAttempts = 10 // Wait up to 10 seconds for completion
+
+                                while (finalRunStatus === 'in_progress' && finalAttempts < maxFinalAttempts) {
+                                    await new Promise(resolve => setTimeout(resolve, 1000))
+                                    try {
+                                        const finalRunResult = await openai.beta.threads.runs.retrieve(run.id, { thread_id: threadId })
+                                        finalRunStatus = finalRunResult.status
+                                        finalAttempts++
+                                        console.log(`⏳ Final run status (non-streaming): ${finalRunStatus} (attempt ${finalAttempts}/${maxFinalAttempts})`)
+
+                                        if (finalRunStatus === 'completed') {
+                                            console.log('✅ Run completed successfully after tool output submission (non-streaming)')
+                                            break
+                                        } else if (finalRunStatus === 'failed' || finalRunStatus === 'cancelled') {
+                                            console.log(`❌ Run ${finalRunStatus} after tool output submission (non-streaming)`)
+                                            break
+                                        }
+                                    } catch (error) {
+                                        console.error('❌ Error checking final run status (non-streaming):', error)
+                                        break
+                                    }
+                                }
+
+                            } catch (submitError) {
+                                console.error('❌ Error submitting tool outputs (non-streaming):', submitError)
+                                // Don't fail the request, but log the error
+                            }
+                        }
+
+                        // Return with function call data
                         return {
                             response: `I found ${stamps.length} stamp${stamps.length !== 1 ? 's' : ''} for you.`,
                             stampsFound: stamps.length,
@@ -689,7 +896,7 @@ You have access to stamp knowledge and can provide detailed, conversational info
                 }
 
                 // Get the messages from the thread
-                const messages = await openai.beta.threads.messages.list(thread.id)
+                const messages = await openai.beta.threads.messages.list(threadId)
                 console.log('📨 Messages in thread:', messages.data.length)
 
                 // Get the latest assistant message
