@@ -10,7 +10,7 @@ export interface CountryOption {
   historicalNote?: string
 }
 
-export interface StampGroupOption {
+export interface SeriesOption {
   id: string
   name: string
   catalogNumber: string
@@ -52,7 +52,7 @@ export interface DenominationOption {
 export interface ColorOption {
   code: string
   name: string
-  hexColor: string
+  hex: string
   totalStamps: number
   stampImageUrl: string
   popularity?: number
@@ -108,6 +108,7 @@ export interface StampData {
   name: string
   publisher: string
   country: string
+  countryCode: string
   stampImageUrl: string
   catalogName: string | null
   catalogNumber: string
@@ -122,6 +123,9 @@ export interface StampData {
   stampDetailsJson: string
   estimatedMarketValue: number | null
   actualPrice: number | null
+  rarity?: string
+  condition?: string
+  story: string
   stampGroupId: string;
   instances: StampInstance[];
 }
@@ -133,6 +137,10 @@ export interface ApiStampData {
   name: string
   publisher: string
   country: string
+  countryCode: string
+  story: string
+  stampGroupId: string
+  instances: StampInstance[]
   stampImageUrl: string
   catalogName: string
   catalogNumber: string
@@ -166,7 +174,8 @@ export interface NavigationState {
   level: number
 }
 
-export type GroupingField = 'seriesName' | 'issueYear' | 'country' | 'color' | 'paperType' | 'denominationValue' | 'publisher'
+// GroupingField is intentionally broad to allow grouping by any available or computed field
+export type GroupingField = string
 
 export interface StampInstance {
   id: string
@@ -189,6 +198,7 @@ export interface ParsedStampDetails {
   size?: string
   errors?: string[]
   rarityRating?: string
+  rarity?: string
   catalogPrice?: string
   estimatedValue?: string
   currentMarketValue?: string
@@ -214,6 +224,7 @@ export interface ParsedStampDetails {
   demandLevel?: string
   specialNotes?: string
   bibliography?: string
+  errorType?: string
 }
 
 export interface StampDetailData extends StampData {
@@ -244,7 +255,7 @@ export interface AdditionalCategoryOption {
 }
 
 // Modal types for the navigation stack
-export type ModalType = 'country' | 'stampGroup' | 'year' | 'currency' | 'denomination' | 
+export type ModalType = 'series' | 'country' | 'stampGroup' | 'year' | 'currency' | 'denomination' | 
                  'color' | 'paper' | 'watermark' | 'perforation' | 'itemType' | 'stampDetails' |
                  'postalHistory' | 'postmarks' | 'proofs' | 'essays' | 'onPiece' | 'errors' | 'other'
 

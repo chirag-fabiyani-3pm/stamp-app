@@ -134,7 +134,6 @@ export default function ProfileInfo() {
         ...userResult,
         jwt: jwt // Keep the JWT from localStorage
       }
-      console.log("updatedUserData", updatedUserData)
 
       setUserData(updatedUserData)
       setLoading(false)

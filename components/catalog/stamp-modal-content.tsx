@@ -14,7 +14,6 @@ interface StampModalContentProps {
 }
 
 export function StampModalContent({ stampData, isLoading }: StampModalContentProps) {
-
   const stampDetailData = createStampDetailData(stampData)
   const selectedImage = stampData.stampImageUrl
   const details = stampData.stampDetailsJson ? JSON.parse(stampData.stampDetailsJson) : {}
@@ -78,7 +77,7 @@ export function StampModalContent({ stampData, isLoading }: StampModalContentPro
         </h2>
         <div className="flex items-center gap-4 mt-1 text-sm text-gray-600 dark:text-gray-400">
           <span>{stampDetailData.country}</span>
-          <span>#{stampDetailData.catalogNumber}</span>
+          <span>{stampDetailData.stampCode}</span>
         </div>
       </div>
 
@@ -200,19 +199,19 @@ export function StampModalContent({ stampData, isLoading }: StampModalContentPro
               <div className="grid md:grid-cols-3 gap-4 text-center">
                 <div>
                   <div className="text-lg font-bold text-black dark:text-white">
-                    {stampDetailData.marketInfo.mintValue}
+                    {stampDetailData.marketInfo.mintValue || '-'}
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">Mint Value</div>
                 </div>
                 <div>
                   <div className="text-lg font-bold text-black dark:text-white">
-                    {stampDetailData.marketInfo.usedValue}
+                    {stampDetailData.marketInfo.usedValue || '-'}
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">Used Value</div>
                 </div>
                 <div>
                   <div className="text-lg font-bold text-black dark:text-white">
-                    {stampDetailData.marketInfo.rarity}
+                    {stampDetailData.marketInfo.rarity || '-'}
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">Rarity</div>
                 </div>

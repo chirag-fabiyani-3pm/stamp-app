@@ -1,660 +1,308 @@
 import { SeriesData, TypeData, StampGroupData, CountryData, YearData, ReleaseData, CategoryData, PaperTypeData, StampData, StampInstance, ParsedStampDetails, StampDetailData } from "@/types/catalog"
+import {
+    apiStampData,
+    groupStampsByCountry,
+    groupStampsBySeries,
+    groupStampsByYear,
+    groupStampsByCurrency,
+    groupStampsByDenomination,
+    groupStampsByColor,
+    groupStampsByPaper,
+    groupStampsByWatermark,
+    groupStampsByPerforation,
+    groupStampsByItemType,
+    getStampDetails,
+    convertApiStampToStampData
+} from "@/lib/data/catalog-data"
 
-export const generateSeriesData = async (): Promise<SeriesData[]> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 500))
-  const campbellPatersonSeries = [
-    {
-      id: "full-face-queens",
-      name: "Full-Face Queens",
-      description: "The first stamps of New Zealand, featuring Queen Victoria's full face portrait",
-      totalTypes: 3,
-      country: "New Zealand",
-      periodStart: 1855,
-      periodEnd: 1862
-    },
-    {
-      id: "chalon-head",
-      name: "Chalon Head",
-      description: "Second design featuring Queen Victoria's profile by Alfred Edward Chalon",
-      totalTypes: 4,
-      country: "New Zealand",
-      periodStart: 1862,
-      periodEnd: 1867
-    },
-    {
-      id: "second-sideface",
-      name: "Second Sideface",
-      description: "Third design with modified Queen Victoria profile",
-      totalTypes: 5,
-      country: "New Zealand",
-      periodStart: 1867,
-      periodEnd: 1873
-    },
-    {
-      id: "long-type",
-      name: "Long Type",
-      description: "Fourth design with elongated format",
-      totalTypes: 3,
-      country: "New Zealand",
-      periodStart: 1873,
-      periodEnd: 1878
-    },
-    {
-      id: "short-type",
-      name: "Short Type",
-      description: "Fifth design with compact format",
-      totalTypes: 4,
-      country: "New Zealand",
-      periodStart: 1878,
-      periodEnd: 1882
-    },
-    {
-      id: "pictorials",
-      name: "Pictorials",
-      description: "First pictorial stamps featuring New Zealand landscapes and wildlife",
-      totalTypes: 6,
-      country: "New Zealand",
-      periodStart: 1898,
-      periodEnd: 1907
-    },
-    {
-      id: "king-edward-vii",
-      name: "King Edward VII",
-      description: "Stamps featuring King Edward VII portrait",
-      totalTypes: 3,
-      country: "New Zealand",
-      periodStart: 1902,
-      periodEnd: 1910
-    },
-    {
-      id: "king-george-v",
-      name: "King George V",
-      description: "Stamps featuring King George V portrait and various designs",
-      totalTypes: 8,
-      country: "New Zealand",
-      periodStart: 1915,
-      periodEnd: 1936
-    },
-    {
-      id: "king-george-vi",
-      name: "King George VI",
-      description: "Stamps featuring King George VI and commemorative issues",
-      totalTypes: 12,
-      country: "New Zealand",
-      periodStart: 1937,
-      periodEnd: 1952
-    },
-    {
-      id: "queen-elizabeth-ii",
-      name: "Queen Elizabeth II",
-      description: "Modern stamps featuring Queen Elizabeth II and diverse themes",
-      totalTypes: 25,
-      country: "New Zealand",
-      periodStart: 1953,
-      periodEnd: 2025
-    }
-  ]
-  return campbellPatersonSeries
+export const getCampbellPatersonSeries = async (): Promise<SeriesData[]> => {
+  await new Promise(resolve => setTimeout(resolve, 500)) // Simulate API delay
+
+  // Filter for 'GB' country, as Campbell Paterson is New Zealand specific in dummy data,
+  // but for actual data, we will need to adjust this filter or parameterize it.
+  // For now, let's use all stamps and group them by series, as there isn't a direct "Campbell Paterson" filter in apiStampData.
+  // We'll assume the series are the top level for Campbell Paterson.
+  const allSeries = groupStampsBySeries(apiStampData, 'NZ'); // Using 'GB' as a placeholder, might need to adjust based on actual data.
+
+  const seriesData: SeriesData[] = allSeries.map((series: any) => {
+    // Calculate periodStart and periodEnd from the stamps within the series
+    const years = series.stamps.map((stamp: any) => stamp.issueYear).filter(Boolean);
+    const periodStart = years.length > 0 ? Math.min(...years) : 0;
+    const periodEnd = years.length > 0 ? Math.max(...years) : 0;
+
+    return {
+      id: series.catalogNumber,
+      name: series.name,
+      description: series.description,
+      totalTypes: series.stamps.length, // Placeholder: count of stamps in series as types
+      country: series.stamps[0]?.countryName || 'Unknown',
+      periodStart: periodStart,
+      periodEnd: periodEnd
+    };
+  });
+  return seriesData;
 }
 
-export const generateCountryData = async (): Promise<CountryData[]> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 500))
-  const stanleyGibbonsCountries = [
-    {
-      id: "great-britain",
-      name: "Great Britain",
-      code: "GB",
-      description: "Including England, Scotland, Wales, and Northern Ireland",
-      totalYears: 175,
-      yearStart: 1840,
-      yearEnd: 2025
-    },
-    {
-      id: "australia",
-      name: "Australia",
-      code: "AU",
-      description: "Commonwealth of Australia including states and territories",
-      totalYears: 125,
-      yearStart: 1901,
-      yearEnd: 2025
-    },
-    {
-      id: "new-zealand",
-      name: "New Zealand",
-      code: "NZ",
-      description: "Including North Island, South Island, and dependencies",
-      totalYears: 170,
-      yearStart: 1855,
-      yearEnd: 2025
-    },
-    {
-      id: "canada",
-      name: "Canada",
-      code: "CA",
-      description: "Dominion of Canada including provinces and territories",
-      totalYears: 158,
-      yearStart: 1867,
-      yearEnd: 2025
-    },
-    {
-      id: "south-africa",
-      name: "South Africa",
-      code: "ZA",
-      description: "Union and Republic of South Africa",
-      totalYears: 115,
-      yearStart: 1910,
-      yearEnd: 2025
-    },
-    {
-      id: "india",
-      name: "India",
-      code: "IN",
-      description: "British India and Republic of India",
-      totalYears: 178,
-      yearStart: 1847,
-      yearEnd: 2025
-    },
-    {
-      id: "hong-kong",
-      name: "Hong Kong",
-      code: "HK",
-      description: "British Crown Colony and Special Administrative Region",
-      totalYears: 165,
-      yearStart: 1860,
-      yearEnd: 2025
-    },
-    {
-      id: "singapore",
-      name: "Singapore",
-      code: "SG",
-      description: "British Straits Settlements and Republic of Singapore",
-      totalYears: 80,
-      yearStart: 1945,
-      yearEnd: 2025
-    }
-  ]
-  return stanleyGibbonsCountries
+export const getStanleyGibbonsCountries = async (): Promise<CountryData[]> => {
+  await new Promise(resolve => setTimeout(resolve, 500)) // Simulate API delay
+
+  const allCountries = groupStampsByCountry(apiStampData);
+
+  const countryData: CountryData[] = allCountries.map((country: any) => {
+    const years = country.stamps.map((stamp: any) => stamp.issueYear).filter(Boolean);
+    const yearStart = years.length > 0 ? Math.min(...years) : 0;
+    const yearEnd = years.length > 0 ? Math.max(...years) : 0;
+
+    return {
+      id: country.code,
+      name: country.name,
+      code: country.code,
+      description: country.description,
+      totalYears: country.stamps.length, // Placeholder: count of stamps in country as years
+      yearStart: yearStart,
+      yearEnd: yearEnd
+    };
+  });
+  return countryData;
 }
 
-export const generateTypeData = async (series: SeriesData): Promise<TypeData[]> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 300))
-  const types: TypeData[] = []
-  if (series.id === "full-face-queens") {
-    types.push(
-      {
-        id: "type-a1",
-        name: "Type A1",
-        seriesId: series.id,
-        description: "First printing with distinctive characteristics",
-        totalStampGroups: 4,
-        catalogPrefix: "A1"
-      },
-      {
-        id: "type-a2",
-        name: "Type A2",
-        seriesId: series.id,
-        description: "Second printing with modified design elements",
-        totalStampGroups: 3,
-        catalogPrefix: "A2"
-      },
-      {
-        id: "type-a3",
-        name: "Type A3",
-        seriesId: series.id,
-        description: "Third printing with further modifications",
-        totalStampGroups: 2,
-        catalogPrefix: "A3"
-      }
-    )
-  } else {
-    for (let i = 1; i <= series.totalTypes; i++) {
-      types.push({
-        id: `${series.id}-type-${i}`,
-        name: `Type ${String.fromCharCode(64 + i)}${i}`,
-        seriesId: series.id,
-        description: `Type ${i} of the ${series.name} series`,
-        totalStampGroups: Math.floor(Math.random() * 5) + 2,
-        catalogPrefix: `${String.fromCharCode(64 + i)}${i}`
-      })
+export const getTypesForSeries = async (seriesName: string): Promise<TypeData[]> => {
+  await new Promise(resolve => setTimeout(resolve, 300)) // Simulate API delay
+
+  // Assuming 'types' in Campbell Paterson corresponds to itemType in apiStampData
+  const seriesStamps = apiStampData.filter(s => s.seriesName === seriesName);
+  const groupedByItemType = seriesStamps.reduce((acc: any, stamp: any) => {
+    const key = stamp.itemTypeName || 'unknown_type';
+    if (!acc[key]) {
+      acc[key] = {
+        id: key,
+        name: stamp.itemTypeName || 'Unknown Type',
+        seriesId: seriesName,
+        description: stamp.itemTypeDescription || `${stamp.itemTypeName} category`,
+        totalStampGroups: 0,
+        catalogPrefix: key
+      };
     }
-  }
-  return types
+    acc[key].totalStampGroups++;
+    return acc;
+  }, {});
+
+  return Object.values(groupedByItemType);
 }
 
-export const generateYearData = async (country: CountryData): Promise<YearData[]> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 300))
-  const years: YearData[] = []
-  const startYear = country.yearStart
-  const endYear = Math.min(country.yearEnd, 2025)
-  const sampleYears = []
-  for (let year = startYear; year <= endYear; year += Math.floor(Math.random() * 3) + 1) {
-    if (sampleYears.length < 20) { // Limit to 20 years for demo
-      sampleYears.push(year)
+export const getStampGroupsForType = async (seriesName: string, itemTypeCode: string): Promise<StampGroupData[]> => {
+  await new Promise(resolve => setTimeout(resolve, 300)) // Simulate API delay
+
+  const stampsForType = apiStampData.filter(s => s.seriesName === seriesName && (s.itemTypeName === itemTypeCode || (!s.itemTypeName && itemTypeCode === 'unknown_type')));
+  
+  const groupedByStampGroup = stampsForType.reduce((acc: any, stamp: any) => {
+    const key = stamp.stampGroupName || 'unknown_group';
+    if (!acc[key]) {
+      acc[key] = {
+        id: key,
+        name: stamp.stampGroupName || stamp.name,
+        typeId: itemTypeCode,
+        year: stamp.issueYear,
+        issueDate: stamp.issueDate,
+        description: stamp.stampGroupDescription || stamp.description,
+        watermark: stamp.watermarkName || 'None',
+        perforation: stamp.perforationName || 'Imperforate',
+        printingMethod: stamp.printingMethod || 'Unknown',
+        printer: stamp.printer || 'Unknown',
+        totalStamps: 0,
+      };
     }
-  }
-  sampleYears.forEach(year => {
-    years.push({
-      id: `${country.id}-${year}`,
-      year: year,
-      countryId: country.id,
-      totalReleases: Math.floor(Math.random() * 8) + 2,
-      description: `Stamp issues for ${year}`
-    })
-  })
-  return years.sort((a, b) => a.year - b.year)
+    acc[key].totalStamps++;
+    return acc;
+  }, {});
+
+  return Object.values(groupedByStampGroup);
 }
 
-export const generateReleasesData = async (yearData: YearData): Promise<ReleaseData[]> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 300))
-  const sampleReleases = [
-    {
-      id: `${yearData.id}-release-1`,
-      name: `${yearData.year} (24 July)-55. Imperf.`,
-      yearId: yearData.id,
-      dateRange: `${yearData.year} (24 July)-55`,
-      description: "Imperforate issue with distinctive characteristics",
-      perforation: "Imperf",
-      totalCategories: 3,
-      hasCategories: true,
-    },
-    {
-      id: `${yearData.id}-release-2`,
-      name: `${yearData.year} (15 September). Perf 14.`,
-      yearId: yearData.id,
-      dateRange: `${yearData.year} (15 September)`,
-      description: "Perforated issue with standard gauge",
-      perforation: "Perf 14",
-      totalCategories: 2,
-      hasCategories: true,
-    },
-    {
-      id: `${yearData.id}-release-3`,
-      name: `${yearData.year} (December). Perf 12½.`,
-      yearId: yearData.id,
-      dateRange: `${yearData.year} (December)`,
-      description: "Late year issue with different perforation",
-      perforation: "Perf 12½",
+export const getYearsForCountry = async (countryCode: string): Promise<YearData[]> => {
+  await new Promise(resolve => setTimeout(resolve, 300)) // Simulate API delay
+
+  const countryStamps = apiStampData.filter(s => s.country === countryCode);
+  const groupedByYear = countryStamps.reduce((acc: any, stamp: any) => {
+    const year = stamp.issueYear;
+    if (!year) return acc;
+    const key = year.toString();
+    if (!acc[key]) {
+      acc[key] = {
+        id: `${countryCode}-${year}`,
+        year: year,
+        countryId: countryCode,
+        totalReleases: 0,
+        description: `Stamp issues for ${year}`
+      };
+    }
+    acc[key].totalReleases++; // Placeholder: count of stamps as releases
+    return acc;
+  }, {});
+
+  return( Object.values(groupedByYear).sort((a: any, b: any) => a.year - b.year) as YearData[]);
+}
+
+export const getReleasesForYear = async (countryCode: string, year: number): Promise<ReleaseData[]> => {
+  await new Promise(resolve => setTimeout(resolve, 300)) // Simulate API delay
+
+  const yearStamps = apiStampData.filter(s => s.country === countryCode && s.issueYear === year);
+  const groupedByRelease = yearStamps.reduce((acc: any, stamp: any) => {
+    const key = stamp.releaseName || 'unknown_release';
+    if (!acc[key]) {
+      acc[key] = {
+        id: key,
+        name: stamp.releaseName || `Release ${year}`,
+        yearId: `${countryCode}-${year}`,
+        dateRange: stamp.releaseDateRange || `${year}`,
+        description: stamp.releaseDescription || `Stamp releases for ${year}`,
+        perforation: stamp.perforationName || 'Unknown',
       totalCategories: 0,
       hasCategories: false,
-    },
-  ]
-  return sampleReleases.slice(0, yearData.totalReleases)
-}
-
-export const generateCategoriesData = async (releaseData: ReleaseData): Promise<CategoryData[]> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 300))
-  const sampleCategories = [
-    {
-      id: `${releaseData.id}-cat-1`,
-      name: "(a) Plate I",
-      code: "a",
-      releaseId: releaseData.id,
-      description: "First plate printing with clear impressions",
-      totalPaperTypes: 3,
-      hasPaperTypes: true,
-    },
-    {
-      id: `${releaseData.id}-cat-2`,
-      name: "(b) Plate II",
-      code: "b",
-      releaseId: releaseData.id,
-      description: "Second plate printing with slight variations",
-      totalPaperTypes: 2,
-      hasPaperTypes: true,
-    },
-    {
-      id: `${releaseData.id}-cat-3`,
-      name: "(c) Medium greyish blue wove paper",
-      code: "c",
-      releaseId: releaseData.id,
-      description: "Specific paper type categorization",
-      totalPaperTypes: 4,
-      hasPaperTypes: true,
-    },
-  ]
-  return sampleCategories.slice(0, releaseData.totalCategories)
-}
-
-export const generatePaperTypesData = async (dataId: string, totalStampsToGenerate: number): Promise<PaperTypeData[]> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 300))
-  const samplePaperTypes = [
-    {
-      id: `${dataId}-paper-1`,
-      name: "(i) Thick yellowish wove paper",
-      code: "i",
-      categoryId: dataId,
-      description: "Thick paper with yellowish tint",
-      totalStamps: 4,
-    },
-    {
-      id: `${dataId}-paper-2`,
-      name: "(ii) Fine impressions, blue to greyish medium paper",
-      code: "ii",
-      categoryId: dataId,
-      description: "Fine quality impressions on medium paper",
-      totalStamps: 3,
-    },
-    {
-      id: `${dataId}-paper-3`,
-      name: "(iii) Worn plate, blue to greyish medium paper",
-      code: "iii",
-      categoryId: dataId,
-      description: "Later impressions from worn plate",
-      totalStamps: 2,
-    },
-  ]
-  return samplePaperTypes.slice(0, totalStampsToGenerate)
-}
-
-export const generateStampGroupsData = async (typeData: TypeData): Promise<StampGroupData[]> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 300))
-  const groups: StampGroupData[] = []
-  if (typeData.id === "type-a1") {
-    groups.push(
-      {
-        id: "1855-july-20-large-star",
-        name: '1855 (JULY 20 at Auckland), IMPERF, "LARGE STAR" WATERMARK (W.1), PRINTED BY PERKINS, BACON & CO., LONDON',
-        typeId: typeData.id,
-        year: 1855,
-        issueDate: "1855-07-20",
-        description: "First issue of New Zealand stamps with Large Star watermark",
-        watermark: "Large Star (W.1)",
-        perforation: "Imperforate",
-        printingMethod: "Engraved",
-        printer: "Perkins, Bacon & Co., London",
-        totalStamps: 3,
-      },
-      {
-        id: "1857-trial-print",
-        name: '1857 TRIAL PRINT? IMPERF, "LARGE STAR" WATERMARK (W.1), PRINTED BY RICHARDSON?',
-        typeId: typeData.id,
-        year: 1857,
-        issueDate: "1857-01-01",
-        description: "Trial printing with Large Star watermark",
-        watermark: "Large Star (W.1)",
-        perforation: "Imperforate",
-        printingMethod: "Engraved",
-        printer: "Richardson?",
-        totalStamps: 2,
-      },
-      {
-        id: "1855-december-deep-blue",
-        name: '1855 (17 DECEMBER), IMPERF, ON DEEP BLUE PAPER, NO WATERMARK, RICHARDSON PRINT',
-        typeId: typeData.id,
-        year: 1855,
-        issueDate: "1855-12-17",
-        description: "Issue on deep blue paper without watermark",
-        watermark: "None",
-        perforation: "Imperforate",
-        printingMethod: "Engraved",
-        printer: "Richardson",
-        totalStamps: 2,
-      },
-      {
-        id: "1862-1864-large-star",
-        name: '1862-1864 IMPERF, "LARGE STAR" WMK (W.1), (DAVIES PRINT, AUCKLAND)',
-        typeId: typeData.id,
-        year: 1862,
-        issueDate: "1862-01-01",
-        description: "Davies print from Auckland with Large Star watermark",
-        watermark: "Large Star (W.1)",
-        perforation: "Imperforate",
-        printingMethod: "Engraved",
-        printer: "Davies Print, Auckland",
-        totalStamps: 4,
-      },
-    )
-  } else {
-    for (let i = 1; i <= typeData.totalStampGroups; i++) {
-      groups.push({
-        id: `${typeData.id}-group-${i}`,
-        name: `Stamp Group ${i} - ${typeData.name}`,
-        typeId: typeData.id,
-        year: 1855 + i,
-        issueDate: `${1855 + i}-01-01`,
-        description: `Stamp group ${i} description`,
-        watermark: i % 2 === 0 ? "Large Star" : "None",
-        perforation: i % 3 === 0 ? "Perf 14" : "Imperforate",
-        printingMethod: "Engraved",
-        printer: "Various",
-        totalStamps: Math.floor(Math.random() * 5) + 2,
-      })
+      };
     }
-  }
-  return groups
+    acc[key].totalCategories++; // Placeholder: count of stamps as categories
+    acc[key].hasCategories = true; // Assume true if there are stamps
+    return acc;
+  }, {});
+
+  return Object.values(groupedByRelease);
 }
 
-export const generateStampsData = async (dataId: string, totalStampsToGenerate: number, dataType: 'paperType' | 'stampGroup'): Promise<StampData[]> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 300))
-  const mockStamps: StampData[] = []
-  let denominations: { value: number; symbol: string }[] = []
-  let colors = ["Deep carmine-red", "Bright red", "Dull orange", "Bright orange-vermillion", "Carmine", "Vermillion"]
+export const getCategoriesForRelease = async (countryCode: string, year: number, releaseId: string): Promise<CategoryData[]> => {
+  await new Promise(resolve => setTimeout(resolve, 300)) // Simulate API delay
 
-  if (dataType === 'stampGroup') {
-    // Logic for Campbell Paterson style denominations
-    const stampGroupYear = 1855; // Placeholder, replace with actual stampGroupData.year if needed
-    if (stampGroupYear >= 1970) {
-      denominations = [
-        { value: 10, symbol: "c" }, { value: 20, symbol: "c" }, { value: 30, symbol: "c" },
-        { value: 50, symbol: "c" }, { value: 80, symbol: "c" }, { value: 1.00, symbol: "$" },
-        { value: 1.50, symbol: "$" }, { value: 2.00, symbol: "$" }, { value: 3.00, symbol: "$" },
-        { value: 5.00, symbol: "$" },
-      ]
-    } else {
-      denominations = [
-        { value: 1, symbol: "d" }, { value: 2, symbol: "d" }, { value: 3, symbol: "d" },
-        { value: 4, symbol: "d" }, { value: 6, symbol: "d" }, { value: 8, symbol: "d" },
-        { value: 1, symbol: "/-" }, { value: 2, symbol: "/-" },
-      ]
+  const releaseStamps = apiStampData.filter(s => s.country === countryCode && s.issueYear === year && (s.releaseName === releaseId || (!s.releaseName && releaseId === 'unknown_release')));
+  const groupedByCategory = releaseStamps.reduce((acc: any, stamp: any) => {
+    const key = stamp.categoryName || 'unknown_category';
+    if (!acc[key]) {
+      acc[key] = {
+        id: key,
+        name: stamp.categoryName || 'Unknown Category',
+        code: stamp.categoryCode || 'Unknown',
+        releaseId: releaseId,
+        description: stamp.categoryDescription || `${stamp.categoryName} category`,
+        totalPaperTypes: 0,
+        hasPaperTypes: false,
+      };
     }
+    acc[key].totalPaperTypes++; // Placeholder: count of stamps as paper types
+    acc[key].hasPaperTypes = true; // Assume true if there are stamps
+    return acc;
+  }, {});
 
-    for (let i = 0; i < totalStampsToGenerate; i++) {
-      const denom = denominations[i % denominations.length]
-      const color = colors[i % colors.length]
+  return Object.values(groupedByCategory);
+}
 
-      const instances: StampInstance[] = [
-        {
-          id: `${dataId}-stamp-${i + 1}-mint`,
-          code: "",
-          description: "Mint unhinged",
-          mintValue: `$${(denom.value * 25).toFixed(2)}`,
-          usedValue: "",
-        },
-        {
-          id: `${dataId}-stamp-${i + 1}-used`,
-          code: "",
-          description: "Fine used",
-          mintValue: "",
-          usedValue: `$${(denom.value * 12).toFixed(2)}`,
-        },
-      ]
+export const getPaperTypesForCategory = async (countryCode: string, year: number, releaseId: string, categoryId: string): Promise<PaperTypeData[]> => {
+  await new Promise(resolve => setTimeout(resolve, 300)) // Simulate API delay
 
-      if (i % 2 === 0) {
-        instances.push({
-          id: `${dataId}-stamp-${i + 1}-reentry`,
-          code: "(Z)",
-          description: "Re-entries, various",
-          mintValue: `$${(denom.value * 35).toFixed(2)}`,
-          usedValue: `$${(denom.value * 18).toFixed(2)}`,
-        })
-      }
+  const categoryStamps = apiStampData.filter(s => 
+    s.country === countryCode && 
+    s.issueYear === year && 
+    (s.releaseName === releaseId || (!s.releaseName && releaseId === 'unknown_release')) && 
+    (s.categoryName === categoryId || (!s.categoryName && categoryId === 'unknown_category'))
+  );
 
-      if (i % 3 === 0) {
-        instances.push({
-          id: `${dataId}-stamp-${i + 1}-cover`,
-          code: "(Y)",
-          description: "On cover, pair or two singles",
-          mintValue: "",
-          usedValue: `$${(denom.value * 45).toFixed(2)}`,
-        })
-      }
-
-      mockStamps.push({
-        id: `${dataId}-stamp-${i + 1}`,
-        name: `${denom.value}${denom.symbol} ${color}`,
-        country: "New Zealand",
-        stampImageUrl: "/placeholder.svg",
-        catalogNumber: `CP${i + 1}`,
-        stampGroupId: dataId,
-        denominationValue: denom.value,
-        denominationSymbol: denom.symbol,
-        color: color,
-        paperType: "Wove paper",
-        instances: instances,
-        stampDetailsJson: JSON.stringify({
-          perforation: "Imperforate",
-          watermark: "Large Star",
-          printingMethod: "Engraved",
-          designer: "Unknown",
-          printRun: "Unknown",
-          paperType: "Wove paper",
-          gum: "Original gum",
-          varieties: instances.filter(inst => inst.code).map(inst => inst.description),
-          theme: "Queen Victoria",
-          size: "Standard",
-          errors: [],
-          rarityRating: "Fine",
-        }),
-      })
+  console.log(`Found ${categoryStamps.length} stamps for category ${categoryStamps}`)
+  
+  const groupedByPaperType = categoryStamps.reduce((acc: any, stamp: any) => {
+    const key = stamp.paperTypeName || 'unknown_paper_type';
+    if (!acc[key]) {
+      acc[key] = {
+        id: key,
+        name: stamp.paperTypeName || 'Unknown Paper Type',
+        code: key,
+        categoryId: categoryId,
+        description: stamp.paperTypeDescription || `${stamp.paperTypeName} paper type`,
+        totalStamps: 0,
+      };
     }
-  } else if (dataType === 'paperType') {
-    // Logic for Stanley Gibbons style stamps
-    const stanleyGibbonsStamps = [
-      {
-        denominationValue: 2,
-        denominationSymbol: "d",
-        color: "deep ultramarine",
-        instances: [
-          {
-            id: `${dataId}-stamp-1-mint`,
-            code: "",
-            description: "Mint",
-            mintValue: "£125",
-            usedValue: "",
-          },
-          {
-            id: `${dataId}-stamp-1-used`,
-            code: "",
-            description: "Used",
-            mintValue: "",
-            usedValue: "£45",
-          },
-          {
-            id: `${dataId}-stamp-1-waees`,
-            code: 'a',
-            description: '"WAEES" (R. 3/3)',
-            mintValue: "£350",
-            usedValue: "£150",
-            rarity: "Scarce",
-          },
-        ],
-      },
-      {
-        denominationValue: 2,
-        denominationSymbol: "d",
-        color: "indigo",
-        instances: [
-          {
-            id: `${dataId}-stamp-2-mint`,
-            code: "",
-            description: "Mint",
-            mintValue: "£115",
-            usedValue: "",
-          },
-          {
-            id: `${dataId}-stamp-2-used`,
-            code: "",
-            description: "Used",
-            mintValue: "",
-            usedValue: "£40",
-          },
-          {
-            id: `${dataId}-stamp-2-waees`,
-            code: 'a',
-            description: '"WAEES" (R. 3/3)',
-            mintValue: "£350",
-            usedValue: "£150",
-            rarity: "Scarce",
-          },
-        ],
-      },
-    ]
+    acc[key].totalStamps++;
+    return acc;
+  }, {});
 
-    stanleyGibbonsStamps.forEach((stampTemplate, index) => {
-      mockStamps.push({
-        id: `${dataId}-stamp-${index + 1}`,
-        name: `${stampTemplate.denominationValue}${stampTemplate.denominationSymbol} ${stampTemplate.color}`,
-        country: "Great Britain",
-        stampImageUrl: "/placeholder.svg",
-        catalogNumber: `SG${index + 1}`,
-        paperTypeId: dataId,
-        denominationValue: stampTemplate.denominationValue,
-        denominationSymbol: stampTemplate.denominationSymbol,
-        color: stampTemplate.color,
-        paperType: "", // This will be filled by parsing stampDetailsJson later
-        instances: stampTemplate.instances,
-        stampDetailsJson: JSON.stringify({
-          perforation: "Imperf",
-          watermark: "None",
-          printingMethod: "Line Engraved",
-          designer: "Unknown",
-          printRun: "Unknown",
-          paperType: "(i) Thick yellowish wove paper", // Example value
-          gum: "Original gum",
-          theme: "Definitive",
-          size: "Standard",
-          rarityRating: "Fine",
-        }),
-      })
-    })
-  }
-  return mockStamps.slice(0, totalStampsToGenerate)
+  return Object.values(groupedByPaperType);
+}
+
+export const getStampsForPaperType = async (countryCode: string, year: number, releaseId: string, categoryId: string, paperTypeCode: string): Promise<StampData[]> => {
+  await new Promise(resolve => setTimeout(resolve, 300)) // Simulate API delay
+
+  const stamps = apiStampData.filter(s =>
+    s.country === countryCode &&
+    s.issueYear === year &&
+    (s.releaseName === releaseId || (!s.releaseName && releaseId === 'unknown_release')) &&
+    (s.categoryName === categoryId || (!s.categoryName && categoryId === 'unknown_category')) &&
+    (s.paperTypeName === paperTypeCode || (!s.paperTypeName && paperTypeCode === 'unknown_paper_type'))
+  ).map(convertApiStampToStampData);
+
+  const stampIds = stamps.map(s => s.stampId);
+  const stampInstances = apiStampData.filter(s => stampIds.includes(s.ParentStampId)).map(convertApiStampToStampData);
+
+  stamps.forEach(stamp => {
+    const instances = stampInstances.filter(s => s.parentStampId === stamp.stampId);
+    stamp.instances = instances as never;
+  });
+
+  return stamps as unknown as StampData[];
+}
+
+export const getStampsForStampGroup = async (stampGroupId: string, typeId: string, seriesName: string): Promise<StampData[]> => {
+  await new Promise(resolve => setTimeout(resolve, 300)); // Simulate API delay
+
+  const stamps = apiStampData.filter(s =>
+    (s.stampGroupName === stampGroupId || (!s.stampGroupName && stampGroupId === 'unknown_group')) &&
+    (s.itemTypeName === typeId || (!s.itemTypeName && typeId === 'unknown_type')) &&
+    (s.seriesName === seriesName || (!s.seriesName && seriesName === 'unknown_series') &&
+    (s.isInstance === false))
+  ).map(convertApiStampToStampData);
+
+  const stampIds = stamps.map(s => s.stampId);
+
+  const stampInstances = apiStampData.filter(s => stampIds.includes(s.ParentStampId)).map(convertApiStampToStampData);
+
+  stamps.forEach(stamp => {
+    const instances = stampInstances.filter(s => s.parentStampId === stamp.stampId);
+    stamp.instances = instances as never;
+  })
+
+  return stamps as unknown as StampData[];
 }
 
 export const parseStampDetails = (stampDetailsJson: string): ParsedStampDetails => {
   try {
     const details = JSON.parse(stampDetailsJson);
     
-    const getNestedValue = (obj: any, path: string): string => {
-      const keys = path.split('.');
-      let current = obj;
-      for (const key of keys) {
-        if (current && typeof current === 'object' && key in current) {
-          current = current[key];
-        } else {
-          return '';
-        }
-      }
-      return typeof current === 'string' ? current : '';
-    };
-
+    // Direct mapping from apiStampData fields to ParsedStampDetails
     return {
-      perforation: getNestedValue(details, 'perfsep.perftype.value') || getNestedValue(details, 'perftype.value') || details.perforation || 'Perf 14',
-      watermark: getNestedValue(details, 'wmkchar.watermarkpresence.value') || details.watermark || 'None',
-      printingMethod: getNestedValue(details, 'printchar.printmethods.printmethod.value') || getNestedValue(details, 'printmethod.value') || details.printingMethod || 'Engraved',
-      designer: getNestedValue(details, 'design.designer.value') || details.designer || 'Unknown',
-      printRun: getNestedValue(details, 'quantity.value') || details.printRun || 'Unknown',
-      paperType: getNestedValue(details, 'paperchar.papertypes.papertype.value') || details.paperType || 'Standard',
-      gum: getNestedValue(details, 'primarydetails.gum.value') || details.gum || 'Original gum',
-      theme: getNestedValue(details, 'theme.value') || details.theme || 'General',
-      size: getNestedValue(details, 'size.value') || details.size || 'Standard',
-      rarityRating: getNestedValue(details, 'knownrarity.rarityrating.value') || details.rarityRating || 'Common'
+      perforation: details.perforation || details.perforationName || 'Unknown',
+      watermark: details.watermark || details.watermarkName || 'None',
+      printingMethod: details.printingMethod || 'Unknown',
+      designer: details.designer || 'Unknown',
+      printRun: details.printRun || 'Unknown',
+      paperType: details.paperType || details.paperName || 'Standard',
+      gum: details.gumType || 'Original gum',
+      theme: details.theme || 'General',
+      size: details.sizeFormat || 'Standard',
+      rarityRating: details.rarityRating || 'Common',
+      catalogPrice: details.catalogPrice,
+      estimatedValue: details.estimatedMarketValue,
+      currentMarketValue: details.currentMarketValue,
+      condition: details.conditionNotes || 'Unknown',
+      usage: 'Unknown', // No direct mapping in apiStampData
+      postalHistoryType: details.postalHistoryType,
+      errorType: details.errorType as string || 'None',
+      specialNotes: details.specialNotes,
+      rarity: details.rarityRating,
+      varieties: details.varietyType ? details.varietyType.split(',').map((v: string) => v.trim()) : [],
+      errors: details.knownError ? [details.knownError] : [],
     };
   } catch (error) {
     console.error('Error parsing stamp details:', error);
     return {
-      perforation: 'Perf 14',
+      perforation: 'Unknown',
       watermark: 'None',
-      printingMethod: 'Engraved',
+      printingMethod: 'Unknown',
       designer: 'Unknown',
       printRun: 'Unknown',
       paperType: 'Standard',
@@ -672,18 +320,18 @@ export const createStampDetailData = (stamp: StampData): StampDetailData => {
   return {
     ...stamp,
     parsedDetails,
-    relatedStamps: [],
+    relatedStamps: [], // This would require more logic to find related stamps
     varieties: {
-      perforations: [parsedDetails.perforation || 'Perf 14'],
-      colors: [stamp.color],
-      paperTypes: [stamp.paperType || 'Standard'],
-      errors: []
+      perforations: parsedDetails.perforation ? [parsedDetails.perforation] : [],
+      colors: stamp.color ? [stamp.color] : [],
+      paperTypes: parsedDetails.paperType ? [parsedDetails.paperType] : [],
+      errors: parsedDetails.errors || []
     },
     marketInfo: {
-      mintValue: stamp.instances.find(i => i.mintValue)?.mintValue || undefined,
-      usedValue: stamp.instances.find(i => i.usedValue)?.usedValue || undefined,
+      mintValue: stamp.estimatedMarketValue ? `$${stamp.estimatedMarketValue.toFixed(2)}` : undefined,
+      usedValue: stamp.actualPrice ? `$${stamp.actualPrice.toFixed(2)}` : undefined,
       rarity: parsedDetails.rarityRating || 'Common'
     },
-    bibliography: `Catalog Entry: ${stamp.catalogNumber}\n\nIssue Details:\nThe ${stamp.denominationValue}${stamp.denominationSymbol} ${stamp.color} stamp from the ${stamp.catalogNumber.startsWith('CP') ? 'Campbell Paterson' : 'Stanley Gibbons'} catalog. This stamp represents part of a comprehensive stamp group showcasing ${parsedDetails.theme || 'various themes'}.\n\nTechnical Specifications:\n• Perforation: ${parsedDetails.perforation}\n• Printing Method: ${parsedDetails.printingMethod}\n• Paper Type: ${parsedDetails.paperType}\n• Watermark: ${parsedDetails.watermark}\n• Gum Type: ${parsedDetails.gum}\n• Designer: ${parsedDetails.designer}\n• Print Run: ${parsedDetails.printRun}\n\nCollector Notes:\nThis stamp has a rarity rating of "${parsedDetails.rarityRating}" among collectors. The ${stamp.color} color variant is particularly sought after for its vibrant hues and precise registration.\n\nVarieties and Errors:\nWhile no major varieties are currently documented, collectors should examine copies for minor plate flaws or color variations that may increase collectible value.\n\nReferences:\n• Official Postal Service Records\n• Specialized Philatelic Catalogues\n• Contemporary Collector Surveys`
+    bibliography: parsedDetails.bibliography || `Catalog Entry: ${stamp.catalogNumber}\n\nIssue Details:\nThe ${stamp.denominationValue}${stamp.denominationSymbol} ${stamp.color} stamp from the ${stamp.catalogNumber.startsWith('CP') ? 'Campbell Paterson' : 'Stanley Gibbons'} catalog. This stamp represents part of a comprehensive stamp group showcasing ${parsedDetails.theme || 'various themes'}.\n\nTechnical Specifications:\n• Perforation: ${parsedDetails.perforation || 'Unknown'}\n• Printing Method: ${parsedDetails.printingMethod || 'Unknown'}\n• Paper Type: ${parsedDetails.paperType || 'Unknown'}\n• Watermark: ${parsedDetails.watermark || 'Unknown'}\n• Gum Type: ${parsedDetails.gum || 'Unknown'}\n• Designer: ${parsedDetails.designer || 'Unknown'}\n• Print Run: ${parsedDetails.printRun || 'Unknown'}\n\nCollector Notes:\nThis stamp has a rarity rating of "${parsedDetails.rarityRating || 'Common'}" among collectors. The ${stamp.color || 'Unknown'} color variant is particularly sought after for its vibrant hues and precise registration.\n\nVarieties and Errors:\n${parsedDetails.varieties && parsedDetails.varieties.length > 0 ? `Known varieties include: ${parsedDetails.varieties.join(', ')}.` : 'No major varieties are currently documented.'} ${parsedDetails.errors && parsedDetails.errors.length > 0 ? `Known errors include: ${parsedDetails.errors.join(', ')}.` : ''} While no major varieties are currently documented, collectors should examine copies for minor plate flaws or color variations that may increase collectible value.\n\nReferences:\n• Official Postal Service Records\n• Specialized Philatelic Catalogues\n• Contemporary Collector Surveys`
   }
 } 

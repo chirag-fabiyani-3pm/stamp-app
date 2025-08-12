@@ -3,32 +3,23 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { BookOpen, ChevronRight, Search } from "lucide-react"
 import { ReleaseData, YearData } from "@/types/catalog"
-import { generateReleasesData } from "@/lib/data/list-catalog-data"
+import { getReleasesForYear } from "@/lib/data/list-catalog-data"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface YearModalContentProps {
   yearData: YearData
+  releases: ReleaseData[]
   onReleaseClick: (release: ReleaseData) => void
   isLoading: boolean;
 }
 
 export function YearModalContent({
   yearData,
+  releases,
   onReleaseClick,
   isLoading
 }: YearModalContentProps) {
-  const [releases, setReleases] = useState<ReleaseData[]>([])
   const [searchTerm, setSearchTerm] = useState("")
-
-  useEffect(() => {
-    const loadReleases = async () => {
-      const data = await generateReleasesData(yearData)
-      setReleases(data)
-    }
-    if (!isLoading) {
-      loadReleases()
-    }
-  }, [yearData, isLoading])
 
   const filteredReleases = useMemo(() => {
     if (!searchTerm) return releases

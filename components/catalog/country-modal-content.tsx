@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Search, Calendar, BookOpen, ChevronRight, AlertCircle, Award, MapPin } from "lucide-react"
 import { CountryData, YearData, ReleaseData, CategoryData, PaperTypeData, StampData, ParsedStampDetails, StampDetailData, SeriesData, TypeData, StampGroupData } from "@/types/catalog"
-import { generateReleasesData, generateCategoriesData, generatePaperTypesData, generateStampsData, parseStampDetails, createStampDetailData, generateTypeData, generateStampGroupsData } from "@/lib/data/list-catalog-data"
+import { getReleasesForYear, getCategoriesForRelease, getPaperTypesForCategory, getStampsForPaperType, getStampsForStampGroup, getYearsForCountry, getTypesForSeries } from "@/lib/data/list-catalog-data"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface CountryModalContentProps {

@@ -71,6 +71,8 @@ import {
   mapApiStampToStampData,
   fetchAllStampsFromAPI
 } from "@/lib/api/investigate-search-api"
+// Use shared data provider instead of importing apiStampData directly
+import { useCatalogData } from "@/lib/context/catalog-data-context"
 import { Skeleton } from "@/components/ui/skeleton"
 
 
@@ -233,17 +235,54 @@ const reactFlowStyles = `
   }
 `
 
-const GROUPING_FIELDS: { value: GroupingField; label: string }[] = [
-  { value: 'seriesName', label: 'Series Name' },
-  { value: 'issueYear', label: 'Issue Year' },
-  { value: 'country', label: 'Country' },
-  { value: 'color', label: 'Color' },
-  { value: 'paperType', label: 'Paper Type' },
-  { value: 'denominationValue', label: 'Denomination' },
-  { value: 'publisher', label: 'Publisher' },
+// Central registry of grouping options with display labels and accessors.
+// Add to this list to enable new grouping dimensions from the new API response shape.
+const GROUPING_FIELDS: { value: GroupingField; label: string; accessor: (s: StampData) => string }[] = [
+  { value: 'seriesName', label: 'Series Name', accessor: (s) => s.seriesName || 'Unknown Series' },
+  { value: 'issueYear', label: 'Issue Year', accessor: (s) => (s.issueYear != null ? String(s.issueYear) : 'Unknown Year') },
+  { value: 'country', label: 'Country', accessor: (s) => s.country || 'Unknown Country' },
+  { value: 'color', label: 'Color', accessor: (s) => s.color || 'Unknown Color' },
+  { value: 'paperType', label: 'Paper Type', accessor: (s) => s.paperType || 'Unknown Paper Type' },
+  { value: 'denomination', label: 'Denomination', accessor: (s) => s.denominationValue ? `${s.denominationValue}${s.denominationSymbol || ''}` : 'Unknown Denomination' },
+  // Back-compat alias
+  { value: 'publisher', label: 'Publisher', accessor: (s) => s.publisher || 'Unknown Publisher' },
+  // Additional groupings leveraging richer apiStampData → StampData mapping
+  { value: 'catalogName', label: 'Catalog Name', accessor: (s) => s.catalogName || 'Unknown Catalog' },
+  { value: 'stampGroupId', label: 'Stamp Group', accessor: (s) => s.stampGroupId || 'Unknown Group' },
+  { value: 'countryCode', label: 'Country Code', accessor: (s) => s.countryCode || 'Unknown Country' },
+  { value: 'denominationCurrency', label: 'Currency Code', accessor: (s) => s.denominationCurrency || 'Unknown Currency' },
+  { value: 'denominationSymbol', label: 'Currency Symbol', accessor: (s) => s.denominationSymbol || 'Unknown Symbol' },
+  { value: 'rarity', label: 'Rarity', accessor: (s) => s.rarity || 'Unknown' },
+  { value: 'condition', label: 'Condition', accessor: (s) => s.condition || 'Unknown' },
+  // Extracted from stampDetailsJson
+  { value: 'perforation', label: 'Perforation', accessor: (s) => {
+      try { const d = JSON.parse(s.stampDetailsJson); return d.perforation || 'Unknown'; } catch { return 'Unknown'; }
+    }
+  },
+  { value: 'watermark', label: 'Watermark', accessor: (s) => {
+      try { const d = JSON.parse(s.stampDetailsJson); return d.watermark || 'Unknown'; } catch { return 'Unknown'; }
+    }
+  },
+  { value: 'printingMethod', label: 'Printing Method', accessor: (s) => {
+      try { const d = JSON.parse(s.stampDetailsJson); return d.printingMethod || 'Unknown'; } catch { return 'Unknown'; }
+    }
+  },
+  { value: 'designer', label: 'Designer', accessor: (s) => {
+      try { const d = JSON.parse(s.stampDetailsJson); return d.designer || 'Unknown'; } catch { return 'Unknown'; }
+    }
+  },
+  { value: 'postalHistoryType', label: 'Postal History Type', accessor: (s) => {
+      try { const d = JSON.parse(s.stampDetailsJson); return d.postalHistoryType || 'Unknown'; } catch { return 'Unknown'; }
+    }
+  },
+  { value: 'errorType', label: 'Error Type', accessor: (s) => {
+      try { const d = JSON.parse(s.stampDetailsJson); return d.errorType || 'None'; } catch { return 'Unknown'; }
+    }
+  },
 ]
 
 export function CatalogContent() {
+  const { normalizedStamps, dbReady } = useCatalogData()
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
@@ -351,29 +390,32 @@ export function CatalogContent() {
 
   // Update URL when navigation changes
   const updateURL = (newPath: string[], preserveOtherParams: boolean = true) => {
-    const params = new URLSearchParams()
-    
-    // Add navigation path
+    // Start from existing params (if preserving), otherwise fresh
+    const params = preserveOtherParams
+      ? new URLSearchParams(window.location.search)
+      : new URLSearchParams()
+
+    // Path
     if (newPath.length > 0) {
       params.set('path', encodeURIComponent(newPath.join(',')))
+    } else {
+      params.delete('path')
     }
-    
-    
-    if (preserveOtherParams) {
-      // Preserve other parameters
-      if (searchTerm) params.set('search', searchTerm)
-      if (groupSearchTerm) params.set('groupSearch', groupSearchTerm)
-      if (viewMode !== 'grid') params.set('view', viewMode)
-      // Only add grouping param if there are actual grouping levels set
-      if (groupingLevels.length > 0) {
-        params.set('grouping', groupingLevels.join(','))
-      }
+
+    // Controlled params
+    if (searchTerm) params.set('search', searchTerm); else params.delete('search')
+    if (groupSearchTerm) params.set('groupSearch', groupSearchTerm); else params.delete('groupSearch')
+    if (viewMode !== 'grid') params.set('view', viewMode); else params.delete('view')
+    if (groupingLevels.length > 0) params.set('grouping', groupingLevels.join(',')); else params.delete('grouping')
+
+    const newQuery = params.toString()
+    const newUrl = newQuery ? `${window.location.pathname}?${newQuery}` : `${window.location.pathname}`
+    const currentUrl = `${window.location.pathname}${window.location.search}`
+
+    // Avoid pushing same URL to prevent loops
+    if (newUrl !== currentUrl) {
+      router.replace(newUrl, { scroll: false })
     }
-    
-    const queryString = params.toString()
-    const existingParams = new URLSearchParams(window.location.search)
-    const url = queryString ? `${window.location.pathname}?${queryString}&${existingParams.toString()}` : `${window.location.pathname}?${existingParams.toString()}`
-    router.push(url, { scroll: false })
   }
 
   // Update URL when other parameters change
@@ -381,110 +423,22 @@ export function CatalogContent() {
     updateURL(navigation.path, true)
   }
 
-  // Initialize IndexedDB with real API data if empty
+  // Initialize IndexedDB with real API data if empty (now handled at ModernCatalog level)
   const initializeIndexedDB = async () => {
     try {
       const isEmpty = await checkIndexedDBEmpty()
-      console.log('IndexedDB isEmpty:', isEmpty)
-      
       if (isEmpty) {
-        console.log('IndexedDB is empty, checking authentication...')
-        
-        // Check if user is logged in
-        const userDataStr = localStorage.getItem('stamp_user_data')
-        console.log('User data from localStorage:', userDataStr ? 'Found' : 'Not found')
-        
-        if (!userDataStr) {
-          // No logged in user - show error that authentication is required
-          console.log('User not logged in, no data available')
-          toast({
-            title: "Authentication Required",
-            description: "Please log in to access the stamp catalog",
-            variant: "destructive"
-          })
-          return
+        // If empty here, still seed using shared normalized stamps
+        if (normalizedStamps.length > 0) {
+          await saveStampsToIndexedDB(normalizedStamps)
         }
-
-        try {
-          const userData = JSON.parse(userDataStr)
-          console.log('Parsed user data:', { hasJwt: !!userData.jwt, userId: userData.id || 'N/A' })
-          const jwt = userData.jwt
-
-          if (!jwt) {
-            console.log('No JWT token found in user data')
-            throw new Error('No JWT token found')
-          }
-
-          console.log('JWT token found, fetching data from API...')
-          toast({
-            title: "Loading Catalog",
-            description: "Fetching stamp data from server...",
-          })
-
-          // Fetch all stamps from API
-          const apiStamps = await fetchAllStampsFromAPI(jwt)
-          console.log(`API returned ${apiStamps.length} stamps`)
-          
-          if (apiStamps.length > 0) {
-            console.log('Saving API stamps to IndexedDB...')
-            await saveStampsToIndexedDB(apiStamps)
-            toast({
-              title: "Database Initialized",
-              description: `Loaded ${apiStamps.length} stamps from server`,
-            })
-          } else {
-            // No stamps available from API
-            console.log('API returned no stamps')
-            toast({
-              title: "No Data Available", 
-              description: "No stamps found on server",
-              variant: "destructive"
-            })
-          }
-        } catch (apiError: unknown) {
-          console.error('Error fetching from API:', apiError)
-          const errorMessage = apiError instanceof Error ? apiError.message : 'Unknown error'
-          
-          // Check if it's a constraint error (schema issue)
-          if (errorMessage.includes('ConstraintError') || errorMessage.includes('uniqueness requirements')) {
-            console.log('Detected schema conflict, recreating database...')
-            try {
-              await recreateIndexedDB()
-              // Try API fetch again with fresh database
-              const userData = JSON.parse(userDataStr)
-              const retryJwt = userData.jwt
-              if (retryJwt) {
-                const apiStamps = await fetchAllStampsFromAPI(retryJwt)
-                if (apiStamps.length > 0) {
-                  await saveStampsToIndexedDB(apiStamps)
-                  toast({
-                    title: "Database Upgraded",
-                    description: `Database schema updated. Loaded ${apiStamps.length} stamps from server.`,
-                  })
-                  return
-                }
-              }
-            } catch (retryError) {
-              console.error('Retry after database recreation failed:', retryError)
-            }
-          }
-          
-          toast({
-            title: "Server Error",
-            description: `Unable to load data: ${errorMessage}`,
-            variant: "destructive"
-          })
-        }
-      } else {
-        console.log('IndexedDB already has data, skipping initialization')
+        toast({
+          title: "Database Initialized",
+          description: `Loaded ${normalizedStamps.length} stamps into local database`,
+        })
       }
     } catch (error) {
       console.error('Error initializing IndexedDB:', error)
-      toast({
-        title: "Database Error",
-        description: "Unable to initialize local database",
-        variant: "destructive"
-      })
     }
   }
 
@@ -533,10 +487,7 @@ export function CatalogContent() {
     setCurrentOffset(0)
     setAllStampsLoaded(false)
 
-    try {
-      // First, initialize IndexedDB if needed
-      await initializeIndexedDB()
-      
+    try {  
       // Try to get total count first
       const totalCount = await getTotalStampsCountFromIndexedDB()
       setTotalStampsCount(totalCount)
@@ -547,7 +498,6 @@ export function CatalogContent() {
         setStamps(initialStamps)
         setCurrentOffset(INDEXEDDB_PAGE_SIZE)
         setAllStampsLoaded(!hasMore)
-        console.log(`Loaded ${initialStamps.length} stamps from IndexedDB (page 1)`)
       } else {
         // Fallback to API or mock data
         await loadFromAPIOrData()
@@ -574,7 +524,6 @@ export function CatalogContent() {
         setStamps(prevStamps => [...prevStamps, ...moreStamps])
         setCurrentOffset(prev => prev + INDEXEDDB_PAGE_SIZE)
         setAllStampsLoaded(!hasMore)
-        console.log(`Loaded ${moreStamps.length} more stamps from IndexedDB`)
       } else {
         setAllStampsLoaded(true)
       }
@@ -588,54 +537,28 @@ export function CatalogContent() {
 
   // Fallback function for API data
   const loadFromAPIOrData = async () => {
-    const userDataStr = localStorage.getItem('stamp_user_data')
-    if (!userDataStr) {
-      // No user logged in
-      setStamps([])
-      setTotalStampsCount(0)
-      setAllStampsLoaded(true)
-      setError('Please log in to access the stamp catalog')
-      return
-    }
-    
     try {
-      const userData = JSON.parse(userDataStr)
-      const jwt = userData.jwt
-
-      if (!jwt) {
-        throw new Error('No JWT token found')
-      }
-
-      // Fetch all stamps from the API endpoint
-      const apiStamps = await fetchAllStampsFromAPI(jwt)
-      
-      if (apiStamps.length > 0) {
-        setStamps(apiStamps)
-        setTotalStampsCount(apiStamps.length)
-        setAllStampsLoaded(true)
-        
-        // Save fetched data to IndexedDB for future use
-        await saveStampsToIndexedDB(apiStamps)
-      } else {
-        // No stamps available from API
-        setStamps([])
-        setTotalStampsCount(0)
-        setAllStampsLoaded(true)
-        setError('No stamps found on server')
-      }
+      // Use shared normalized stamps immediately
+      const localStamps = normalizedStamps
+      setStamps(localStamps)
+      setTotalStampsCount(localStamps.length)
+      setAllStampsLoaded(true)
+      // Persist into IndexedDB for subsequent paginated loads
+      await saveStampsToIndexedDB(localStamps)
     } catch (error) {
-      console.error('Error fetching from API:', error)
-      // No data available
+      console.error('Error loading local apiStampData:', error)
       setStamps([])
       setTotalStampsCount(0)
       setAllStampsLoaded(true)
-      setError('Unable to load stamp data from server')
+      setError('Unable to load local catalog data')
     }
   }
 
   useEffect(() => {
+    // Wait for provider to be ready to avoid double-seeding
+    if (!dbReady) return
     loadInitialStamps()
-  }, [])
+  }, [dbReady])
 
   // Filter stamps based on debounced search term
   const filteredStamps = useMemo(() => {
@@ -663,35 +586,11 @@ export function CatalogContent() {
       const grouped: GroupedStamps = {}
 
       stamps.forEach(stamp => {
-        let groupKey: string
-        
-        switch (currentLevel) {
-          case 'seriesName':
-            groupKey = stamp.seriesName || 'Unknown Series'
-            break
-          case 'issueYear':
-            groupKey = stamp.issueYear ? stamp.issueYear.toString() : 'Unknown Year'
-            break
-          case 'country':
-            groupKey = stamp.country || 'Unknown Country'
-            break
-          case 'color':
-            groupKey = stamp.color || 'Unknown Color'
-            break
-          case 'paperType':
-            groupKey = stamp.paperType || 'Unknown Paper Type'
-            break
-          case 'denominationValue':
-            groupKey = stamp.denominationValue 
-              ? `${stamp.denominationValue}${stamp.denominationSymbol || ''}`
-              : 'Unknown Denomination'
-            break
-          case 'publisher':
-            groupKey = stamp.publisher || 'Unknown Publisher'
-            break
-          default:
-            groupKey = 'Other'
-        }
+        // Find accessor for the current grouping field, fallback to dynamic property access
+        const gf = GROUPING_FIELDS.find(f => f.value === currentLevel)
+        const groupKey = gf
+          ? gf.accessor(stamp)
+          : String((stamp as any)[currentLevel] ?? 'Unknown')
 
         if (!grouped[groupKey]) {
           grouped[groupKey] = []
@@ -830,7 +729,6 @@ export function CatalogContent() {
       if (needsAllStamps && !allStampsLoaded) {
         try {
           setLoading(true)
-          console.log('Loading all stamps for search/grouping...')
           
           // Load all stamps from IndexedDB
           const allStamps = await getStampsFromIndexedDB()
@@ -839,7 +737,6 @@ export function CatalogContent() {
             setAllStampsLoaded(true)
             setCurrentOffset(allStamps.length)
             setTotalStampsCount(allStamps.length)
-            console.log(`Loaded all ${allStamps.length} stamps for complete search/grouping`)
             
             toast({
               title: "Complete Dataset Loaded",
@@ -968,19 +865,18 @@ export function CatalogContent() {
 
   const addGroupingLevel = (field: GroupingField) => {
     if (!groupingLevels.includes(field)) {
-      setGroupingLevels([...groupingLevels, field])
-      // Reset navigation when grouping changes
-      updateURL([])
+      const next = [...groupingLevels, field]
+      setGroupingLevels(next)
+      // Reset navigation when grouping changes and sync URL only if changed
+      updateURL([], true)
     }
   }
 
   const removeGroupingLevel = (index: number) => {
     const newLevels = groupingLevels.filter((_, i) => i !== index)
     setGroupingLevels(newLevels)
-    // Reset navigation when grouping changes
-    updateURL([])
-    
-    // If no grouping levels left and we're in list view, switch back to grid view
+    // Reset navigation when grouping changes and sync URL only if changed
+    updateURL([], true)
     if (newLevels.length === 0 && viewMode === 'list') {
       setViewMode('grid')
     }
@@ -1101,9 +997,6 @@ export function CatalogContent() {
 
   // Function to create tree layout using dagre
   const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
-    console.log('getLayoutedElements input:')
-    console.log('- Nodes:', nodes.length, nodes.map(n => n.id))
-    console.log('- Edges:', edges.length, edges.map(e => `${e.source} -> ${e.target}`))
     
     const g = new dagre.graphlib.Graph()
     g.setDefaultEdgeLabel(() => ({}))
@@ -1137,10 +1030,6 @@ export function CatalogContent() {
         },
       }
     })
-
-    console.log('getLayoutedElements output:')
-    console.log('- Layouted nodes:', layoutedNodes.map(n => ({ id: n.id, pos: n.position })))
-    console.log('- Edges (unchanged):', edges.map(e => ({ id: e.id, source: e.source, target: e.target, style: e.style })))
 
     return { nodes: layoutedNodes, edges }
   }
@@ -1377,16 +1266,6 @@ export function CatalogContent() {
       )
     }
     
-    // Debug: Log all data for debugging
-    console.log('=== DEBUGGING EDGES ===')
-    console.log('Group name:', groupName)
-    console.log('Root node ID:', rootNodeId)
-    console.log('Tree nodes:', treeData.nodes.map(n => ({ id: n.id, type: n.type, data: n.data.name || n.data.stamp?.name })))
-    console.log('Tree edges:', treeData.edges.map(e => ({ id: e.id, source: e.source, target: e.target, style: e.style })))
-    console.log('All nodes (including root):', [rootNode, ...treeData.nodes].map(n => ({ id: n.id, type: n.type })))
-    console.log('All edges:', treeData.edges)
-    console.log('========================')
-    
     // If no sub-structure, just show stamps
     if (Array.isArray(groupData)) {
       return (
@@ -1435,8 +1314,6 @@ export function CatalogContent() {
     const allNodes = [rootNode, ...treeData.nodes]
     const allEdges = treeData.edges
     
-    console.log('Edges to layout:', allEdges)
-    
     const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(allNodes, allEdges)
 
     return (
@@ -1460,9 +1337,6 @@ export function CatalogContent() {
             },
             type: 'smoothstep'
           }}
-          onInit={() => console.log('ReactFlow initialized')}
-          onNodesChange={(changes) => console.log('Nodes changed:', changes)}
-          onEdgesChange={(changes) => console.log('Edges changed:', changes)}
         >
           {/* SVG Gradient Definitions */}
           <svg style={{ position: 'absolute', width: 0, height: 0 }}>
@@ -1573,9 +1447,9 @@ export function CatalogContent() {
           <p>
             Showing {displayedGroups.length} of {groupEntries.length} {rootFieldLabel.toLowerCase()} organized by{' '}
             <span className="font-medium">
-              {groupingLevels.map((field, idx) => 
-                GROUPING_FIELDS.find(f => f.value === field)?.label
-              ).join(' → ')}
+              {groupingLevels.map((field) => (
+                GROUPING_FIELDS.find(f => f.value === field)?.label || field
+              )).join(' → ')}
             </span>
           </p>
         </div>

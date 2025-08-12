@@ -28,7 +28,7 @@ export const generateStampGroupsData = async (countryCode: string): Promise<Stam
       name: `Series ${catalogNumber} - Queen Victoria Chalon`,
       catalogNumber,
       totalStamps: Math.floor(Math.random() * 100) + 20,
-      stampImageUrl: '/images/stamps/stamp.png'
+      stampImageUrl: '/images/stamps/no-image-available.png'
     })
   }
 
@@ -79,7 +79,7 @@ export const generateDenominationsData = async (stampCode: string, currencyCode:
     symbol,
     displayName: `${value}${symbol}`,
     totalStamps: Math.floor(Math.random() * 30) + 5,
-    stampImageUrl: '/images/stamps/stamp.png'
+    stampImageUrl: '/images/stamps/no-image-available.png'
   }))
 }
 
@@ -87,13 +87,13 @@ export const generateColorsData = async (stampCode: string, denomination: string
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 300))
   const colors: ColorOption[] = [
-    { code: 'Blu', name: 'Blue', hexColor: '#0066CC', totalStamps: 25, stampImageUrl: '/images/stamps/stamp.png' },
-    { code: 'R', name: 'Red', hexColor: '#CC0000', totalStamps: 20, stampImageUrl: '/images/stamps/stamp.png' },
-    { code: 'Gr', name: 'Green', hexColor: '#00AA00', totalStamps: 18, stampImageUrl: '/images/stamps/stamp.png' },
-    { code: 'Pur', name: 'Purple', hexColor: '#6600CC', totalStamps: 15, stampImageUrl: '/images/stamps/stamp.png' },
-    { code: 'Br', name: 'Brown', hexColor: '#8B4513', totalStamps: 12, stampImageUrl: '/images/stamps/stamp.png' },
-    { code: 'Blk', name: 'Black', hexColor: '#000000', totalStamps: 10, stampImageUrl: '/images/stamps/stamp.png' },
-    { code: 'Yel', name: 'Yellow', hexColor: '#FFDD00', totalStamps: 8, stampImageUrl: '/images/stamps/stamp.png' },
+    { code: 'Blu', name: 'Blue', hexColor: '#0066CC', totalStamps: 25, stampImageUrl: '/images/stamps/no-image-available.png' },
+    { code: 'R', name: 'Red', hexColor: '#CC0000', totalStamps: 20, stampImageUrl: '/images/stamps/no-image-available.png' },
+    { code: 'Gr', name: 'Green', hexColor: '#00AA00', totalStamps: 18, stampImageUrl: '/images/stamps/no-image-available.png' },
+    { code: 'Pur', name: 'Purple', hexColor: '#6600CC', totalStamps: 15, stampImageUrl: '/images/stamps/no-image-available.png' },
+    { code: 'Br', name: 'Brown', hexColor: '#8B4513', totalStamps: 12, stampImageUrl: '/images/stamps/no-image-available.png' },
+    { code: 'Blk', name: 'Black', hexColor: '#000000', totalStamps: 10, stampImageUrl: '/images/stamps/no-image-available.png' },
+    { code: 'Yel', name: 'Yellow', hexColor: '#FFDD00', totalStamps: 8, stampImageUrl: '/images/stamps/no-image-available.png' },
   ]
 
   return colors
@@ -116,10 +116,10 @@ export const generateWatermarksData = async (stampCode: string, paperCode: strin
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 300))
   const watermarks: WatermarkOption[] = [
-    { code: 'WmkNZStr6mm', name: 'NZ and Star 6mm', description: 'New Zealand and Star watermark', totalStamps: 10, stampImageUrl: '/images/stamps/stamp.png' },
-    { code: 'WmkLgStr', name: 'Large Star', description: 'Large star watermark', totalStamps: 8, stampImageUrl: '/images/stamps/stamp.png' },
-    { code: 'WmkCrownCC', name: 'Crown Over CC', description: 'Crown over CC watermark', totalStamps: 6, stampImageUrl: '/images/stamps/stamp.png' },
-    { code: 'NoWmk', name: 'No Watermark', description: 'No watermark present', totalStamps: 15, stampImageUrl: '/images/stamps/stamp.png' },
+    { code: 'WmkNZStr6mm', name: 'NZ and Star 6mm', description: 'New Zealand and Star watermark', totalStamps: 10, stampImageUrl: '/images/stamps/no-image-available.png' },
+    { code: 'WmkLgStr', name: 'Large Star', description: 'Large star watermark', totalStamps: 8, stampImageUrl: '/images/stamps/no-image-available.png' },
+    { code: 'WmkCrownCC', name: 'Crown Over CC', description: 'Crown over CC watermark', totalStamps: 6, stampImageUrl: '/images/stamps/no-image-available.png' },
+    { code: 'NoWmk', name: 'No Watermark', description: 'No watermark present', totalStamps: 15, stampImageUrl: '/images/stamps/no-image-available.png' },
   ]
 
   return watermarks
@@ -129,10 +129,10 @@ export const generatePerforationsData = async (stampCode: string, watermarkCode:
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 300))
   const perforations: PerforationOption[] = [
-    { code: 'P12', name: 'Perf 12', measurement: '12.0', totalStamps: 12, stampImageUrl: '/images/stamps/stamp.png' },
-    { code: 'P13', name: 'Perf 13', measurement: '13.0', totalStamps: 10, stampImageUrl: '/images/stamps/stamp.png' },
-    { code: 'P14', name: 'Perf 14', measurement: '14.0', totalStamps: 8, stampImageUrl: '/images/stamps/stamp.png' },
-    { code: 'Imp', name: 'Imperforate', measurement: 'No perforations', totalStamps: 5, stampImageUrl: '/images/stamps/stamp.png' },
+    { code: 'P12', name: 'Perf 12', measurement: '12.0', totalStamps: 12, stampImageUrl: '/images/stamps/no-image-available.png' },
+    { code: 'P13', name: 'Perf 13', measurement: '13.0', totalStamps: 10, stampImageUrl: '/images/stamps/no-image-available.png' },
+    { code: 'P14', name: 'Perf 14', measurement: '14.0', totalStamps: 8, stampImageUrl: '/images/stamps/no-image-available.png' },
+    { code: 'Imp', name: 'Imperforate', measurement: 'No perforations', totalStamps: 5, stampImageUrl: '/images/stamps/no-image-available.png' },
   ]
 
   return perforations
@@ -142,7 +142,7 @@ export const generateItemTypesData = async (stampCode: string, perforationCode: 
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 300))
   const itemTypes: ItemTypeOption[] = [
-    { code: 'St001', name: 'Stamp', description: 'Regular stamp', totalStamps: 8, stampImageUrl: '/images/stamps/stamp.png' },
+    { code: 'St001', name: 'Stamp', description: 'Regular stamp', totalStamps: 8, stampImageUrl: '/images/stamps/no-image-available.png' },
     { code: 'OnP01', name: 'On Piece', description: 'Stamp on piece', totalStamps: 5, stampImageUrl: '/images/stamps/stamp-on-piece.png' },
     { code: 'OnC01', name: 'On Card', description: 'Stamp on card', totalStamps: 3, stampImageUrl: '/images/stamps/stamp-on-card.png' },
     { code: 'OnE01', name: 'On Envelope', description: 'Stamp on envelope', totalStamps: 4, stampImageUrl: '/images/stamps/stamp-on-envelope.png' },
@@ -174,7 +174,7 @@ export const generateStampDetails = async (stampCode: string, itemTypeCode: stri
       id: `${stampCode}-${itemTypeCode}-${i}`,
       name: `${baseData.baseStamp.name} - ${postalHistory.type} (${condition.grade})`,
       country: baseData.baseStamp.country,
-      stampImageUrl: '/images/stamps/stamp.png',
+      stampImageUrl: '/images/stamps/no-image-available.png',
       catalogNumber: `SG${i}${postalHistory.type === 'Proofs' ? 'P' : postalHistory.type === 'Essays' ? 'E' : ''}`,
       seriesName: baseData.baseStamp.seriesName,
       issueDate: baseData.baseStamp.issueDate,
@@ -235,22 +235,22 @@ export const generateAdditionalCategoriesData = async (categoryType: string, sta
       { code: 'NEWS', name: 'On Newspaper', description: 'Stamp used on newspaper wrapper', totalStamps: 15, stampImageUrl: '/images/stamps/stamp-on-newspaper.png', priceMultiplier: 2.5, rarity: 'rare' }
     ],
     'postmarks': [
-      { code: 'CDS', name: 'Circular Date Stamp', description: 'Standard circular postmark', totalStamps: 120, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 1.0, rarity: 'common' },
-      { code: 'DUPLEX', name: 'Duplex Cancel', description: 'Combined postmark and killer', totalStamps: 85, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 1.3, rarity: 'common' },
-      { code: 'NUMERAL', name: 'Numeral Cancel', description: 'Numeric obliterator', totalStamps: 67, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 1.5, rarity: 'uncommon' },
-      { code: 'SPECIAL', name: 'Special Occasion', description: 'Commemorative or special event postmark', totalStamps: 23, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 3.0, rarity: 'rare' }
+      { code: 'CDS', name: 'Circular Date Stamp', description: 'Standard circular postmark', totalStamps: 120, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 1.0, rarity: 'common' },
+      { code: 'DUPLEX', name: 'Duplex Cancel', description: 'Combined postmark and killer', totalStamps: 85, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 1.3, rarity: 'common' },
+      { code: 'NUMERAL', name: 'Numeral Cancel', description: 'Numeric obliterator', totalStamps: 67, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 1.5, rarity: 'uncommon' },
+      { code: 'SPECIAL', name: 'Special Occasion', description: 'Commemorative or special event postmark', totalStamps: 23, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 3.0, rarity: 'rare' }
     ],
     'proofs': [
-      { code: 'DIE', name: 'Die Proof', description: 'Proof taken from the original die', totalStamps: 8, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 15.0, rarity: 'extremely rare' },
-      { code: 'PLATE', name: 'Plate Proof', description: 'Proof taken from the printing plate', totalStamps: 12, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 8.0, rarity: 'very rare' },
-      { code: 'TRIAL', name: 'Trial Color Proof', description: 'Proof in different color', totalStamps: 15, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 6.0, rarity: 'rare' },
-      { code: 'PROG', name: 'Progressive Proof', description: 'Proof showing stages of printing', totalStamps: 6, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 12.0, rarity: 'extremely rare' }
+      { code: 'DIE', name: 'Die Proof', description: 'Proof taken from the original die', totalStamps: 8, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 15.0, rarity: 'extremely rare' },
+      { code: 'PLATE', name: 'Plate Proof', description: 'Proof taken from the printing plate', totalStamps: 12, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 8.0, rarity: 'very rare' },
+      { code: 'TRIAL', name: 'Trial Color Proof', description: 'Proof in different color', totalStamps: 15, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 6.0, rarity: 'rare' },
+      { code: 'PROG', name: 'Progressive Proof', description: 'Proof showing stages of printing', totalStamps: 6, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 12.0, rarity: 'extremely rare' }
     ],
     'essays': [
-      { code: 'DESIGN', name: 'Design Essay', description: 'Original design proposal', totalStamps: 5, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 20.0, rarity: 'extremely rare' },
-      { code: 'COLOR', name: 'Color Essay', description: 'Alternative color scheme', totalStamps: 8, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 12.0, rarity: 'very rare' },
-      { code: 'FRAME', name: 'Frame Essay', description: 'Border or frame design variant', totalStamps: 7, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 15.0, rarity: 'extremely rare' },
-      { code: 'COMP', name: 'Composite Essay', description: 'Multiple design elements combined', totalStamps: 3, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 25.0, rarity: 'unique' }
+      { code: 'DESIGN', name: 'Design Essay', description: 'Original design proposal', totalStamps: 5, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 20.0, rarity: 'extremely rare' },
+      { code: 'COLOR', name: 'Color Essay', description: 'Alternative color scheme', totalStamps: 8, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 12.0, rarity: 'very rare' },
+      { code: 'FRAME', name: 'Frame Essay', description: 'Border or frame design variant', totalStamps: 7, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 15.0, rarity: 'extremely rare' },
+      { code: 'COMP', name: 'Composite Essay', description: 'Multiple design elements combined', totalStamps: 3, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 25.0, rarity: 'unique' }
     ],
     'onPiece': [
       { code: 'ENV_PIECE', name: 'Envelope Piece', description: 'Corner or piece of envelope', totalStamps: 95, stampImageUrl: '/images/stamps/stamp-on-piece.png', priceMultiplier: 0.8, rarity: 'common' },
@@ -259,17 +259,17 @@ export const generateAdditionalCategoriesData = async (categoryType: string, sta
       { code: 'WRAP_PIECE', name: 'Wrapper Piece', description: 'Piece of newspaper wrapper', totalStamps: 19, stampImageUrl: '/images/stamps/stamp-on-piece.png', priceMultiplier: 1.8, rarity: 'rare' }
     ],
     'errors': [
-      { code: 'MISPERF', name: 'Misperforated', description: 'Perforations in wrong position', totalStamps: 12, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 8.0, rarity: 'rare' },
-      { code: 'MISSING_COLOR', name: 'Missing Color', description: 'One or more colors omitted', totalStamps: 8, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 15.0, rarity: 'very rare' },
-      { code: 'DOUBLE_PRINT', name: 'Double Print', description: 'Printed twice, images offset', totalStamps: 5, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 20.0, rarity: 'extremely rare' },
-      { code: 'INVERTED', name: 'Inverted Center', description: 'Center design upside down', totalStamps: 2, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 50.0, rarity: 'unique' },
-      { code: 'IMPERF', name: 'Imperforate', description: 'Missing perforations', totalStamps: 18, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 6.0, rarity: 'rare' }
+      { code: 'MISPERF', name: 'Misperforated', description: 'Perforations in wrong position', totalStamps: 12, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 8.0, rarity: 'rare' },
+      { code: 'MISSING_COLOR', name: 'Missing Color', description: 'One or more colors omitted', totalStamps: 8, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 15.0, rarity: 'very rare' },
+      { code: 'DOUBLE_PRINT', name: 'Double Print', description: 'Printed twice, images offset', totalStamps: 5, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 20.0, rarity: 'extremely rare' },
+      { code: 'INVERTED', name: 'Inverted Center', description: 'Center design upside down', totalStamps: 2, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 50.0, rarity: 'unique' },
+      { code: 'IMPERF', name: 'Imperforate', description: 'Missing perforations', totalStamps: 18, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 6.0, rarity: 'rare' }
     ],
     'other': [
-      { code: 'SPECIMENS', name: 'Specimens', description: 'Stamps overprinted SPECIMEN', totalStamps: 25, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 3.0, rarity: 'uncommon' },
-      { code: 'REPRINTS', name: 'Reprints', description: 'Later reprints of original stamps', totalStamps: 45, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 0.3, rarity: 'common' },
-      { code: 'OFFICIALS', name: 'Official Overprints', description: 'Stamps overprinted for official use', totalStamps: 35, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 2.5, rarity: 'uncommon' },
-      { code: 'LOCALS', name: 'Local Issues', description: 'Locally produced variants', totalStamps: 20, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 4.0, rarity: 'rare' }
+      { code: 'SPECIMENS', name: 'Specimens', description: 'Stamps overprinted SPECIMEN', totalStamps: 25, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 3.0, rarity: 'uncommon' },
+      { code: 'REPRINTS', name: 'Reprints', description: 'Later reprints of original stamps', totalStamps: 45, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 0.3, rarity: 'common' },
+      { code: 'OFFICIALS', name: 'Official Overprints', description: 'Stamps overprinted for official use', totalStamps: 35, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 2.5, rarity: 'uncommon' },
+      { code: 'LOCALS', name: 'Local Issues', description: 'Locally produced variants', totalStamps: 20, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 4.0, rarity: 'rare' }
     ]
   }
 
@@ -313,7 +313,7 @@ export const generateStampsForAdditionalCategory = async (baseStampCode: string,
       id: `${baseStampCode}-${categoryCode}-${i}`,
       name: `${baseData.baseStamp.name} - ${categoryName} (${categoryCode})`,
       country: baseData.baseStamp.country,
-      stampImageUrl: '/images/stamps/stamp.png',
+      stampImageUrl: '/images/stamps/no-image-available.png',
       catalogNumber: `SG${i}${categoryCode.substring(0, 2)}`,
       seriesName: baseData.baseStamp.seriesName,
       issueDate: baseData.baseStamp.issueDate,
@@ -359,7 +359,7 @@ export const generateComprehensiveStampData = (baseStampCode: string) => {
     id: `stamp-${baseStampCode}`,
     name: 'Queen Victoria Chalon',
     country: 'New Zealand',
-    stampImageUrl: '/images/stamps/stamp.png',
+    stampImageUrl: '/images/stamps/no-image-available.png',
     catalogNumber: 'SG1',
     seriesName: 'Queen Victoria Chalon',
     issueDate: '1855-07-18',
