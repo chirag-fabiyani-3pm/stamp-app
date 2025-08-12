@@ -216,19 +216,10 @@ async function handleStreamingResponse(message: string, voiceChat: boolean = fal
                     // Don't close controller here - streamRunResponse handles it
                 }
 
-                // Ensure controller is properly closed when all streaming is complete
-                console.log('🔒 All streaming complete, closing controller...')
-                console.log('🔒 Controller state before closing:', controller.desiredSize)
-                try {
-                    if (controller.desiredSize !== null) {
-                        controller.close()
-                        console.log('✅ Controller closed successfully')
-                    } else {
-                        console.log('⚠️ Controller already closed')
-                    }
-                } catch (error) {
-                    console.log('⚠️ Error closing controller:', error)
-                }
+                // Don't try to close controller here - it's already being closed elsewhere
+                // The controller will be closed automatically when the stream ends
+                console.log('🔒 All streaming complete, controller state:', controller.desiredSize)
+                console.log('🔒 Skipping controller close - already handled elsewhere')
 
             } catch (error) {
                 console.error('❌ Streaming error:', error)
@@ -409,7 +400,7 @@ async function streamRunResponse(threadId: string, runId: string, controller: Re
                         output: JSON.stringify({
                             success: true,
                             stamps: stamps,
-                            instructions: "IMPORTANT: When responding about these stamps, DO NOT list basic details like Country, Issue Date, Catalog Code, Denomination, Color, or Paper Type as they are already displayed in the card view. Instead, focus on historical significance, design details, interesting stories, cultural importance, and unique characteristics that complement the visual information."
+                            instructions: "🚨 CRITICAL INSTRUCTIONS - YOU MUST FOLLOW THESE EXACTLY: ❌ NEVER list basic stamp details like Country, Issue Date, Catalog Code, Denomination, Color, or Paper Type. These are already displayed in the card above. ✅ INSTEAD, write ONLY about: Historical significance, design elements, cultural importance, interesting stories, collecting insights, philatelic significance, and series context. Focus on the STORY behind the stamp, not repeating the data. Example: 'This stamp captures the dynamic beauty of New Zealand's native trout in a stunning artistic composition that celebrates the country's freshwater fishing heritage.' NOT 'Country: New Zealand, Issue Date: May 4, 1935, Color: Blue'"
                         })
                     })
                 }
@@ -489,7 +480,8 @@ async function streamRunResponse(threadId: string, runId: string, controller: Re
                             await streamMessages(threadId, controller, encoder)
                             console.log('✅ Final response streamed, exiting early')
                             console.log('📤 streamMessages completed, controller state:', controller.desiredSize)
-                            return // Exit early since we've already handled the response
+                            // Don't return early - let the main flow handle completion
+                            // This ensures the controller isn't closed prematurely
                         }
 
                     } catch (submitError) {
@@ -544,27 +536,68 @@ async function streamMessages(threadId: string, controller: ReadableStreamDefaul
                     const cleanedText = cleanResponseText(text)
                     console.log('📝 Streaming text content, length:', cleanedText.length)
 
-                    // Stream the text character by character for ChatGPT-like effect
+                    // BULLETPROOF: Send complete response immediately to prevent any loss
+                    const completeResponseMessage = `data: ${JSON.stringify({ type: 'complete_response', content: cleanedText })}\n\n`
+                    try {
+                        controller.enqueue(encoder.encode(completeResponseMessage))
+                        console.log('✅ Complete response sent immediately to prevent loss')
+                    } catch (completeError) {
+                        console.log('❌ Could not send complete response')
+                    }
+
+                    // Send initial connection establishment signal
+                    const connectionMessage = `data: ${JSON.stringify({ type: 'connection', status: 'established', contentLength: cleanedText.length })}\n\n`
+                    try {
+                        controller.enqueue(encoder.encode(connectionMessage))
+                        console.log('🔗 Connection established signal sent')
+                    } catch (connectionError) {
+                        console.log('❌ Connection signal failed')
+                    }
+
+                    // Buffer the complete response in case streaming gets interrupted
+                    let completeResponse = ''
+                    let streamedWords = 0
+                    const totalWords = cleanedText.split(' ').length
+
+                    // Stream the text in larger chunks to reduce interruption risk
                     const words = cleanedText.split(' ')
-                    for (let i = 0; i < words.length; i++) {
-                        const word = words[i]
-                        const message = `data: ${JSON.stringify({ type: 'content', content: word + (i < words.length - 1 ? ' ' : '') })}\n\n`
+                    const chunkSize = 5 // Send 5 words at a time instead of 1
+
+                    for (let i = 0; i < words.length; i += chunkSize) {
+                        const chunk = words.slice(i, i + chunkSize)
+                        const chunkText = chunk.join(' ')
+                        const message = `data: ${JSON.stringify({ type: 'content', content: chunkText + (i + chunkSize < words.length ? ' ' : '') })}\n\n`
 
                         // BULLETPROOF: Check controller state before every operation
                         if (controller.desiredSize === null) {
                             console.log('⚠️ Controller closed during streaming, stopping content stream at word', i)
+                            console.log('📤 Complete response already sent at start - no content loss')
                             return
                         }
 
                         try {
                             controller.enqueue(encoder.encode(message))
-                            console.log(`📤 Streamed word ${i + 1}/${words.length}: "${word}"`)
+                            streamedWords = Math.min(i + chunkSize, words.length)
+                            completeResponse += chunkText + (i + chunkSize < words.length ? ' ' : '')
+                            console.log(`📤 Streamed chunk ${Math.floor(i / chunkSize) + 1}/${Math.ceil(words.length / chunkSize)}: "${chunkText}" (words ${i + 1}-${streamedWords})`)
+
+                            // Send keep-alive signal every 3 chunks to prevent timeout
+                            if (Math.floor(i / chunkSize) % 3 === 0 && i > 0) {
+                                const keepAliveMessage = `data: ${JSON.stringify({ type: 'keep-alive', chunk: Math.floor(i / chunkSize), total: Math.ceil(words.length / chunkSize) })}\n\n`
+                                try {
+                                    controller.enqueue(encoder.encode(keepAliveMessage))
+                                    console.log(`📡 Keep-alive signal sent at chunk ${Math.floor(i / chunkSize)}`)
+                                } catch (keepAliveError) {
+                                    console.log('❌ Keep-alive signal failed')
+                                }
+                            }
                         } catch (error) {
                             console.log('❌ Controller closed during content streaming, stopping at word', i)
+                            console.log('📤 Complete response already sent at start - no content loss')
                             return
                         }
 
-                        // Small delay for streaming effect
+                        // Reduced delay for faster chunked streaming
                         await new Promise(resolve => setTimeout(resolve, 50))
                     }
 
@@ -832,23 +865,33 @@ You have access to stamp knowledge and can provide detailed, conversational info
                 // Step 3: Add the user's message to the thread (OpenAI manages history automatically)
                 const enhancedMessage = `${message}
 
-CRITICAL INSTRUCTIONS - AVOID REPETITION:
-- DO NOT list basic stamp details like Country, Issue Date, Catalog Code, Denomination, Color, or Paper Type
-- These details are already displayed in the structured data card below
-- Instead, focus ONLY on:
-  * Historical significance and context
-  * Design and artistic details
-  * Interesting stories or facts about the stamp
-  * Cultural or philatelic importance
-  * Unique characteristics that aren't visible
-  * Collecting insights or rarity information
-  * Related stamps or series context
+🚨 CRITICAL - YOU MUST FOLLOW THESE INSTRUCTIONS EXACTLY:
 
-Example of GOOD response: "This stamp features a beautiful depiction of a trout leaping out of the water, set against a blue background. It's an excellent representation of New Zealand's rich natural heritage and fishing culture."
+❌ ABSOLUTELY FORBIDDEN - NEVER INCLUDE:
+- Country names
+- Issue dates  
+- Catalog codes
+- Denominations
+- Colors
+- Paper types
+- ANY basic stamp details
 
-Example of BAD response: "Country: New Zealand, Issue Date: May 4, 1935, Catalog Code: NZ-19350504-13-TroutBlue1/3d-001, Denomination: 1/3, Color: Blue" (DON'T DO THIS)
+✅ INSTEAD, WRITE ONLY ABOUT:
+- Historical significance and stories
+- Design and artistic elements
+- Cultural importance
+- Interesting facts and trivia
+- Collecting insights
+- Philatelic significance
+- Series context and relationships
 
-Focus on storytelling and insights, not data listing.`
+🚨 REMEMBER: The user already sees all basic details in the card above. Your job is to provide the STORY behind the stamp, not repeat the data.
+
+Example of CORRECT response: "This stamp captures the dynamic beauty of New Zealand's native trout in a stunning artistic composition. The leaping fish design celebrates the country's world-renowned freshwater fishing heritage and represents the pristine natural ecosystems that make New Zealand unique. Part of the iconic 1935-1947 Pictorial Issue series, this stamp showcases the artistic excellence and cultural storytelling that defined this golden era of New Zealand philately."
+
+Example of WRONG response: "Name: Trout Blue 1/3d, Country: New Zealand, Issue Date: May 4, 1935, Color: Blue" (NEVER DO THIS)
+
+Focus on the STORY, not the DATA.`
 
                 const threadMessage = await openai.beta.threads.messages.create(threadId, {
                     role: 'user',
