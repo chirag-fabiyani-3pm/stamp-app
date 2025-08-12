@@ -215,10 +215,32 @@ export async function POST(request: NextRequest) {
                                 const country = subtitleParts[0] || 'Unknown'
                                 const year = subtitleParts[1] || 'Unknown'
 
-                                // Extract denomination and color from summary
-                                const summaryParts = stamp.summary.split(' ')
-                                const denomination = summaryParts[0] || 'Unknown'
-                                const color = summaryParts[1] || 'Unknown'
+                                // Try to use new detailed content structure first
+                                let denomination = 'Unknown'
+                                let color = 'Unknown'
+                                let description = ''
+
+                                if (stamp.content && stamp.content.length > 0) {
+                                    const overviewSection = stamp.content.find((s: any) => s.section === 'Overview')
+                                    if (overviewSection && overviewSection.text) {
+                                        description = overviewSection.text
+                                    }
+
+                                    const detailsSection = stamp.content.find((s: any) => s.section === 'Details')
+                                    if (detailsSection && detailsSection.details) {
+                                        const colorDetail = detailsSection.details.find((d: any) => d.label === 'Color')
+                                        if (colorDetail) {
+                                            color = colorDetail.value
+                                        }
+                                    }
+                                }
+
+                                // Fall back to old format if new structure not available
+                                if (!description) {
+                                    const summaryParts = stamp.summary?.split(' ') || []
+                                    denomination = summaryParts[0] || 'Unknown'
+                                    color = summaryParts[1] || 'Unknown'
+                                }
 
                                 // Use the actual image URL from the knowledge base
                                 let finalImageUrl = stamp.image
@@ -229,9 +251,17 @@ export async function POST(request: NextRequest) {
                                 // Create natural conversational response for multiple stamps
                                 const uniqueness = getStampUniqueness(stamp)
                                 if (stamps.length === 1) {
-                                    voiceResponse = `I found the ${name} stamp for you. This is a ${denomination} stamp from ${country}, issued in ${year}. ${uniqueness}`
+                                    if (description) {
+                                        voiceResponse = `I found the ${name} stamp for you. ${description} ${stamp.significance || uniqueness}`
+                                    } else {
+                                        voiceResponse = `I found the ${name} stamp for you. This is a ${denomination} stamp from ${country}, issued in ${year}. ${uniqueness}`
+                                    }
                                 } else {
-                                    voiceResponse = `I found ${stamps.length} stamps for you. Let me tell you about the ${name} stamp. This is a ${denomination} stamp from ${country}, issued in ${year}. ${uniqueness} Would you like me to tell you about the others?`
+                                    if (description) {
+                                        voiceResponse = `I found ${stamps.length} stamps for you. Let me tell you about the ${name} stamp. ${description} ${stamp.significance || uniqueness} Would you like me to tell you about the others?`
+                                    } else {
+                                        voiceResponse = `I found ${stamps.length} stamps for you. Let me tell you about the ${name} stamp. This is a ${denomination} stamp from ${country}, issued in ${year}. ${uniqueness} Would you like me to tell you about the others?`
+                                    }
                                 }
 
                                 stampDetails = {
