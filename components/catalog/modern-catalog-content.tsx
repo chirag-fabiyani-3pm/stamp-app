@@ -4,15 +4,12 @@ import React, { useState, useEffect, useMemo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
-import { Search, Calendar, BookOpen, Archive, Eye, ChevronRight, ArrowLeft, Home, Sparkles, Coins, Palette, Grid, Filter, Share2, Layers, Globe, Star, Zap, Gem, Heart, Navigation, MapPin, Clock, DollarSign, FileText, Package, Menu, User, Settings, X, TrendingUp, AlertCircle, Play, Camera, Image as ImageIcon, Quote, Bookmark, BookmarkPlus, ExternalLink, Award, Telescope, Stamp, List, MenuSquare, PanelLeft, AlignJustify, GripVertical, PanelRightOpen, AlignLeft, GripHorizontal, MoreHorizontal, MoreVertical, EllipsisVertical, SlidersHorizontal, Rows2, Grid3x3, LayoutGrid } from "lucide-react"
+import { Calendar, BookOpen, Archive, Eye, ArrowLeft, Home, Sparkles, Coins, Palette, Grid, Filter, Share2, Layers, Globe, Star, Zap, Gem, Heart, Navigation, MapPin, Clock, DollarSign, FileText, Package, Menu, User, Settings, X, TrendingUp, AlertCircle, Play, Camera, Image as ImageIcon, ExternalLink, Stamp, List, MenuSquare, PanelLeft, AlignJustify, GripVertical, PanelRightOpen, AlignLeft, GripHorizontal, MoreHorizontal, MoreVertical, EllipsisVertical, SlidersHorizontal, Rows2, Grid3x3, LayoutGrid, Telescope } from "lucide-react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { CountryOption, YearOption, CurrencyOption, DenominationOption, ColorOption, PaperOption, WatermarkOption, PerforationOption, ItemTypeOption, StampData, ModalType, ModalStackItem, FeaturedStory, AdditionalCategoryOption, SeriesOption } from "@/types/catalog"
 import { 
-    apiStampData, 
     groupStampsByCountry, 
     groupStampsBySeries, 
     groupStampsByYear, 
@@ -26,7 +23,7 @@ import {
     getStampDetails, 
     convertApiStampToStampData
 } from "@/lib/data/catalog-data"
-import { checkIndexedDBEmpty, saveStampsToIndexedDB } from "@/lib/data/investigate-search-db"
+// DB seeding handled in CatalogDataProvider
 import PinnedStampCard from "@/components/catalog/pinned-stamp-card"
 import ModalContent from "@/components/catalog/modal-content"
 import { VisualCatalogContent } from "@/components/catalog/visual-catalog-content"
@@ -34,16 +31,19 @@ import { ListCatalogContent } from "@/components/catalog/list-catalog-content"
 import { Skeleton } from "@/components/ui/skeleton";
 import { CatalogContent } from "@/components/catalog/investigate-search/catalog-content";
 import { useIsMobile } from "@/hooks/use-mobile";
-import ReactCountryFlag from "react-country-flag";
+// Removed: country flag now handled inside child component
+import { CountryCatalogContent } from "@/components/catalog/country-catalog-content";
+import { CatalogDataProvider, useCatalogData } from "@/lib/context/catalog-data-context"
+import { parseStampCode } from "@/lib/utils/parse-stamp-code"
 
-export function ModernCatalogContent() {
+function ModernCatalogContentInner() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const mainContentRef = React.useRef<HTMLDivElement>(null);
 
     // Navigation state - updated to include new tabs
     const [modalStack, setModalStack] = useState<ModalStackItem[]>([])
-    const [searchTerm, setSearchTerm] = useState("")
+    // Moved to CountryCatalogContent
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const initialActiveSection = (searchParams.get('tab') as 'countries' | 'visual' | 'list' | 'investigate') || 'countries'
@@ -57,117 +57,45 @@ export function ModernCatalogContent() {
     const [pinnedStamp, setPinnedStamp] = useState<StampData | null>(null)
     const [isPinnedMinimized, setIsPinnedMinimized] = useState(false)
 
-    // Data states - now using API data
+    // Data via shared provider
+    const { stamps, loading: dataLoading, error: dataError } = useCatalogData()
+    // Data states - derived from API data
     const [countries, setCountries] = useState<CountryOption[]>([])
 
-    // Helper function to properly parse stamp codes with decimal points
-    const parseStampCode = (stampCode: string) => {
-        const parts = stampCode.split('.')
-        
-        const countryCode = parts[0] || ''
-        const encodedSeriesName = parts[1] || ''
-        const year = parseInt(parts[2] || '0')
-        const currencyCode = parts[3] || ''
-        
-        // Handle decimal in denomination: parts[4] = "1", parts[5] = "5d" -> "1.5d"
-        let denominationPart = parts[4] || ''
-        let nextIndex = 5
-        
-        // Check if the next part starts with a digit (indicating it's part of the decimal)
-        if (parts[5] && /^\d/.test(parts[5])) {
-            denominationPart = `${parts[4] || ''}.${parts[5]}`
-            nextIndex = 6
-        }
-        
-        const denominationValue = denominationPart.replace(/[^\d.]/g, '')
-        const actualSeriesName = decodeURIComponent(encodedSeriesName)
-        
-        // Extract remaining path components and handle additional decimal points
-        const remainingParts = []
-        let i = nextIndex
-        
-        while (i < parts.length) {
-            let currentPart = parts[i] || ''
-            
-            // Check if next part could be a decimal continuation
-            // This handles cases like watermark "W.7" being split into "W" and "7"
-            if (i + 1 < parts.length && /^\d+$/.test(parts[i + 1])) {
-                // If current part is a letter/code and next is purely numeric, combine them
-                currentPart = `${parts[i] || ''}.${parts[i + 1]}`
-                i += 2 // Skip both parts
-            } else {
-                i += 1
-            }
-            
-            remainingParts.push(currentPart)
-        }
-        
-        return {
-            countryCode,
-            actualSeriesName,
-            year,
-            currencyCode,
-            denominationValue,
-            remainingParts,
-            // Legacy support - map to indexed positions for existing code
-            colorCode: remainingParts[0] || '',
-            paperCode: remainingParts[1] || '',
-            watermarkCode: remainingParts[2] || '',
-            perforationCode: remainingParts[3] || '',
-            itemTypeCode: remainingParts[4] || ''
-        }
-    }
-
-    // Ensure IndexedDB (StampCatalogDB) exists and is populated at app start
+    // Initialize component with API data from context
     useEffect(() => {
-        const ensureStampCatalogDB = async () => {
-            try {
-                const isEmpty = await checkIndexedDBEmpty()
-                if (isEmpty) {
-                    const seeded = apiStampData.map(convertApiStampToStampData)
-                    await saveStampsToIndexedDB(seeded)
-                }
-            } catch (e) {
-                console.warn('StampCatalogDB init skipped:', e)
-            }
-        }
-        ensureStampCatalogDB()
-    }, [])
-
-    // Initialize component with API data
-    useEffect(() => {
-        const loadInitialData = async () => {
-            try {
-                setLoading(true)
-                // Use our dummy API data for now
-                const countriesData = groupStampsByCountry(apiStampData)
+        try {
+            setLoading(true)
+            if (stamps && stamps.length > 0) {
+                const countriesData = groupStampsByCountry(stamps)
                 setCountries(countriesData as CountryOption[])
-            } catch (err) {
-                console.error('Error loading initial data:', err)
-                setError('Failed to load catalog data')
-            } finally {
-                setLoading(false)
+            } else {
+                setCountries([])
             }
+        } catch (err) {
+            console.error('Error loading initial data:', err)
+            setError('Failed to load catalog data')
+        } finally {
+            setLoading(false)
         }
-        loadInitialData()
-    }, [])
+    }, [stamps])
 
     // Navigation handlers updated to use API data grouping
     const handleCountryClick = async (country: CountryOption) => {
         setLoadingModalContent(true);
         try {
-            const series = groupStampsBySeries(apiStampData, country.code)
+            const series = groupStampsBySeries(stamps, country.code)
             
             // Check if there are no series (broken hierarchy)
             if (series.length === 0) {
                 // Get stamps without series for this country
-                const stamps = getStampDetails(apiStampData, country.code)
-                if (stamps.length > 0) {
+                const stampsList = getStampDetails(stamps, country.code)
+                if (stampsList.length > 0) {
                     // Go directly to stamp details
                     setModalStack([{
                         type: 'stampDetails',
                         title: `${country.name} Stamps`,
-                        data: { stamps: stamps.map(convertApiStampToStampData) },
+                        data: { stamps: stampsList.map(convertApiStampToStampData) },
                         stampCode: country.code
                     }])
                     return
@@ -188,7 +116,7 @@ export function ModernCatalogContent() {
     const handleSeriesClick = async (series: SeriesOption, currentStampCode: string) => {
         setLoadingModalContent(true);
         try {
-            const years = groupStampsByYear(apiStampData, currentStampCode, series.name)
+            const years = groupStampsByYear(stamps, currentStampCode, series.name)
             // Use the series name directly, encoded to avoid issues with special characters
             const encodedSeriesName = encodeURIComponent(series.name)
             const newStampCode = `${currentStampCode}.${encodedSeriesName}`
@@ -214,13 +142,13 @@ export function ModernCatalogContent() {
             // Decode the series name
             const actualSeriesName = decodeURIComponent(encodedSeriesName)
             
-            const currencies = groupStampsByCurrency(apiStampData, countryCode, actualSeriesName, year.year)
+            const currencies = groupStampsByCurrency(stamps, countryCode, actualSeriesName, year.year)
             
             // If no currencies available, show stamp details directly
             if (currencies.length === 0) {
-                const stamps = getStampDetails(apiStampData, countryCode, actualSeriesName, year.year)
-                if (stamps.length > 0) {
-                    const convertedStamps = stamps.map(convertApiStampToStampData)
+                const stampsList = getStampDetails(stamps, countryCode, actualSeriesName, year.year)
+                if (stampsList.length > 0) {
+                    const convertedStamps = stampsList.map(convertApiStampToStampData)
                     setModalStack(prev => [...prev, {
                         type: 'stampDetails',
                         title: `${year.year} Stamps`,
@@ -255,16 +183,16 @@ export function ModernCatalogContent() {
             // Decode the series name
             const actualSeriesName = decodeURIComponent(encodedSeriesName)
             
-            const denominations = groupStampsByDenomination(apiStampData, countryCode, actualSeriesName, year, currency.code)
+            const denominations = groupStampsByDenomination(stamps, countryCode, actualSeriesName, year, currency.code)
             
             // Check if there are no denominations (broken hierarchy)
             if (denominations.length === 0) {
-                const stamps = getStampDetails(apiStampData, countryCode, actualSeriesName, year, currency.code)
-                if (stamps.length > 0) {
+                const stampsList = getStampDetails(stamps, countryCode, actualSeriesName, year, currency.code)
+                if (stampsList.length > 0) {
                     setModalStack(prev => [...prev, {
                         type: 'stampDetails',
                         title: `${currency.name} Stamps`,
-                        data: { stamps: stamps.map(convertApiStampToStampData) },
+                        data: { stamps: stampsList.map(convertApiStampToStampData) },
                         stampCode: `${currentStampCode}.${currency.code}`
                     }])
                     return
@@ -296,16 +224,16 @@ export function ModernCatalogContent() {
             // Decode the series name
             const actualSeriesName = decodeURIComponent(encodedSeriesName)
             
-            const colors = groupStampsByColor(apiStampData, countryCode, actualSeriesName, year, currencyCode, denomination.value)
+            const colors = groupStampsByColor(stamps, countryCode, actualSeriesName, year, currencyCode, denomination.value)
             
             // If no colors available, show stamp details directly
             if (colors.length === 0) {
-                const stamps = getStampDetails(apiStampData, countryCode, actualSeriesName, year, currencyCode, denomination.value)
-                if (stamps.length > 0) {
+                const stampsList = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denomination.value)
+                if (stampsList.length > 0) {
                     setModalStack(prev => [...prev, {
                         type: 'stampDetails',
                         title: `${denomination.displayName} Stamps`,
-                        data: { stamps: stamps.map(convertApiStampToStampData) },
+                        data: { stamps: stampsList.map(convertApiStampToStampData) },
                         stampCode: `${currentStampCode}.${denomination.value}${denomination.symbol}`
                     }])
                     return
@@ -329,13 +257,13 @@ export function ModernCatalogContent() {
         try {
             const { countryCode, actualSeriesName, year, currencyCode, denominationValue } = parseStampCode(currentStampCode)
             
-            const papers = groupStampsByPaper(apiStampData, countryCode, actualSeriesName, year, currencyCode, denominationValue, color.code)
+            const papers = groupStampsByPaper(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, color.code)
             
             // If no papers available, show stamp details directly
             if (papers.length === 0) {
-                const stamps = getStampDetails(apiStampData, countryCode, actualSeriesName, year, currencyCode, denominationValue, color.code)
-                if (stamps.length > 0) {
-                    const convertedStamps = stamps.map(convertApiStampToStampData)
+                const stampsList = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, color.code)
+                if (stampsList.length > 0) {
+                    const convertedStamps = stampsList.map(convertApiStampToStampData)
                     setModalStack(prev => [...prev, {
                         type: 'stampDetails',
                         title: `${color.name} Stamps`,
@@ -363,16 +291,16 @@ export function ModernCatalogContent() {
         try {
             const { countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode } = parseStampCode(currentStampCode)
             
-            const watermarks = groupStampsByWatermark(apiStampData, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paper.code)
+            const watermarks = groupStampsByWatermark(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paper.code)
             
             // If no watermarks available, show stamp details directly
             if (watermarks.length === 0) {
-                const stamps = getStampDetails(apiStampData, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paper.code)
-                if (stamps.length > 0) {
+                const stampsList = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paper.code)
+                if (stampsList.length > 0) {
                     setModalStack(prev => [...prev, {
                         type: 'stampDetails',
                         title: `${paper.name} Stamps`,
-                        data: { stamps: stamps.map(convertApiStampToStampData) },
+                        data: { stamps: stampsList.map(convertApiStampToStampData) },
                         stampCode: `${currentStampCode}.${paper.code}`
                     }])
                     return
@@ -396,16 +324,16 @@ export function ModernCatalogContent() {
         try {
             const { countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode } = parseStampCode(currentStampCode)
             
-            const perforations = groupStampsByPerforation(apiStampData, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermark.code)
+            const perforations = groupStampsByPerforation(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermark.code)
             
             // If no perforations available, show stamp details directly
             if (perforations.length === 0) {
-                const stamps = getStampDetails(apiStampData, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermark.code)
-                if (stamps.length > 0) {
+                const stampsList = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermark.code)
+                if (stampsList.length > 0) {
                     setModalStack(prev => [...prev, {
                         type: 'stampDetails',
                         title: `${watermark.name} Stamps`,
-                        data: { stamps: stamps.map(convertApiStampToStampData) },
+                        data: { stamps: stampsList.map(convertApiStampToStampData) },
                         stampCode: `${currentStampCode}.${watermark.code}`
                     }])
                     return
@@ -429,16 +357,16 @@ export function ModernCatalogContent() {
         try {
             const { countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode } = parseStampCode(currentStampCode)
             
-            const itemTypes = groupStampsByItemType(apiStampData, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforation.code)
+            const itemTypes = groupStampsByItemType(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforation.code)
             
             // If no item types available, show stamp details directly
             if (itemTypes.length === 0) {
-                const stamps = getStampDetails(apiStampData, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforation.code)
-                if (stamps.length > 0) {
+                const stampsList = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforation.code)
+                if (stampsList.length > 0) {
                     setModalStack(prev => [...prev, {
                         type: 'stampDetails',
                         title: `${perforation.name} Stamps`,
-                        data: { stamps: stamps.map(convertApiStampToStampData) },
+                        data: { stamps: stampsList.map(convertApiStampToStampData) },
                         stampCode: `${currentStampCode}.${perforation.code}`
                     }])
                     return
@@ -462,14 +390,14 @@ export function ModernCatalogContent() {
         try {
             const { countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode } = parseStampCode(currentStampCode)
             
-            const stamps = getStampDetails(apiStampData, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemType.code)
+            const stampsList = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemType.code)
             
             // Always go directly to stamp details - additional categories will be handled within the stamp details modal
             const newStampCode = `${currentStampCode}.${itemType.code}`
             setModalStack(prev => [...prev, {
                 type: 'stampDetails',
                 title: `Approved Collection`,
-                data: { stamps: stamps.map(convertApiStampToStampData) },
+                data: { stamps: stampsList.map(convertApiStampToStampData) },
                 stampCode: newStampCode
             }])
         } finally {
@@ -522,7 +450,7 @@ export function ModernCatalogContent() {
             const { countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemTypeCode } = parseStampCode(baseStampCode || '')
 
             // Get all stamps matching the path
-            const allStamps = getStampDetails(apiStampData, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemTypeCode)
+            const allStamps = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemTypeCode)
             
             // Filter stamps by category type
             let filteredStamps = []
@@ -585,7 +513,7 @@ export function ModernCatalogContent() {
                                 default: return false
                             }
                         }).length,
-                        stampImageUrl: stamp.stampImageUrl || '/images/stamps/stamp.png'
+                        stampImageUrl: stamp.stampImageUrl || '/images/stamps/no-image-available.png'
                     })
                 }
             })
@@ -617,10 +545,10 @@ export function ModernCatalogContent() {
             const { countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemTypeCode } = parseStampCode(currentStampCode)
 
             // Get all stamps matching the path and specific category
-            const allStamps = getStampDetails(apiStampData, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemTypeCode)
+            const allStamps = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemTypeCode)
             
             // Filter stamps by the specific category option
-            const stamps = allStamps.filter(stamp => {
+            const filteredStamps = allStamps.filter(stamp => {
                 switch (categoryType) {
                     case 'postalHistory':
                         return stamp.postalHistoryType === category.name
@@ -644,7 +572,7 @@ export function ModernCatalogContent() {
                     type: 'stampDetails',
                     title: `${category.name} - Stamp Details`,
                     data: {
-                        stamps: stamps.map(convertApiStampToStampData),
+                        stamps: filteredStamps.map(convertApiStampToStampData),
                         categoryFilter: category,
                         baseStampCode: currentStampCode,
                         selectedAdditionalCategories: currentSelectedCategories,
@@ -658,16 +586,7 @@ export function ModernCatalogContent() {
         }
     }
 
-    // Filter countries based on search term
-    const filteredCountries = useMemo(() => {
-        if (!searchTerm) return countries
-
-        return countries.filter(country =>
-            country.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            country.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            country.code.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-    }, [searchTerm, countries])
+    // Filtering now handled inside CountryCatalogContent
 
     if (loading) {
         return (
@@ -759,8 +678,7 @@ export function ModernCatalogContent() {
                         setError(null)
                         setLoading(true)
                         try {
-                            // Use our dummy API data for now
-                            const countriesData = groupStampsByCountry(apiStampData)
+                            const countriesData = groupStampsByCountry(stamps)
                             setCountries(countriesData as CountryOption[])
                         } catch (err) {
                             console.error('Error retrying data load:', err)
@@ -915,7 +833,7 @@ export function ModernCatalogContent() {
                                                         : "bg-secondary text-secondary-foreground hover:bg-secondary/90 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
                                                 )}
                                             >
-                                                <Telescope className="h-6 w-6 mb-2" />
+                                                <Eye className="h-6 w-6 mb-2" />
                                                 Investigate Search
                                             </DropdownMenuItem>
                                         </div>
@@ -1018,107 +936,7 @@ export function ModernCatalogContent() {
 
                         {/* Country Catalogs Section */}
                         {activeSection === 'countries' && (
-                            <section>
-                                <div className="text-center mb-8 md:mb-12">
-                                    <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">Explore by Country</h2>
-                                    <p className="text-base md:text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-                                        Browse our premium catalog of stamps organized by country. Each collection features stamps that have earned collector approval through careful authentication and grading.
-                                    </p>
-                                </div>
-
-                                <div className="relative mb-8">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
-                                    <Input
-                                        type="text"
-                                        placeholder="Search countries..."
-                                        className="w-full pl-10 pr-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm focus:ring-2 focus:ring-primary dark:focus:ring-amber-500 focus:border-transparent transition-all duration-300"
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-                                    {filteredCountries.map((country, index) => (
-                                        <article
-                                            key={country.code}
-                                            className="group cursor-pointer"
-                                            onClick={() => handleCountryClick(country)}
-                                        >
-                                            <div className="relative overflow-hidden rounded-2xl bg-white shadow-lg hover:shadow-2xl transition-all duration-500 group-hover:scale-[1.02] dark:bg-gray-800 dark:border-gray-700">
-                                                <div className="relative h-56 overflow-hidden">
-                                                        <Image
-                                                        src={country.featuredStampUrl || '/images/stamps/no-image-available.png'}
-                                                            alt={`Premium stamps from ${country.name}`}
-                                                            fill
-                                                            className="object-cover transition-transform duration-700 group-hover:scale-110"
-                                                            sizes="(max-width: 768px) 100vw, 50vw"
-                                                        onError={(e) => {
-                                                            const target = e.currentTarget;
-                                                            if (target.src !== '/images/stamps/no-image-available.png') {
-                                                                target.src = '/images/stamps/no-image-available.png';
-                                                            }
-                                                        }}
-                                                    />
-                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
-
-                                                    <div className="absolute top-4 left-4">
-                                                        <div className="flex items-center space-x-2">
-                                                            <ReactCountryFlag countryCode={country.code} svg />
-                                                            <Badge className="bg-white/20 backdrop-blur text-white border-white/30">
-                                                                {country.totalStamps.toLocaleString()} stamps
-                                                            </Badge>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="absolute bottom-4 left-4 right-4">
-                                                        <h3 className="text-2xl font-bold text-white mb-2">{country.name}</h3>
-                                                        <p className="text-gray-200 text-sm mb-3">{country.description}</p>
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="text-gray-300 text-sm">
-                                                                {country.firstIssue} - {country.lastIssue}
-                                                            </span>
-                                                            <div className="flex items-center space-x-2">
-                                                                <Award className="w-4 h-4 text-primary dark:text-amber-400" />
-                                                                <span className="text-primary text-sm font-medium dark:text-amber-400">Approved Collection</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div className="p-6">
-                                                    <blockquote className="text-gray-600 italic mb-4 relative dark:text-gray-300">
-                                                        <Quote className="w-4 h-4 text-primary dark:text-amber-400 absolute -top-1 -left-1" />
-                                                        <span className="ml-3">{country.historicalNote}</span>
-                                                    </blockquote>
-
-                                                    <div className="flex items-center justify-between">
-                                                        <Button variant="outline" className="border-primary/30 text-primary hover:bg-primary/10 dark:border-amber-600 dark:text-amber-400 dark:hover:bg-amber-900">
-                                                            Browse Catalog
-                                                            <ChevronRight className="w-4 h-4 ml-2" />
-                                                        </Button>
-                                                        <div className="flex items-center space-x-1">
-                                                            <BookmarkPlus className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity dark:text-gray-600 dark:group-hover:text-gray-400" />
-                                                            <Telescope className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity dark:text-gray-600 dark:group-hover:text-gray-400" />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </article>
-                                    ))}
-                                </div>
-
-                                {filteredCountries.length === 0 && searchTerm && (
-                                    <div className="text-center py-12 md:py-16">
-                                        <div className="w-20 h-20 md:w-24 md:h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
-                                            <Search className="w-10 h-10 md:w-12 md:h-12 text-gray-400" />
-                                        </div>
-                                        <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">No Catalogs Found</h3>
-                                        <p className="text-gray-600 dark:text-gray-300 max-w-md mx-auto">
-                                            We couldn't find any countries matching your search. Try a different term or explore our featured collections.
-                                        </p>
-                                    </div>
-                                )}
-                            </section>
+                            <CountryCatalogContent countries={countries} onCountryClick={handleCountryClick} />
                         )}
                     </>
                 ) : null}
@@ -1184,5 +1002,14 @@ export function ModernCatalogContent() {
                 />
             )}
         </div>
+    )
+}
+
+export function ModernCatalogContent() {
+    // Wrap with provider so child tabs share data and DB seed
+    return (
+        <CatalogDataProvider>
+            <ModernCatalogContentInner />
+        </CatalogDataProvider>
     )
 }

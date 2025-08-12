@@ -7,7 +7,9 @@ import { Separator } from "@/components/ui/separator"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Search, Archive, ChevronRight, X } from "lucide-react"
 import { CountryOption, YearOption, CurrencyOption, DenominationOption, ColorOption, PaperOption, WatermarkOption, PerforationOption, ItemTypeOption, StampData, AdditionalCategoryOption, ModalType, ModalStackItem, SeriesOption } from "@/types/catalog"
-import { apiStampData, groupStampsByCountry, groupStampsBySeries, groupStampsByYear, groupStampsByCurrency, groupStampsByDenomination, groupStampsByColor, groupStampsByPaper, groupStampsByWatermark, groupStampsByPerforation, groupStampsByItemType, getStampDetails, convertApiStampToStampData, generateAdditionalCategoriesData, generateStampsForAdditionalCategory } from "@/lib/data/catalog-data"
+import { groupStampsByCountry, groupStampsBySeries, groupStampsByYear, groupStampsByCurrency, groupStampsByDenomination, groupStampsByColor, groupStampsByPaper, groupStampsByWatermark, groupStampsByPerforation, groupStampsByItemType, getStampDetails, convertApiStampToStampData, generateAdditionalCategoriesData, generateStampsForAdditionalCategory } from "@/lib/data/catalog-data"
+import { useCatalogData } from "@/lib/context/catalog-data-context"
+import { parseStampCode } from "@/lib/utils/parse-stamp-code"
 import { TraditionalPinnedStampCard } from "@/components/catalog/traditional-pinned-stamp-card"
 import { AdditionalCategoryModalContent } from "@/components/catalog/additional-category-modal-content"
 import { SeriesModalContent as VisualSeriesModalContent } from "@/components/catalog/visual-series-modal-content"
@@ -23,6 +25,7 @@ import { StampDetailsModalContent as VisualStampDetailsModalContent } from "@/co
 import { Skeleton } from "@/components/ui/skeleton"
 
 export function VisualCatalogContent() {
+  const { stamps } = useCatalogData()
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
 
@@ -37,70 +40,15 @@ export function VisualCatalogContent() {
   // Countries data
   const [countries, setCountries] = useState<CountryOption[]>([])
 
-  // Helper function to properly parse stamp codes with decimal points
-  const parseStampCode = (stampCode: string) => {
-    const parts = stampCode.split('.')
-    const countryCode = parts[0] || ''
-    const encodedSeriesName = parts[1] || ''
-    const year = parseInt(parts[2] || '0')
-    const currencyCode = parts[3] || ''
-    
-    // Handle decimal in denomination: parts[4] = "1", parts[5] = "5d" -> "1.5d"
-    let denominationPart = parts[4] || ''
-    let nextIndex = 5
-    
-    // Check if the next part starts with a digit (indicating it's part of the decimal)
-    if (parts[5] && /^\d/.test(parts[5])) {
-        denominationPart = `${parts[4] || ''}.${parts[5]}`
-        nextIndex = 6
-    }
-    
-    const denominationValue = denominationPart.replace(/[^\d.]/g, '')
-    const actualSeriesName = decodeURIComponent(encodedSeriesName)
-    
-    // Extract remaining path components and handle additional decimal points
-    const remainingParts = []
-    let i = nextIndex
-    
-    while (i < parts.length) {
-        let currentPart = parts[i] || ''
-        
-        // Check if next part could be a decimal continuation
-        // This handles cases like watermark "W.7" being split into "W" and "7"
-        if (i + 1 < parts.length && /^\d+$/.test(parts[i + 1])) {
-            // If current part is a letter/code and next is purely numeric, combine them
-            currentPart = `${parts[i] || ''}.${parts[i + 1]}`
-            i += 2 // Skip both parts
-        } else {
-            i += 1
-        }
-        
-        remainingParts.push(currentPart)
-    }
-    
-    return {
-        countryCode,
-        actualSeriesName,
-        year,
-        currencyCode,
-        denominationValue,
-        remainingParts,
-        // Legacy support - map to indexed positions for existing code
-        colorCode: remainingParts[0] || '',
-        paperCode: remainingParts[1] || '',
-        watermarkCode: remainingParts[2] || '',
-        perforationCode: remainingParts[3] || '',
-        itemTypeCode: remainingParts[4] || ''
-    }
-  }
+  // parseStampCode now shared via utility
 
   const totalStampsCount = useMemo(() => {
-    return apiStampData.filter(stamp => stamp.isInstance === false).length;
+    return stamps.filter(stamp => stamp.isInstance === false).length;
   }, []);
 
   const totalSeriesCount = useMemo(() => {
     const seriesNames = new Set<string>();
-    apiStampData.forEach(stamp => {
+    stamps.forEach(stamp => {
       if (stamp.seriesName) {
         seriesNames.add(stamp.seriesName);
       }
@@ -110,7 +58,7 @@ export function VisualCatalogContent() {
 
   const totalVarietiesCount = useMemo(() => {
     let varieties = 0;
-    apiStampData.filter(stamp => stamp.isInstance === true).forEach(stamp => {
+    stamps.filter(stamp => stamp.isInstance === true).forEach(stamp => {
       if (stamp.hasVarieties && stamp.varietyCount) {
         varieties += stamp.varietyCount;
       } else {
@@ -124,7 +72,7 @@ export function VisualCatalogContent() {
     const loadInitialData = async () => {
         try {
             setLoading(true)
-            const countriesData = groupStampsByCountry(apiStampData)
+            const countriesData = groupStampsByCountry(stamps)
             setCountries(countriesData as CountryOption[])
         } catch (err) {
             console.error('Error loading initial data:', err)
@@ -133,20 +81,20 @@ export function VisualCatalogContent() {
         }
     }
     loadInitialData()
-  }, [])
+  }, [stamps])
 
   // Navigation handlers
   const handleCountryClick = async (country: CountryOption) => {
     setLoadingModalContent(true);
     try {
-      const seriesOfStamps = groupStampsBySeries(apiStampData, country.code)
+      const seriesOfStamps = groupStampsBySeries(stamps, country.code)
       if (seriesOfStamps.length === 0) {
-        const stamps = getStampDetails(apiStampData, country.code)
-        if (stamps.length > 0) {
+        const stampsList = getStampDetails(stamps, country.code)
+        if (stampsList.length > 0) {
           setModalStack([{
             type: 'stampDetails',
             title: `${country.name} Stamps`,
-            data: { stamps: stamps.map(convertApiStampToStampData) },
+            data: { stamps: stampsList.map(convertApiStampToStampData) },
             stampCode: country.code
           }])
           return
@@ -167,7 +115,7 @@ export function VisualCatalogContent() {
     setLoadingModalContent(true);
     try {
       const { countryCode } = parseStampCode(currentStampCode)
-      const years = groupStampsByYear(apiStampData, countryCode, series.name)
+      const years = groupStampsByYear(stamps, countryCode, series.name)
       const encodedSeriesName = encodeURIComponent(series.name)
       const newStampCode = `${currentStampCode}.${encodedSeriesName}`
       setModalStack(prev => [...prev, {
@@ -185,14 +133,14 @@ export function VisualCatalogContent() {
     setLoadingModalContent(true);
     try {
       const { countryCode, actualSeriesName } = parseStampCode(currentStampCode)
-      const currencies = groupStampsByCurrency(apiStampData, countryCode, actualSeriesName, year.year)
+      const currencies = groupStampsByCurrency(stamps, countryCode, actualSeriesName, year.year)
       if (currencies.length === 0) {
-        const stamps = getStampDetails(apiStampData, countryCode, actualSeriesName, year.year)
-        if (stamps.length > 0) {
+        const stampsList = getStampDetails(stamps, countryCode, actualSeriesName, year.year)
+        if (stampsList.length > 0) {
           setModalStack(prev => [...prev, {
             type: 'stampDetails',
             title: `${year.year} Stamps`,
-            data: { stamps: stamps.map(convertApiStampToStampData) },
+            data: { stamps: stampsList.map(convertApiStampToStampData) },
             stampCode: `${currentStampCode}.${year.year}`
           }])
           return
@@ -214,14 +162,14 @@ export function VisualCatalogContent() {
     setLoadingModalContent(true);
     try {
       const { countryCode, actualSeriesName, year } = parseStampCode(currentStampCode)
-      const denominations = groupStampsByDenomination(apiStampData, countryCode, actualSeriesName, year, currency.code)
+      const denominations = groupStampsByDenomination(stamps, countryCode, actualSeriesName, year, currency.code)
       if (denominations.length === 0) {
-        const stamps = getStampDetails(apiStampData, countryCode, actualSeriesName, year, currency.code)
-        if (stamps.length > 0) {
+        const stampsList = getStampDetails(stamps, countryCode, actualSeriesName, year, currency.code)
+        if (stampsList.length > 0) {
           setModalStack(prev => [...prev, {
             type: 'stampDetails',
             title: `${currency.name} Stamps`,
-            data: { stamps: stamps.map(convertApiStampToStampData) },
+            data: { stamps: stampsList.map(convertApiStampToStampData) },
             stampCode: `${currentStampCode}.${currency.code}`
           }])
           return
@@ -243,14 +191,14 @@ export function VisualCatalogContent() {
     setLoadingModalContent(true);
     try {
       const { countryCode, actualSeriesName, year, currencyCode } = parseStampCode(currentStampCode)
-      const colors = groupStampsByColor(apiStampData, countryCode, actualSeriesName, year, currencyCode, denomination.value)
+      const colors = groupStampsByColor(stamps, countryCode, actualSeriesName, year, currencyCode, denomination.value)
       if (colors.length === 0) {
-        const stamps = getStampDetails(apiStampData, countryCode, actualSeriesName, year, currencyCode, denomination.value)
-        if (stamps.length > 0) {
+        const stampsList = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denomination.value)
+        if (stampsList.length > 0) {
           setModalStack(prev => [...prev, {
             type: 'stampDetails',
             title: `${denomination.displayName} Stamps`,
-            data: { stamps: stamps.map(convertApiStampToStampData) },
+            data: { stamps: stampsList.map(convertApiStampToStampData) },
             stampCode: `${currentStampCode}.${denomination.value}${denomination.symbol}`
           }])
           return
@@ -272,14 +220,14 @@ export function VisualCatalogContent() {
     setLoadingModalContent(true);
     try {
       const { countryCode, actualSeriesName, year, currencyCode, denominationValue } = parseStampCode(currentStampCode)
-      const papers = groupStampsByPaper(apiStampData, countryCode, actualSeriesName, year, currencyCode, denominationValue, color.code)
+      const papers = groupStampsByPaper(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, color.code)
       if (papers.length === 0) {
-        const stamps = getStampDetails(apiStampData, countryCode, actualSeriesName, year, currencyCode, denominationValue, color.code)
-        if (stamps.length > 0) {
+        const stampsList = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, color.code)
+        if (stampsList.length > 0) {
           setModalStack(prev => [...prev, {
             type: 'stampDetails',
             title: `${color.name} Stamps`,
-            data: { stamps: stamps.map(convertApiStampToStampData) },
+            data: { stamps: stampsList.map(convertApiStampToStampData) },
             stampCode: `${currentStampCode}.${color.code}`
           }])
           return
@@ -301,14 +249,14 @@ export function VisualCatalogContent() {
     setLoadingModalContent(true);
     try {
       const { countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode } = parseStampCode(currentStampCode)
-      const watermarks = groupStampsByWatermark(apiStampData, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paper.code)
+      const watermarks = groupStampsByWatermark(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paper.code)
       if (watermarks.length === 0) {
-        const stamps = getStampDetails(apiStampData, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paper.code)
-        if (stamps.length > 0) {
+        const stampsList = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paper.code)
+        if (stampsList.length > 0) {
           setModalStack(prev => [...prev, {
             type: 'stampDetails',
             title: `${paper.name} Stamps`,
-            data: { stamps: stamps.map(convertApiStampToStampData) },
+            data: { stamps: stampsList.map(convertApiStampToStampData) },
             stampCode: `${currentStampCode}.${paper.code}`
           }])
           return
@@ -330,14 +278,14 @@ export function VisualCatalogContent() {
     setLoadingModalContent(true);
     try {
       const { countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode } = parseStampCode(currentStampCode)
-      const perforations = groupStampsByPerforation(apiStampData, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermark.code)
+      const perforations = groupStampsByPerforation(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermark.code)
       if (perforations.length === 0) {
-        const stamps = getStampDetails(apiStampData, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermark.code)
-        if (stamps.length > 0) {
+        const stampsList = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermark.code)
+        if (stampsList.length > 0) {
           setModalStack(prev => [...prev, {
             type: 'stampDetails',
             title: `${watermark.name} Stamps`,
-            data: { stamps: stamps.map(convertApiStampToStampData) },
+            data: { stamps: stampsList.map(convertApiStampToStampData) },
             stampCode: `${currentStampCode}.${watermark.code}`
           }])
           return
@@ -359,14 +307,14 @@ export function VisualCatalogContent() {
     setLoadingModalContent(true);
     try {
       const { countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode } = parseStampCode(currentStampCode)
-      const itemTypes = groupStampsByItemType(apiStampData, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforation.code)
+      const itemTypes = groupStampsByItemType(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforation.code)
       if (itemTypes.length === 0) {
-        const stamps = getStampDetails(apiStampData, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforation.code)
-        if (stamps.length > 0) {
+        const stampsList = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforation.code)
+        if (stampsList.length > 0) {
           setModalStack(prev => [...prev, {
             type: 'stampDetails',
             title: `${perforation.name} Stamps`,
-            data: { stamps: stamps.map(convertApiStampToStampData) },
+            data: { stamps: stampsList.map(convertApiStampToStampData) },
             stampCode: `${currentStampCode}.${perforation.code}`
           }])
           return
@@ -388,12 +336,12 @@ export function VisualCatalogContent() {
     setLoadingModalContent(true);
     try {
       const { countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode } = parseStampCode(currentStampCode)
-      const stamps = getStampDetails(apiStampData, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemType.code)
+      const stampsList = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemType.code)
       const newStampCode = `${currentStampCode}.${itemType.code}`
       setModalStack(prev => [...prev, {
         type: 'stampDetails',
         title: `${itemType.name} Details`,
-        data: { stamps: stamps.map(convertApiStampToStampData), showAsIndividualCards: true, stampCode: newStampCode },
+        data: { stamps: stampsList.map(convertApiStampToStampData), showAsIndividualCards: true, stampCode: newStampCode },
         stampCode: newStampCode
       }])
     } finally {
@@ -432,7 +380,7 @@ export function VisualCatalogContent() {
     setLoadingModalContent(true);
     try {
       const { countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemTypeCode } = parseStampCode(currentStampCode)
-      const allStamps = getStampDetails(apiStampData, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemTypeCode)
+      const allStamps = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemTypeCode)
       
       let filteredStamps = []
       switch (categoryType) {
@@ -493,7 +441,7 @@ export function VisualCatalogContent() {
                         default: return false
                     }
                 }).length,
-                stampImageUrl: stamp.stampImageUrl || '/images/stamps/stamp.png'
+                stampImageUrl: stamp.stampImageUrl || '/images/stamps/no-image-available.png'
             })
         }
       })
@@ -521,9 +469,9 @@ export function VisualCatalogContent() {
     setLoadingModalContent(true);
     try {
       const { countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemTypeCode } = parseStampCode(currentStampCode)
-      const allStamps = getStampDetails(apiStampData, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemTypeCode)
+      const allStamps = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemTypeCode)
       
-      const stamps = allStamps.filter(stamp => {
+      const filteredStamps = allStamps.filter(stamp => {
           switch (categoryType) {
               case 'postalHistory':
                   return stamp.postalHistoryType === category.name
@@ -545,7 +493,7 @@ export function VisualCatalogContent() {
         type: 'stampDetails',
         title: `${category.name} - Stamp Details`,
         data: {
-          stamps,
+          stamps: filteredStamps,
           categoryFilter: category,
           baseStampCode: currentStampCode,
           showAsIndividualCards: true,

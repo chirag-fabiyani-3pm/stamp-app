@@ -974,7 +974,7 @@ export default function ModalContent({
                                         {stamp.issueYear}
                                     </span>
                                     <span className="flex items-center">
-                                        <ReactCountryFlag countryCode={stamp.stampCode.split('.')[0]} svg className="mr-1" />
+                                        <ReactCountryFlag countryCode={decodedStampCode?.split('.')[0]} svg className="mr-1" />
                                         {stamp.country}
                                     </span>
                                     <span className="flex items-center">

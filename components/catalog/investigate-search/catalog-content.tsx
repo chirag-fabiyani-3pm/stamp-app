@@ -71,7 +71,8 @@ import {
   mapApiStampToStampData,
   fetchAllStampsFromAPI
 } from "@/lib/api/investigate-search-api"
-import { apiStampData, convertApiStampToStampData } from "@/lib/data/catalog-data"
+// Use shared data provider instead of importing apiStampData directly
+import { useCatalogData } from "@/lib/context/catalog-data-context"
 import { Skeleton } from "@/components/ui/skeleton"
 
 
@@ -281,6 +282,7 @@ const GROUPING_FIELDS: { value: GroupingField; label: string; accessor: (s: Stam
 ]
 
 export function CatalogContent() {
+  const { normalizedStamps, dbReady } = useCatalogData()
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
@@ -426,12 +428,13 @@ export function CatalogContent() {
     try {
       const isEmpty = await checkIndexedDBEmpty()
       if (isEmpty) {
-        // If empty here, still seed to keep investigate-search standalone-safe
-        const seeded = apiStampData.map(convertApiStampToStampData)
-        await saveStampsToIndexedDB(seeded)
+        // If empty here, still seed using shared normalized stamps
+        if (normalizedStamps.length > 0) {
+          await saveStampsToIndexedDB(normalizedStamps)
+        }
         toast({
           title: "Database Initialized",
-          description: `Loaded ${seeded.length} stamps into local database`,
+          description: `Loaded ${normalizedStamps.length} stamps into local database`,
         })
       }
     } catch (error) {
@@ -535,8 +538,8 @@ export function CatalogContent() {
   // Fallback function for API data
   const loadFromAPIOrData = async () => {
     try {
-      // Use local example apiStampData immediately
-      const localStamps = apiStampData.map(convertApiStampToStampData)
+      // Use shared normalized stamps immediately
+      const localStamps = normalizedStamps
       setStamps(localStamps)
       setTotalStampsCount(localStamps.length)
       setAllStampsLoaded(true)
@@ -552,8 +555,10 @@ export function CatalogContent() {
   }
 
   useEffect(() => {
+    // Wait for provider to be ready to avoid double-seeding
+    if (!dbReady) return
     loadInitialStamps()
-  }, [])
+  }, [dbReady])
 
   // Filter stamps based on debounced search term
   const filteredStamps = useMemo(() => {

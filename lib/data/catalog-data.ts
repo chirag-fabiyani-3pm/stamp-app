@@ -12,7 +12,7 @@ export const generateCountriesData = async (): Promise<CountryOption[]> => {
       totalStamps: 18950, 
       firstIssue: '1840', 
       lastIssue: '2024', 
-      featuredStampUrl: '/images/stamps/stamp.png',
+      featuredStampUrl: '/images/stamps/no-image-available.png',
       description: 'The birthplace of postal excellence',
       historicalNote: 'Home to the world\'s first adhesive postage stamp, the Penny Black, issued on May 1, 1840, setting the gold standard for philatelic approval.'
     },
@@ -23,7 +23,7 @@ export const generateCountriesData = async (): Promise<CountryOption[]> => {
       totalStamps: 22100, 
     firstIssue: '1847',
     lastIssue: '2024',
-      featuredStampUrl: '/images/stamps/stamp.png',
+      featuredStampUrl: '/images/stamps/no-image-available.png',
       description: 'American innovation in stamp design',
       historicalNote: 'The first U.S. stamps featured Benjamin Franklin and George Washington, establishing an enduring tradition of honoring national figures with philatelic approval.'
     },
@@ -34,7 +34,7 @@ export const generateCountriesData = async (): Promise<CountryOption[]> => {
       totalStamps: 14200, 
       firstIssue: '1849', 
     lastIssue: '2024',
-      featuredStampUrl: '/images/stamps/stamp.png',
+      featuredStampUrl: '/images/stamps/no-image-available.png',
       description: 'Artistic elegance in every issue',
       historicalNote: 'French stamps have long been celebrated for their artistic beauty and technical precision, earning worldwide approval from collectors and designers alike.'
     },
@@ -45,7 +45,7 @@ export const generateCountriesData = async (): Promise<CountryOption[]> => {
       totalStamps: 16750, 
       firstIssue: '1872', 
     lastIssue: '2024',
-      featuredStampUrl: '/images/stamps/stamp.png',
+      featuredStampUrl: '/images/stamps/no-image-available.png',
       description: 'Precision and innovation combined',
       historicalNote: 'German stamps reflect the nation\'s commitment to engineering excellence and design precision, consistently earning approval for their technical quality.'
     },
@@ -56,7 +56,7 @@ export const generateCountriesData = async (): Promise<CountryOption[]> => {
         totalStamps: 12380, 
       firstIssue: '1856',
       lastIssue: '2024',
-        featuredStampUrl: '/images/stamps/stamp.png',
+        featuredStampUrl: '/images/stamps/no-image-available.png',
         description: 'Natural wonders on stamps',
         historicalNote: 'Australian stamps showcase the continent\'s unique flora and fauna, earning international approval for their vibrant depictions of natural heritage.'
       },
@@ -67,7 +67,7 @@ export const generateCountriesData = async (): Promise<CountryOption[]> => {
         totalStamps: 9840, 
         firstIssue: '1851', 
       lastIssue: '2024',
-        featuredStampUrl: '/images/stamps/stamp.png',
+        featuredStampUrl: '/images/stamps/no-image-available.png',
         description: 'Natural majesty preserved in miniature',
         historicalNote: 'The famous "Three-penny Beaver" was the world\'s first stamp to feature an animal, earning immediate approval and setting a new standard for wildlife on stamps.'
       },
@@ -78,7 +78,7 @@ export const generateCountriesData = async (): Promise<CountryOption[]> => {
         totalStamps: 13560, 
         firstIssue: '1871', 
       lastIssue: '2024',
-        featuredStampUrl: '/images/stamps/stamp.png',
+        featuredStampUrl: '/images/stamps/no-image-available.png',
         description: 'Where tradition meets innovation',
         historicalNote: 'Japanese stamps beautifully blend traditional artistic elements with modern design principles, earning approval for their cultural authenticity and aesthetic excellence.'
       },
@@ -89,7 +89,7 @@ export const generateCountriesData = async (): Promise<CountryOption[]> => {
         totalStamps: 8920, 
         firstIssue: '1850', 
         lastIssue: '2024', 
-        featuredStampUrl: '/images/stamps/stamp.png',
+        featuredStampUrl: '/images/stamps/no-image-available.png',
         description: 'Alpine precision meets design excellence',
         historicalNote: 'Swiss stamps are universally approved for their exceptional quality, innovative security features, and meticulous attention to detail that reflects the nation\'s commitment to excellence.'
       }
@@ -107,7 +107,7 @@ export const generateStampGroupsData = async (countryCode: string): Promise<Seri
       name: `Series ${catalogNumber} - Queen Victoria Chalon`,
       catalogNumber,
       totalStamps: Math.floor(Math.random() * 100) + 20,
-      stampImageUrl: '/images/stamps/stamp.png',
+      stampImageUrl: '/images/stamps/no-image-available.png',
       description: `Premium collection from the ${catalogNumber} series featuring detailed engravings worthy of collector approval`,
       period: '1855-1875',
       featured: i <= 3
@@ -155,7 +155,7 @@ export const generateDenominationsData = async (stampCode: string, currencyCode:
     symbol,
     displayName: `${value}${symbol}`,
     totalStamps: Math.floor(Math.random() * 30) + 5,
-    stampImageUrl: '/images/stamps/stamp.png',
+    stampImageUrl: '/images/stamps/no-image-available.png',
     commonColors: ['Red', 'Blue', 'Green'],
     featured: index < 2
   }))
@@ -165,13 +165,13 @@ export const generateColorsData = async (stampCode: string, denomination: string
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 300))
   return [
-    { code: 'Blu', name: 'Royal Blue', hex: '#1e40af', totalStamps: 25, stampImageUrl: '/images/stamps/stamp.png', popularity: 9, description: 'The distinguished blue of royal heritage' },
-    { code: 'R', name: 'Carmine Red', hex: '#dc2626', totalStamps: 20, stampImageUrl: '/images/stamps/stamp.png', popularity: 8, description: 'A bold red that commands approval' },
-    { code: 'Gr', name: 'Emerald Green', hex: '#059669', totalStamps: 18, stampImageUrl: '/images/stamps/stamp.png', popularity: 7, description: 'The rich green of precious emeralds' },
-    { code: 'Pur', name: 'Imperial Purple', hex: '#7c3aed', totalStamps: 15, stampImageUrl: '/images/stamps/stamp.png', popularity: 6, description: 'The purple of nobility and prestige' },
-    { code: 'Br', name: 'Sepia Brown', hex: '#92400e', totalStamps: 12, stampImageUrl: '/images/stamps/stamp.png', popularity: 5, description: 'Warm brown tones of vintage excellence' },
-    { code: 'Blk', name: 'Jet Black', hex: '#1f2937', totalStamps: 10, stampImageUrl: '/images/stamps/stamp.png', popularity: 4, description: 'The profound depth of classic black' },
-    { code: 'Yel', name: 'Golden Yellow', hex: '#f59e0b', totalStamps: 8, stampImageUrl: '/images/stamps/stamp.png', popularity: 3, description: 'Bright as sunshine, valuable as gold' }
+    { code: 'Blu', name: 'Royal Blue', hex: '#1e40af', totalStamps: 25, stampImageUrl: '/images/stamps/no-image-available.png', popularity: 9, description: 'The distinguished blue of royal heritage' },
+    { code: 'R', name: 'Carmine Red', hex: '#dc2626', totalStamps: 20, stampImageUrl: '/images/stamps/no-image-available.png', popularity: 8, description: 'A bold red that commands approval' },
+    { code: 'Gr', name: 'Emerald Green', hex: '#059669', totalStamps: 18, stampImageUrl: '/images/stamps/no-image-available.png', popularity: 7, description: 'The rich green of precious emeralds' },
+    { code: 'Pur', name: 'Imperial Purple', hex: '#7c3aed', totalStamps: 15, stampImageUrl: '/images/stamps/no-image-available.png', popularity: 6, description: 'The purple of nobility and prestige' },
+    { code: 'Br', name: 'Sepia Brown', hex: '#92400e', totalStamps: 12, stampImageUrl: '/images/stamps/no-image-available.png', popularity: 5, description: 'Warm brown tones of vintage excellence' },
+    { code: 'Blk', name: 'Jet Black', hex: '#1f2937', totalStamps: 10, stampImageUrl: '/images/stamps/no-image-available.png', popularity: 4, description: 'The profound depth of classic black' },
+    { code: 'Yel', name: 'Golden Yellow', hex: '#f59e0b', totalStamps: 8, stampImageUrl: '/images/stamps/no-image-available.png', popularity: 3, description: 'Bright as sunshine, valuable as gold' }
   ]
 }
 
@@ -190,10 +190,10 @@ export const generateWatermarksData = async (stampCode: string, paperCode: strin
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 300))
   return [
-    { code: 'WmkNZStr6mm', name: 'NZ and Star 6mm', description: 'New Zealand and Star watermark pattern', totalStamps: 10, stampImageUrl: '/images/stamps/stamp.png', pattern: 'Star', historicalInfo: 'Used during the colonial period for authentication' },
-    { code: 'WmkLgStr', name: 'Large Star', description: 'Large star watermark for premium stamps', totalStamps: 8, stampImageUrl: '/images/stamps/stamp.png', pattern: 'Large Star', historicalInfo: 'Symbol of imperial connection and approval' },
-    { code: 'WmkCrownCC', name: 'Crown Over CC', description: 'Crown over CC colonial watermark', totalStamps: 6, stampImageUrl: '/images/stamps/stamp.png', pattern: 'Crown', historicalInfo: 'Crown Colony designation mark of official approval' },
-    { code: 'NoWmk', name: 'No Watermark', description: 'No watermark present', totalStamps: 15, stampImageUrl: '/images/stamps/stamp.png', pattern: 'None', historicalInfo: 'Later printing methods without watermark authentication' }
+    { code: 'WmkNZStr6mm', name: 'NZ and Star 6mm', description: 'New Zealand and Star watermark pattern', totalStamps: 10, stampImageUrl: '/images/stamps/no-image-available.png', pattern: 'Star', historicalInfo: 'Used during the colonial period for authentication' },
+    { code: 'WmkLgStr', name: 'Large Star', description: 'Large star watermark for premium stamps', totalStamps: 8, stampImageUrl: '/images/stamps/no-image-available.png', pattern: 'Large Star', historicalInfo: 'Symbol of imperial connection and approval' },
+    { code: 'WmkCrownCC', name: 'Crown Over CC', description: 'Crown over CC colonial watermark', totalStamps: 6, stampImageUrl: '/images/stamps/no-image-available.png', pattern: 'Crown', historicalInfo: 'Crown Colony designation mark of official approval' },
+    { code: 'NoWmk', name: 'No Watermark', description: 'No watermark present', totalStamps: 15, stampImageUrl: '/images/stamps/no-image-available.png', pattern: 'None', historicalInfo: 'Later printing methods without watermark authentication' }
   ]
 }
 
@@ -201,10 +201,10 @@ export const generatePerforationsData = async (stampCode: string, watermarkCode:
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 300))
   return [
-    { code: 'P12', name: 'Perf 12', measurement: '12.0', totalStamps: 12, stampImageUrl: '/images/stamps/stamp.png', style: 'Standard', technicalDetail: '12 holes per 2 centimeters - industry standard' },
-    { code: 'P13', name: 'Perf 13', measurement: '13.0', totalStamps: 10, stampImageUrl: '/images/stamps/stamp.png', style: 'Fine', technicalDetail: '13 holes per 2 centimeters - fine quality' },
-    { code: 'P14', name: 'Perf 14', measurement: '14.0', totalStamps: 8, stampImageUrl: '/images/stamps/stamp.png', style: 'Very Fine', technicalDetail: '14 holes per 2 centimeters - premium grade' },
-    { code: 'Imp', name: 'Imperforate', measurement: 'No perforations', totalStamps: 5, stampImageUrl: '/images/stamps/stamp.png', style: 'Special', technicalDetail: 'Hand-cut stamps for collectors\' approval' }
+    { code: 'P12', name: 'Perf 12', measurement: '12.0', totalStamps: 12, stampImageUrl: '/images/stamps/no-image-available.png', style: 'Standard', technicalDetail: '12 holes per 2 centimeters - industry standard' },
+    { code: 'P13', name: 'Perf 13', measurement: '13.0', totalStamps: 10, stampImageUrl: '/images/stamps/no-image-available.png', style: 'Fine', technicalDetail: '13 holes per 2 centimeters - fine quality' },
+    { code: 'P14', name: 'Perf 14', measurement: '14.0', totalStamps: 8, stampImageUrl: '/images/stamps/no-image-available.png', style: 'Very Fine', technicalDetail: '14 holes per 2 centimeters - premium grade' },
+    { code: 'Imp', name: 'Imperforate', measurement: 'No perforations', totalStamps: 5, stampImageUrl: '/images/stamps/no-image-available.png', style: 'Special', technicalDetail: 'Hand-cut stamps for collectors\' approval' }
   ]
 }
 
@@ -212,7 +212,7 @@ export const generateItemTypesData = async (stampCode: string, perforationCode: 
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 300))
   return [
-    { code: 'St001', name: 'Mint Condition', description: 'Pristine unused stamps in perfect condition', totalStamps: 8, stampImageUrl: '/images/stamps/stamp.png', category: 'Premium Grade', collectorsNote: 'The most sought-after condition, earning highest approval from collectors' },
+    { code: 'St001', name: 'Mint Condition', description: 'Pristine unused stamps in perfect condition', totalStamps: 8, stampImageUrl: '/images/stamps/no-image-available.png', category: 'Premium Grade', collectorsNote: 'The most sought-after condition, earning highest approval from collectors' },
     { code: 'OnP01', name: 'On Piece', description: 'Stamps still attached to original envelope fragments', totalStamps: 5, stampImageUrl: '/images/stamps/stamp-on-piece.png', category: 'Historical', collectorsNote: 'Preserves postal history context for research approval' },
     { code: 'OnC01', name: 'On Card', description: 'Stamps professionally mounted on collector cards', totalStamps: 3, stampImageUrl: '/images/stamps/stamp-on-card.png', category: 'Display Ready', collectorsNote: 'Perfect for exhibition and display approval' },
     { code: 'OnE01', name: 'On Cover', description: 'Complete postal covers with stamps attached', totalStamps: 4, stampImageUrl: '/images/stamps/stamp-on-envelope.png', category: 'Complete History', collectorsNote: 'Full postal documents earning historical approval' }
@@ -229,7 +229,7 @@ export const generateStampDetails = async (stampCode: string, itemTypeCode: stri
       name: `Premium Specimen ${i}`,
       country: 'Great Britain',
       countryCode: 'GB',
-      stampImageUrl: '/images/stamps/stamp.png',
+      stampImageUrl: '/images/stamps/no-image-available.png',
       catalogNumber: `SOA${i}`,
       catalogName: 'Stamps of Approval',
       seriesName: 'Stamps of Approval Collection',
@@ -275,22 +275,22 @@ export const generateAdditionalCategoriesData = async (categoryType: string, sta
       { code: 'NEWS', name: 'On Newspaper', description: 'Stamp used on newspaper wrapper - rare approval', totalStamps: 15, stampImageUrl: '/images/stamps/stamp-on-newspaper.png', priceMultiplier: 2.5, rarity: 'rare' }
     ],
     'postmarks': [
-      { code: 'CDS', name: 'Circular Date Stamp', description: 'Standard circular postmark with clear approval', totalStamps: 120, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 1.0, rarity: 'common' },
-      { code: 'DUPLEX', name: 'Duplex Cancel', description: 'Combined postmark and killer earning approval', totalStamps: 85, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 1.3, rarity: 'common' },
-      { code: 'NUMERAL', name: 'Numeral Cancel', description: 'Numeric obliterator with collector approval', totalStamps: 67, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 1.5, rarity: 'uncommon' },
-      { code: 'SPECIAL', name: 'Special Occasion', description: 'Commemorative postmark with premium approval', totalStamps: 23, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 3.0, rarity: 'rare' }
+      { code: 'CDS', name: 'Circular Date Stamp', description: 'Standard circular postmark with clear approval', totalStamps: 120, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 1.0, rarity: 'common' },
+      { code: 'DUPLEX', name: 'Duplex Cancel', description: 'Combined postmark and killer earning approval', totalStamps: 85, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 1.3, rarity: 'common' },
+      { code: 'NUMERAL', name: 'Numeral Cancel', description: 'Numeric obliterator with collector approval', totalStamps: 67, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 1.5, rarity: 'uncommon' },
+      { code: 'SPECIAL', name: 'Special Occasion', description: 'Commemorative postmark with premium approval', totalStamps: 23, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 3.0, rarity: 'rare' }
     ],
     'proofs': [
-      { code: 'DIE', name: 'Die Proof', description: 'Proof taken from the original die - ultimate approval', totalStamps: 8, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 15.0, rarity: 'extremely rare' },
-      { code: 'PLATE', name: 'Plate Proof', description: 'Proof from printing plate with expert approval', totalStamps: 12, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 8.0, rarity: 'very rare' },
-      { code: 'TRIAL', name: 'Trial Color Proof', description: 'Alternative color proof earning design approval', totalStamps: 15, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 6.0, rarity: 'rare' },
-      { code: 'PROG', name: 'Progressive Proof', description: 'Printing stage proof with technical approval', totalStamps: 6, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 12.0, rarity: 'extremely rare' }
+      { code: 'DIE', name: 'Die Proof', description: 'Proof taken from the original die - ultimate approval', totalStamps: 8, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 15.0, rarity: 'extremely rare' },
+      { code: 'PLATE', name: 'Plate Proof', description: 'Proof from printing plate with expert approval', totalStamps: 12, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 8.0, rarity: 'very rare' },
+      { code: 'TRIAL', name: 'Trial Color Proof', description: 'Alternative color proof earning design approval', totalStamps: 15, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 6.0, rarity: 'rare' },
+      { code: 'PROG', name: 'Progressive Proof', description: 'Printing stage proof with technical approval', totalStamps: 6, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 12.0, rarity: 'extremely rare' }
     ],
     'essays': [
-      { code: 'DESIGN', name: 'Design Essay', description: 'Original design proposal with artistic approval', totalStamps: 5, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 20.0, rarity: 'extremely rare' },
-      { code: 'COLOR', name: 'Color Essay', description: 'Alternative color scheme with approval', totalStamps: 8, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 12.0, rarity: 'very rare' },
-      { code: 'FRAME', name: 'Frame Essay', description: 'Border design variant earning approval', totalStamps: 7, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 15.0, rarity: 'extremely rare' },
-      { code: 'COMP', name: 'Composite Essay', description: 'Multiple design elements with unique approval', totalStamps: 3, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 25.0, rarity: 'unique' }
+      { code: 'DESIGN', name: 'Design Essay', description: 'Original design proposal with artistic approval', totalStamps: 5, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 20.0, rarity: 'extremely rare' },
+      { code: 'COLOR', name: 'Color Essay', description: 'Alternative color scheme with approval', totalStamps: 8, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 12.0, rarity: 'very rare' },
+      { code: 'FRAME', name: 'Frame Essay', description: 'Border design variant earning approval', totalStamps: 7, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 15.0, rarity: 'extremely rare' },
+      { code: 'COMP', name: 'Composite Essay', description: 'Multiple design elements with unique approval', totalStamps: 3, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 25.0, rarity: 'unique' }
     ],
     'onPiece': [
       { code: 'ENV_PIECE', name: 'Envelope Piece', description: 'Corner or piece of envelope with approval', totalStamps: 95, stampImageUrl: '/images/stamps/stamp-on-piece.png', priceMultiplier: 0.8, rarity: 'common' },
@@ -299,17 +299,17 @@ export const generateAdditionalCategoriesData = async (categoryType: string, sta
       { code: 'WRAP_PIECE', name: 'Wrapper Piece', description: 'Newspaper wrapper piece with rare approval', totalStamps: 19, stampImageUrl: '/images/stamps/stamp-on-piece.png', priceMultiplier: 1.8, rarity: 'rare' }
     ],
     'errors': [
-      { code: 'MISPERF', name: 'Misperforated', description: 'Perforations in wrong position - error approval', totalStamps: 12, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 8.0, rarity: 'rare' },
-      { code: 'MISSING_COLOR', name: 'Missing Color', description: 'Colors omitted earning error approval', totalStamps: 8, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 15.0, rarity: 'very rare' },
-      { code: 'DOUBLE_PRINT', name: 'Double Print', description: 'Double printing with prestigious approval', totalStamps: 5, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 20.0, rarity: 'extremely rare' },
-      { code: 'INVERTED', name: 'Inverted Center', description: 'Upside down center - legendary approval', totalStamps: 2, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 50.0, rarity: 'unique' },
-      { code: 'IMPERF', name: 'Imperforate', description: 'Missing perforations earning specialist approval', totalStamps: 18, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 6.0, rarity: 'rare' }
+      { code: 'MISPERF', name: 'Misperforated', description: 'Perforations in wrong position - error approval', totalStamps: 12, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 8.0, rarity: 'rare' },
+      { code: 'MISSING_COLOR', name: 'Missing Color', description: 'Colors omitted earning error approval', totalStamps: 8, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 15.0, rarity: 'very rare' },
+      { code: 'DOUBLE_PRINT', name: 'Double Print', description: 'Double printing with prestigious approval', totalStamps: 5, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 20.0, rarity: 'extremely rare' },
+      { code: 'INVERTED', name: 'Inverted Center', description: 'Upside down center - legendary approval', totalStamps: 2, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 50.0, rarity: 'unique' },
+      { code: 'IMPERF', name: 'Imperforate', description: 'Missing perforations earning specialist approval', totalStamps: 18, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 6.0, rarity: 'rare' }
     ],
     'other': [
-      { code: 'SPECIMENS', name: 'Specimens', description: 'SPECIMEN overprints with official approval', totalStamps: 25, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 3.0, rarity: 'uncommon' },
-      { code: 'REPRINTS', name: 'Reprints', description: 'Later reprints with documented approval', totalStamps: 45, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 0.3, rarity: 'common' },
-      { code: 'OFFICIALS', name: 'Official Overprints', description: 'Official use overprints with government approval', totalStamps: 35, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 2.5, rarity: 'uncommon' },
-      { code: 'LOCALS', name: 'Local Issues', description: 'Local variants earning regional approval', totalStamps: 20, stampImageUrl: '/images/stamps/stamp.png', priceMultiplier: 4.0, rarity: 'rare' }
+      { code: 'SPECIMENS', name: 'Specimens', description: 'SPECIMEN overprints with official approval', totalStamps: 25, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 3.0, rarity: 'uncommon' },
+      { code: 'REPRINTS', name: 'Reprints', description: 'Later reprints with documented approval', totalStamps: 45, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 0.3, rarity: 'common' },
+      { code: 'OFFICIALS', name: 'Official Overprints', description: 'Official use overprints with government approval', totalStamps: 35, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 2.5, rarity: 'uncommon' },
+      { code: 'LOCALS', name: 'Local Issues', description: 'Local variants earning regional approval', totalStamps: 20, stampImageUrl: '/images/stamps/no-image-available.png', priceMultiplier: 4.0, rarity: 'rare' }
     ]
   }
   return categoryMap[categoryType] || []
@@ -341,7 +341,7 @@ export const generateStampsForAdditionalCategory = async (baseStampCode: string,
       name: `Queen Victoria Chalon - ${categoryName} (${categoryCode})`,
       country: 'Great Britain',
       countryCode: 'GB',
-      stampImageUrl: '/images/stamps/stamp.png',
+      stampImageUrl: '/images/stamps/no-image-available.png',
       catalogNumber: `SOA${i}${categoryCode.substring(0, 2)}`,
       catalogName: 'Additional Categories',
       seriesName: 'Stamps of Approval Collection',
@@ -395,7 +395,7 @@ export const featuredStories = [
     id: '1',
     title: 'The Penny Black Revolution',
     subtitle: 'How the world\'s first postage stamp earned universal approval',
-    imageUrl: '/images/stamps/stamp.png',
+    imageUrl: '/images/stamps/no-image-available.png',
     readTime: '8 min read',
     category: 'Historical Milestones',
     excerpt: 'Discover the fascinating story behind the creation of the Penny Black and how it transformed global communication, earning the approval of nations worldwide.'
@@ -404,7 +404,7 @@ export const featuredStories = [
     id: '2',
     title: 'Watermarks: Hidden Signatures',
     subtitle: 'The secret marks that give stamps their stamp of approval',
-    imageUrl: '/images/stamps/stamp.png',
+    imageUrl: '/images/stamps/no-image-available.png',
     readTime: '6 min read',
     category: 'Technical Excellence',
     excerpt: 'Learn to identify the subtle watermarks that authenticate stamps and make them worthy of collector approval.'
@@ -413,7 +413,7 @@ export const featuredStories = [
     id: '3',
     title: 'Color Mastery in Philately',
     subtitle: 'The artistry that earns stamps lasting approval',
-    imageUrl: '/images/stamps/stamp.png',
+    imageUrl: '/images/stamps/no-image-available.png',
     readTime: '10 min read',
     category: 'Artistic Heritage',
     excerpt: 'Explore how master printers created the vibrant colors that have earned stamps their enduring approval through the centuries.'
@@ -3046,7 +3046,7 @@ export const groupStampsByCountry = (stamps: any[]) => {
         firstIssue: Math.min(...stamps.filter((s: any) => s.country === key && s.issueYear).map((s: any) => s.issueYear)).toString(),
         lastIssue: Math.max(...stamps.filter((s: any) => s.country === key && s.issueYear).map((s: any) => s.issueYear)).toString(),
         historicalNote: `Rich philatelic history spanning multiple eras and postal innovations.`,
-        featuredStampUrl: stamp.stampImageUrl || '/images/stamps/stamp.png'
+        featuredStampUrl: stamp.stampImageUrl || '/images/stamps/no-image-available.png'
       };
     }
     acc[key].stamps.push(stamp);
@@ -3074,7 +3074,7 @@ export const groupStampsBySeries = (stamps: any[], countryCode: string) => {
         totalStamps: 0,
         stamps: [],
         yearRange: '',
-        featuredStampUrl: stamp.stampImageUrl || '/images/stamps/stamp.png'
+        featuredStampUrl: stamp.stampImageUrl || '/images/stamps/no-image-available.png'
       };
     }
     acc[key].stamps.push(stamp);
@@ -3108,7 +3108,7 @@ export const groupStampsByYear = (stamps: any[], countryCode: string, seriesName
         description: `Stamps issued in ${year}`,
         totalStamps: 0,
         stamps: [],
-        featuredStampUrl: stamp.stampImageUrl || '/images/stamps/stamp.png'
+        featuredStampUrl: stamp.stampImageUrl || '/images/stamps/no-image-available.png'
       };
     }
     acc[key].stamps.push(stamp);
@@ -3413,8 +3413,8 @@ export const getStampDetails = (stamps: any[], countryCode: string, seriesName?:
 export const convertApiStampToStampData = (apiStamp: any) => {
   return {
     id: apiStamp.id,
-    stampId: apiStamp.StampId,
-    parentStampId: apiStamp.ParentStampId,
+    stampId: apiStamp.stampId,
+    parentStampId: apiStamp.parentStampId,
     stampCode: apiStamp.stampCode,
     status: 1,
     userId: "user123",
@@ -3424,7 +3424,7 @@ export const convertApiStampToStampData = (apiStamp: any) => {
     publisher: apiStamp.printer || "Unknown Publisher",
     country: apiStamp.countryName,
     countryCode: apiStamp.country, // Ensure countryCode is mapped
-    stampImageUrl: apiStamp.stampImageUrl || '/images/stamps/stamp.png',
+    stampImageUrl: apiStamp.stampImageUrl || '/images/stamps/no-image-available.png',
     catalogName: apiStamp.seriesName,
     catalogNumber: apiStamp.catalogNumber,
     seriesName: apiStamp.seriesName || "Unknown Series",

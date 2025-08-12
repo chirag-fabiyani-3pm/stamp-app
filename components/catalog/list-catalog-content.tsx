@@ -9,11 +9,8 @@ import { Search, Calendar, BookOpen, Archive, Eye, ChevronRight, X, Grid, AlertC
 import Image from "next/image"
 import Link from "next/link"
 import { CatalogLayout, SeriesData, CountryData, ListModalStackItem, TypeData, StampGroupData, YearData, ReleaseData, CategoryData, PaperTypeData, StampData } from "@/types/catalog"
-import {
-    getCampbellPatersonSeries, getStanleyGibbonsCountries, getTypesForSeries,
-    getStampGroupsForType, getYearsForCountry, getReleasesForYear,
-    getCategoriesForRelease, getPaperTypesForCategory, getStampsForPaperType, getStampsForStampGroup
-} from "@/lib/data/list-catalog-data"
+// All deeper levels derived from shared API data
+import { useCatalogData } from "@/lib/context/catalog-data-context"
 import { CountryModalContent } from "@/components/catalog/country-modal-content"
 import { YearModalContent } from "@/components/catalog/year-modal-content"
 import { ReleaseModalContent } from "@/components/catalog/release-modal-content"
@@ -26,6 +23,7 @@ import { StampGroupModalContent } from "@/components/catalog/stamp-group-modal-c
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function ListCatalogContent() {
+  const { normalizedStamps, stamps: rawStamps, loading: providerLoading } = useCatalogData()
   const [catalogLayout, setCatalogLayout] = useState<CatalogLayout>('campbell-paterson')
   
   // Campbell Paterson state
@@ -42,33 +40,243 @@ export function ListCatalogContent() {
   // Modal stack state - LIFO behavior with updated types
   const [modalStack, setModalStack] = useState<ListModalStackItem[]>([])
 
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      if (catalogLayout === 'campbell-paterson') {
-        try {
-          const data = await getCampbellPatersonSeries();
-          setSeriesData(data);
-        } catch (error) {
-          console.error("Error loading Campbell Paterson series:", error);
-        }
-      } else {
-        try {
-          const data = await getStanleyGibbonsCountries();
-          setCountryData(data);
-        } catch (error) {
-          console.error("Error loading Stanley Gibbons countries:", error);
-        }
+  // Helper builders using raw and normalized stamps
+  const buildTypesForSeries = (seriesName: string): TypeData[] => {
+    const items = rawStamps.filter(i => (i.seriesName || '') === seriesName)
+    const map = new Map<string, TypeData & { _groupSet?: Set<string> }>()
+    for (const i of items) {
+      const typeKey = i.typeId || i.typeName || 'unknown_type'
+      const entry = map.get(typeKey) || {
+        id: typeKey,
+        name: i.typeName || 'Type',
+        seriesId: i.seriesId || seriesName,
+        description: i.typeDescription || '',
+        totalStampGroups: 0,
+        catalogPrefix: (i.catalogNumber || '').split(/\d/)[0] || (i.typeName || '')
       }
-      setLoading(false);
-    };
-    loadData();
-  }, [catalogLayout])
+      ;(entry as any)._groupSet = (entry as any)._groupSet || new Set<string>()
+      if (i.stampGroupId) (entry as any)._groupSet.add(i.stampGroupId)
+      map.set(typeKey, entry)
+    }
+    return Array.from(map.values()).map(e => ({
+      ...e,
+      totalStampGroups: ((e as any)._groupSet ? (e as any)._groupSet.size : e.totalStampGroups) || 0
+    }))
+  }
+
+  const buildStampGroupsForType = (seriesName: string, typeId: string): StampGroupData[] => {
+    const items = rawStamps.filter(i => (i.seriesName || '') === seriesName && ((i.typeId || i.typeName || 'unknown_type') === typeId))
+    const map = new Map<string, StampGroupData & { _count?: number }>()
+    for (const i of items) {
+      const groupKey = i.stampGroupId || 'unknown_group'
+      const entry = map.get(groupKey) || {
+        id: groupKey,
+        name: i.stampGroupName || groupKey,
+        typeId,
+        year: i.issueYear || 0,
+        issueDate: i.issueDate || '',
+        description: i.stampGroupDescription || '',
+        watermark: i.watermarkName || '',
+        perforation: i.perforationName || '',
+        printingMethod: i.printingMethod || '',
+        printer: i.printer || '',
+        totalStamps: 0,
+      }
+      entry.year = Math.min(entry.year || i.issueYear || 0, i.issueYear || entry.year || 0)
+      ;(entry as any)._count = ((entry as any)._count || 0) + 1
+      map.set(groupKey, entry)
+    }
+    return Array.from(map.values()).map(e => ({ ...e, totalStamps: (e as any)._count || e.totalStamps }))
+  }
+
+  const buildYearsForCountry = (countryCode: string): YearData[] => {
+    const items = rawStamps.filter(i => (i.country || '').toLowerCase() === countryCode.toLowerCase() || (i.countryName || '') === countryCode)
+    const set = new Map<number, YearData & { _releaseSet?: Set<string> }>()
+    for (const i of items) {
+      if (i.issueYear == null) continue
+      const entry = set.get(i.issueYear) || {
+        id: `${countryCode}-${i.issueYear}`,
+        year: i.issueYear,
+        countryId: countryCode,
+        totalReleases: 0,
+        description: ''
+      }
+      ;(entry as any)._releaseSet = (entry as any)._releaseSet || new Set<string>()
+      if (i.releaseId) (entry as any)._releaseSet.add(i.releaseId)
+      set.set(i.issueYear, entry)
+    }
+    return Array.from(set.values()).map(e => ({ ...e, totalReleases: ((e as any)._releaseSet ? (e as any)._releaseSet.size : e.totalReleases) || 0 }))
+  }
+
+  const buildReleasesForYear = (countryCode: string, year: number): ReleaseData[] => {
+    const items = rawStamps.filter(i => ((i.country || '').toLowerCase() === countryCode.toLowerCase() || (i.countryName || '') === countryCode) && i.issueYear === year)
+    const map = new Map<string, ReleaseData & { _categorySet?: Set<string> }>()
+    for (const i of items) {
+      const key = i.releaseId || `${i.releaseName || 'Release'}-${year}`
+      const entry = map.get(key) || {
+        id: key,
+        name: i.releaseName || 'Release',
+        yearId: `${countryCode}-${year}`,
+        dateRange: i.releaseDateRange || '',
+        description: i.releaseDescription || '',
+        perforation: i.perforationName || '',
+        totalCategories: 0,
+        hasCategories: false,
+      }
+      ;(entry as any)._categorySet = (entry as any)._categorySet || new Set<string>()
+      if (i.categoryId) (entry as any)._categorySet.add(i.categoryId)
+      map.set(key, entry)
+    }
+    return Array.from(map.values()).map(e => ({ ...e, totalCategories: ((e as any)._categorySet ? (e as any)._categorySet.size : e.totalCategories) || 0, hasCategories: (((e as any)._categorySet)?.size || 0) > 0 }))
+  }
+
+  const buildCategoriesForRelease = (countryCode: string, year: number, releaseId: string): CategoryData[] => {
+    const items = rawStamps.filter(i => ((i.country || '').toLowerCase() === countryCode.toLowerCase() || (i.countryName || '') === countryCode) && i.issueYear === year && (i.releaseId || '') === releaseId)
+    const map = new Map<string, CategoryData & { _paperSet?: Set<string> }>()
+    for (const i of items) {
+      const key = i.categoryId || i.categoryCode || 'unknown_category'
+      const entry = map.get(key) || {
+        id: key,
+        name: i.categoryName || key,
+        code: i.categoryCode || key,
+        releaseId,
+        description: i.categoryDescription || '',
+        totalPaperTypes: 0,
+        hasPaperTypes: false,
+      }
+      ;(entry as any)._paperSet = (entry as any)._paperSet || new Set<string>()
+      if (i.paperTypeCode) (entry as any)._paperSet.add(i.paperTypeCode)
+      map.set(key, entry)
+    }
+    return Array.from(map.values()).map(e => ({ ...e, totalPaperTypes: ((e as any)._paperSet ? (e as any)._paperSet.size : e.totalPaperTypes) || 0, hasPaperTypes: (((e as any)._paperSet)?.size || 0) > 0 }))
+  }
+
+  const buildPaperTypesForCategory = (countryCode: string, year: number, releaseId: string, categoryId: string): PaperTypeData[] => {
+    const items = rawStamps.filter(i => ((i.country || '').toLowerCase() === countryCode.toLowerCase() || (i.countryName || '') === countryCode) && i.issueYear === year && (i.releaseId || '') === releaseId && ((i.categoryId || i.categoryCode) === categoryId))
+    const map = new Map<string, PaperTypeData & { _count?: number }>()
+    for (const i of items) {
+      const key = i.paperTypeCode || i.paperCode || 'unknown_paper'
+      const entry = map.get(key) || {
+        id: i.paperTypeId || key,
+        name: i.paperTypeName || i.paperName || key,
+        code: key,
+        categoryId,
+        description: i.paperTypeDescription || i.paperDescription || '',
+        totalStamps: 0,
+      }
+      ;(entry as any)._count = ((entry as any)._count || 0) + 1
+      map.set(key, entry)
+    }
+    return Array.from(map.values()).map(e => ({ ...e, totalStamps: (e as any)._count || e.totalStamps }))
+  }
+
+  const buildStampsForPaperType = (countryCode: string, year: number, releaseId: string, categoryId: string, paperTypeCode: string): StampData[] => {
+    const candidates = normalizedStamps.filter(s => (s.countryCode || '').toLowerCase() === countryCode.toLowerCase() && (s.issueYear || 0) === year)
+    // We don't carry release/category/paper codes in normalizedStamps explicitly; match by names via rawStamps join
+    const rawKeyed = new Map<string, any>()
+    for (const r of rawStamps) {
+      rawKeyed.set(r.id, r)
+    }
+    return candidates.filter(s => {
+      const r = rawKeyed.get(s.id)
+      if (!r) return false
+      return (r.releaseId || '') === releaseId && ((r.categoryId || r.categoryCode) === categoryId) && ((r.paperTypeCode || r.paperCode) === paperTypeCode)
+    })
+  }
+
+  const buildStampsForStampGroup = (seriesName: string, typeId: string, stampGroupId: string): StampData[] => {
+    // Join normalized with raw to filter by stampGroupId reliably
+    const set = new Set<string>()
+    rawStamps.forEach(r => {
+      if ((r.seriesName || '') === seriesName && ((r.typeId || r.typeName || 'unknown_type') === typeId) && (r.stampGroupId || '') === stampGroupId) {
+        set.add(r.id)
+      }
+    })
+    return normalizedStamps.filter(s => set.has(s.id))
+  }
+
+  useEffect(() => {
+    const buildFromStamps = () => {
+      setLoading(true)
+      try {
+        const stamps = normalizedStamps || []
+
+        if (catalogLayout === 'campbell-paterson') {
+          // Group by seriesName
+          const seriesMap = new Map<string, SeriesData>()
+          stamps.forEach(s => {
+            const key = s.seriesName || 'Unknown Series'
+            const entry = seriesMap.get(key) || {
+              id: s.stampGroupId || key,
+              name: key,
+              description: '',
+              country: s.country || 'Unknown',
+              periodStart: s.issueYear || 0,
+              periodEnd: s.issueYear || 0,
+              totalTypes: 0,
+            } as SeriesData
+
+            entry.description = entry.description || s.catalogName || s.seriesName || ''
+            entry.country = entry.country || s.country || 'Unknown'
+            if (s.issueYear) {
+              entry.periodStart = Math.min(entry.periodStart || s.issueYear, s.issueYear)
+              entry.periodEnd = Math.max(entry.periodEnd || s.issueYear, s.issueYear)
+            }
+            // Track distinct type names per series as totalTypes
+            ;(entry as any)._typeSet = (entry as any)._typeSet || new Set<string>()
+            if (s.stampGroupId) (entry as any)._typeSet.add(s.stampGroupId)
+            seriesMap.set(key, entry)
+          })
+
+          const builtSeries = Array.from(seriesMap.values()).map(e => ({
+            ...e,
+            totalTypes: ((e as any)._typeSet ? (e as any)._typeSet.size : e.totalTypes) || 0,
+          }))
+          setSeriesData(builtSeries)
+        } else {
+          // Group by country
+          const countryMap = new Map<string, CountryData>()
+          stamps.forEach(s => {
+            const code = s.countryCode || 'XX'
+            const entry = countryMap.get(code) || {
+              id: code,
+              code,
+              name: s.country || code,
+              description: '',
+              totalYears: 0,
+              yearStart: s.issueYear || 0,
+              yearEnd: s.issueYear || 0,
+            } as CountryData
+
+            entry.name = entry.name || s.country || code
+            entry.description = entry.description || s.publisher || ''
+            if (s.issueYear) {
+              entry.yearStart = Math.min(entry.yearStart || s.issueYear, s.issueYear)
+              entry.yearEnd = Math.max(entry.yearEnd || s.issueYear, s.issueYear)
+            }
+            ;(entry as any)._yearSet = (entry as any)._yearSet || new Set<number>()
+            if (s.issueYear != null) (entry as any)._yearSet.add(s.issueYear)
+            countryMap.set(code, entry)
+          })
+
+          const builtCountries = Array.from(countryMap.values()).map(e => ({
+            ...e,
+            totalYears: ((e as any)._yearSet ? (e as any)._yearSet.size : e.totalYears) || 0,
+          }))
+          setCountryData(builtCountries)
+        }
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (!providerLoading) buildFromStamps()
+  }, [catalogLayout, normalizedStamps, providerLoading])
 
   const handleSeriesClick = async (series: SeriesData) => {
     setLoadingModalContent(true);
     try {
-      const typeData = await getTypesForSeries(series.name);
+      const typeData = buildTypesForSeries(series.name);
       setModalStack(prev => [...prev, {
         type: 'series',
         data: { series, types: typeData },
@@ -82,7 +290,7 @@ export function ListCatalogContent() {
   const handleCountryClick = async (country: CountryData) => {
     setLoadingModalContent(true);
     try {
-      const yearData = await getYearsForCountry(country.code);
+      const yearData = buildYearsForCountry(country.code);
       setModalStack(prev => [...prev, {
         type: 'country',
         data: { country, years: yearData },
@@ -535,7 +743,7 @@ export function ListCatalogContent() {
                     onTypeClick={async (typeData: TypeData) => {
                       setLoadingModalContent(true);
                       try {
-                        const stampGroupData = await getStampGroupsForType(modal.data.series.name, typeData.id);
+                        const stampGroupData = buildStampGroupsForType(modal.data.series.name, typeData.id);
                         setModalStack(prev => [...prev, {
                           type: 'type',
                           data: { typeData, stampGroups: stampGroupData, series: modal.data.series },
@@ -556,7 +764,7 @@ export function ListCatalogContent() {
                     onStampGroupClick={async (stampGroupData: StampGroupData) => {
                       setLoadingModalContent(true);
                       try {
-                        const stampsData = await getStampsForStampGroup(stampGroupData.id, modal.data.typeData.id, modal.data.series.name);
+                        const stampsData = buildStampsForStampGroup(modal.data.series.name, modal.data.typeData.id, stampGroupData.id);
                         setModalStack(prev => [...prev, {
                           type: 'stampGroup',
                           data: { stampGroupData, stamps: stampsData },
@@ -593,7 +801,7 @@ export function ListCatalogContent() {
                     onYearClick={async (yearData: YearData) => {
                       setLoadingModalContent(true);
                       try {
-                        const releaseData = await getReleasesForYear(modal.data.country.code, yearData.year);
+                        const releaseData = buildReleasesForYear(modal.data.country.code, yearData.year);
                         setModalStack(prev => [...prev, {
                           type: 'year',
                           data: { countryId: modal.data.country.code, yearData, releases: releaseData },
@@ -614,7 +822,7 @@ export function ListCatalogContent() {
                     onReleaseClick={async (releaseData: ReleaseData) => {
                       setLoadingModalContent(true);
                       try {
-                        const categoryData = await getCategoriesForRelease(modal.data.countryId, modal.data.yearData.year, releaseData.id);
+                        const categoryData = buildCategoriesForRelease(modal.data.countryId, modal.data.yearData.year, releaseData.id);
                         setModalStack(prev => [...prev, {
                           type: 'release',
                           data: { countryId: modal.data.countryId, year: modal.data.yearData.year, releaseData, categories: categoryData },
@@ -635,7 +843,7 @@ export function ListCatalogContent() {
                     onCategoryClick={async (categoryData: CategoryData) => {
                       setLoadingModalContent(true);
                       try {
-                        const paperTypeData = await getPaperTypesForCategory(modal.data.countryId, modal.data.year, modal.data.releaseData.id, categoryData.id);
+                        const paperTypeData = buildPaperTypesForCategory(modal.data.countryId, modal.data.year, modal.data.releaseData.id, categoryData.id);
                         setModalStack(prev => [...prev, {
                           type: 'category',
                           data: { countryId: modal.data.countryId, year: modal.data.year, releaseId: modal.data.releaseData.id, categoryData, paperTypes: paperTypeData },
@@ -648,7 +856,7 @@ export function ListCatalogContent() {
                     onPaperTypeClick={async (paperTypeData: PaperTypeData) => {
                       setLoadingModalContent(true);
                       try {
-                        const stampsData = await getStampsForPaperType(modal.data.countryId, modal.data.year, modal.data.releaseId, modal.data.categoryDate.id, paperTypeData.code); // Assuming unknown_category if coming directly from release
+                        const stampsData = buildStampsForPaperType(modal.data.countryId, modal.data.year, modal.data.releaseId, modal.data.categoryData.id, paperTypeData.code)
                         setModalStack(prev => [...prev, {
                           type: 'paperType',
                           data: { countryId: modal.data.countryId, year: modal.data.year, releaseId: modal.data.releaseId, categoryId: modal.data.categoryData.id, paperTypeData, stamps: stampsData },
@@ -669,7 +877,7 @@ export function ListCatalogContent() {
                     onPaperTypeClick={async (paperTypeData: PaperTypeData) => {
                       setLoadingModalContent(true);
                       try {
-                        const stampsData = await getStampsForPaperType(modal.data.countryId, modal.data.year, modal.data.releaseId, modal.data.categoryData.id, paperTypeData.code);
+                        const stampsData = buildStampsForPaperType(modal.data.countryId, modal.data.year, modal.data.releaseId, modal.data.categoryData.id, paperTypeData.code)
                         setModalStack(prev => [...prev, {
                           type: 'paperType',
                           data: { countryId: modal.data.countryId, year: modal.data.year, releaseId: modal.data.releaseId, categoryId: modal.data.categoryData.id, paperTypeData, stamps: stampsData },
