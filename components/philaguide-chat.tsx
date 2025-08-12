@@ -73,6 +73,13 @@ interface StampCarousel {
         summary: string
         marketValue: string
         quickFacts: string[]
+        content?: Array<{
+            section: string
+            text?: string
+            details?: Array<{ label: string; value: string }>
+        }>
+        significance?: string
+        specialNotes?: string
     }>
 }
 
@@ -257,19 +264,60 @@ function StampCarouselDisplay({ data }: StampCarouselDisplayProps) {
                 </div>
             </CardHeader>
             <CardContent className="pt-0 space-y-3">
-                <div>
-                    <h4 className="font-medium text-xs text-foreground mb-1">Overview</h4>
-                    <p className="text-xs text-muted-foreground leading-relaxed break-words">{currentItem.summary}</p>
-                </div>
-                <div>
-                    <h4 className="font-medium text-xs text-foreground mb-1">Details</h4>
-                    <div className="space-y-1">
-                        <div className="text-xs text-muted-foreground break-words">• Market Value: {currentItem.marketValue}</div>
-                        {currentItem.quickFacts.map((fact, index) => (
-                            <div key={index} className="text-xs text-muted-foreground break-words">• {fact}</div>
-                        ))}
+                {/* Show detailed content if available, otherwise fall back to summary */}
+                {currentItem.content ? (
+                    // Use the new detailed content structure (same as single cards)
+                    currentItem.content.map((section, index) => (
+                        <div key={index}>
+                            <h4 className="font-medium text-xs text-foreground mb-1">{section.section}</h4>
+                            {section.text && (
+                                <p className="text-xs text-muted-foreground leading-relaxed break-words">{section.text}</p>
+                            )}
+                            {section.details && (
+                                <div className="space-y-1">
+                                    {section.details.map((detail, detailIndex) => (
+                                        <div key={detailIndex} className="text-xs text-muted-foreground break-words">
+                                            • {detail.label}: {detail.value}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ))
+                ) : (
+                    // Fall back to old summary format for backward compatibility
+                    <>
+                        <div>
+                            <h4 className="font-medium text-xs text-foreground mb-1">Overview</h4>
+                            <p className="text-xs text-muted-foreground leading-relaxed break-words">{currentItem.summary}</p>
+                        </div>
+                        <div>
+                            <h4 className="font-medium text-xs text-foreground mb-1">Details</h4>
+                            <div className="space-y-1">
+                                <div className="text-xs text-muted-foreground break-words">• Market Value: {currentItem.marketValue}</div>
+                                {currentItem.quickFacts?.map((fact, index) => (
+                                    <div key={index} className="text-xs text-muted-foreground break-words">• {fact}</div>
+                                ))}
+                            </div>
+                        </div>
+                    </>
+                )}
+
+                {/* Show significance and special notes if available */}
+                {currentItem.significance && (
+                    <div>
+                        <h4 className="font-medium text-xs text-foreground mb-1">Significance</h4>
+                        <p className="text-xs text-muted-foreground leading-relaxed break-words">{currentItem.significance}</p>
                     </div>
-                </div>
+                )}
+
+                {currentItem.specialNotes && (
+                    <div>
+                        <h4 className="font-medium text-xs text-foreground mb-1">Special Notes</h4>
+                        <p className="text-xs text-muted-foreground leading-relaxed break-words">{currentItem.specialNotes}</p>
+                    </div>
+                )}
+
                 <div className="flex gap-2 pt-2">
                     <Button
                         variant="default"
@@ -739,18 +787,18 @@ export function PhilaGuideChat() {
                     <div className="flex items-center gap-3 min-w-0">
                         <Avatar className="w-11 h-11 flex-shrink-0 border-2 border-primary-foreground/30">
                             <AvatarImage src="/images/stamp-bot-avatar.png" alt="PhilaGuide AI" />
-                            <AvatarFallback className="bg-primary-foreground/10 text-primary-foreground text-base">PG</AvatarFallback>
+                            <AvatarFallback className="bg-primary-foreground/10 text-primary-foreground text-base dark:text-black">PG</AvatarFallback>
                         </Avatar>
                         <div className="min-w-0">
-                            <h3 className="font-bold text-lg truncate">PhilaGuide AI</h3>
-                            <p className="text-xs opacity-90 truncate">Your intelligent stamp assistant</p>
+                            <h3 className="font-bold text-lg truncate dark:text-black">PhilaGuide AI</h3>
+                            <p className="text-xs opacity-90 truncate dark:text-black">Your intelligent stamp assistant</p>
                         </div>
                     </div>
                     <Button
                         variant="ghost"
-                        size="icon"
+                        size="sm"
                         onClick={() => setIsOpen(false)}
-                        className="text-primary-foreground hover:bg-primary-foreground/10 rounded-full"
+                        className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-800 dark:text-black dark:hover:text-black dark:hover:bg-gray-200"
                     >
                         <X className="w-5 h-5" />
                     </Button>
@@ -819,7 +867,7 @@ export function PhilaGuideChat() {
                                     <div className={cn(
                                         "px-4 py-2 text-sm break-words shadow-sm",
                                         message.role === 'user'
-                                            ? "bg-primary text-primary-foreground rounded-tl-xl rounded-br-xl rounded-tr-sm rounded-bl-sm ml-auto"
+                                            ? "bg-primary text-primary-foreground dark:text-black rounded-tl-xl rounded-br-xl rounded-tr-sm rounded-bl-sm ml-auto"
                                             : "bg-muted text-foreground rounded-tr-xl rounded-bl-xl rounded-tl-sm rounded-br-sm mr-auto border border-input"
                                     )}>
                                         {message.role === 'assistant' ? (

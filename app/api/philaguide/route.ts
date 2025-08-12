@@ -100,7 +100,7 @@ You have access to stamp knowledge and can provide detailed, conversational info
         const completeMessage = `data: ${JSON.stringify({ type: 'complete', content: accumulatedContent })}\n\n`
         try {
             controller.enqueue(encoder.encode(completeMessage))
-            controller.close()
+            // Don't close controller here - let the main ReadableStream handle it
         } catch (controllerError) {
             console.log('🎤 Controller already closed')
         }
@@ -216,11 +216,29 @@ async function handleStreamingResponse(message: string, voiceChat: boolean = fal
                     // Don't close controller here - streamRunResponse handles it
                 }
 
+                // Ensure controller is properly closed when all streaming is complete
+                console.log('🔒 All streaming complete, closing controller...')
+                console.log('🔒 Controller state before closing:', controller.desiredSize)
+                try {
+                    if (controller.desiredSize !== null) {
+                        controller.close()
+                        console.log('✅ Controller closed successfully')
+                    } else {
+                        console.log('⚠️ Controller already closed')
+                    }
+                } catch (error) {
+                    console.log('⚠️ Error closing controller:', error)
+                }
+
             } catch (error) {
                 console.error('❌ Streaming error:', error)
                 const errorMessage = `data: ${JSON.stringify({ error: 'Failed to process request' })}\n\n`
-                controller.enqueue(encoder.encode(errorMessage))
-                controller.close()
+                try {
+                    controller.enqueue(encoder.encode(errorMessage))
+                } catch (controllerError) {
+                    console.log('Controller closed, cannot send error message')
+                }
+                // Don't close controller here - let the natural flow handle it
             }
         }
     })
@@ -241,240 +259,277 @@ async function streamRunResponse(threadId: string, runId: string, controller: Re
     let attempts = 0
     const maxAttempts = 15 // 15 seconds max to allow for function calls
 
-    while ((runStatus === 'queued' || runStatus === 'in_progress') && attempts < maxAttempts) {
-        console.log(`⏳ Run status: ${runStatus} (attempt ${attempts + 1}/${maxAttempts})`)
+    try {
+        while ((runStatus === 'queued' || runStatus === 'in_progress') && attempts < maxAttempts) {
+            console.log(`⏳ Run status: ${runStatus} (attempt ${attempts + 1}/${maxAttempts})`)
 
-        // Send status update
-        const statusMessage = `data: ${JSON.stringify({ type: 'status', status: runStatus })}\n\n`
-        controller.enqueue(encoder.encode(statusMessage))
-
-        // Send keep-alive signal every 5 seconds to prevent idle timeout
-        if (attempts % 5 === 0) {
-            const keepAliveMessage = `data: ${JSON.stringify({ type: 'keep-alive', timestamp: Date.now() })}\n\n`
+            // Send status update
+            const statusMessage = `data: ${JSON.stringify({ type: 'status', status: runStatus })}\n\n`
             try {
-                controller.enqueue(encoder.encode(keepAliveMessage))
+                controller.enqueue(encoder.encode(statusMessage))
             } catch (error) {
-                console.log('Keep-alive signal failed, connection may be closed')
+                console.log('Controller closed during status update, stopping')
+                return
+            }
+
+            // Send keep-alive signal every 5 seconds to prevent idle timeout
+            if (attempts % 5 === 0) {
+                const keepAliveMessage = `data: ${JSON.stringify({ type: 'keep-alive', timestamp: Date.now() })}\n\n`
+                try {
+                    controller.enqueue(encoder.encode(keepAliveMessage))
+                } catch (error) {
+                    console.log('Keep-alive signal failed, connection may be closed')
+                    break
+                }
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 1000))
+
+            try {
+                const runResult = await openai.beta.threads.runs.retrieve(runId, { thread_id: threadId })
+                runStatus = runResult.status
+                attempts++
+
+                if (runResult.last_error) {
+                    console.error('❌ Run error:', runResult.last_error)
+                    const errorMessage = `data: ${JSON.stringify({ type: 'error', error: runResult.last_error })}\n\n`
+                    try {
+                        controller.enqueue(encoder.encode(errorMessage))
+                    } catch (error) {
+                        console.log('Controller closed during error message, stopping')
+                        return
+                    }
+                    return
+                }
+            } catch (error) {
+                console.error('❌ Error checking run status:', error)
                 break
             }
         }
 
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        console.log(`✅ Run completed with status: ${runStatus}`)
 
-        try {
-            const runResult = await openai.beta.threads.runs.retrieve(runId, { thread_id: threadId })
-            runStatus = runResult.status
-            attempts++
-
-            if (runResult.last_error) {
-                console.error('❌ Run error:', runResult.last_error)
-                const errorMessage = `data: ${JSON.stringify({ type: 'error', error: runResult.last_error })}\n\n`
+        // Handle different run statuses
+        if (runStatus === 'failed' || runStatus === 'cancelled' || runStatus === 'expired') {
+            const errorMessage = `data: ${JSON.stringify({ type: 'error', error: `Run ${runStatus}` })}\n\n`
+            try {
                 controller.enqueue(encoder.encode(errorMessage))
+            } catch (error) {
+                console.log('Controller closed during error message, stopping')
                 return
             }
-        } catch (error) {
-            console.error('❌ Error checking run status:', error)
-            break
+            return
         }
-    }
 
-    console.log(`✅ Run completed with status: ${runStatus}`)
-
-    // Handle different run statuses
-    if (runStatus === 'failed' || runStatus === 'cancelled' || runStatus === 'expired') {
-        const errorMessage = `data: ${JSON.stringify({ type: 'error', error: `Run ${runStatus}` })}\n\n`
-        controller.enqueue(encoder.encode(errorMessage))
-        return
-    }
-
-    if (runStatus === 'queued' || runStatus === 'in_progress') {
-        const timeoutMessage = `data: ${JSON.stringify({ type: 'timeout', message: 'Processing is taking longer than expected. Please try a more specific query about stamps, or ask about a particular country or year.' })}\n\n`
-        controller.enqueue(encoder.encode(timeoutMessage))
-        return
-    }
-
-    // Handle requires_action (function calls)
-    if (runStatus === 'requires_action') {
-        console.log('🔧 Run requires action - handling function calls...')
-
-        const runResult = await openai.beta.threads.runs.retrieve(runId, { thread_id: threadId })
-        console.log('📊 Run result:', runResult)
-
-        if (runResult.required_action && runResult.required_action.type === 'submit_tool_outputs') {
-            console.log('🔧 Found tool outputs to submit')
-
-            const toolCalls = runResult.required_action.submit_tool_outputs.tool_calls
-            console.log('🔧 Tool calls found:', toolCalls.length)
-
-            const toolOutputs = []
-            let stamps = []
-            let structuredData = null
-
-            for (const toolCall of toolCalls) {
-                console.log('🔧 Processing tool call:', toolCall)
-                if (toolCall.function.name === 'return_stamp_data') {
-                    try {
-                        const functionArgs = JSON.parse(toolCall.function.arguments)
-                        console.log('📊 Function call data:', functionArgs)
-
-                        if (functionArgs.stamps && Array.isArray(functionArgs.stamps)) {
-                            stamps = functionArgs.stamps
-                            structuredData = functionArgs
-                            console.log(`✅ Found ${stamps.length} stamps from function call`)
-                            console.log('📋 Stamp details:', stamps.map((s: any) => ({ name: s.Name, country: s.Country, year: s.IssueYear })))
-
-                            // Send stamp preview immediately
-                            const stampPreview = {
-                                count: stamps.length,
-                                stamps: stamps.slice(0, 5).map((s: any) => ({
-                                    name: s.Name || 'Unknown',
-                                    country: s.Country || 'Unknown',
-                                    year: s.IssueYear || 'Unknown',
-                                    denomination: `${s.DenominationValue || ''}${s.DenominationSymbol || ''}`,
-                                    color: s.Color || 'Unknown'
-                                }))
-                            }
-
-                            const previewMessage = `data: ${JSON.stringify({ type: 'stamp_preview', data: stampPreview })}\n\n`
-                            controller.enqueue(encoder.encode(previewMessage))
-
-                            // Also send raw stamp data for voice chat
-                            const rawStampData = {
-                                count: stamps.length,
-                                stamps: stamps.slice(0, 5) // Send the raw stamp objects
-                            }
-
-                            console.log('📤 Sending raw stamp data for voice chat:', rawStampData)
-                            const rawDataMessage = `data: ${JSON.stringify({ type: 'raw_stamp_data', data: rawStampData })}\n\n`
-                            controller.enqueue(encoder.encode(rawDataMessage))
-                        } else {
-                            console.log('⚠️ No stamps array found in function call data')
-                        }
-                    } catch (error) {
-                        console.log('❌ Error parsing function arguments:', error)
-                    }
-                }
-
-                toolOutputs.push({
-                    tool_call_id: toolCall.id,
-                    output: JSON.stringify({ success: true, stamps: stamps })
-                })
+        if (runStatus === 'queued' || runStatus === 'in_progress') {
+            const timeoutMessage = `data: ${JSON.stringify({ type: 'timeout', message: 'Processing is taking longer than expected. Please try a more specific query about stamps, or ask about a particular country or year.' })}\n\n`
+            try {
+                controller.enqueue(encoder.encode(timeoutMessage))
+            } catch (error) {
+                console.log('Controller closed during timeout message, stopping')
+                return
             }
+            return
+        }
 
-            // Create structured data immediately from function call
-            let immediateStructuredData = null
-            if (stamps.length === 1) {
-                console.log('🎴 Creating single stamp card with data:', stamps[0])
-                immediateStructuredData = generateStampCard(stamps[0])
-                console.log('🎴 Generated card data:', immediateStructuredData)
-            } else if (stamps.length > 1) {
-                console.log(`🎠 Creating carousel with ${stamps.length} stamps`)
-                immediateStructuredData = generateStampCarousel(stamps.slice(0, 5))
-                console.log('🎠 Generated carousel data:', immediateStructuredData)
-            } else {
-                console.log('⚠️ No stamps found in function call data')
-            }
+        // Handle requires_action (function calls)
+        if (runStatus === 'requires_action') {
+            console.log('🔧 Run requires action - handling function calls...')
 
-            // Send structured data
-            if (immediateStructuredData) {
-                console.log('📤 Sending structured data to frontend:', immediateStructuredData.type)
-                const structuredMessage = `data: ${JSON.stringify({ type: 'structured_data', data: immediateStructuredData })}\n\n`
-                controller.enqueue(encoder.encode(structuredMessage))
-            } else {
-                console.log('⚠️ No structured data to send')
-            }
+            const runResult = await openai.beta.threads.runs.retrieve(runId, { thread_id: threadId })
+            console.log('📊 Run result:', runResult)
 
-            // Stream the immediate response
-            let responseText = ''
-            if (stamps.length > 0) {
-                responseText = `I found ${stamps.length} stamp${stamps.length !== 1 ? 's' : ''} for you.`
-            } else {
-                responseText = "I couldn't find any specific stamps matching your query. Let me provide some general information about philately instead."
-            }
+            if (runResult.required_action && runResult.required_action.type === 'submit_tool_outputs') {
+                console.log('🔧 Found tool outputs to submit')
 
-            // Stream the response text
-            const words = responseText.split(' ')
-            for (let i = 0; i < words.length; i++) {
-                const word = words[i]
-                const message = `data: ${JSON.stringify({ type: 'content', content: word + (i < words.length - 1 ? ' ' : '') })}\n\n`
-                controller.enqueue(encoder.encode(message))
-                await new Promise(resolve => setTimeout(resolve, 50))
-            }
+                const toolCalls = runResult.required_action.submit_tool_outputs.tool_calls
+                console.log('🔧 Tool calls found:', toolCalls.length)
 
+                const toolOutputs = []
+                let stamps = []
+                let structuredData = null
 
-
-            // Send completion signal
-            const completeMessage = `data: ${JSON.stringify({ type: 'complete' })}\n\n`
-            controller.enqueue(encoder.encode(completeMessage))
-
-            // CRITICAL: Submit tool outputs back to the thread to complete the conversation
-            if (toolOutputs.length > 0) {
-                try {
-                    console.log('📤 Submitting tool outputs back to thread:', toolOutputs.length, 'outputs')
-                    await openai.beta.threads.runs.submitToolOutputs(runId, {
-                        thread_id: threadId,
-                        tool_outputs: toolOutputs
-                    })
-                    console.log('✅ Tool outputs submitted successfully')
-
-                    // Wait for the run to complete after submitting tool outputs
-                    console.log('⏳ Waiting for run to complete after tool output submission...')
-                    let finalRunStatus = 'in_progress'
-                    let finalAttempts = 0
-                    const maxFinalAttempts = 10 // Wait up to 10 seconds for completion
-
-                    while (finalRunStatus === 'in_progress' && finalAttempts < maxFinalAttempts) {
-                        await new Promise(resolve => setTimeout(resolve, 1000))
+                for (const toolCall of toolCalls) {
+                    console.log('🔧 Processing tool call:', toolCall)
+                    if (toolCall.function.name === 'return_stamp_data') {
                         try {
-                            const finalRunResult = await openai.beta.threads.runs.retrieve(runId, { thread_id: threadId })
-                            finalRunStatus = finalRunResult.status
-                            finalAttempts++
-                            console.log(`⏳ Final run status: ${finalRunStatus} (attempt ${finalAttempts}/${maxFinalAttempts})`)
+                            const functionArgs = JSON.parse(toolCall.function.arguments)
+                            console.log('📊 Function call data:', functionArgs)
 
-                            if (finalRunStatus === 'completed') {
-                                console.log('✅ Run completed successfully after tool output submission')
-                                break
-                            } else if (finalRunStatus === 'failed' || finalRunStatus === 'cancelled') {
-                                console.log(`❌ Run ${finalRunStatus} after tool output submission`)
-                                break
+                            if (functionArgs.stamps && Array.isArray(functionArgs.stamps)) {
+                                stamps = functionArgs.stamps
+                                structuredData = functionArgs
+                                console.log(`✅ Found ${stamps.length} stamps from function call`)
+                                console.log('📋 Stamp details:', stamps.map((s: any) => ({ name: s.Name, country: s.Country, year: s.IssueYear })))
+
+                                // Send stamp preview immediately
+                                const stampPreview = {
+                                    count: stamps.length,
+                                    stamps: stamps.slice(0, 5).map((s: any) => ({
+                                        name: s.Name || 'Unknown',
+                                        country: s.Country || 'Unknown',
+                                        year: s.IssueYear || 'Unknown',
+                                        denomination: `${s.DenominationValue || ''}${s.DenominationSymbol || ''}`,
+                                        color: s.Color || 'Unknown'
+                                    }))
+                                }
+
+                                const previewMessage = `data: ${JSON.stringify({ type: 'stamp_preview', data: stampPreview })}\n\n`
+                                try {
+                                    controller.enqueue(encoder.encode(previewMessage))
+                                } catch (error) {
+                                    console.log('Controller closed during preview message, stopping')
+                                    return
+                                }
+
+                                // Also send raw stamp data for voice chat
+                                const rawStampData = {
+                                    count: stamps.length,
+                                    stamps: stamps.slice(0, 5) // Send the raw stamp objects
+                                }
+
+                                console.log('📤 Sending raw stamp data for voice chat:', rawStampData)
+                                const rawDataMessage = `data: ${JSON.stringify({ type: 'raw_stamp_data', data: rawStampData })}\n\n`
+                                try {
+                                    controller.enqueue(encoder.encode(rawDataMessage))
+                                } catch (error) {
+                                    console.log('Controller closed during raw data message, stopping')
+                                    return
+                                }
+                            } else {
+                                console.log('⚠️ No stamps array found in function call data')
                             }
                         } catch (error) {
-                            console.error('❌ Error checking final run status:', error)
-                            break
+                            console.log('❌ Error parsing function arguments:', error)
                         }
                     }
 
-                    // If the run completed, stream the final response
-                    if (finalRunStatus === 'completed') {
-                        console.log('📤 Streaming final response after tool output submission')
-                        await streamMessages(threadId, controller, encoder)
-                        console.log('✅ Final response streamed, exiting early')
-                        return // Exit early since we've already handled the response
-                    }
-
-                } catch (submitError) {
-                    console.error('❌ Error submitting tool outputs:', submitError)
-                    // Don't fail the request, but log the error
+                    toolOutputs.push({
+                        tool_call_id: toolCall.id,
+                        output: JSON.stringify({
+                            success: true,
+                            stamps: stamps,
+                            instructions: "IMPORTANT: When responding about these stamps, DO NOT list basic details like Country, Issue Date, Catalog Code, Denomination, Color, or Paper Type as they are already displayed in the card view. Instead, focus on historical significance, design details, interesting stories, cultural importance, and unique characteristics that complement the visual information."
+                        })
+                    })
                 }
-            }
 
+                // Create structured data immediately from function call
+                let immediateStructuredData = null
+                if (stamps.length === 1) {
+                    console.log('🎴 Creating single stamp card with data:', stamps[0])
+                    immediateStructuredData = generateStampCard(stamps[0])
+                    console.log('🎴 Generated card data:', immediateStructuredData)
+                } else if (stamps.length > 1) {
+                    console.log(`🎠 Creating carousel with ${stamps.length} stamps`)
+                    immediateStructuredData = generateStampCarousel(stamps.slice(0, 5))
+                    console.log('🎠 Generated carousel data:', immediateStructuredData)
+                } else {
+                    console.log('⚠️ No stamps found in function call data')
+                }
+
+                // Send structured data
+                if (immediateStructuredData) {
+                    console.log('📤 Sending structured data to frontend:', immediateStructuredData.type)
+                    const structuredMessage = `data: ${JSON.stringify({ type: 'structured_data', data: immediateStructuredData })}\n\n`
+                    try {
+                        controller.enqueue(encoder.encode(structuredMessage))
+                    } catch (error) {
+                        console.log('Controller closed during structured data message, stopping')
+                        return
+                    }
+                } else {
+                    console.log('⚠️ No structured data to send')
+                }
+
+                // Let the AI assistant generate the proper response instead of hardcoded text
+                // The AI will provide contextual, complementary information about the stamps
+
+                // CRITICAL: Submit tool outputs back to the thread to complete the conversation
+                if (toolOutputs.length > 0) {
+                    try {
+                        console.log('📤 Submitting tool outputs back to thread:', toolOutputs.length, 'outputs')
+                        await openai.beta.threads.runs.submitToolOutputs(runId, {
+                            thread_id: threadId,
+                            tool_outputs: toolOutputs
+                        })
+                        console.log('✅ Tool outputs submitted successfully')
+
+                        // Wait for the run to complete after submitting tool outputs
+                        console.log('⏳ Waiting for run to complete after tool output submission...')
+                        let finalRunStatus = 'in_progress'
+                        let finalAttempts = 0
+                        const maxFinalAttempts = 10 // Wait up to 10 seconds for completion
+
+                        while (finalRunStatus === 'in_progress' && finalAttempts < maxFinalAttempts) {
+                            await new Promise(resolve => setTimeout(resolve, 1000))
+                            try {
+                                const finalRunResult = await openai.beta.threads.runs.retrieve(runId, { thread_id: threadId })
+                                finalRunStatus = finalRunResult.status
+                                finalAttempts++
+                                console.log(`⏳ Final run status: ${finalRunStatus} (attempt ${finalAttempts}/${maxFinalAttempts})`)
+
+                                if (finalRunStatus === 'completed') {
+                                    console.log('✅ Run completed successfully after tool output submission')
+                                    break
+                                } else if (finalRunStatus === 'failed' || finalRunStatus === 'cancelled') {
+                                    console.log(`❌ Run ${finalRunStatus} after tool output submission`)
+                                    break
+                                }
+                            } catch (error) {
+                                console.error('❌ Error checking final run status:', error)
+                                break
+                            }
+                        }
+
+                        // If the run completed, stream the final response
+                        if (finalRunStatus === 'completed') {
+                            console.log('📤 Streaming final response after tool output submission')
+                            console.log('📤 Controller state before calling streamMessages:', controller.desiredSize)
+                            await streamMessages(threadId, controller, encoder)
+                            console.log('✅ Final response streamed, exiting early')
+                            console.log('📤 streamMessages completed, controller state:', controller.desiredSize)
+                            return // Exit early since we've already handled the response
+                        }
+
+                    } catch (submitError) {
+                        console.error('❌ Error submitting tool outputs:', submitError)
+                        // Don't fail the request, but log the error
+                    }
+                }
+
+                return
+            }
+        }
+
+        // Get the messages and stream the response (only if we didn't handle it above)
+        if (runStatus === 'completed') {
+            console.log('📤 Streaming response for completed run (no tool outputs)')
+            console.log('📤 Controller state before calling streamMessages:', controller.desiredSize)
+            await streamMessages(threadId, controller, encoder)
+            console.log('📤 streamMessages completed, controller state:', controller.desiredSize)
+        } else {
+            console.log(`📤 Run ended with status: ${runStatus}, no response to stream`)
+        }
+        // Note: streamMessages will handle closing the controller
+
+    } catch (error) {
+        console.error('❌ Error in streamRunResponse:', error)
+        const errorMessage = `data: ${JSON.stringify({ type: 'error', error: 'Failed to process request' })}\n\n`
+        try {
+            controller.enqueue(encoder.encode(errorMessage))
+        } catch (controllerError) {
+            console.log('Controller closed during error message, stopping')
             return
         }
     }
-
-    // Get the messages and stream the response (only if we didn't handle it above)
-    if (runStatus === 'completed') {
-        console.log('📤 Streaming response for completed run (no tool outputs)')
-        await streamMessages(threadId, controller, encoder)
-    } else {
-        console.log(`📤 Run ended with status: ${runStatus}, no response to stream`)
-    }
-    // Note: streamMessages will handle closing the controller
 }
 
 // Stream messages from thread
 async function streamMessages(threadId: string, controller: ReadableStreamDefaultController, encoder: TextEncoder) {
     try {
+        console.log('📤 Starting streamMessages with controller state:', controller.desiredSize)
+
         const messages = await openai.beta.threads.messages.list(threadId)
         const assistantMessages = messages.data.filter(msg => msg.role === 'assistant')
 
@@ -487,38 +542,75 @@ async function streamMessages(threadId: string, controller: ReadableStreamDefaul
                 if (content.type === 'text') {
                     const text = content.text.value
                     const cleanedText = cleanResponseText(text)
+                    console.log('📝 Streaming text content, length:', cleanedText.length)
 
                     // Stream the text character by character for ChatGPT-like effect
                     const words = cleanedText.split(' ')
                     for (let i = 0; i < words.length; i++) {
                         const word = words[i]
                         const message = `data: ${JSON.stringify({ type: 'content', content: word + (i < words.length - 1 ? ' ' : '') })}\n\n`
-                        controller.enqueue(encoder.encode(message))
+
+                        // BULLETPROOF: Check controller state before every operation
+                        if (controller.desiredSize === null) {
+                            console.log('⚠️ Controller closed during streaming, stopping content stream at word', i)
+                            return
+                        }
+
+                        try {
+                            controller.enqueue(encoder.encode(message))
+                            console.log(`📤 Streamed word ${i + 1}/${words.length}: "${word}"`)
+                        } catch (error) {
+                            console.log('❌ Controller closed during content streaming, stopping at word', i)
+                            return
+                        }
 
                         // Small delay for streaming effect
                         await new Promise(resolve => setTimeout(resolve, 50))
                     }
 
-                    // Send completion signal
-                    const completeMessage = `data: ${JSON.stringify({ type: 'complete' })}\n\n`
-                    controller.enqueue(encoder.encode(completeMessage))
+                    console.log('✅ Content streaming completed successfully')
+
+                    // Send completion signal only if controller is still open
+                    if (controller.desiredSize !== null) {
+                        const completeMessage = `data: ${JSON.stringify({ type: 'complete' })}\n\n`
+                        try {
+                            controller.enqueue(encoder.encode(completeMessage))
+                            console.log('✅ Completion signal sent successfully')
+                        } catch (error) {
+                            console.log('❌ Controller closed during completion message')
+                            return
+                        }
+                    } else {
+                        console.log('⚠️ Controller already closed, skipping completion message')
+                    }
+                } else {
+                    console.log('⚠️ No text content found in message')
                 }
+            } else {
+                console.log('⚠️ No content found in assistant message')
             }
+        } else {
+            console.log('⚠️ No assistant messages found')
         }
     } catch (error) {
         console.error('❌ Error streaming messages:', error)
         const errorMessage = `data: ${JSON.stringify({ type: 'error', error: 'Failed to get response' })}\n\n`
-        controller.enqueue(encoder.encode(errorMessage))
+
+        // BULLETPROOF: Check controller state before sending error message
+        if (controller.desiredSize !== null) {
+            try {
+                controller.enqueue(encoder.encode(errorMessage))
+                console.log('✅ Error message sent successfully')
+            } catch (controllerError) {
+                console.log('❌ Controller closed during error message')
+                return
+            }
+        } else {
+            console.log('⚠️ Controller already closed, cannot send error message')
+        }
     }
 
-    // Ensure controller is closed
-    try {
-        console.log('🔒 Closing stream controller...')
-        controller.close()
-        console.log('✅ Stream controller closed successfully')
-    } catch (error) {
-        console.log('⚠️ Controller already closed or error closing:', error)
-    }
+    console.log('📤 streamMessages function completed, controller state:', controller.desiredSize)
 }
 
 // Generate card format for single stamp
@@ -567,6 +659,7 @@ function generateStampCarousel(stamps: any[]) {
             const year = stamp.IssueYear || (stamp.IssueDate ? stamp.IssueDate.split('-')[0] : 'Unknown')
             // Use DenominationSymbol if available, otherwise construct from DenominationValue
             const denomination = stamp.DenominationSymbol || `${stamp.DenominationValue}`
+            const subtitle = `${stamp.Country} • ${year} • ${denomination}`
 
             // Handle different possible image URL field names
             const imageUrl = stamp.StampImageUrl || stamp.image || stamp.StampImage || '/images/stamps/no-image-available.png'
@@ -574,8 +667,27 @@ function generateStampCarousel(stamps: any[]) {
             return {
                 id: stamp.Id || stamp.id,
                 title: stamp.Name || stamp.StampCatalogCode || 'Stamp',
-                subtitle: `${stamp.Country} • ${year}`,
+                subtitle: subtitle,
                 image: imageUrl,
+                // Include the same detailed content as single cards
+                content: [
+                    {
+                        section: 'Overview',
+                        text: `${stamp.Name} from ${stamp.Country}, issued in ${year}. Denomination: ${denomination}. Color: ${stamp.Color || 'Unknown'}.`
+                    },
+                    {
+                        section: 'Details',
+                        details: [
+                            { label: 'Catalog Code', value: stamp.StampCatalogCode || 'N/A' },
+                            { label: 'Issue Date', value: stamp.IssueDate || 'N/A' },
+                            { label: 'Color', value: stamp.Color || 'N/A' },
+                            { label: 'Paper Type', value: stamp.PaperType || 'N/A' }
+                        ]
+                    }
+                ],
+                significance: `A ${stamp.Color || 'colorful'} stamp from ${stamp.Country} issued in ${year}.`,
+                specialNotes: stamp.SeriesName ? `Part of the ${stamp.SeriesName} series.` : '',
+                // Keep existing fields for backward compatibility
                 summary: `${denomination} ${stamp.Color || 'Unknown'}`,
                 marketValue: 'Value varies by condition',
                 quickFacts: [
@@ -718,9 +830,29 @@ You have access to stamp knowledge and can provide detailed, conversational info
                 }
 
                 // Step 3: Add the user's message to the thread (OpenAI manages history automatically)
+                const enhancedMessage = `${message}
+
+CRITICAL INSTRUCTIONS - AVOID REPETITION:
+- DO NOT list basic stamp details like Country, Issue Date, Catalog Code, Denomination, Color, or Paper Type
+- These details are already displayed in the structured data card below
+- Instead, focus ONLY on:
+  * Historical significance and context
+  * Design and artistic details
+  * Interesting stories or facts about the stamp
+  * Cultural or philatelic importance
+  * Unique characteristics that aren't visible
+  * Collecting insights or rarity information
+  * Related stamps or series context
+
+Example of GOOD response: "This stamp features a beautiful depiction of a trout leaping out of the water, set against a blue background. It's an excellent representation of New Zealand's rich natural heritage and fishing culture."
+
+Example of BAD response: "Country: New Zealand, Issue Date: May 4, 1935, Catalog Code: NZ-19350504-13-TroutBlue1/3d-001, Denomination: 1/3, Color: Blue" (DON'T DO THIS)
+
+Focus on storytelling and insights, not data listing.`
+
                 const threadMessage = await openai.beta.threads.messages.create(threadId, {
                     role: 'user',
-                    content: message
+                    content: enhancedMessage
                 })
                 console.log('✅ Message created:', threadMessage.id)
 
