@@ -4,14 +4,26 @@ import React, { useState, useEffect, useMemo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
-import { Search, Calendar, BookOpen, Archive, Eye, ChevronRight, ArrowLeft, Home, Sparkles, Coins, Palette, Grid, Filter, Share2, Layers, Globe, Star, Zap, Gem, Heart, Navigation, MapPin, Clock, DollarSign, FileText, Package, Menu, User, Settings, X, TrendingUp, AlertCircle, Play, Camera, Image as ImageIcon, Quote, Bookmark, BookmarkPlus, ExternalLink, Award, Telescope, Stamp, List, MenuSquare, PanelLeft, AlignJustify, GripVertical, PanelRightOpen, AlignLeft, GripHorizontal, MoreHorizontal, MoreVertical, EllipsisVertical, SlidersHorizontal, Rows2, Grid3x3, LayoutGrid } from "lucide-react"
+import { Calendar, BookOpen, Archive, Eye, ArrowLeft, Home, Sparkles, Coins, Palette, Grid, Filter, Share2, Layers, Globe, Star, Zap, Gem, Heart, Navigation, MapPin, Clock, DollarSign, FileText, Package, Menu, User, Settings, X, TrendingUp, AlertCircle, Play, Camera, Image as ImageIcon, ExternalLink, Stamp, List, MenuSquare, PanelLeft, AlignJustify, GripVertical, PanelRightOpen, AlignLeft, GripHorizontal, MoreHorizontal, MoreVertical, EllipsisVertical, SlidersHorizontal, Rows2, Grid3x3, LayoutGrid, Telescope } from "lucide-react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
-import { CountryOption, StampGroupOption, YearOption, CurrencyOption, DenominationOption, ColorOption, PaperOption, WatermarkOption, PerforationOption, ItemTypeOption, StampData, ModalType, ModalStackItem, FeaturedStory, AdditionalCategoryOption } from "@/types/catalog"
-import { generateCountriesData, generateStampGroupsData, generateYearsData, generateCurrenciesData, generateDenominationsData, generateColorsData, generatePapersData, generateWatermarksData, generatePerforationsData, generateItemTypesData, generateStampDetails, generateAdditionalCategoriesData, generateStampsForAdditionalCategory, featuredStories } from "@/lib/data/catalog-data"
+import { CountryOption, YearOption, CurrencyOption, DenominationOption, ColorOption, PaperOption, WatermarkOption, PerforationOption, ItemTypeOption, StampData, ModalType, ModalStackItem, FeaturedStory, AdditionalCategoryOption, SeriesOption } from "@/types/catalog"
+import { 
+    groupStampsByCountry, 
+    groupStampsBySeries, 
+    groupStampsByYear, 
+    groupStampsByCurrency, 
+    groupStampsByDenomination, 
+    groupStampsByColor, 
+    groupStampsByPaper, 
+    groupStampsByWatermark, 
+    groupStampsByPerforation, 
+    groupStampsByItemType, 
+    getStampDetails, 
+    convertApiStampToStampData
+} from "@/lib/data/catalog-data"
+// DB seeding handled in CatalogDataProvider
 import PinnedStampCard from "@/components/catalog/pinned-stamp-card"
 import ModalContent from "@/components/catalog/modal-content"
 import { VisualCatalogContent } from "@/components/catalog/visual-catalog-content"
@@ -19,15 +31,19 @@ import { ListCatalogContent } from "@/components/catalog/list-catalog-content"
 import { Skeleton } from "@/components/ui/skeleton";
 import { CatalogContent } from "@/components/catalog/investigate-search/catalog-content";
 import { useIsMobile } from "@/hooks/use-mobile";
+// Removed: country flag now handled inside child component
+import { CountryCatalogContent } from "@/components/catalog/country-catalog-content";
+import { CatalogDataProvider, useCatalogData } from "@/lib/context/catalog-data-context"
+import { parseStampCode } from "@/lib/utils/parse-stamp-code"
 
-export function ModernCatalogContent() {
+function ModernCatalogContentInner() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const mainContentRef = React.useRef<HTMLDivElement>(null);
 
     // Navigation state - updated to include new tabs
     const [modalStack, setModalStack] = useState<ModalStackItem[]>([])
-    const [searchTerm, setSearchTerm] = useState("")
+    // Moved to CountryCatalogContent
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const initialActiveSection = (searchParams.get('tab') as 'countries' | 'visual' | 'list' | 'investigate') || 'countries'
@@ -41,35 +57,55 @@ export function ModernCatalogContent() {
     const [pinnedStamp, setPinnedStamp] = useState<StampData | null>(null)
     const [isPinnedMinimized, setIsPinnedMinimized] = useState(false)
 
-    // Data states
+    // Data via shared provider
+    const { stamps, loading: dataLoading, error: dataError } = useCatalogData()
+    // Data states - derived from API data
     const [countries, setCountries] = useState<CountryOption[]>([])
 
-    // Initialize component
+    // Initialize component with API data from context
     useEffect(() => {
-        const loadInitialData = async () => {
-            try {
-                setLoading(true)
-                const countriesData = await generateCountriesData()
-                setCountries(countriesData)
-            } catch (err) {
-                console.error('Error loading initial data:', err)
-                setError('Failed to load catalog data')
-            } finally {
-                setLoading(false)
+        try {
+            setLoading(true)
+            if (stamps && stamps.length > 0) {
+                const countriesData = groupStampsByCountry(stamps)
+                setCountries(countriesData as CountryOption[])
+            } else {
+                setCountries([])
             }
+        } catch (err) {
+            console.error('Error loading initial data:', err)
+            setError('Failed to load catalog data')
+        } finally {
+            setLoading(false)
         }
-        loadInitialData()
-    }, [])
+    }, [stamps])
 
-    // Navigation handlers
+    // Navigation handlers updated to use API data grouping
     const handleCountryClick = async (country: CountryOption) => {
         setLoadingModalContent(true);
         try {
-            const stampGroups = await generateStampGroupsData(country.code)
+            const series = groupStampsBySeries(stamps, country.code)
+            
+            // Check if there are no series (broken hierarchy)
+            if (series.length === 0) {
+                // Get stamps without series for this country
+                const stampsList = getStampDetails(stamps, country.code)
+                if (stampsList.length > 0) {
+                    // Go directly to stamp details
+                    setModalStack([{
+                        type: 'stampDetails',
+                        title: `${country.name} Stamps`,
+                        data: { stamps: stampsList.map(convertApiStampToStampData) },
+                        stampCode: country.code
+                    }])
+                    return
+                }
+            }
+            
             setModalStack([{
                 type: 'country',
                 title: `${country.name} Catalog`,
-                data: { country, stampGroups },
+                data: { country, series },
                 stampCode: country.code
             }])
         } finally {
@@ -77,15 +113,17 @@ export function ModernCatalogContent() {
         }
     }
 
-    const handleStampGroupClick = async (group: StampGroupOption, currentStampCode: string) => {
+    const handleSeriesClick = async (series: SeriesOption, currentStampCode: string) => {
         setLoadingModalContent(true);
         try {
-            const years = await generateYearsData(currentStampCode, group.catalogNumber)
-            const newStampCode = `${currentStampCode}.${group.catalogNumber}`
+            const years = groupStampsByYear(stamps, currentStampCode, series.name)
+            // Use the series name directly, encoded to avoid issues with special characters
+            const encodedSeriesName = encodeURIComponent(series.name)
+            const newStampCode = `${currentStampCode}.${encodedSeriesName}`
             setModalStack(prev => [...prev, {
-                type: 'stampGroup',
-                title: `${group.name} Timeline`,
-                data: { group, years },
+                type: 'series',
+                title: `${series.name} Timeline`,
+                data: { series, years },
                 stampCode: newStampCode
             }])
         } finally {
@@ -96,7 +134,31 @@ export function ModernCatalogContent() {
     const handleYearClick = async (year: YearOption, currentStampCode: string) => {
         setLoadingModalContent(true);
         try {
-            const currencies = await generateCurrenciesData(currentStampCode, year.year)
+            // Extract series name from the stamp code
+            const pathParts = currentStampCode.split('.')
+            const countryCode = pathParts[0]
+            const encodedSeriesName = pathParts[1] // This is the encoded series name
+            
+            // Decode the series name
+            const actualSeriesName = decodeURIComponent(encodedSeriesName)
+            
+            const currencies = groupStampsByCurrency(stamps, countryCode, actualSeriesName, year.year)
+            
+            // If no currencies available, show stamp details directly
+            if (currencies.length === 0) {
+                const stampsList = getStampDetails(stamps, countryCode, actualSeriesName, year.year)
+                if (stampsList.length > 0) {
+                    const convertedStamps = stampsList.map(convertApiStampToStampData)
+                    setModalStack(prev => [...prev, {
+                        type: 'stampDetails',
+                        title: `${year.year} Stamps`,
+                        data: { stamps: convertedStamps },
+                        stampCode: `${currentStampCode}.${year.year}`
+                    }])
+                    return
+                }
+            }
+            
             const newStampCode = `${currentStampCode}.${year.year}`
             setModalStack(prev => [...prev, {
                 type: 'year',
@@ -112,7 +174,31 @@ export function ModernCatalogContent() {
     const handleCurrencyClick = async (currency: CurrencyOption, currentStampCode: string) => {
         setLoadingModalContent(true);
         try {
-            const denominations = await generateDenominationsData(currentStampCode, currency.code)
+            // Extract parameters from stamp code
+            const pathParts = currentStampCode.split('.')
+            const countryCode = pathParts[0]
+            const encodedSeriesName = pathParts[1]
+            const year = parseInt(pathParts[2])
+            
+            // Decode the series name
+            const actualSeriesName = decodeURIComponent(encodedSeriesName)
+            
+            const denominations = groupStampsByDenomination(stamps, countryCode, actualSeriesName, year, currency.code)
+            
+            // Check if there are no denominations (broken hierarchy)
+            if (denominations.length === 0) {
+                const stampsList = getStampDetails(stamps, countryCode, actualSeriesName, year, currency.code)
+                if (stampsList.length > 0) {
+                    setModalStack(prev => [...prev, {
+                        type: 'stampDetails',
+                        title: `${currency.name} Stamps`,
+                        data: { stamps: stampsList.map(convertApiStampToStampData) },
+                        stampCode: `${currentStampCode}.${currency.code}`
+                    }])
+                    return
+                }
+            }
+            
             const newStampCode = `${currentStampCode}.${currency.code}`
             setModalStack(prev => [...prev, {
                 type: 'currency',
@@ -128,7 +214,32 @@ export function ModernCatalogContent() {
     const handleDenominationClick = async (denomination: DenominationOption, currentStampCode: string) => {
         setLoadingModalContent(true);
         try {
-            const colors = await generateColorsData(currentStampCode, denomination.value)
+            // Extract parameters from stamp code
+            const pathParts = currentStampCode.split('.')
+            const countryCode = pathParts[0]
+            const encodedSeriesName = pathParts[1]
+            const year = parseInt(pathParts[2])
+            const currencyCode = pathParts[3]
+            
+            // Decode the series name
+            const actualSeriesName = decodeURIComponent(encodedSeriesName)
+            
+            const colors = groupStampsByColor(stamps, countryCode, actualSeriesName, year, currencyCode, denomination.value)
+            
+            // If no colors available, show stamp details directly
+            if (colors.length === 0) {
+                const stampsList = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denomination.value)
+                if (stampsList.length > 0) {
+                    setModalStack(prev => [...prev, {
+                        type: 'stampDetails',
+                        title: `${denomination.displayName} Stamps`,
+                        data: { stamps: stampsList.map(convertApiStampToStampData) },
+                        stampCode: `${currentStampCode}.${denomination.value}${denomination.symbol}`
+                    }])
+                    return
+                }
+            }
+            
             const newStampCode = `${currentStampCode}.${denomination.value}${denomination.symbol}`
             setModalStack(prev => [...prev, {
                 type: 'denomination',
@@ -144,7 +255,25 @@ export function ModernCatalogContent() {
     const handleColorClick = async (color: ColorOption, currentStampCode: string) => {
         setLoadingModalContent(true);
         try {
-            const papers = await generatePapersData(currentStampCode, color.code)
+            const { countryCode, actualSeriesName, year, currencyCode, denominationValue } = parseStampCode(currentStampCode)
+            
+            const papers = groupStampsByPaper(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, color.code)
+            
+            // If no papers available, show stamp details directly
+            if (papers.length === 0) {
+                const stampsList = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, color.code)
+                if (stampsList.length > 0) {
+                    const convertedStamps = stampsList.map(convertApiStampToStampData)
+                    setModalStack(prev => [...prev, {
+                        type: 'stampDetails',
+                        title: `${color.name} Stamps`,
+                        data: { stamps: convertedStamps },
+                        stampCode: `${currentStampCode}.${color.code}`
+                    }])
+                    return
+                }
+            }
+            
             const newStampCode = `${currentStampCode}.${color.code}`
             setModalStack(prev => [...prev, {
                 type: 'color',
@@ -160,7 +289,24 @@ export function ModernCatalogContent() {
     const handlePaperClick = async (paper: PaperOption, currentStampCode: string) => {
         setLoadingModalContent(true);
         try {
-            const watermarks = await generateWatermarksData(currentStampCode, paper.code)
+            const { countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode } = parseStampCode(currentStampCode)
+            
+            const watermarks = groupStampsByWatermark(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paper.code)
+            
+            // If no watermarks available, show stamp details directly
+            if (watermarks.length === 0) {
+                const stampsList = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paper.code)
+                if (stampsList.length > 0) {
+                    setModalStack(prev => [...prev, {
+                        type: 'stampDetails',
+                        title: `${paper.name} Stamps`,
+                        data: { stamps: stampsList.map(convertApiStampToStampData) },
+                        stampCode: `${currentStampCode}.${paper.code}`
+                    }])
+                    return
+                }
+            }
+            
             const newStampCode = `${currentStampCode}.${paper.code}`
             setModalStack(prev => [...prev, {
                 type: 'paper',
@@ -176,7 +322,24 @@ export function ModernCatalogContent() {
     const handleWatermarkClick = async (watermark: WatermarkOption, currentStampCode: string) => {
         setLoadingModalContent(true);
         try {
-            const perforations = await generatePerforationsData(currentStampCode, watermark.code)
+            const { countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode } = parseStampCode(currentStampCode)
+            
+            const perforations = groupStampsByPerforation(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermark.code)
+            
+            // If no perforations available, show stamp details directly
+            if (perforations.length === 0) {
+                const stampsList = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermark.code)
+                if (stampsList.length > 0) {
+                    setModalStack(prev => [...prev, {
+                        type: 'stampDetails',
+                        title: `${watermark.name} Stamps`,
+                        data: { stamps: stampsList.map(convertApiStampToStampData) },
+                        stampCode: `${currentStampCode}.${watermark.code}`
+                    }])
+                    return
+                }
+            }
+            
             const newStampCode = `${currentStampCode}.${watermark.code}`
             setModalStack(prev => [...prev, {
                 type: 'watermark',
@@ -192,7 +355,24 @@ export function ModernCatalogContent() {
     const handlePerforationClick = async (perforation: PerforationOption, currentStampCode: string) => {
         setLoadingModalContent(true);
         try {
-            const itemTypes = await generateItemTypesData(currentStampCode, perforation.code)
+            const { countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode } = parseStampCode(currentStampCode)
+            
+            const itemTypes = groupStampsByItemType(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforation.code)
+            
+            // If no item types available, show stamp details directly
+            if (itemTypes.length === 0) {
+                const stampsList = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforation.code)
+                if (stampsList.length > 0) {
+                    setModalStack(prev => [...prev, {
+                        type: 'stampDetails',
+                        title: `${perforation.name} Stamps`,
+                        data: { stamps: stampsList.map(convertApiStampToStampData) },
+                        stampCode: `${currentStampCode}.${perforation.code}`
+                    }])
+                    return
+                }
+            }
+            
             const newStampCode = `${currentStampCode}.${perforation.code}`
             setModalStack(prev => [...prev, {
                 type: 'perforation',
@@ -208,12 +388,16 @@ export function ModernCatalogContent() {
     const handleItemTypeClick = async (itemType: ItemTypeOption, currentStampCode: string) => {
         setLoadingModalContent(true);
         try {
-            const stamps = await generateStampDetails(currentStampCode, itemType.code)
+            const { countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode } = parseStampCode(currentStampCode)
+            
+            const stampsList = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemType.code)
+            
+            // Always go directly to stamp details - additional categories will be handled within the stamp details modal
             const newStampCode = `${currentStampCode}.${itemType.code}`
             setModalStack(prev => [...prev, {
-                type: 'itemType',
+                type: 'stampDetails',
                 title: `Approved Collection`,
-                data: { itemType, stamps },
+                data: { stamps: stampsList.map(convertApiStampToStampData) },
                 stampCode: newStampCode
             }])
         } finally {
@@ -242,15 +426,16 @@ export function ModernCatalogContent() {
     }
 
     const handleStampDetailClick = (stamp: StampData) => {
-        // Get current modal to propagate selected categories
+        // Get current modal to propagate selected categories and baseStampCode
         const currentModal = modalStack[modalStack.length - 1]
         const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
+        const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
 
         setModalStack(prev => [...prev, {
             type: 'stampDetails',
             title: `${stamp.name}`,
             data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-            stampCode: stamp.stampCode || '', // Ensure stampCode is never undefined
+            stampCode: baseStampCode ? `${baseStampCode}.${stamp.catalogNumber}` : (stamp.stampCode || ''),
             selectedAdditionalCategories: currentSelectedCategories
         }])
     }
@@ -259,10 +444,81 @@ export function ModernCatalogContent() {
     const handleAdditionalCategoryClick = async (categoryType: string, currentStampCode: string) => {
         setLoadingModalContent(true);
         try {
-            const categories = await generateAdditionalCategoriesData(categoryType, currentStampCode)
+            const currentModal = modalStack[modalStack.length - 1];
+            const baseStampCode = currentModal?.stampCode; // Get the full stamp code from the current modal
+
+            const { countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemTypeCode } = parseStampCode(baseStampCode || '')
+
+            // Get all stamps matching the path
+            const allStamps = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemTypeCode)
+            
+            // Filter stamps by category type
+            let filteredStamps = []
+            switch (categoryType) {
+                case 'postalHistory':
+                    filteredStamps = allStamps.filter(s => s.postalHistoryType)
+                    break
+                case 'errors':
+                    filteredStamps = allStamps.filter(s => s.errorType)
+                    break
+                case 'proofs':
+                    filteredStamps = allStamps.filter(s => s.proofType)
+                    break
+                case 'essays':
+                    filteredStamps = allStamps.filter(s => s.essayType)
+                    break
+                default:
+                    filteredStamps = allStamps
+            }
+
+            // Group the filtered stamps by their specific category values
+            const categories: AdditionalCategoryOption[] = []
+            const seenTypes = new Set()
+            
+            filteredStamps.forEach(stamp => {
+                let categoryValue = null
+                let categoryName = null
+                
+                switch (categoryType) {
+                    case 'postalHistory':
+                        categoryValue = stamp.postalHistoryType
+                        categoryName = stamp.postalHistoryType
+                        break
+                    case 'errors':
+                        categoryValue = stamp.errorType
+                        categoryName = stamp.errorType
+                        break
+                    case 'proofs':
+                        categoryValue = stamp.proofType
+                        categoryName = stamp.proofType
+                        break
+                    case 'essays':
+                        categoryValue = stamp.essayType
+                        categoryName = stamp.essayType
+                        break
+                }
+                
+                if (categoryValue && !seenTypes.has(categoryValue)) {
+                    seenTypes.add(categoryValue)
+                    categories.push({
+                        code: categoryValue.replace(/\s+/g, '_').toLowerCase(),
+                        name: categoryName,
+                        description: `${categoryName} category stamps`,
+                        totalStamps: filteredStamps.filter(s => {
+                            switch (categoryType) {
+                                case 'postalHistory': return s.postalHistoryType === categoryValue
+                                case 'errors': return s.errorType === categoryValue
+                                case 'proofs': return s.proofType === categoryValue
+                                case 'essays': return s.essayType === categoryValue
+                                default: return false
+                            }
+                        }).length,
+                        stampImageUrl: stamp.stampImageUrl || '/images/stamps/no-image-available.png'
+                    })
+                }
+            })
 
             // Get current modal to track selected categories
-            const currentModal = modalStack[modalStack.length - 1]
             const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
 
             // Pin the current stamp for comparison if it's not already pinned and we have stamp data
@@ -274,8 +530,8 @@ export function ModernCatalogContent() {
             setModalStack(prev => [...prev, {
                 type: categoryType as ModalType,
                 title: `${categoryType.charAt(0).toUpperCase() + categoryType.slice(1)} Categories`,
-                data: { categoryType, categories, stampCode: currentStampCode },
-                stampCode: currentStampCode,
+                data: { categoryType, categories, stampCode: baseStampCode }, // Pass baseStampCode here
+                stampCode: baseStampCode || '',
                 selectedAdditionalCategories: [...currentSelectedCategories, categoryType]
             }])
         } finally {
@@ -286,65 +542,58 @@ export function ModernCatalogContent() {
     const handleAdditionalCategoryOptionClick = async (category: AdditionalCategoryOption, categoryType: string, currentStampCode: string) => {
         setLoadingModalContent(true);
         try {
-            // Generate stamps for the selected additional category
-            const stamps = await generateStampsForAdditionalCategory(currentStampCode, categoryType, category.code)
+            const { countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemTypeCode } = parseStampCode(currentStampCode)
+
+            // Get all stamps matching the path and specific category
+            const allStamps = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemTypeCode)
+            
+            // Filter stamps by the specific category option
+            const filteredStamps = allStamps.filter(stamp => {
+                switch (categoryType) {
+                    case 'postalHistory':
+                        return stamp.postalHistoryType === category.name
+                    case 'errors':
+                        return stamp.errorType === category.name
+                    case 'proofs':
+                        return stamp.proofType === category.name
+                    case 'essays':
+                        return stamp.essayType === category.name
+                    default:
+                        return false
+                }
+            })
 
             // Get current modal to propagate selected categories
             const currentModal = modalStack[modalStack.length - 1]
             const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
 
-            if (stamps.length === 1) {
-                // If only one stamp, go directly to stamp details
+            // Always go to stamp details for additional category options
                 setModalStack(prev => [...prev, {
                     type: 'stampDetails',
                     title: `${category.name} - Stamp Details`,
                     data: {
-                        stamp: stamps[0],
+                        stamps: filteredStamps.map(convertApiStampToStampData),
                         categoryFilter: category,
                         baseStampCode: currentStampCode,
-                        selectedAdditionalCategories: currentSelectedCategories
+                        selectedAdditionalCategories: currentSelectedCategories,
+                        // showAsIndividualCards: true
                     },
                     stampCode: `${currentStampCode}.${category.code}`,
-                    selectedAdditionalCategories: currentSelectedCategories
+                    selectedAdditionalCategories: currentSelectedCategories,
                 }])
-            } else {
-                // If multiple stamps, show them as individual stamp detail options
-                setModalStack(prev => [...prev, {
-                    type: 'stampDetails',
-                    title: `${category.name} - Select Stamp`,
-                    data: {
-                        stamps,
-                        categoryFilter: category,
-                        baseStampCode: currentStampCode,
-                        showAsIndividualCards: true,
-                        selectedAdditionalCategories: currentSelectedCategories
-                    },
-                    stampCode: `${currentStampCode}.${category.code}`,
-                    selectedAdditionalCategories: currentSelectedCategories
-                }])
-            }
         } finally {
             setLoadingModalContent(false);
         }
     }
 
-    // Filter countries based on search term
-    const filteredCountries = useMemo(() => {
-        if (!searchTerm) return countries
-
-        return countries.filter(country =>
-            country.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            country.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            country.code.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-    }, [searchTerm, countries])
+    // Filtering now handled inside CountryCatalogContent
 
     if (loading) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-800 text-gray-900 dark:text-gray-100">
                 {/* Header Skeleton */}
                 <header className="relative overflow-hidden">
-                    <div className="relative h-[400px] sm:h-[500px] md:h-[600px] bg-gray-900 flex items-center justify-center">
+                    <div className="relative h-[200px] sm:h-[300px] md:h-[350px] bg-gray-900 flex items-center justify-center">
                         <Skeleton className="absolute inset-0 w-full h-full" />
                         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center w-full">
                             <div className="max-w-3xl w-full">
@@ -428,10 +677,15 @@ export function ModernCatalogContent() {
                     <Button onClick={() => {
                         setError(null)
                         setLoading(true)
-                        generateCountriesData().then(setCountries).catch(err => {
+                        try {
+                            const countriesData = groupStampsByCountry(stamps)
+                            setCountries(countriesData as CountryOption[])
+                        } catch (err) {
                             console.error('Error retrying data load:', err)
                             setError('Failed to reload catalog data')
-                        }).finally(() => setLoading(false))
+                        } finally {
+                            setLoading(false)
+                        }
                     }} className="bg-primary hover:bg-primary/90 text-white">
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         Try Again
@@ -579,7 +833,7 @@ export function ModernCatalogContent() {
                                                         : "bg-secondary text-secondary-foreground hover:bg-secondary/90 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
                                                 )}
                                             >
-                                                <Telescope className="h-6 w-6 mb-2" />
+                                                <Eye className="h-6 w-6 mb-2" />
                                                 Investigate Search
                                             </DropdownMenuItem>
                                         </div>
@@ -682,103 +936,7 @@ export function ModernCatalogContent() {
 
                         {/* Country Catalogs Section */}
                         {activeSection === 'countries' && (
-                            <section>
-                                <div className="text-center mb-8 md:mb-12">
-                                    <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">Explore by Country</h2>
-                                    <p className="text-base md:text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-                                        Browse our premium catalog of stamps organized by country. Each collection features stamps that have earned collector approval through careful authentication and grading.
-                                    </p>
-                                </div>
-
-                                <div className="relative mb-8">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
-                                    <Input
-                                        type="text"
-                                        placeholder="Search countries..."
-                                        className="w-full pl-10 pr-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm focus:ring-2 focus:ring-primary dark:focus:ring-amber-500 focus:border-transparent transition-all duration-300"
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-                                    {filteredCountries.map((country, index) => (
-                                        <article
-                                            key={country.code}
-                                            className="group cursor-pointer"
-                                            onClick={() => handleCountryClick(country)}
-                                        >
-                                            <div className="relative overflow-hidden rounded-2xl bg-white shadow-lg hover:shadow-2xl transition-all duration-500 group-hover:scale-[1.02] dark:bg-gray-800 dark:border-gray-700">
-                                                <div className="relative h-56 overflow-hidden">
-                                                    {country.featuredStampUrl && (
-                                                        <Image
-                                                            src={country.featuredStampUrl}
-                                                            alt={`Premium stamps from ${country.name}`}
-                                                            fill
-                                                            className="object-cover transition-transform duration-700 group-hover:scale-110"
-                                                            sizes="(max-width: 768px) 100vw, 50vw"
-                                                        />
-                                                    )}
-                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
-
-                                                    <div className="absolute top-4 left-4">
-                                                        <div className="flex items-center space-x-2">
-                                                            <span className="text-3xl">{country.flag}</span>
-                                                            <Badge className="bg-white/20 backdrop-blur text-white border-white/30">
-                                                                {country.totalStamps.toLocaleString()} stamps
-                                                            </Badge>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="absolute bottom-4 left-4 right-4">
-                                                        <h3 className="text-2xl font-bold text-white mb-2">{country.name}</h3>
-                                                        <p className="text-gray-200 text-sm mb-3">{country.description}</p>
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="text-gray-300 text-sm">
-                                                                {country.firstIssue} - {country.lastIssue}
-                                                            </span>
-                                                            <div className="flex items-center space-x-2">
-                                                                <Award className="w-4 h-4 text-primary dark:text-amber-400" />
-                                                                <span className="text-primary text-sm font-medium dark:text-amber-400">Approved Collection</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div className="p-6">
-                                                    <blockquote className="text-gray-600 italic mb-4 relative dark:text-gray-300">
-                                                        <Quote className="w-4 h-4 text-primary dark:text-amber-400 absolute -top-1 -left-1" />
-                                                        <span className="ml-3">{country.historicalNote}</span>
-                                                    </blockquote>
-
-                                                    <div className="flex items-center justify-between">
-                                                        <Button variant="outline" className="border-primary/30 text-primary hover:bg-primary/10 dark:border-amber-600 dark:text-amber-400 dark:hover:bg-amber-900">
-                                                            Browse Catalog
-                                                            <ChevronRight className="w-4 h-4 ml-2" />
-                                                        </Button>
-                                                        <div className="flex items-center space-x-1">
-                                                            <BookmarkPlus className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity dark:text-gray-600 dark:group-hover:text-gray-400" />
-                                                            <Telescope className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity dark:text-gray-600 dark:group-hover:text-gray-400" />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </article>
-                                    ))}
-                                </div>
-
-                                {filteredCountries.length === 0 && searchTerm && (
-                                    <div className="text-center py-12 md:py-16">
-                                        <div className="w-20 h-20 md:w-24 md:h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
-                                            <Search className="w-10 h-10 md:w-12 md:h-12 text-gray-400" />
-                                        </div>
-                                        <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">No Catalogs Found</h3>
-                                        <p className="text-gray-600 dark:text-gray-300 max-w-md mx-auto">
-                                            We couldn't find any countries matching your search. Try a different term or explore our featured collections.
-                                        </p>
-                                    </div>
-                                )}
-                            </section>
+                            <CountryCatalogContent countries={countries} onCountryClick={handleCountryClick} />
                         )}
                     </>
                 ) : null}
@@ -798,7 +956,7 @@ export function ModernCatalogContent() {
                                         <span>Level {modalStack.length}</span>
                                         <span>•</span>
                                         <code className="bg-primary/10 dark:bg-primary/20 px-2 py-1 rounded font-mono text-xs text-primary dark:text-amber-300 break-all">
-                                            {modalStack[modalStack.length - 1].stampCode}
+                                            {decodeURIComponent(modalStack[modalStack.length - 1].stampCode)}
                                         </code>
 
                                     </div>
@@ -813,7 +971,7 @@ export function ModernCatalogContent() {
                             {modalStack.length > 0 && (
                                 <ModalContent
                                     modalItem={modalStack[modalStack.length - 1]}
-                                    onStampGroupClick={handleStampGroupClick}
+                                    onSeriesClick={handleSeriesClick}
                                     onYearClick={handleYearClick}
                                     onCurrencyClick={handleCurrencyClick}
                                     onDenominationClick={handleDenominationClick}
@@ -844,5 +1002,14 @@ export function ModernCatalogContent() {
                 />
             )}
         </div>
+    )
+}
+
+export function ModernCatalogContent() {
+    // Wrap with provider so child tabs share data and DB seed
+    return (
+        <CatalogDataProvider>
+            <ModernCatalogContentInner />
+        </CatalogDataProvider>
     )
 }

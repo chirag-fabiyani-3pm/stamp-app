@@ -3,32 +3,23 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { BookOpen, ChevronRight, Search } from "lucide-react"
 import { PaperTypeData, StampData } from "@/types/catalog"
-import { generateStampsData } from "@/lib/data/list-catalog-data"
+import { getStampsForPaperType } from "@/lib/data/list-catalog-data"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface PaperTypeModalContentProps {
   paperTypeData: PaperTypeData
+  stamps: StampData[]
   onStampClick: (stamp: StampData) => void
   isLoading: boolean;
 }
 
 export function PaperTypeModalContent({
   paperTypeData,
+  stamps,
   onStampClick,
   isLoading
 }: PaperTypeModalContentProps) {
-  const [stamps, setStamps] = useState<StampData[]>([])
   const [searchTerm, setSearchTerm] = useState("")
-
-  useEffect(() => {
-    const loadStamps = async () => {
-      const data = await generateStampsData(paperTypeData.id, paperTypeData.totalStamps, 'paperType')
-      setStamps(data)
-    }
-    if (!isLoading) {
-      loadStamps()
-    }
-  }, [paperTypeData, isLoading])
 
   const filteredStamps = useMemo(() => {
     if (!searchTerm) return stamps
@@ -124,31 +115,39 @@ export function PaperTypeModalContent({
                       <td className="py-3 px-4 font-medium text-black dark:text-gray-100">
                         {index + 1}
                       </td>
-                      <td className="py-3 px-4 text-black dark:text-gray-100">
-                        {stamp.denominationValue}{stamp.denominationSymbol} {stamp.color}
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
-                          {stamp.instances.find(i => i.mintValue)?.mintValue || '-'}
+                      <td className="py-3 px-4 text-black dark:text-gray-100 flex flex-col gap-2">
+                        <span className="font-medium">{stamp.name}</span>
+                        <span className="text-gray-600 dark:text-gray-400 block">
+                          {(stamp as any).description}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-center">
                         <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
-                          {stamp.instances.find(i => i.usedValue)?.usedValue || '-'}
+                          {stamp.estimatedMarketValue ? `$${stamp.estimatedMarketValue.toFixed(2)}` : '-'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
+                          {stamp.actualPrice ? `$${stamp.actualPrice.toFixed(2)}` : '-'}
                         </span>
                       </td>
                     </tr>
                     
                     {/* Varieties/instances listed as separate rows with indentation */}
-                    {stamp.instances.filter(instance => instance.code).map((instance) => (
+                    {stamp.instances && stamp.instances.map((instance) => (
                       <tr 
                         key={instance.id}
                         className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
-                        onClick={() => onStampClick(stamp)}
+                        onClick={() => onStampClick(instance as unknown as StampData)}
                       >
                         <td className="py-2 px-4 text-xs text-gray-600 dark:text-gray-400"></td>
-                        <td className="py-2 px-4 text-xs text-gray-700 dark:text-gray-300 pl-8">
-                          {instance.code && `${instance.code}. `}{instance.description}
+                        <td className="py-2 px-4 text-xs text-gray-700 dark:text-gray-300 pl-8 flex flex-col gap-2">
+                          <span className="font-medium text-gray-900 dark:text-gray-100">
+                            {(instance as any).name}
+                          </span>
+                          <span>
+                            {instance.description}
+                          </span>
                         </td>
                         <td className="py-2 px-4 text-center text-xs">
                           {instance.mintValue ? (

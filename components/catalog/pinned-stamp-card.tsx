@@ -80,6 +80,12 @@ export default function PinnedStampCard({
                 width={24}
                 height={30}
                 className="rounded border opacity-80 group-hover:opacity-100 transition-opacity"
+                onError={(e) => {
+                    const target = e.currentTarget;
+                    if (target.src !== '/images/stamps/no-image-available.png') {
+                        target.src = '/images/stamps/no-image-available.png';
+                    }
+                }}
               />
               <Badge className="bg-primary/80 text-white text-xs">REF</Badge>
             </div>
@@ -171,6 +177,12 @@ export default function PinnedStampCard({
                   fill
                   className="object-contain p-3"
                   sizes="500px"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    if (target.src !== '/images/stamps/no-image-available.png') {
+                        target.src = '/images/stamps/no-image-available.png';
+                    }
+                }}
                 />
               </div>
               
@@ -218,7 +230,7 @@ export default function PinnedStampCard({
                 
                 <div className="grid grid-cols-3 gap-2 text-center bg-gray-50 dark:bg-gray-700 rounded-lg p-2">
                   <div>
-                    <div className="text-sm font-bold text-green-600 dark:text-green-400">${details.currentMarketValue || stamp.marketValue || '518'}</div>
+                    <div className="text-sm font-bold text-green-600 dark:text-green-400">${details.currentMarketValue || stamp.estimatedMarketValue || '518'}</div>
                     <div className="text-xs text-gray-500 dark:text-gray-400">Market Value</div>
                   </div>
                   <div>
@@ -257,6 +269,12 @@ export default function PinnedStampCard({
                     fill
                     className="object-cover rounded border shadow-sm group-hover:shadow-md transition-shadow"
                     sizes="64px"
+                    onError={(e) => {
+                        const target = e.currentTarget;
+                        if (target.src !== '/images/stamps/no-image-available.png') {
+                            target.src = '/images/stamps/no-image-available.png';
+                        }
+                    }}
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 rounded transition-colors flex items-center justify-center">
                     <ImageIcon className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -279,7 +297,7 @@ export default function PinnedStampCard({
               {/* Detailed Stats */}
               <div className="grid grid-cols-2 gap-3 text-center border-t border-gray-100 dark:border-gray-700 pt-3 mb-3">
                 <div>
-                  <div className="text-sm font-bold text-green-600 dark:text-green-400">${details.currentMarketValue || stamp.marketValue || '125'}</div>
+                  <div className="text-sm font-bold text-green-600 dark:text-green-400">${details.currentMarketValue || stamp.estimatedMarketValue || '125'}</div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">Market Value</div>
                 </div>
                 <div>

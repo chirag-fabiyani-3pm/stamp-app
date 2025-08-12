@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { BookOpen, ChevronRight, Search } from "lucide-react"
 import { SeriesData, TypeData } from "@/types/catalog"
-import { generateTypeData } from "@/lib/data/list-catalog-data"
+import { getTypesForSeries } from "@/lib/data/list-catalog-data"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface SeriesModalContentProps {

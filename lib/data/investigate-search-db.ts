@@ -17,12 +17,10 @@ export const openDB = (): Promise<IDBDatabase> => {
       
       // Delete existing store if it exists (to handle schema changes)
       if (db.objectStoreNames.contains(STORE_NAME)) {
-        console.log('Deleting existing store to upgrade schema...')
         db.deleteObjectStore(STORE_NAME)
       }
       
       // Create new store with updated schema
-      console.log('Creating new store with updated schema...')
       const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' })
       // Remove unique constraint from stampCode since API data can have duplicates
       store.createIndex('stampCode', 'stampCode', { unique: false })
@@ -152,7 +150,6 @@ export const clearIndexedDB = async (): Promise<void> => {
       clearRequest.onerror = () => reject(clearRequest.error)
     })
     
-    console.log('IndexedDB cleared successfully')
   } catch (error) {
     console.error('Error clearing IndexedDB:', error)
     throw error
@@ -175,7 +172,6 @@ export const recreateIndexedDB = async () => {
     const dbs = await indexedDB.databases()
     for (const dbInfo of dbs) {
       if (dbInfo.name === DB_NAME) {
-        console.log('Deleting existing database for schema upgrade...')
         await new Promise<void>((resolve, reject) => {
           const deleteRequest = indexedDB.deleteDatabase(DB_NAME)
           deleteRequest.onsuccess = () => resolve()
@@ -185,6 +181,6 @@ export const recreateIndexedDB = async () => {
       }
     }
   } catch (error) {
-    console.log('Database deletion not needed or failed:', error)
+    console.error('Database deletion not needed or failed:', error)
   }
 } 

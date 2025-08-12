@@ -3,32 +3,23 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { BookOpen, ChevronRight, Search } from "lucide-react"
 import { StampGroupData, TypeData } from "@/types/catalog"
-import { generateStampGroupsData } from "@/lib/data/list-catalog-data"
+import { getStampGroupsForType } from "@/lib/data/list-catalog-data"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface TypeModalContentProps {
   typeData: TypeData
+  stampGroups: StampGroupData[]
   onStampGroupClick: (stampGroup: StampGroupData) => void
   isLoading: boolean;
 }
 
 export function TypeModalContent({
   typeData,
+  stampGroups,
   onStampGroupClick,
   isLoading
 }: TypeModalContentProps) {
-  const [stampGroups, setStampGroups] = useState<StampGroupData[]>([])
   const [searchTerm, setSearchTerm] = useState("")
-
-  useEffect(() => {
-    const loadStampGroups = async () => {
-      const data = await generateStampGroupsData(typeData)
-      setStampGroups(data)
-    }
-    if (!isLoading) {
-      loadStampGroups()
-    }
-  }, [typeData, isLoading])
 
   const filteredStampGroups = useMemo(() => {
     if (!searchTerm) return stampGroups
