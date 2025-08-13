@@ -459,9 +459,26 @@ export function VoiceChatPopup({
                 const stamps = structuredData.items
                 if (stamps.length === 1) {
                     const stamp = stamps[0]
+                    // Use new detailed content structure if available
+                    if (stamp.content && stamp.content.length > 0) {
+                        const overviewSection = stamp.content.find((s: any) => s.section === 'Overview')
+                        if (overviewSection && overviewSection.text) {
+                            return `I found one stamp matching your query: ${stamp.title}. ${overviewSection.text} ${stamp.significance || 'This is a significant stamp in philatelic history.'}`
+                        }
+                    }
+                    // Fall back to old format
                     return `I found one stamp matching your query: ${stamp.title}. This stamp is from ${stamp.subtitle} and ${stamp.summary}.`
                 } else {
-                    return `I found ${stamps.length} stamps matching your query. The first one is ${stamps[0].title} from ${stamps[0].subtitle}. Would you like me to tell you about a specific stamp?`
+                    const firstStamp = stamps[0]
+                    // Use new detailed content structure if available
+                    if (firstStamp.content && firstStamp.content.length > 0) {
+                        const overviewSection = firstStamp.content.find((s: any) => s.section === 'Overview')
+                        if (overviewSection && overviewSection.text) {
+                            return `I found ${stamps.length} stamps matching your query. The first one is ${firstStamp.title}. ${overviewSection.text} Would you like me to tell you about a specific stamp?`
+                        }
+                    }
+                    // Fall back to old format
+                    return `I found ${stamps.length} stamps matching your query. The first one is ${firstStamp.title} from ${firstStamp.subtitle}. Would you like me to tell you about a specific stamp?`
                 }
             }
         }
