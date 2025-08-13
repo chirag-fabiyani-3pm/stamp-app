@@ -32,45 +32,100 @@ import { Toaster } from "@/components/ui/toaster"
 
 // API Response interfaces
 interface ApiStampResponse {
+  // Detection
   isStamp?: boolean
-  id: string
-  catalogId: string
-  name: string
-  publisher: string
-  country: string
-  stampImageUrl: string
-  catalogName: string
-  catalogNumber: string
-  seriesName: string
-  issueDate: string
-  denominationValue: number
-  denominationCurrency: string
-  denominationSymbol: string
-  color: string
-  design: string
-  theme: string
-  artist: string
-  engraver: string
-  printing: string
-  paperType: string
-  perforation: string
-  size: string
-  specialNotes: string
-  historicalContext: string
-  printingQuantity: number
-  usagePeriod: string
-  rarenessLevel: string
-  hasGum: boolean
-  gumCondition: string
-  description: string
-  watermark: string | null
-  actualPrice: string
-  estimatedMarketValue: string
+
+  // Identifiers
+  id?: string
+  stampId?: string
+  stampCode?: string
+  catalogId?: string
+  catalogExtractionProcessId?: string
+
+  // Basic info
+  name?: string
+  description?: string
+  publisher?: string
+  country?: string
+  countryName?: string
+  countryFlag?: string
+
+  // Imagery
+  stampImageUrl?: string
+  stampImageAlt?: string
+  stampImageHighRes?: string
+
+  // Catalog
+  catalogName?: string
+  catalogNumber?: string
+  seriesName?: string
+
+  // Dating
+  issueDate?: string
+  issueYear?: number
+
+  // Denomination / currency
+  denominationValue?: number | string
+  denominationCurrency?: string
+  denominationSymbol?: string
+  currencyCode?: string
+
+  // Color / design
+  color?: string
+  colorName?: string
+  colorHex?: string
+  design?: string
+  theme?: string
+  artist?: string
+  engraver?: string
+
+  // Printing / paper / perforation / watermark
+  printing?: string
+  printingMethod?: string
+  printingProcess?: string
+  paperType?: string
+  paperTypeName?: string
+  perforation?: string
+  perforationName?: string
+  perforationMeasurement?: string
+  size?: string
+  sizeWidth?: string
+  sizeHeight?: string
+  watermark?: string | null
+  watermarkName?: string
+
+  // Notes / context
+  specialNotes?: string
+  historicalContext?: string
+  historicalSignificance?: string
+
+  // Quantities / usage
+  printingQuantity?: number
+  printRun?: string
+  usagePeriod?: string
+  periodStart?: number
+  periodEnd?: number
+
+  // Gum / condition
+  hasGum?: boolean
+  gumCondition?: string
+  gumType?: string
+  gumQuality?: string
+
+  // Rarity
+  rarenessLevel?: string
+  rarityRating?: string
+
+  // Misc
+  stampDetailsJson?: string
+  actualPrice?: string
+  estimatedMarketValue?: string
 }
 
 interface ImageSearchResponse {
   aiResponse: ApiStampResponse
   similarStamps: ApiStampResponse[]
+  vectorSearchResults?: ApiStampResponse[]
 }
 
 // Helper function to get JWT from cookies or localStorage
@@ -103,16 +158,33 @@ const getJWT = (): string | null => {
 
 // Helper function to transform API stamp to internal format
 const transformApiStampToInternal = (apiStamp: ApiStampResponse, capturedImageUrl?: string) => {
+  const derivedSize = apiStamp.size ||
+    ((apiStamp.sizeWidth || apiStamp.sizeHeight) ? `${apiStamp.sizeWidth || "?"} x ${apiStamp.sizeHeight || "?"}` : undefined)
+
+  const watermarkValue = typeof apiStamp.watermark !== 'undefined' && apiStamp.watermark !== null
+    ? apiStamp.watermark
+    : (apiStamp.watermarkName || undefined)
+
+  const yearString = (apiStamp.issueDate
+    ? new Date(apiStamp.issueDate).getFullYear().toString()
+    : (typeof apiStamp.issueYear === 'number' ? String(apiStamp.issueYear) : ""))
+
   return {
-    id: apiStamp.id,
-    name: apiStamp.name,
+    id: apiStamp.id || apiStamp.stampId || apiStamp.stampCode || "",
+    name: apiStamp.name || "",
     // Use captured image since API response won't have stampImageUrl for aiResponse
     imagePath: capturedImageUrl || apiStamp.stampImageUrl || "/placeholder-stamp.png",
-    country: apiStamp.country,
-    year: new Date(apiStamp.issueDate).getFullYear().toString(),
-    description: apiStamp.description,
-    watermarkOptions: apiStamp.watermark ? [apiStamp.watermark, "None"] : ["None"],
-    perforationOptions: [apiStamp.perforation, "Imperforate", "10", "12.5", "Roulette 7"],
+    country: apiStamp.country || apiStamp.countryName || "",
+    year: yearString,
+    description: apiStamp.description || "",
+    watermarkOptions: watermarkValue ? [String(watermarkValue), "None"] : ["None"],
+    perforationOptions: [
+      (apiStamp.perforation || apiStamp.perforationName || apiStamp.perforationMeasurement || ""),
+      "Imperforate",
+      "10",
+      "12.5",
+      "Roulette 7"
+    ],
     possibleErrors: [
       "Colour Shift",
       "Double Print", 
@@ -126,14 +198,14 @@ const transformApiStampToInternal = (apiStamp: ApiStampResponse, capturedImageUr
       "Print Process Error"
     ],
     certifiers: ["Expert Committee", "RPSNZ", "BPA", "APS"],
-    paperTypes: [apiStamp.paperType, "Thick", "Thin", "Wove", "Laid"],
-    printTypes: [apiStamp.printing, "Typography", "Lithography", "Intaglio"],
-    millimeterMeasurements: [apiStamp.size, "20 x 24", "21 x 25", "19 x 23", "Other"],
-    colors: [apiStamp.color, "Red", "Blue", "Green", "Brown"],
+    paperTypes: [apiStamp.paperType || apiStamp.paperTypeName || "", "Thick", "Thin", "Wove", "Laid"],
+    printTypes: [apiStamp.printing || apiStamp.printingMethod || apiStamp.printingProcess || "", "Typography", "Lithography", "Intaglio"],
+    millimeterMeasurements: [derivedSize || "", "20 x 24", "21 x 25", "19 x 23", "Other"],
+    colors: [apiStamp.color || apiStamp.colorName || "", "Red", "Blue", "Green", "Brown"],
     grades: ["Fine", "Very Fine", "Good", "Poor", "Superb"],
-    rarityRatings: [apiStamp.rarenessLevel, "Common", "Scarce", "Rare", "Very Rare", "Extremely Rare"],
+    rarityRatings: [apiStamp.rarenessLevel || apiStamp.rarityRating || "", "Common", "Scarce", "Rare", "Very Rare", "Extremely Rare"],
     // Additional API data
-    catalogId: apiStamp.catalogId,
+    catalogId: apiStamp.catalogId || apiStamp.catalogExtractionProcessId || "",
     catalogName: apiStamp.catalogName,
     catalogNumber: apiStamp.catalogNumber,
     seriesName: apiStamp.seriesName,
@@ -144,12 +216,12 @@ const transformApiStampToInternal = (apiStamp: ApiStampResponse, capturedImageUr
     theme: apiStamp.theme,
     artist: apiStamp.artist,
     engraver: apiStamp.engraver,
-    printingQuantity: apiStamp.printingQuantity,
-    usagePeriod: apiStamp.usagePeriod,
+    printingQuantity: apiStamp.printingQuantity || (apiStamp.printRun ? Number.parseInt(String(apiStamp.printRun).replace(/[^0-9]/g, '')) : undefined),
+    usagePeriod: apiStamp.usagePeriod || ((apiStamp.periodStart || apiStamp.periodEnd) ? `${apiStamp.periodStart || ''}${(apiStamp.periodStart || apiStamp.periodEnd) ? '–' : ''}${apiStamp.periodEnd || ''}` : undefined),
     hasGum: apiStamp.hasGum,
-    gumCondition: apiStamp.gumCondition,
+    gumCondition: apiStamp.gumCondition || apiStamp.gumQuality,
     specialNotes: apiStamp.specialNotes,
-    historicalContext: apiStamp.historicalContext
+    historicalContext: apiStamp.historicalContext || apiStamp.historicalSignificance
   };
 };
 
@@ -157,14 +229,14 @@ const transformApiStampToInternal = (apiStamp: ApiStampResponse, capturedImageUr
 const mapApiStampToFormData = (apiStamp: ApiStampResponse) => {
   return {
     // Basic identification
-    watermark: apiStamp.watermark || "unknown-watermark",
-    perforation: apiStamp.perforation || "unknown-perforation", 
-    paper: apiStamp.paperType || "unknown-paper",
-    printType: apiStamp.printing || "unknown-print",
+    watermark: (apiStamp.watermark ?? apiStamp.watermarkName) || "unknown-watermark",
+    perforation: (apiStamp.perforation || apiStamp.perforationName || apiStamp.perforationMeasurement) || "unknown-perforation", 
+    paper: (apiStamp.paperType || apiStamp.paperTypeName) || "unknown-paper",
+    printType: (apiStamp.printing || apiStamp.printingMethod || apiStamp.printingProcess) || "unknown-print",
     certifier: "none-certifier", // Not provided by API
     itemType: "Stamp", // Default from API context
-    color: apiStamp.color || "unknown-color",
-    millimeterSize: apiStamp.size || "unknown-size",
+    color: (apiStamp.color || apiStamp.colorName) || "unknown-color",
+    millimeterSize: (apiStamp.size || ((apiStamp.sizeWidth || apiStamp.sizeHeight) ? `${apiStamp.sizeWidth || "?"} x ${apiStamp.sizeHeight || "?"}` : undefined)) || "unknown-size",
     
     // Error and condition info
     errors: [], // Will be filled during observation
@@ -182,32 +254,32 @@ const mapApiStampToFormData = (apiStamp: ApiStampResponse) => {
     // Grading and rarity
     grade: "", // Will be assessed during observation
     visualAppeal: 50, // Default, will be assessed
-    rarityRating: apiStamp.rarenessLevel || "unknown-rarity",
+    rarityRating: apiStamp.rarenessLevel || apiStamp.rarityRating || "unknown-rarity",
     
     // Catalog and identification
     plateNumber: "", // Not provided by API
-    words: `${apiStamp.denominationValue} ${apiStamp.denominationCurrency}`,
+    words: `${apiStamp.denominationValue ?? ''} ${apiStamp.denominationCurrency || apiStamp.currencyCode || ''}`.trim(),
     
     // Purchase info (empty for new scans)
     purchasePrice: "",
     purchaseDate: "",
-    notes: `${apiStamp.specialNotes}${apiStamp.historicalContext ? ` | ${apiStamp.historicalContext}` : ''}`,
+    notes: `${apiStamp.specialNotes || ''}${(apiStamp.historicalContext || apiStamp.historicalSignificance) ? ` | ${apiStamp.historicalContext || apiStamp.historicalSignificance}` : ''}`,
     
     // Additional API data for reference
-    catalogId: apiStamp.catalogId,
+    catalogId: apiStamp.catalogId || apiStamp.catalogExtractionProcessId || "",
     catalogName: apiStamp.catalogName,
     catalogNumber: apiStamp.catalogNumber,
     seriesName: apiStamp.seriesName,
-    country: apiStamp.country,
+    country: apiStamp.country || apiStamp.countryName || "",
     issueDate: apiStamp.issueDate,
     design: apiStamp.design,
     theme: apiStamp.theme,
     artist: apiStamp.artist,
     engraver: apiStamp.engraver,
-    printingQuantity: apiStamp.printingQuantity,
-    usagePeriod: apiStamp.usagePeriod,
+    printingQuantity: apiStamp.printingQuantity || (apiStamp.printRun ? Number.parseInt(String(apiStamp.printRun).replace(/[^0-9]/g, '')) : undefined),
+    usagePeriod: apiStamp.usagePeriod || ((apiStamp.periodStart || apiStamp.periodEnd) ? `${apiStamp.periodStart || ''}${(apiStamp.periodStart || apiStamp.periodEnd) ? '–' : ''}${apiStamp.periodEnd || ''}` : undefined),
     hasGum: apiStamp.hasGum,
-    gumCondition: apiStamp.gumCondition
+    gumCondition: apiStamp.gumCondition || apiStamp.gumQuality
   };
 };
 
@@ -915,7 +987,7 @@ function ScanPage() {
       }, 200);
 
       // Make API call
-      const apiResponse = await fetch('https://3pm-stampapp-prod.azurewebsites.net/api/v1/StampCatalog/SearchByImage', {
+      const apiResponse = await fetch('https://3pm-stampapp-prod.azurewebsites.net/api/v1/StampMasterCatalog/StampSearchGlobal', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${jwt}`
@@ -958,6 +1030,7 @@ function ScanPage() {
   const processStampMatches = (searchResult: ImageSearchResponse, imageDataUrl: string) => {
     let primaryMatch: any = null;
     const similarMatches: any[] = [];
+    const seenKeys = new Set<string>();
 
     // Process the main AI response as the primary match
     if (searchResult.aiResponse) {
@@ -966,20 +1039,45 @@ function ScanPage() {
         ...transformedStamp,
         apiData: searchResult.aiResponse
       };
+      const key = String(searchResult.aiResponse.id || searchResult.aiResponse.stampId || searchResult.aiResponse.stampCode || searchResult.aiResponse.catalogNumber || Math.random());
+      seenKeys.add(key);
     }
 
     // Process similar stamps as reference matches (use catalog images, not captured image)
     if (searchResult.similarStamps && searchResult.similarStamps.length > 0) {
       searchResult.similarStamps.forEach((similarStamp, index) => {
         const transformedStamp = transformApiStampToInternal(similarStamp, undefined);
-        similarMatches.push({
-          ...transformedStamp,
-          apiData: {
-            ...similarStamp,
-            actualPrice: searchResult.aiResponse.actualPrice,
-            estimatedMarketValue: searchResult.aiResponse.estimatedMarketValue,
-          },
-        });
+        const key = String(similarStamp.id || similarStamp.stampId || similarStamp.stampCode || similarStamp.catalogNumber || `${index}`);
+        if (!seenKeys.has(key)) {
+          seenKeys.add(key);
+          similarMatches.push({
+            ...transformedStamp,
+            apiData: {
+              ...similarStamp,
+              actualPrice: searchResult.aiResponse?.actualPrice,
+              estimatedMarketValue: searchResult.aiResponse?.estimatedMarketValue,
+            },
+          });
+        }
+      });
+    }
+
+    // Optionally process vector search results as additional similar matches
+    if (searchResult.vectorSearchResults && searchResult.vectorSearchResults.length > 0) {
+      searchResult.vectorSearchResults.forEach((result, index) => {
+        const transformedStamp = transformApiStampToInternal(result, undefined);
+        const key = String(result.id || result.stampId || result.stampCode || result.catalogNumber || `v-${index}`);
+        if (!seenKeys.has(key)) {
+          seenKeys.add(key);
+          similarMatches.push({
+            ...transformedStamp,
+            apiData: {
+              ...result,
+              actualPrice: searchResult.aiResponse?.actualPrice,
+              estimatedMarketValue: searchResult.aiResponse?.estimatedMarketValue,
+            },
+          });
+        }
       });
     }
 
