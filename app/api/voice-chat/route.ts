@@ -89,14 +89,16 @@ export async function POST(request: NextRequest) {
                                     rawStampData = data.data.stamps || []
                                     console.log('📋 Received raw stamp data from function calls:', rawStampData)
                                     console.log('📋 Raw stamp data details:', rawStampData.map(s => ({
-                                        Name: s.Name,
-                                        Country: s.Country,
-                                        IssueDate: s.IssueDate,
-                                        IssueYear: s.IssueYear,
-                                        DenominationValue: s.DenominationValue,
-                                        DenominationSymbol: s.DenominationSymbol,
-                                        Color: s.Color,
-                                        StampImageUrl: s.StampImageUrl
+                                        id: s.id,
+                                        stampId: s.stampId,
+                                        name: s.name,
+                                        country: s.country,
+                                        issueDate: s.issueDate,
+                                        issueYear: s.issueYear,
+                                        denominationValue: s.denominationValue,
+                                        denominationSymbol: s.denominationSymbol,
+                                        color: s.color,
+                                        stampImageUrl: s.stampImageUrl
                                     })))
                                 } else if (data.type === 'complete') {
                                     // Streaming complete
@@ -133,18 +135,18 @@ export async function POST(request: NextRequest) {
                         const stamp = rawStampData[0]
                         console.log('🎴 Using raw stamp data:', stamp)
 
-                        // Extract data from raw stamp object using the correct field names
-                        const name = stamp.Name || 'Unknown'
-                        const country = stamp.Country || 'Unknown'
-                        const issueDate = stamp.IssueDate || 'Unknown'
-                        const year = stamp.IssueYear || (issueDate !== 'Unknown' ? issueDate.split('-')[0] : 'Unknown')
-                        const denominationValue = stamp.DenominationValue || 'Unknown'
-                        const denominationSymbol = stamp.DenominationSymbol || ''
+                        // Extract data from raw stamp object using the correct field names (prioritize lowercase, fallback to uppercase)
+                        const name = stamp.name || stamp.Name || 'Unknown'
+                        const country = stamp.country || stamp.Country || 'Unknown'
+                        const issueDate = stamp.issueDate || stamp.IssueDate || 'Unknown'
+                        const year = stamp.issueYear || stamp.IssueYear || (issueDate !== 'Unknown' ? issueDate.split('-')[0] : 'Unknown')
+                        const denominationValue = stamp.denominationValue || stamp.DenominationValue || 'Unknown'
+                        const denominationSymbol = stamp.denominationSymbol || stamp.DenominationSymbol || ''
                         const denomination = denominationSymbol ? `${denominationValue}${denominationSymbol}` : denominationValue
-                        const color = stamp.Color || 'Unknown'
+                        const color = stamp.color || stamp.Color || 'Unknown'
 
                         // Use the actual image URL from the knowledge base
-                        let finalImageUrl = stamp.StampImageUrl || '/images/stamps/stamp.png'
+                        let finalImageUrl = stamp.stampImageUrl || stamp.StampImageUrl || '/images/stamps/stamp.png'
 
                         // Create natural conversational response with stamp details and uniqueness
                         const uniqueness = getStampUniqueness(stamp)
@@ -153,6 +155,7 @@ export async function POST(request: NextRequest) {
                         stampDetails = {
                             type: 'single_stamp',
                             stamp: {
+                                id: stamp.id || stamp.Id || stamp.stampId || 'unknown', // Add stamp ID for View Details
                                 name: name,
                                 country: country,
                                 issueYear: year,
@@ -192,6 +195,7 @@ export async function POST(request: NextRequest) {
                             stampDetails = {
                                 type: 'single_stamp',
                                 stamp: {
+                                    id: stamp.id || stamp.Id || stamp.stampId || 'unknown', // Add stamp ID for View Details
                                     name: name,
                                     country: country,
                                     issueYear: year,
@@ -267,6 +271,7 @@ export async function POST(request: NextRequest) {
                                 stampDetails = {
                                     type: 'single_stamp',
                                     stamp: {
+                                        id: stamp.id || stamp.Id || stamp.stampId || 'unknown', // Add stamp ID for View Details
                                         name: name,
                                         country: country,
                                         issueYear: year,
@@ -330,7 +335,7 @@ Keep it short, natural, and conversational!`
         ]
 
         const completion = await openai.chat.completions.create({
-            model: "gpt-4o",
+            model: "gpt-4.1",
             messages,
             max_tokens: 150, // Much shorter responses
             temperature: 0.8
@@ -395,4 +400,4 @@ function getStampUniqueness(stamp: any): string {
     ]
 
     return defaultDescriptions[Math.floor(Math.random() * defaultDescriptions.length)]
-} 
+}
