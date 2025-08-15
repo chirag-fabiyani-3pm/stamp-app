@@ -73,10 +73,12 @@
     "reactflow": "^11.11.4",
     "recharts": "latest",
     "remark-gfm": "^4.0.1",
+    "socket.io-client": "^4.8.1",
     "sonner": "latest",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "latest",
+    "webrtc-adapter": "^9.0.3",
     "zod": "^3.24.1"
   },
   "devDependencies": {

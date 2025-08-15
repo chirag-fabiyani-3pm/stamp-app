@@ -649,37 +649,37 @@ async function streamMessages(threadId: string, controller: ReadableStreamDefaul
 // Generate card format for single stamp
 function generateStampCard(stamp: any) {
     // Map the vector store fields to card display format
-    const year = stamp.IssueYear || (stamp.IssueDate ? stamp.IssueDate.split('-')[0] : 'Unknown')
-    // Use DenominationSymbol if available, otherwise construct from DenominationValue
-    const denomination = stamp.DenominationSymbol || `${stamp.DenominationValue}`
-    const subtitle = `${stamp.Country} • ${year} • ${denomination}`
+    const year = stamp.issueYear || stamp.IssueYear || (stamp.issueDate ? stamp.issueDate.split('-')[0] : stamp.IssueDate ? stamp.IssueDate.split('-')[0] : 'Unknown')
+    // Use denominationSymbol if available, otherwise construct from denominationValue
+    const denomination = stamp.denominationSymbol || stamp.DenominationSymbol || `${stamp.denominationValue || stamp.DenominationValue}`
+    const subtitle = `${stamp.country || stamp.Country} • ${year} • ${denomination}`
 
     // Handle different possible image URL field names
-    const imageUrl = stamp.StampImageUrl || stamp.image || stamp.StampImage || '/images/stamps/no-image-available.png'
+    const imageUrl = stamp.stampImageUrl || stamp.StampImageUrl || stamp.image || stamp.StampImage || '/images/stamps/no-image-available.png'
 
     return {
         type: 'card',
-        id: stamp.Id || stamp.id,
-        title: stamp.Name || stamp.StampCatalogCode || 'Stamp',
+        id: stamp.id || stamp.Id, // Use lowercase 'id' first, then fallback to 'Id'
+        title: stamp.name || stamp.Name || stamp.catalogNumber || stamp.StampCatalogCode || 'Stamp',
         subtitle: subtitle,
         image: imageUrl,
         content: [
             {
                 section: 'Overview',
-                text: `${stamp.Name} from ${stamp.Country}, issued in ${year}. Denomination: ${denomination}. Color: ${stamp.Color || 'Unknown'}.`
+                text: `${stamp.name || stamp.Name} from ${stamp.country || stamp.Country}, issued in ${year}. Denomination: ${denomination}. Color: ${stamp.color || stamp.Color || 'Unknown'}.`
             },
             {
                 section: 'Details',
                 details: [
-                    { label: 'Catalog Code', value: stamp.StampCatalogCode || 'N/A' },
-                    { label: 'Issue Date', value: stamp.IssueDate || 'N/A' },
-                    { label: 'Color', value: stamp.Color || 'N/A' },
-                    { label: 'Paper Type', value: stamp.PaperType || 'N/A' }
+                    { label: 'Catalog Code', value: stamp.catalogNumber || stamp.StampCatalogCode || 'N/A' },
+                    { label: 'Issue Date', value: stamp.issueDate || stamp.IssueDate || 'N/A' },
+                    { label: 'Color', value: stamp.color || stamp.Color || 'N/A' },
+                    { label: 'Paper Type', value: stamp.paperType || stamp.PaperType || 'N/A' }
                 ]
             }
         ],
-        significance: `A ${stamp.Color || 'colorful'} stamp from ${stamp.Country} issued in ${year}.`,
-        specialNotes: stamp.SeriesName ? `Part of the ${stamp.SeriesName} series.` : ''
+        significance: `A ${stamp.color || stamp.Color || 'colorful'} stamp from ${stamp.country || stamp.Country} issued in ${year}.`,
+        specialNotes: stamp.seriesName || stamp.SeriesName ? `Part of the ${stamp.seriesName || stamp.SeriesName} series.` : ''
     }
 }
 
@@ -689,43 +689,43 @@ function generateStampCarousel(stamps: any[]) {
         type: 'carousel',
         title: `Found ${stamps.length} stamp${stamps.length !== 1 ? 's' : ''}`,
         items: stamps.map(stamp => {
-            const year = stamp.IssueYear || (stamp.IssueDate ? stamp.IssueDate.split('-')[0] : 'Unknown')
-            // Use DenominationSymbol if available, otherwise construct from DenominationValue
-            const denomination = stamp.DenominationSymbol || `${stamp.DenominationValue}`
-            const subtitle = `${stamp.Country} • ${year} • ${denomination}`
+            const year = stamp.issueYear || stamp.IssueYear || (stamp.issueDate ? stamp.issueDate.split('-')[0] : stamp.IssueDate ? stamp.IssueDate.split('-')[0] : 'Unknown')
+            // Use denominationSymbol if available, otherwise construct from denominationValue
+            const denomination = stamp.denominationSymbol || stamp.DenominationSymbol || `${stamp.denominationValue || stamp.DenominationValue}`
+            const subtitle = `${stamp.country || stamp.Country} • ${year} • ${denomination}`
 
             // Handle different possible image URL field names
-            const imageUrl = stamp.StampImageUrl || stamp.image || stamp.StampImage || '/images/stamps/no-image-available.png'
+            const imageUrl = stamp.stampImageUrl || stamp.StampImageUrl || stamp.image || stamp.StampImage || '/images/stamps/no-image-available.png'
 
             return {
-                id: stamp.Id || stamp.id,
-                title: stamp.Name || stamp.StampCatalogCode || 'Stamp',
+                id: stamp.id || stamp.Id, // Use lowercase 'id' first, then fallback to 'Id'
+                title: stamp.name || stamp.Name || stamp.catalogNumber || stamp.StampCatalogCode || 'Stamp',
                 subtitle: subtitle,
                 image: imageUrl,
                 // Include the same detailed content as single cards
                 content: [
                     {
                         section: 'Overview',
-                        text: `${stamp.Name} from ${stamp.Country}, issued in ${year}. Denomination: ${denomination}. Color: ${stamp.Color || 'Unknown'}.`
+                        text: `${stamp.name || stamp.Name} from ${stamp.country || stamp.Country}, issued in ${year}. Denomination: ${denomination}. Color: ${stamp.color || stamp.Color || 'Unknown'}.`
                     },
                     {
                         section: 'Details',
                         details: [
-                            { label: 'Catalog Code', value: stamp.StampCatalogCode || 'N/A' },
-                            { label: 'Issue Date', value: stamp.IssueDate || 'N/A' },
-                            { label: 'Color', value: stamp.Color || 'N/A' },
-                            { label: 'Paper Type', value: stamp.PaperType || 'N/A' }
+                            { label: 'Catalog Code', value: stamp.catalogNumber || stamp.StampCatalogCode || 'N/A' },
+                            { label: 'Issue Date', value: stamp.issueDate || stamp.IssueDate || 'N/A' },
+                            { label: 'Color', value: stamp.color || stamp.Color || 'N/A' },
+                            { label: 'Paper Type', value: stamp.paperType || stamp.PaperType || 'N/A' }
                         ]
                     }
                 ],
-                significance: `A ${stamp.Color || 'colorful'} stamp from ${stamp.Country} issued in ${year}.`,
-                specialNotes: stamp.SeriesName ? `Part of the ${stamp.SeriesName} series.` : '',
+                significance: `A ${stamp.color || stamp.Color || 'colorful'} stamp from ${stamp.country || stamp.Country} issued in ${year}.`,
+                specialNotes: stamp.seriesName || stamp.SeriesName ? `Part of the ${stamp.seriesName || stamp.SeriesName} series.` : '',
                 // Keep existing fields for backward compatibility
-                summary: `${denomination} ${stamp.Color || 'Unknown'}`,
+                summary: `${denomination} ${stamp.color || stamp.Color || 'Unknown'}`,
                 marketValue: 'Value varies by condition',
                 quickFacts: [
-                    `${stamp.Country} ${year}`,
-                    stamp.Color || 'Unknown',
+                    `${stamp.country || stamp.Country} ${year}`,
+                    stamp.color || stamp.Color || 'Unknown',
                     denomination
                 ]
             }
