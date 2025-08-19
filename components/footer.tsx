@@ -1,18 +1,30 @@
-import React from "react"
-import Link from "next/link"
-import { Stamp } from "lucide-react"
-import Image from "next/image"
 import { useTheme } from "next-themes"
+import Image from "next/image"
+import Link from "next/link"
+import { useEffect, useState } from "react"
 
 export default function Footer() {
   const { theme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  // Avoid hydration mismatch by only showing theme-dependent content after mount
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Use light theme as default during SSR to prevent hydration mismatch
+  const logoSrc = mounted && theme === "dark" ? "/icons/logo-dark.png" : "/icons/logo-light.png"
+
+  // Use a fixed year during SSR to prevent hydration mismatch
+  const currentYear = mounted ? new Date().getFullYear() : 2024
+
   return (
     <footer className="border-t bg-background">
       <div className="container py-8 md:py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <Image src={theme === "dark" ? "/icons/logo-dark.png" : "/icons/logo-light.png"} alt="Stamps of Approval" width={220} height={220} />
+              <Image src={logoSrc} alt="Stamps of Approval" width={220} height={220} />
             </div>
             <p className="text-sm text-muted-foreground">
               AI-powered platform for stamp collectors to catalog, identify, and trade stamps worldwide.
@@ -80,7 +92,7 @@ export default function Footer() {
 
         <div className="border-t mt-8 pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Stamps of Approval. All rights reserved.
+            © {currentYear} Stamps of Approval. All rights reserved.
           </p>
           <div className="flex gap-4">
             <Link href="#" className="text-muted-foreground hover:text-primary">

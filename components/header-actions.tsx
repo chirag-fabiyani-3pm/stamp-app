@@ -1,11 +1,8 @@
 "use client"
 
-import React from "react"
-import { usePathname } from "next/navigation"
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
 import { ModeToggle } from "@/components/mode-toggle"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,18 +11,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Menu, User, LogOut, LayoutDashboard, Sparkles, MessageSquare } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { useToast } from "@/components/ui/use-toast"
 import {
-  isAuthenticated,
-  isAdmin,
-  getUserDisplayName,
   getUserAvatar,
+  getUserDisplayName,
+  isAdmin,
+  isAuthenticated,
   signOut
 } from "@/lib/api/auth"
+import { cn } from "@/lib/utils"
+import { LayoutDashboard, LogOut, Menu, MessageSquare, Sparkles, User } from "lucide-react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { useEffect, useState } from "react"
 
 interface HeaderActionsProps {
   setIsOpen: (isOpen: boolean) => void;
@@ -40,8 +39,11 @@ export function HeaderActions({ setIsOpen }: HeaderActionsProps) {
   const [userName, setUserName] = useState<string>("")
   const [userAvatar, setUserAvatar] = useState<string | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
+
     // Check authentication status
     const checkAuth = () => {
       const authenticated = isAuthenticated()
@@ -101,6 +103,48 @@ export function HeaderActions({ setIsOpen }: HeaderActionsProps) {
     </Link>
   )
 
+  // Show loading state during SSR to prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <div className="flex items-center gap-2">
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center space-x-1">
+          <ScanButton />
+        </nav>
+
+        <ModeToggle />
+
+        <button
+          onClick={() => setIsOpen(true)}
+          className="mr-2.5 hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors duration-300 ease-in-out group"
+        >
+          <MessageSquare className="w-4 h-4 mr-1 opacity-90 group-hover:opacity-100 transition-opacity" />
+          <span className="text-sm font-medium">AI Chat</span>
+        </button>
+
+        {/* Default to sign in button during SSR */}
+        <Link href="/login">
+          <Button>Sign in</Button>
+        </Link>
+
+        {/* Mobile Menu */}
+        <Sheet>
+          <SheetTrigger className="md:hidden outline-none inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9">
+            <Menu className="h-5 w-5" />
+            <span className="sr-only">Toggle menu</span>
+          </SheetTrigger>
+          <SheetContent side="right">
+            <nav className="flex flex-col gap-4">
+              <Link href="/login">
+                <Button className="w-full">Sign in</Button>
+              </Link>
+            </nav>
+          </SheetContent>
+        </Sheet>
+      </div>
+    )
+  }
+
   return (
     <div className="flex items-center gap-2">
       {/* Desktop Navigation */}
@@ -120,13 +164,11 @@ export function HeaderActions({ setIsOpen }: HeaderActionsProps) {
 
       {isLoggedIn ? (
         <DropdownMenu>
-          <DropdownMenuTrigger className="outline-none">
-            <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={userAvatar || "/man-avatar-profile-picture.avif"} alt={userName || "User"} />
-                <AvatarFallback>{getUserInitials(userName)}</AvatarFallback>
-              </Avatar>
-            </Button>
+          <DropdownMenuTrigger className="outline-none relative h-8 w-8 rounded-full p-0 inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={userAvatar || "/man-avatar-profile-picture.avif"} alt={userName || "User"} />
+              <AvatarFallback>{getUserInitials(userName)}</AvatarFallback>
+            </Avatar>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" align="end">
             <DropdownMenuLabel className="font-normal">
@@ -167,11 +209,9 @@ export function HeaderActions({ setIsOpen }: HeaderActionsProps) {
 
       {/* Mobile Menu */}
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <SheetTrigger className="md:hidden outline-none">
-          <Button variant="ghost" size="icon">
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle menu</span>
-          </Button>
+        <SheetTrigger className="md:hidden outline-none inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9">
+          <Menu className="h-5 w-5" />
+          <span className="sr-only">Toggle menu</span>
         </SheetTrigger>
         <SheetContent side="right">
           <nav className="flex flex-col gap-4">

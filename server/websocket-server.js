@@ -342,21 +342,19 @@ class OpenAIWebSocketServer {
                             modalities: ['text', 'audio'],
                             instructions: `You are a knowledgeable stamp collecting expert and navigation assistant.
 
-CRITICAL: ALWAYS RESPOND IN ENGLISH ONLY. The user is speaking English. Do not respond in Spanish, French, or any other language. English responses only.
+CRITICAL: Always respond in the SAME LANGUAGE the user speaks. Detect the user's spoken language from their audio and match it exactly. If the language is unclear, ask a brief clarifying question in the most likely detected language.
 
 You help with:
 1. Stamp collecting (philatelly) questions, history, and values
 2. App navigation and features  
 3. General philatelic knowledge
 
-Keep responses concise, helpful, and in English.`,
+Keep responses concise, helpful, and always in the user's language.`,
                             voice: 'alloy',
                             input_audio_format: 'pcm16',
                             output_audio_format: 'pcm16',
                             input_audio_transcription: {
-                                model: 'whisper-1',
-                                enabled: true,
-                                prompt: 'English only. User speaks English about stamps and philatelly. Transcribe in English: philatelly, stamps, collecting, profile, scan, navigation.'
+                                model: 'whisper-1'
                             },
                             turn_detection: { type: 'server_vad', threshold: 0.5, prefix_padding_ms: 300, silence_duration_ms: 200 },
                             tools: [],
@@ -366,17 +364,36 @@ Keep responses concise, helpful, and in English.`,
                         }
                     }))
 
+                    console.log(`🎤 WebSocket Server: Appending audio buffer, size: ${audioBuffer.length} bytes`)
                     // Append the audio to the buffer
                     openaiWs.send(JSON.stringify({
                         type: 'input_audio_buffer.append',
                         audio: message.audio
                     }))
+                    console.log(`🎤 WebSocket Server: ✅ Audio buffer appended`)
 
+                    console.log(`🎤 WebSocket Server: Committing audio buffer for transcription...`)
                     // Commit the audio buffer
                     openaiWs.send(JSON.stringify({
                         type: 'input_audio_buffer.commit'
                     }))
+                    console.log(`🎤 WebSocket Server: ✅ Audio buffer committed`)
 
+                    // CRITICAL: Create a user conversation item that consumes the committed buffer
+                    console.log(`🎤 WebSocket Server: Creating user conversation item from committed audio buffer...`)
+                    openaiWs.send(JSON.stringify({
+                        type: 'conversation.item.create',
+                        item: {
+                            type: 'message',
+                            role: 'user',
+                            content: [
+                                { type: 'input_audio' } // Uses the most recently committed input_audio_buffer
+                            ]
+                        }
+                    }))
+                    console.log(`🎤 WebSocket Server: ✅ User conversation item created`)
+
+                    console.log(`🎤 WebSocket Server: Creating response...`)
                     // Create a response
                     openaiWs.send(JSON.stringify({
                         type: 'response.create',
@@ -385,6 +402,7 @@ Keep responses concise, helpful, and in English.`,
                             instructions: 'Please respond as a helpful stamp collecting expert.'
                         }
                     }))
+                    console.log(`🎤 WebSocket Server: ✅ Response create request sent`)
 
                     openaiWs.on('message', (data) => {
                         try {
@@ -404,6 +422,13 @@ Keep responses concise, helpful, and in English.`,
                                     delta: response.delta || '',
                                     sessionId: connection.sessionId
                                 }))
+                            } else if (response.type === 'conversation.item.input_audio_transcription.delta') {
+                                // Forward user transcription delta (if available)
+                                connection.ws.send(JSON.stringify({
+                                    type: 'transcription.delta',
+                                    delta: response.delta || '',
+                                    sessionId: connection.sessionId
+                                }))
                             } else if (response.type === 'conversation.item.input_audio_transcription.completed') {
                                 // User's speech was transcribed
                                 console.log(`🎤 WebSocket Server: ✅ USER TRANSCRIPTION RECEIVED:`, response.transcript)
@@ -414,14 +439,17 @@ Keep responses concise, helpful, and in English.`,
                                     sessionId: connection.sessionId
                                 }))
                                 console.log(`🎤 WebSocket Server: ✅ TRANSCRIPTION SENT TO CLIENT`)
-                            } else if (response.type === 'response.audio_transcript.done') {
-                                // Send the complete transcript for display and speech
-                                console.log(`🎤 WebSocket Server: Audio transcript complete:`, response.transcript)
+                            } else if (response.type === 'response.audio_transcript.delta') {
+                                // Stream AI's speech transcription in real-time
+                                console.log(`🎤 WebSocket Server: AI transcript delta:`, response.delta)
                                 connection.ws.send(JSON.stringify({
                                     type: 'response.text.delta',
-                                    delta: response.transcript || '',
+                                    delta: response.delta || '',
                                     sessionId: connection.sessionId
                                 }))
+                            } else if (response.type === 'response.audio_transcript.done') {
+                                // AI's speech transcription is complete (no need to send again - was streamed via deltas)
+                                console.log(`🎤 WebSocket Server: AI transcript complete:`, response.transcript)
                             } else if (response.type === 'response.done') {
                                 // Response is complete - trigger completion
                                 console.log(`🎤 WebSocket Server: Response complete`)

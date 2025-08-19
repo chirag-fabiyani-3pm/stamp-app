@@ -45,6 +45,7 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
     const [accumulatedResponse, setAccumulatedResponse] = useState('')
     const [isStreamingResponse, setIsStreamingResponse] = useState(false)
     const [lastTranscription, setLastTranscription] = useState<string>('')
+    const isStreamingResponseRef = useRef(false) // Immediate access to streaming state
 
     // Audio streaming for direct playback
     const [isStreamingAudio, setIsStreamingAudio] = useState(false)
@@ -67,16 +68,20 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
     const convertToPCM16 = useCallback(async (audioBlob: Blob): Promise<Uint8Array> => {
         try {
             console.log('🎤 convertToPCM16: Converting audio format...')
+            console.log('🎤 convertToPCM16: Input blob type:', audioBlob.type, 'size:', audioBlob.size)
 
             // Create audio context with 24kHz sample rate (OpenAI Realtime API requirement)
             const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 })
+            console.log('🎤 convertToPCM16: AudioContext created with sample rate:', audioContext.sampleRate)
 
             // Convert blob to array buffer
             const arrayBuffer = await audioBlob.arrayBuffer()
+            console.log('🎤 convertToPCM16: ArrayBuffer size:', arrayBuffer.byteLength)
 
             // Decode audio data
             const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
-            console.log('🎤 convertToPCM16: Audio decoded, channels:', audioBuffer.numberOfChannels, 'sample rate:', audioBuffer.sampleRate)
+            console.log('🎤 convertToPCM16: Audio decoded successfully')
+            console.log('🎤 convertToPCM16: Channels:', audioBuffer.numberOfChannels, 'Sample rate:', audioBuffer.sampleRate, 'Duration:', audioBuffer.duration)
 
             // Get the first channel (mono)
             const channelData = audioBuffer.getChannelData(0)
@@ -348,34 +353,61 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
                     switch (message.type) {
                         case 'connection.established':
                             setClientId(message.clientId)
-                            setDebugInfo(`✅ Connected with client ID: ${message.clientId}`)
+                            setDebugInfo(`✅ Connected! Creating session...`)
+                            console.log('🎤 connectToWebSocketServer: Client connection established, creating session...')
+
+                            // Auto-create session immediately after client connection
+                            if (ws && ws.readyState === WebSocket.OPEN) {
+                                setIsCreatingSession(true)
+                                ws.send(JSON.stringify({
+                                    type: 'session.create',
+                                    voice: selectedVoice || 'alloy',
+                                    instructions: 'You are a knowledgeable stamp collecting expert. Answer questions about stamps, their history, and collecting. Keep responses concise and helpful. Respond naturally to user voice input.'
+                                }))
+                                console.log('🎤 connectToWebSocketServer: Session creation request sent')
+                            }
                             break
 
                         case 'session.created':
                             console.log('🎤 connectToWebSocketServer: OpenAI session created:', message.sessionId)
-                            setDebugInfo(`🎯 Session ready! Click "Start Recording" to begin`)
+                            setDebugInfo(`✅ Session created! Starting recording...`)
                             setSessionId(message.sessionId)
                             setSessionReady(true)
                             setIsCreatingSession(false)
 
-                            // Session is ready, user can now click Start Recording
-                            console.log('🎤 connectToWebSocketServer: Session ready, user can start recording')
+                            // Reset streaming state for new session
+                            isStreamingResponseRef.current = false
+                            setIsStreamingResponse(false)
+                            console.log('🎤 Reset streaming state for new session - ref:', isStreamingResponseRef.current)
+
+                            // Auto-start recording immediately after session creation
+                            console.log('🎤 connectToWebSocketServer: Auto-starting recording...')
+                            setTimeout(() => {
+                                startRecordingWithExistingSession()
+                            }, 100) // Small delay to ensure state updates
                             break
 
                         case 'response.text.delta':
                             console.log('🎤 connectToWebSocketServer: AI text response delta:', message.delta)
+                            console.log('🎤 Current streaming state - ref:', isStreamingResponseRef.current, 'state:', isStreamingResponse)
 
-                            // Start streaming if this is the first delta
-                            if (!isStreamingResponse) {
+                            // Start streaming if this is the first delta (use ref for immediate access)
+                            if (!isStreamingResponseRef.current) {
+                                isStreamingResponseRef.current = true
                                 setIsStreamingResponse(true)
                                 setAccumulatedResponse('')
-                                onTranscript('\nAI: ') // Start AI response line
+                                console.log('🎤 SENDING AI PREFIX: \\nAI: ')
+                                onTranscript('\nAI: ') // Start AI response line ONCE
+                                console.log('🎤 ✅ Started AI response streaming')
+                            } else {
+                                console.log('🎤 ⚠️ Streaming already active, not sending AI prefix')
                             }
 
                             // Accumulate response for speech synthesis
                             setAccumulatedResponse(prev => prev + message.delta)
 
                             // Send delta for real-time text display
+                            console.log('🎤 Sending delta to transcript:', JSON.stringify(message.delta))
                             onTranscript(message.delta)
                             setDebugInfo('🤖 AI streaming response...')
                             break
@@ -384,8 +416,10 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
                             console.log('🎤 connectToWebSocketServer: AI response complete')
                             setDebugInfo('✅ AI response complete! Speaking...')
                             setIsStreamingResponse(false)
+                            isStreamingResponseRef.current = false // Reset ref
 
-                            // AI response complete - transcript already sent via onTranscript
+                            // Signal AI response completion to parent
+                            onTranscript('\n[AI_COMPLETE]')
 
                             // Now speak the complete accumulated response
                             if (onSpeakResponse && accumulatedResponse.trim()) {
@@ -397,23 +431,40 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
                             setAccumulatedResponse('')
                             break
 
+                        case 'transcription.delta':
+                            console.log('🎤 connectToWebSocketServer: Transcription delta:', message.delta)
+
+                            // Start user transcription line if not already started
+                            if (!isStreamingResponseRef.current) {
+                                isStreamingResponseRef.current = true // Reset AI streaming state for user input
+                                setIsStreamingResponse(true)
+                                onTranscript('\nYou: ') // Start user transcription line
+                                console.log('🎤 Started user transcription streaming')
+                            }
+
+                            // Stream the delta
+                            onTranscript(message.delta)
+                            break
+
                         case 'transcription.complete':
-                            console.log('🎤 connectToWebSocketServer: Transcription:', message.text)
+                            console.log('🎤 connectToWebSocketServer: Transcription complete:', message.text)
                             console.log('🎤 Raw transcription text for navigation check:', JSON.stringify(message.text))
 
-                            // Store transcription for display first
+                            // Store transcription for display
                             setLastTranscription(message.text)
+                            setIsStreamingResponse(false) // Reset streaming flag
+                            isStreamingResponseRef.current = false // Reset ref
 
-                            // Send user transcription to chat immediately
-                            const userTranscriptText = `\nYou: ${message.text}`
-                            console.log('🎤 Sending user transcript to chat:', JSON.stringify(userTranscriptText))
-                            console.log('🎤 onTranscript function exists:', typeof onTranscript)
-
-                            if (onTranscript) {
-                                onTranscript(userTranscriptText)
-                                console.log('🎤 ✅ User transcript sent to parent')
-                            } else {
-                                console.error('🎤 ❌ onTranscript function is missing!')
+                            // If we haven't streamed deltas, send the complete transcript
+                            if (!isStreamingResponse) {
+                                const userTranscriptText = `\nYou: ${message.text}`
+                                console.log('🎤 Sending complete user transcript to chat:', JSON.stringify(userTranscriptText))
+                                if (onTranscript) {
+                                    onTranscript(userTranscriptText)
+                                    console.log('🎤 ✅ User transcript sent to parent')
+                                } else {
+                                    console.error('🎤 ❌ onTranscript function is missing!')
+                                }
                             }
 
                             // Show transcription in debug info temporarily
@@ -551,110 +602,6 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
         }
     }, [onTranscript])
 
-    // Start actual voice chat communication
-    const startVoiceChat = useCallback(async () => {
-        try {
-            console.log('🎤 startVoiceChat: Starting voice chat...')
-            setDebugInfo('🎤 Starting voice chat...')
-
-            // First, connect to WebSocket server if not connected
-            if (!isWebSocketConnected || !wsConnection) {
-                console.log('🎤 startVoiceChat: Connecting to WebSocket server first...')
-                await connectToWebSocketServer()
-                // Wait a bit for connection to establish
-                await new Promise(resolve => setTimeout(resolve, 1000))
-            }
-
-            if (!wsConnection) {
-                throw new Error('WebSocket connection not available')
-            }
-
-            // If we already have a session, just start recording
-            if (sessionReady && sessionId) {
-                console.log('🎤 startVoiceChat: Session already exists, starting recording directly...')
-                return startRecordingWithExistingSession()
-            }
-
-            // Create OpenAI session via WebSocket only if we don't have one
-            if (!sessionReady || !sessionId) {
-                if (isCreatingSession) {
-                    console.log('🎤 startVoiceChat: Session creation already in progress...')
-                    setDebugInfo('⏳ Session creation in progress, please wait...')
-                    return
-                }
-
-                console.log('🎤 startVoiceChat: Creating OpenAI session...')
-                setIsCreatingSession(true)
-                setDebugInfo('⏳ Creating session, please wait...')
-
-                wsConnection.send(JSON.stringify({
-                    type: 'session.create',
-                    voice: selectedVoice || 'alloy',
-                    instructions: 'You are a knowledgeable stamp collecting expert. Answer questions about stamps, their history, and collecting. Keep responses concise and helpful. Respond naturally to user voice input.'
-                }))
-
-                // Wait for session to be created before proceeding
-                console.log('🎤 startVoiceChat: Waiting for session creation...')
-                return // Exit early, wait for session.created message
-            } else {
-                console.log('🎤 startVoiceChat: Session already exists:', sessionId)
-            }
-
-            // Initialize media recorder if not already done
-            if (!mediaRecorderRef.current) {
-                console.log('🎤 startVoiceChat: Initializing media recorder...')
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-                mediaRecorderRef.current = new MediaRecorder(stream, {
-                    mimeType: 'audio/webm;codecs=opus'
-                })
-
-                // Store audio chunks
-                const audioChunks: Blob[] = []
-
-                mediaRecorderRef.current.ondataavailable = (event) => {
-                    if (event.data.size > 0) {
-                        audioChunks.push(event.data)
-                    }
-                }
-
-                mediaRecorderRef.current.onstop = async () => {
-                    console.log('🎤 startVoiceChat: Recording stopped, processing audio...')
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' })
-                    await processRecordedAudio(audioBlob)
-                    audioChunks.length = 0 // Clear chunks
-                }
-            }
-
-            // Start recording
-            if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'inactive') {
-                console.log('🎤 startVoiceChat: Starting recording...')
-                mediaRecorderRef.current.start(100) // Record in 100ms chunks
-                setIsListening(true) // Keep isListening state for UI
-                setDebugInfo('🎤 Recording... Speak now!')
-            }
-
-        } catch (error) {
-            console.error('🎤 startVoiceChat: Failed to start voice chat:', error)
-            setDebugInfo('❌ Failed to start voice chat')
-        }
-    }, [isWebSocketConnected, wsConnection, selectedVoice, connectToWebSocketServer])
-
-    // Stop voice chat and process recorded audio
-    const stopVoiceChat = async () => {
-        try {
-            console.log('🎤 stopVoiceChat: Stopping voice chat...')
-
-            if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-                mediaRecorderRef.current.stop()
-                setIsListening(false)
-                setDebugInfo('🔄 Processing your voice...')
-            }
-        } catch (error) {
-            console.error('🎤 stopVoiceChat: Failed to stop voice chat:', error)
-            setDebugInfo(`❌ Failed to stop: ${error}`)
-        }
-    }
-
     // Process the recorded audio when recording stops
     const processRecordedAudio = async (audioBlob: Blob) => {
         try {
@@ -717,6 +664,11 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
         try {
             console.log('🎤 startRecordingWithExistingSession: Starting recording with existing session...')
 
+            // Reset streaming state before starting new recording
+            isStreamingResponseRef.current = false
+            setIsStreamingResponse(false)
+            console.log('🎤 Reset streaming state before recording - ref:', isStreamingResponseRef.current)
+
             if (!wsConnection || !sessionReady || !sessionId) {
                 console.log('🎤 startRecordingWithExistingSession: Session not ready or connection not available')
                 setDebugInfo('❌ Session not ready for recording')
@@ -761,6 +713,47 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
             setDebugInfo('❌ Failed to start recording')
         }
     }, [wsConnection, sessionReady, sessionId, processRecordedAudio])
+
+    // Start actual voice chat communication
+    const startVoiceChat = useCallback(async () => {
+        try {
+            console.log('🎤 startVoiceChat: Starting voice chat...')
+            setDebugInfo('🔌 Connecting to server...')
+
+            // If we already have a session, just start recording
+            if (sessionReady && sessionId) {
+                console.log('🎤 startVoiceChat: Session already exists, starting recording directly...')
+                return startRecordingWithExistingSession()
+            }
+
+            // Connect to WebSocket server (session will be created automatically after connection)
+            if (!isWebSocketConnected || !wsConnection) {
+                console.log('🎤 startVoiceChat: Connecting to WebSocket server...')
+                await connectToWebSocketServer()
+                // Session creation and recording start will happen automatically via event handlers
+            }
+
+        } catch (error) {
+            console.error('🎤 startVoiceChat: Failed to start voice chat:', error)
+            setDebugInfo('❌ Failed to start voice chat')
+        }
+    }, [isWebSocketConnected, wsConnection, sessionReady, sessionId, connectToWebSocketServer, startRecordingWithExistingSession])
+
+    // Stop voice chat and process recorded audio
+    const stopVoiceChat = async () => {
+        try {
+            console.log('🎤 stopVoiceChat: Stopping voice chat...')
+
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+                mediaRecorderRef.current.stop()
+                setIsListening(false)
+                setDebugInfo('🔄 Processing your voice...')
+            }
+        } catch (error) {
+            console.error('🎤 stopVoiceChat: Failed to stop voice chat:', error)
+            setDebugInfo(`❌ Failed to stop: ${error}`)
+        }
+    }
 
     // Cleanup on unmount
     useEffect(() => {
@@ -848,8 +841,8 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
                                     </>
                                 ) : (
                                     <>
-                                        <AudioLines className="w-4 h-4 mr-2" />
-                                        Create Session
+                                        <Mic className="w-4 h-4 mr-2" />
+                                        Start Voice Chat
                                     </>
                                 )}
                             </Button>
@@ -885,27 +878,6 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
                                     {debugInfo}
                                 </div>
                             )}
-                            {lastTranscription && (
-                                <div className="text-xs bg-muted p-2 rounded mt-2">
-                                    <strong>Last Transcription:</strong> "{lastTranscription}"
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Voice Navigation Commands */}
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                            <div className="bg-muted rounded-lg p-2 text-center">
-                                <strong>"Profile"</strong> - Opens profile
-                            </div>
-                            <div className="bg-muted rounded-lg p-2 text-center">
-                                <strong>"Scan"</strong> - Opens scanner
-                            </div>
-                            <div className="bg-muted rounded-lg p-2 text-center">
-                                <strong>"Home"</strong> - Goes home
-                            </div>
-                            <div className="bg-muted rounded-lg p-2 text-center">
-                                <strong>"Help"</strong> - Opens help
-                            </div>
                         </div>
                     </div>
                 </>
