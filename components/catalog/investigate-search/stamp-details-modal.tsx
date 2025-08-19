@@ -7,14 +7,15 @@ import { X, Tag, Calendar, MapPin, Palette, FileText, DollarSign } from "lucide-
 import { StampData } from "@/types/catalog"
 import { Card } from "@/components/ui/card"
 
-const formatStampCode = (stampCode: string): string => {
+const formatStampCode = (stampCode: string | null | undefined): string => {
+  if (!stampCode || typeof stampCode !== 'string') return ''
   // Assuming the watermark is the 8th part (index 7) of the stampCode if it's null
-  const parts = stampCode.split('.');
-  if (parts.length > 7 && parts[7] === 'null') {
-    parts[7] = 'NoWmk';
+  const parts = stampCode.split('.')
+  if (parts.length > 7 && (parts[7] === 'null' || parts[7] == null || parts[7] === '')) {
+    parts[7] = 'NoWmk'
   }
-  return parts.join('.');
-};
+  return parts.join('.')
+}
 
 interface StampDetailsModalProps {
   selectedStamp: StampData | null

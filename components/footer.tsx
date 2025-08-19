@@ -4,7 +4,8 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 
 export default function Footer() {
-  const { theme } = useTheme()
+
+  const { resolvedTheme: theme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
   // Avoid hydration mismatch by only showing theme-dependent content after mount

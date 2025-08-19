@@ -14,7 +14,7 @@ interface HeaderProps {
 export default function Header({ setIsOpen }: HeaderProps) {
   const pathname = usePathname()
   const isAdminRoute = pathname.startsWith('/admin')
-  const { theme } = useTheme()
+  const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
   // Avoid hydration mismatch by only showing theme-dependent content after mount
@@ -23,7 +23,7 @@ export default function Header({ setIsOpen }: HeaderProps) {
   }, [])
 
   // Use light theme as default during SSR to prevent hydration mismatch
-  const logoSrc = mounted && theme === "dark" ? "/icons/logo-dark.png" : "/icons/logo-light.png"
+  const logoSrc = mounted && resolvedTheme === "dark" ? "/icons/logo-dark.png" : "/icons/logo-light.png"
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background">

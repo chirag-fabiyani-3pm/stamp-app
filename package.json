@@ -53,6 +53,7 @@
     "embla-carousel-react": "latest",
     "flag-icons": "^7.5.0",
     "fs": "latest",
+    "i18n-iso-countries": "^7.14.0",
     "input-otp": "latest",
     "js-cookie": "^3.0.5",
     "jwt-decode": "^4.0.0",
