@@ -283,114 +283,6 @@ const mapApiStampToFormData = (apiStamp: ApiStampResponse) => {
   };
 };
 
-// Mock database of reference stamps
-const referenceStampDatabase = [
-  {
-    id: "chalon-1d-red",
-    name: "Chalon Head 1d Red",
-    imagePath: "/images/stamps/1d-red.png",
-    country: "New Zealand",
-    year: "1855",
-    description: "Chalon 1d Red Denomination",
-    watermarkOptions: ["None", "Large Star", "Small Star", "NZ"],
-    perforationOptions: ["Imperforate", "10", "12.5", "Roulette 7"],
-    possibleErrors: [
-      "Colour Shift",
-      "Double Print",
-      "Doctor Blade",
-      "Ink Blob",
-      "White Spots",
-      "Colour Omitted",
-      "Re-Entries",
-      "Re-Touch",
-      "Offset",
-      "Print Process Error"
-    ],
-    certifiers: ["Expert Committee", "RPSNZ", "BPA", "APS"],
-    paperTypes: ["Thick", "Thin", "Wove", "Laid"],
-    printTypes: ["Typography", "Lithography", "Intaglio"],
-    millimeterMeasurements: ["20 x 24", "21 x 25", "19 x 23", "Other"],
-    colors: ["Red", "Carmine", "Rose Red", "Brownish Red"],
-    grades: ["Fine", "Very Fine", "Good", "Poor", "Superb"],
-    rarityRatings: ["Common", "Scarce", "Rare", "Very Rare", "Extremely Rare"]
-  },
-  {
-    id: "chalon-2d-blue",
-    name: "Chalon Head 2d Blue",
-    imagePath: "/images/stamps/2d-blue.png",
-    country: "New Zealand",
-    year: "1855",
-    description: "Chalon 2d Blue Denomination",
-    watermarkOptions: ["None", "Large Star", "NZ"],
-    perforationOptions: ["Imperforate", "10", "12.5", "Roulette 7"],
-    possibleErrors: [
-      "Colour Shift",
-      "Offset",
-      "Doctor Blade",
-      "Re-Entries",
-      "Colour Omitted",
-      "White Spots",
-      "Double Print"
-    ],
-    certifiers: ["Expert Committee", "RPSNZ", "BPA", "APS"],
-    paperTypes: ["Thick", "Thin", "Wove", "Laid"],
-    printTypes: ["Typography", "Lithography", "Intaglio"],
-    millimeterMeasurements: ["20 x 24", "21 x 25", "19 x 23", "Other"],
-    colors: ["Blue", "Pale Blue", "Ultramarine", "Greenish Blue"],
-    grades: ["Fine", "Very Fine", "Good", "Poor", "Superb"],
-    rarityRatings: ["Common", "Scarce", "Rare", "Very Rare", "Extremely Rare"]
-  },
-  {
-    id: "chalon-6d-brown",
-    name: "Chalon Head 6d Brown",
-    imagePath: "/images/stamps/6d-brown.png",
-    country: "New Zealand",
-    year: "1855",
-    description: "Chalon 6d Brown Denomination",
-    watermarkOptions: ["None", "Large Star", "Script"],
-    perforationOptions: ["Imperforate", "10", "12.5"],
-    possibleErrors: [
-      "Colour Shift",
-      "Colour Omitted",
-      "Re-Touch",
-      "Double Print",
-      "Doctor Blade",
-      "White Spots"
-    ],
-    certifiers: ["Expert Committee", "RPSNZ", "BPA", "APS"],
-    paperTypes: ["Thick", "Thin", "Wove", "Laid"],
-    printTypes: ["Typography", "Lithography", "Intaglio"],
-    millimeterMeasurements: ["20 x 24", "21 x 25", "19 x 23", "Other"],
-    colors: ["Brown", "Pale Brown", "Chestnut", "Red Brown"],
-    grades: ["Fine", "Very Fine", "Good", "Poor", "Superb"],
-    rarityRatings: ["Common", "Scarce", "Rare", "Very Rare", "Extremely Rare"]
-  },
-  {
-    id: "penny-black",
-    name: "Penny Black",
-    imagePath: "/images/stamps/penny-black.png",
-    country: "Great Britain",
-    year: "1840",
-    description: "World's First Adhesive Postage Stamp",
-    watermarkOptions: ["Small Crown"],
-    perforationOptions: ["Imperforate"],
-    possibleErrors: [
-      "Re-Entries",
-      "Plate Varieties",
-      "Ink Blob",
-      "Double Print",
-      "Re-Touch"
-    ],
-    certifiers: ["Expert Committee", "RPSL", "BPA", "APS"],
-    paperTypes: ["Wove", "Laid", "Thin"],
-    printTypes: ["Intaglio"],
-    millimeterMeasurements: ["19 x 22", "18.5 x 22", "Other"],
-    colors: ["Black", "Grey Black", "Deep Black"],
-    grades: ["Fine", "Very Fine", "Good", "Poor", "Superb"],
-    rarityRatings: ["Scarce", "Rare", "Very Rare"]
-  }
-];
-
 // Simulated database of stamps that would be found in a real database
 // In a real app, this would come from a database query
 const simulatedStampDatabase = [
@@ -1109,65 +1001,9 @@ function ScanPage() {
     }
   };
 
-  // Handle observation form updates
-  const updateObservation = (field: string, value: any) => {
-    setStampObservations(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const toggleErrorType = (errorType: string) => {
-    setStampObservations(prev => {
-      const errors = [...prev.errors];
-      if (errors.includes(errorType)) {
-        return { ...prev, errors: errors.filter(e => e !== errorType) };
-      } else {
-        return { ...prev, errors: [...errors, errorType] };
-      }
-    });
-  };
-
-  const toggleColourShiftDirection = (direction: string) => {
-    setStampObservations(prev => {
-      const directions = [...prev.colourShift.directions];
-      if (directions.includes(direction)) {
-        return {
-          ...prev,
-          colourShift: {
-            ...prev.colourShift,
-            directions: directions.filter(d => d !== direction)
-          }
-        };
-      } else {
-        return {
-          ...prev,
-          colourShift: {
-            ...prev.colourShift,
-            directions: [...directions, direction]
-          }
-        };
-      }
-    });
-  };
-
-  const updateShiftDistance = (direction: string, value: number) => {
-    setStampObservations(prev => ({
-      ...prev,
-      shiftDistance: {
-        ...prev.shiftDistance,
-        [direction]: value
-      }
-    }));
-  };
-
   // Navigation functions
   const goToObservation = () => {
     setCurrentView("observation");
-  };
-
-  const goToReference = () => {
-    setCurrentView("reference");
   };
 
   const resetScan = () => {
@@ -1203,20 +1039,6 @@ function ScanPage() {
       notes: ""
     });
     setCurrentView("scan");
-  };
-
-  const applyObservations = () => {
-    // After recording observations, save and complete the process
-    // Show success message
-    setCurrentView("scan");
-    setCapturedImage(null);
-    setSelectedStamp(null);
-
-    // Show success Alert instead of using alert()
-    setRecognitionStatus("success");
-    setTimeout(() => {
-      resetScan();
-    }, 3000);
   };
 
   // Function to open stamp detail modal

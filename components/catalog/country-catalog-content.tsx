@@ -10,6 +10,10 @@ import { Badge } from "@/components/ui/badge"
 import { Search, ChevronRight, BookmarkPlus, Quote, Award, Telescope } from "lucide-react"
 
 import { CountryOption } from "@/types/catalog"
+import isoCountries from "i18n-iso-countries"
+import enLocale from "i18n-iso-countries/langs/en.json"
+
+isoCountries.registerLocale(enLocale as any)
 
 type CountryCatalogContentProps = {
   countries: CountryOption[]
@@ -50,14 +54,19 @@ export function CountryCatalogContent({ countries, onCountryClick }: CountryCata
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-        {filteredCountries.map((country) => (
-          <article
+        {filteredCountries.map((country) => {
+          const countriesForFlag = country.name.includes(',') ? country.name.split(',').map(c => c.trim()) : [country.name]
+          const countryCodes: string[] = []
+          countriesForFlag.forEach(country => {
+            countryCodes.push(isoCountries.getAlpha2Code(country, "en") || "")
+          })
+          return <article
             key={country.code}
             className="group cursor-pointer"
             onClick={() => onCountryClick(country)}
           >
             <div className="relative overflow-hidden rounded-2xl bg-white shadow-lg hover:shadow-2xl transition-all duration-500 group-hover:scale-[1.02] dark:bg-gray-800 dark:border-gray-700">
-              <div className="relative h-56 overflow-hidden">
+              <div className="relative h-56 overflow-hidden w-full">
                 <Image
                   src={country.featuredStampUrl || "/images/stamps/no-image-available.png"}
                   alt={`Premium stamps from ${country.name}`}
@@ -71,52 +80,61 @@ export function CountryCatalogContent({ countries, onCountryClick }: CountryCata
                     }
                   }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
 
-                <div className="absolute top-4 left-4">
-                  <div className="flex items-center space-x-2">
-                    <ReactCountryFlag countryCode={country.code} svg />
-                    <Badge className="bg-white/20 backdrop-blur text-white border-white/30">
+                <div className="absolute top-2 left-2 right-2 flex items-center justify-between">
+                  <div className="flex items-center space-x-1.5">
+                    <Badge className="bg-primary text-white border-white/30 text-xs font-medium">
                       {country.totalStamps.toLocaleString()} stamps
                     </Badge>
                   </div>
                 </div>
 
-                <div className="absolute bottom-4 left-4 right-4">
-                  <h3 className="text-2xl font-bold text-white mb-2">{country.name}</h3>
-                  <p className="text-gray-200 text-sm mb-3">{country.description}</p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-300 text-sm">
+                <div className="absolute bottom-2 left-2 right-2 p-2 rounded-lg bg-black/30 backdrop-blur-sm">
+                  <h3 className="text-xl font-extrabold text-white leading-tight mb-0.5 flex items-center">
+                    {countryCodes.map((code) => (
+                      <>
+                        {code ?
+                          <ReactCountryFlag
+                            countryCode={code.toUpperCase()}
+                            svg
+                            style={{
+                              width: '1.2em',
+                              height: '1.2em',
+                              marginRight: '0.5em',
+                            }}
+                            title={country.name}
+                            className="rounded-sm"
+                          /> : <></>}
+                      </>
+                    ))}
+                    {country.name}
+                  </h3>
+                  <p className="text-gray-200 text-sm line-clamp-2">{country.description}</p>
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-gray-300 text-xs font-medium">
                       {country.firstIssue} - {country.lastIssue}
                     </span>
-                    <div className="flex items-center space-x-2">
-                      <Award className="w-4 h-4 text-primary dark:text-amber-400" />
-                      <span className="text-primary text-sm font-medium dark:text-amber-400">Approved Collection</span>
-                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="p-6">
-                <blockquote className="text-gray-600 italic mb-4 relative dark:text-gray-300">
-                  <Quote className="w-4 h-4 text-primary dark:text-amber-400 absolute -top-1 -left-1" />
-                  <span className="ml-3">{country.historicalNote}</span>
-                </blockquote>
+              <div className="p-3 pt-2">
+                <p className="text-gray-600 text-xs italic mb-2.5 relative dark:text-gray-300 line-clamp-3">
+                  <Quote className="w-2.5 h-2.5 text-primary dark:text-amber-400 absolute -top-0.5 -left-0.5 opacity-60" />
+                  <span className="ml-3.5">{country.historicalNote}</span>
+                </p>
 
-                <div className="flex items-center justify-between">
-                  <Button variant="outline" className="border-primary/30 text-primary hover:bg-primary/10 dark:border-amber-600 dark:text-amber-400 dark:hover:bg-amber-900">
+                <div className="flex items-center justify-between mt-2.5">
+                  <Button variant="outline" className="border-primary/30 text-primary hover:bg-primary/10 dark:border-amber-600 dark:text-amber-400 dark:hover:bg-amber-900 group-hover:scale-105 transition-transform duration-300 px-2.5 py-0.5 text-xs h-auto">
                     Browse Catalog
-                    <ChevronRight className="w-4 h-4 ml-2" />
+                    <ChevronRight className="w-3.5 h-3.5 ml-1 group-hover:translate-x-1 transition-transform duration-300" />
                   </Button>
-                  <div className="flex items-center space-x-1">
-                    <BookmarkPlus className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity dark:text-gray-600 dark:group-hover:text-gray-400" />
-                    <Telescope className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity dark:text-gray-600 dark:group-hover:text-gray-400" />
-                  </div>
                 </div>
               </div>
             </div>
           </article>
-        ))}
+        })}
       </div>
 
       {filteredCountries.length === 0 && searchTerm && (

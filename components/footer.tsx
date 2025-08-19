@@ -5,7 +5,7 @@ import Image from "next/image"
 import { useTheme } from "next-themes"
 
 export default function Footer() {
-  const { theme } = useTheme()
+  const { resolvedTheme: theme } = useTheme()
   return (
     <footer className="border-t bg-background">
       <div className="container py-8 md:py-12">
