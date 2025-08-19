@@ -1,17 +1,12 @@
-import type React from "react"
+import { AppContent } from "@/components/app-content"
+import { ChatProvider } from "@/components/chat-provider"
+import { PhilaGuideChat } from "@/components/philaguide-chat"
+import { ThemeProvider } from "@/components/theme-provider"
+import { GoogleOAuthProvider } from '@react-oauth/google'
 import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
+import type React from "react"
 import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
-import Header from "@/components/header"
-import Footer from "@/components/footer"
-import { Toaster } from "@/components/ui/toaster"
-import { PWAProvider } from "@/components/pwa/PWAProvider"
-import { GoogleOAuthProvider } from '@react-oauth/google'
-import { PhilaGuideChat } from "@/components/philaguide-chat"
-import { ChatProvider, useChatContext } from "@/components/chat-provider"
-import { LayoutWrapper } from "@/components/layout-wrapper"
-import { AppContent } from "@/components/app-content"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -58,10 +53,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             enableSystem
             disableTransitionOnChange
           >
-              <ChatProvider>
-                <AppContent>{children}</AppContent>
-                <PhilaGuideChat />
-              </ChatProvider>
+            <ChatProvider>
+              <AppContent>{children}</AppContent>
+              <PhilaGuideChat />
+            </ChatProvider>
           </ThemeProvider>
         </GoogleOAuthProvider>
       </body>

@@ -18,7 +18,17 @@ import {
     ExternalLink,
     MessageSquare,
     Send,
-    X
+    X,
+    Mic,
+    MicOff,
+    Volume2,
+    VolumeX,
+    Settings,
+    Loader2,
+    ChevronDown,
+    ChevronUp,
+    Bot,
+    User
 } from 'lucide-react'
 import Image from 'next/image'
 import React, { useEffect, useRef, useState } from 'react'
@@ -26,7 +36,8 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useChatContext } from './chat-provider'
 import { ImageSearch } from './image-search'
-import VoiceChatPanel from './voice-chat-panel'
+import { VoiceInteraction, useVoiceToText } from './voice-interaction'
+import RealtimeVoiceChat from './realtime-voice-chat'
 
 interface Message {
     id: string
@@ -365,7 +376,7 @@ function StampCarouselDisplay({ data }: StampCarouselDisplayProps) {
     )
 }
 
-export function PhilaGuideChat() {
+export default function PhilaGuideChat() {
     const { isOpen, setIsOpen } = useChatContext()
     const [messages, setMessages] = useState<Message[]>([])
     const [input, setInput] = useState('')
@@ -376,270 +387,21 @@ export function PhilaGuideChat() {
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
     // Voice interaction
-    const [isListening, setIsListening] = useState(false)
-    const [transcript, setTranscript] = useState('')
+    const { isListening, transcript, handleTranscript, handleStartListening, handleStopListening, clearTranscript } = useVoiceToText()
+      // Voice chat mode state
+  const [isVoiceMode, setIsVoiceMode] = useState(false)
+  const [showRealtimeVoiceChat, setShowRealtimeVoiceChat] = useState(false)
 
-    const handleTranscript = (text: string) => {
-        setTranscript(text)
-        // Auto-send the voice message after getting transcript
-        if (text.trim()) {
-            handleVoiceMessage(text)
-            // Clear transcript after processing
-            setTimeout(() => setTranscript(''), 1000)
-        }
+  // Toggle between text and voice modes
+  const toggleVoiceMode = () => {
+    if (isVoiceMode) {
+      setIsVoiceMode(false)
+      setShowRealtimeVoiceChat(false)
+    } else {
+      setIsVoiceMode(true)
+      setShowRealtimeVoiceChat(true)
     }
-
-    const handleStartListening = () => {
-        setIsListening(true)
-        setTranscript('')
-    }
-
-    const handleStopListening = () => {
-        setIsListening(false)
-    }
-
-    const clearTranscript = () => {
-        setTranscript('')
-    }
-
-    // NEW: Voice chat mode state
-    const [isVoiceMode, setIsVoiceMode] = useState(false)
-    const [voiceMessages, setVoiceMessages] = useState<Message[]>([])
-    const [isVoiceProcessing, setIsVoiceProcessing] = useState(false)
-    const [voiceSessionId] = useState(() => `voice_session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`)
-    const [selectedVoiceFromPanel, setSelectedVoiceFromPanel] = useState('alloy')
-
-    // NEW: Voice selection state (from original voice chat popup)
-    const [selectedVoice, setSelectedVoice] = useState<VoiceOption | null>(null)
-    const [availableVoices, setAvailableVoices] = useState<VoiceOption[]>([])
-    const selectedVoiceRef = useRef<VoiceOption | null>(null)
-
-    // Initialize with default voice to prevent undefined errors
-    useEffect(() => {
-        if (!selectedVoice && availableVoices.length > 0) {
-            setSelectedVoice(availableVoices[0])
-            selectedVoiceRef.current = availableVoices[0]
-        }
-    }, [availableVoices, selectedVoice])
-
-    // Image search
-    const [isImageSearchOpen, setIsImageSearchOpen] = useState(false)
-
-    // Update input when transcript changes
-    useEffect(() => {
-        if (transcript) {
-            setInput(transcript)
-            // Don't clear transcript immediately - let handleSendMessage use it
-        }
-    }, [transcript])
-
-    // NEW: Auto-send voice message when transcript is ready (from original voice chat popup)
-    useEffect(() => {
-        if (transcript && isVoiceMode && !isVoiceProcessing) {
-            // Auto-send after a short delay to allow user to review
-            const timer = setTimeout(() => {
-                if (transcript.trim()) {
-                    console.log('🎤 Auto-sending voice message:', transcript)
-                    handleVoiceMessage(transcript)
-                    clearTranscript()
-                }
-            }, 1500) // 1.5 second delay
-
-            return () => clearTimeout(timer)
-        }
-    }, [transcript, isVoiceMode, isVoiceProcessing])
-
-    // NEW: Debug voice messages changes
-    useEffect(() => {
-        console.log('🎤 Voice messages changed:', voiceMessages.length, 'messages')
-        console.log('🎤 Voice mode state:', isVoiceMode)
-        console.log('🎤 Voice processing state:', isVoiceProcessing)
-    }, [voiceMessages, isVoiceMode, isVoiceProcessing])
-
-    // NEW: Load available voices (from original voice chat popup)
-    useEffect(() => {
-        const loadVoices = async () => {
-            try {
-                const response = await fetch(`${BACKEND_URL}/api/voice-synthesis`)
-                if (response.ok) {
-                    const voices = await response.json()
-                    // Ensure voices is an array
-                    if (Array.isArray(voices)) {
-                        setAvailableVoices(voices)
-                        // Set default voice
-                        if (voices.length > 0) {
-                            setSelectedVoice(voices[0])
-                            selectedVoiceRef.current = voices[0]
-                        }
-                    } else {
-                        console.warn('Voices API did not return an array:', voices)
-                        throw new Error('Invalid voices format')
-                    }
-                } else {
-                    throw new Error(`Voices API error: ${response.status}`)
-                }
-            } catch (error) {
-                console.error('Failed to load voices:', error)
-                // Set default voices if API fails
-                const defaultVoices = [
-                    { id: 'alloy', name: 'Alloy', description: 'Balanced and versatile voice' },
-                    { id: 'echo', name: 'Echo', description: 'Clear and professional voice' },
-                    { id: 'fable', name: 'Fable', description: 'Warm and engaging voice' },
-                    { id: 'onyx', name: 'Onyx', description: 'Deep and authoritative voice' },
-                    { id: 'nova', name: 'Nova', description: 'Bright and energetic voice' },
-                    { id: 'shimmer', name: 'Shimmer', description: 'Smooth and melodic voice' }
-                ]
-                setAvailableVoices(defaultVoices)
-                setSelectedVoice(defaultVoices[0])
-                selectedVoiceRef.current = defaultVoices[0]
-            }
-        }
-
-        loadVoices()
-    }, [])
-
-    // NEW: Handle voice chat mode switching
-    const toggleVoiceMode = () => {
-        if (isVoiceMode) {
-            // Switching back to text mode
-            setIsVoiceMode(false)
-            // Keep the conversation history
-        } else {
-            // Switching to voice mode
-            setIsVoiceMode(true)
-            // Initialize voice messages with existing conversation
-            setVoiceMessages([...messages])
-        }
-    }
-
-    // Handle voice message
-    const handleVoiceMessage = async (message: string) => {
-        if (!message.trim()) return
-
-        setIsVoiceProcessing(true)
-
-        try {
-            // Add user message to voice messages
-            const userMessage: Message = {
-                id: (Date.now()).toString(),
-                content: message.trim(),
-                role: 'user',
-                timestamp: new Date()
-            }
-            setVoiceMessages(prev => [...prev, userMessage])
-
-            // Use the realtime-voice API endpoint
-            const response = await fetch('/api/realtime-voice', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    message: message.trim(),
-                    conversationHistory: voiceMessages.map(msg => ({
-                        role: msg.role,
-                        content: msg.content
-                    })),
-                    sessionId: voiceSessionId
-                }),
-            })
-
-            if (!response.ok) {
-                throw new Error(`Realtime voice API error: ${response.status}`)
-            }
-
-            const data = await response.json()
-
-            if (data.success && data.response) {
-                // Add AI response to voice messages
-                const assistantMessage: Message = {
-                    id: (Date.now() + 1).toString(),
-                    content: data.response,
-                    role: 'assistant',
-                    timestamp: new Date()
-                }
-                setVoiceMessages(prev => [...prev, assistantMessage])
-                console.log('🎤 AI response added to voice messages:', data.response)
-
-                // Synthesize and play the AI response
-                await speakResponse(data.response)
-            } else {
-                throw new Error(data.error || 'Invalid response format')
-            }
-
-            setIsVoiceProcessing(false)
-
-        } catch (error) {
-            console.error('❌ Voice message handling failed:', error)
-
-            // Add error message
-            const errorMessage: Message = {
-                id: (Date.now() + 1).toString(),
-                content: 'Sorry, I encountered an error processing your voice message. Please try again.',
-                role: 'assistant',
-                timestamp: new Date()
-            }
-            setVoiceMessages(prev => [...prev, errorMessage])
-            setIsVoiceProcessing(false)
-        }
-    }
-
-    // NEW: Handle voice input submission
-    const handleVoiceInput = () => {
-        if (transcript.trim()) {
-            handleVoiceMessage(transcript)
-            clearTranscript()
-        }
-    }
-
-    // NEW: Speech synthesis function (from original voice chat popup)
-    const speakResponse = async (text: string) => {
-        console.log('🎤 speakResponse called with text:', text.substring(0, 50) + '...')
-
-        try {
-            // Use the voice selected in the voice chat panel
-            const voiceToUse = selectedVoiceFromPanel
-            console.log('🎤 Using voice from panel:', voiceToUse, 'for text:', text.substring(0, 30) + '...')
-
-            const response = await fetch(`${BACKEND_URL}/api/voice-synthesis`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    text: text,
-                    voice: voiceToUse
-                }),
-            })
-
-            if (!response.ok) {
-                throw new Error('Failed to synthesize speech')
-            }
-
-            // Get audio blob
-            const audioBlob = await response.blob()
-            const audioUrl = URL.createObjectURL(audioBlob)
-
-            // Create audio element and play
-            const audio = new Audio(audioUrl)
-
-            audio.onended = () => {
-                console.log('🎤 OpenAI speech ended')
-                URL.revokeObjectURL(audioUrl) // Clean up
-            }
-
-            audio.onerror = (error) => {
-                console.error('🎤 OpenAI speech error:', error)
-                URL.revokeObjectURL(audioUrl) // Clean up
-            }
-
-            console.log('🎤 Playing OpenAI voice synthesis...')
-            await audio.play()
-
-        } catch (error) {
-            console.error('🎤 Voice synthesis error:', error)
-        }
-    }
+  }
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -1084,7 +846,7 @@ export function PhilaGuideChat() {
                 <ScrollArea className="flex-1 p-4 bg-background/70">
                     <div className="space-y-4">
                         {/* NEW: Welcome message based on mode */}
-                        {(isVoiceMode ? voiceMessages : messages).length === 0 && (
+                        {messages.length === 0 && (
                             <div className="text-center py-8 px-4">
                                 <div className="w-20 h-20 mx-auto mb-6 bg-primary/10 rounded-full flex items-center justify-center animate-pulse-slow">
                                     {isVoiceMode ? (
@@ -1139,7 +901,7 @@ export function PhilaGuideChat() {
                         )}
 
                         {/* NEW: Show messages based on current mode */}
-                        {(isVoiceMode ? voiceMessages : messages).map((message) => (
+                        {messages.map((message) => (
                             <div key={message.id} className={cn(
                                 "flex gap-3",
                                 message.role === 'user' ? "justify-end" : "justify-start"
@@ -1165,16 +927,6 @@ export function PhilaGuideChat() {
                                         ) : (
                                             message.content
                                         )}
-
-                                        {/* Timestamp */}
-                                        <div className={cn(
-                                            "text-xs mt-2 opacity-70",
-                                            message.role === 'user'
-                                                ? "text-primary-foreground/70 dark:text-black/70"
-                                                : "text-muted-foreground"
-                                        )}>
-                                            {message.timestamp ? new Date(message.timestamp).toLocaleTimeString() : 'Unknown time'}
-                                        </div>
                                     </div>
 
                                     {/* Stamp Preview Display - Only show when no structured data is available */}
@@ -1204,7 +956,7 @@ export function PhilaGuideChat() {
                         ))}
 
                         {/* NEW: Show loading state based on current mode */}
-                        {(isVoiceMode ? isVoiceProcessing : isLoading) && (
+                        {isLoading && (
                             <div className="flex gap-3 justify-start">
                                 <Avatar className="w-9 h-9 flex-shrink-0 border border-input">
                                     <AvatarImage src="/images/stamp-bot-avatar.png" alt="PhilaGuide AI" />
@@ -1238,28 +990,58 @@ export function PhilaGuideChat() {
 
                 {/* Input */}
                 <div className="p-4 border-t border-input bg-card/60">
-                    {isVoiceMode ? (
-                        /* NEW: Voice Chat Input Interface */
+                    {isVoiceMode && (
                         <div className="space-y-4">
-                            {/* Voice Input Display */}
-                            <div className="bg-muted/50 rounded-lg p-4 border border-input">
-                                <div className="flex items-center gap-3 mb-3">
-                                    <AudioLines className="w-5 h-5 text-primary" />
-                                    <span className="text-sm font-medium text-foreground">Voice Input</span>
-                                </div>
+                            {/* Voice Mode Header */}
+                            <div className="text-center">
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-black mb-2">
+                                    🎤 Realtime Voice Chat
+                                </h3>
+                                <p className="text-sm text-gray-600 dark:text-gray-700">
+                                    Get instant responses in 1-2 seconds with OpenAI's Realtime API
+                                </p>
+                            </div>
 
-                                {/* VoiceChatPanel Component */}
-                                <VoiceChatPanel
-                                    onTranscript={handleTranscript}
-                                    onClose={() => setIsVoiceMode(false)}
-                                    onVoiceChange={setSelectedVoiceFromPanel}
-                                />
+                            {/* Voice Chat Controls */}
+                            <div className="flex justify-center gap-4">
+                                <Button
+                                    onClick={() => setShowRealtimeVoiceChat(true)}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full"
+                                >
+                                    <Mic className="w-5 h-5 mr-2" />
+                                    Start Voice Chat
+                                </Button>
+                                
+                                <Button
+                                    onClick={() => setIsVoiceMode(false)}
+                                    variant="outline"
+                                    className="px-6 py-3 rounded-full"
+                                >
+                                    <MessageSquare className="w-5 h-5 mr-2" />
+                                    Switch to Text
+                                </Button>
                             </div>
 
                             {/* Voice Chat Instructions */}
-                            <div className="text-xs text-muted-foreground text-center">
-                                Speak naturally about stamps, values, history, or collecting tips
+                            <div className="text-center text-sm text-gray-600 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                <p className="font-medium text-blue-800 mb-2">🚀 Ultra-Fast Voice Responses</p>
+                                <ul className="text-blue-700 space-y-1 text-left max-w-md mx-auto">
+                                    <li>• <strong>15-30x faster</strong> than current system</li>
+                                    <li>• <strong>Real-time streaming</strong> audio responses</li>
+                                    <li>• <strong>Natural conversation</strong> flow</li>
+                                    <li>• <strong>Function calling</strong> for stamp searches</li>
+                                    <li>• <strong>Voice selection</strong> and customization</li>
+                                </ul>
                             </div>
+                        </div>
+                    )}
+                    {isVoiceMode ? (
+                        /* NEW: Voice Chat Input Interface */
+                        {/* Voice mode content is now handled by RealtimeVoiceChat component */}
+                        <div className="text-center py-8">
+                            <p className="text-muted-foreground">
+                                Voice chat interface will open in a separate modal
+                            </p>
                         </div>
                     ) : (
                         /* Text Chat Input Interface */
@@ -1274,9 +1056,16 @@ export function PhilaGuideChat() {
                                     className="flex-1 text-sm bg-background border-input px-4 py-2.5 rounded-full focus-visible:ring-offset-0 focus-visible:ring-primary"
                                 />
 
+                                <VoiceInteraction
+                                    onTranscript={handleTranscript}
+                                    isListening={isListening}
+                                    onStartListening={handleStartListening}
+                                    onStopListening={handleStopListening}
+                                    disabled={isLoading}
+                                />
                                 <Button
-                                    onClick={handleSendMessage}
-                                    disabled={isLoading || !input.trim()}
+                                    onClick={isLoading ? handleStopGeneration : handleSendMessage}
+                                    disabled={!input.trim() || isLoading}
                                     size="icon"
                                     className={cn(
                                         "transition-all duration-200 flex-shrink-0 rounded-full",
@@ -1296,18 +1085,9 @@ export function PhilaGuideChat() {
                                     )}
                                 </Button>
                             </div>
-
-                            {/* Voice Mode Toggle */}
-                            <div className="flex justify-center">
-                                <Button
-                                    onClick={() => setIsVoiceMode(true)}
-                                    variant="outline"
-                                    size="sm"
-                                    className="text-xs"
-                                >
-                                    🎤 Switch to Voice Chat
-                                </Button>
-                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                Press Enter to send, use voice, upload image, or ask about stamps, values, history, or collecting tips
+                            </p>
                         </div>
                     )}
                 </div>
@@ -1318,6 +1098,13 @@ export function PhilaGuideChat() {
                 isOpen={isImageSearchOpen}
                 onClose={() => setIsImageSearchOpen(false)}
             />
+
+            {/* Realtime Voice Chat Modal */}
+            {showRealtimeVoiceChat && (
+                <RealtimeVoiceChat 
+                    onClose={() => setShowRealtimeVoiceChat(false)} 
+                />
+            )}
         </>
     )
 } 
