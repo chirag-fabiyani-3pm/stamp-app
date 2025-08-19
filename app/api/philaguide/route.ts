@@ -248,7 +248,7 @@ async function handleStreamingResponse(message: string, voiceChat: boolean = fal
 async function streamRunResponse(threadId: string, runId: string, controller: ReadableStreamDefaultController, encoder: TextEncoder) {
     let runStatus = 'queued'
     let attempts = 0
-    const maxAttempts = 15 // 15 seconds max to allow for function calls
+    const maxAttempts = 30 // 30 seconds max to allow for function calls and handle API delays
 
     try {
         while ((runStatus === 'queued' || runStatus === 'in_progress') && attempts < maxAttempts) {
@@ -298,7 +298,7 @@ async function streamRunResponse(threadId: string, runId: string, controller: Re
             }
         }
 
-        console.log(`✅ Run completed with status: ${runStatus}`)
+        console.log(`✅ Run completed with status: ${runStatus} after ${attempts} attempts (${attempts} seconds)`)
 
         // Handle different run statuses
         if (runStatus === 'failed' || runStatus === 'cancelled' || runStatus === 'expired') {
@@ -313,7 +313,8 @@ async function streamRunResponse(threadId: string, runId: string, controller: Re
         }
 
         if (runStatus === 'queued' || runStatus === 'in_progress') {
-            const timeoutMessage = `data: ${JSON.stringify({ type: 'timeout', message: 'Processing is taking longer than expected. Please try a more specific query about stamps, or ask about a particular country or year.' })}\n\n`
+            console.log(`⏰ Run timed out after ${attempts} attempts with status: ${runStatus}`)
+            const timeoutMessage = `data: ${JSON.stringify({ type: 'timeout', message: 'The AI is taking longer than usual to respond. This might be due to high demand on OpenAI servers. Please try your query again or rephrase it for better results.' })}\n\n`
             try {
                 controller.enqueue(encoder.encode(timeoutMessage))
             } catch (error) {

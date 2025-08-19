@@ -1,6 +1,17 @@
 "use client"
 
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import {
     Avatar,
     AvatarFallback,
     AvatarImage,
@@ -17,6 +28,7 @@ import {
     ChevronRight,
     ExternalLink,
     MessageSquare,
+    RotateCcw,
     Send,
     X
 } from 'lucide-react'
@@ -378,6 +390,11 @@ export function PhilaGuideChat() {
     // Voice interaction
     const [isListening, setIsListening] = useState(false)
     const [transcript, setTranscript] = useState('')
+    const [isStreamingAI, setIsStreamingAI] = useState(false) // Track if we're in the middle of streaming an AI response
+    const [currentStreamingId, setCurrentStreamingId] = useState<string | null>(null) // Track current streaming message ID
+    const isStreamingAIRef = useRef(false) // Immediate access to streaming state
+    const currentStreamingIdRef = useRef<string | null>(null) // Immediate access to streaming ID
+    const pendingAIMessage = useRef<{ id: string, deltas: string[] } | null>(null) // Queue AI message until user message is complete
 
     const handleTranscript = (text: string) => {
         setTranscript(text)
@@ -391,7 +408,23 @@ export function PhilaGuideChat() {
 
             // Parse the transcript format from voice chat
             if (text.startsWith('\nYou: ')) {
-                // User message from voice
+                // User message from voice - first check for pending AI message BEFORE clearing state
+                const pendingAI = pendingAIMessage.current // Save reference before clearing
+                console.log('🎤 User message received, checking for pending AI:', !!pendingAI)
+
+                if (pendingAI) {
+                    console.log('🎤 Pending AI message details:', {
+                        id: pendingAI.id,
+                        deltasCount: pendingAI.deltas.length,
+                        contentPreview: pendingAI.deltas.join('').substring(0, 100)
+                    })
+                }
+
+                // Reset AI streaming state  
+                isStreamingAIRef.current = false
+                currentStreamingIdRef.current = null
+                setIsStreamingAI(false)
+                setCurrentStreamingId(null)
                 const userMessage = text.replace('\nYou: ', '').trim()
                 console.log('🎤 Extracted user message:', JSON.stringify(userMessage))
 
@@ -415,36 +448,144 @@ export function PhilaGuideChat() {
                         return [...prev, newMessage]
                     })
                     console.log('🎤 ✅ Successfully added user voice message:', userMessage)
-                }
-            } else if (text.startsWith('\nAI: ')) {
-                // Start of AI response - create placeholder
-                const aiMessage: Message = {
-                    id: 'ai-streaming-' + Date.now(),
-                    content: '',
-                    role: 'assistant',
-                    timestamp: new Date()
-                }
 
-                // Add to both message arrays to keep them in sync
-                setMessages(prev => [...prev, aiMessage])
-                setVoiceMessages(prev => [...prev, aiMessage])
-                console.log('🎤 Started AI response')
-            } else if (text !== '\nAI: ' && !text.startsWith('\nYou: ')) {
-                // AI response delta - update the last AI message in both arrays
-                const updateLastMessage = (prev: Message[]) => {
-                    const updatedMessages = [...prev]
-                    const lastMessage = updatedMessages[updatedMessages.length - 1]
+                    // If there was a pending AI message, create it now after user message
+                    if (pendingAI) {
+                        const aiMessageId = pendingAI.id
+                        const queuedDeltas = pendingAI.deltas
 
-                    if (lastMessage && lastMessage.role === 'assistant') {
-                        lastMessage.content += text
+                        console.log('🎤 Creating AI message from pending queue - ID:', aiMessageId, 'Deltas count:', queuedDeltas.length)
+                        console.log('🎤 Queued content preview:', queuedDeltas.join('').substring(0, 100) + '...')
+
+                        const aiMessage: Message = {
+                            id: aiMessageId,
+                            content: queuedDeltas.join(''), // Combine all queued deltas
+                            role: 'assistant',
+                            timestamp: new Date()
+                        }
+
+                        // Add AI message to both arrays
+                        setMessages(prev => {
+                            console.log('🎤 Adding queued AI message to messages array, current length:', prev.length)
+                            return [...prev, aiMessage]
+                        })
+                        setVoiceMessages(prev => {
+                            console.log('🎤 Adding queued AI message to voiceMessages array, current length:', prev.length)
+                            return [...prev, aiMessage]
+                        })
+
+                        // Restore streaming state to continue receiving deltas for this message
+                        isStreamingAIRef.current = true
+                        currentStreamingIdRef.current = aiMessageId
+                        setIsStreamingAI(true)
+                        setCurrentStreamingId(aiMessageId)
+
+                        console.log('🎤 ✅ Created AI message from queued deltas:', queuedDeltas.length, 'deltas')
+                        console.log('🎤 ✅ Restored streaming state for continued AI response')
+                    } else {
+                        console.log('🎤 ⚠️ No pending AI message found when user message completed')
                     }
 
-                    return updatedMessages
+                    // Clear pending message after processing
+                    pendingAIMessage.current = null
                 }
+            } else if (text.startsWith('\nAI: ')) {
+                // Start of AI response - create it immediately if we have a user message, otherwise queue
+                if (!isStreamingAIRef.current && !currentStreamingIdRef.current) {
+                    const messageId = 'ai-streaming-' + Date.now()
 
-                setMessages(updateLastMessage)
-                setVoiceMessages(updateLastMessage)
-                console.log('🎤 Updated AI response delta:', text.substring(0, 20) + '...')
+                    // Set refs immediately for synchronous access
+                    isStreamingAIRef.current = true
+                    currentStreamingIdRef.current = messageId
+
+                    // Set state for UI updates
+                    setIsStreamingAI(true)
+                    setCurrentStreamingId(messageId)
+
+                    // Check if we have any user messages already
+                    const hasUserMessages = messages.length > 0 && messages[messages.length - 1].role === 'user'
+
+                    if (hasUserMessages) {
+                        // Create AI message immediately since user message exists
+                        const aiMessage: Message = {
+                            id: messageId,
+                            content: '',
+                            role: 'assistant',
+                            timestamp: new Date()
+                        }
+
+                        setMessages(prev => {
+                            console.log('🎤 Adding AI message immediately to messages array')
+                            return [...prev, aiMessage]
+                        })
+                        setVoiceMessages(prev => {
+                            console.log('🎤 Adding AI message immediately to voiceMessages array')
+                            return [...prev, aiMessage]
+                        })
+                        console.log('🎤 ✅ Created AI message immediately - user message exists')
+                    } else {
+                        // Queue the AI message until user message completes
+                        pendingAIMessage.current = {
+                            id: messageId,
+                            deltas: []
+                        }
+                        console.log('🎤 ✅ Queued AI response - waiting for user message')
+                    }
+                }
+            } else if (text === '\n[AI_COMPLETE]') {
+                // AI response is complete - mark streaming as finished
+                isStreamingAIRef.current = false
+                currentStreamingIdRef.current = null
+                pendingAIMessage.current = null // Clear any pending message
+                setIsStreamingAI(false)
+                setCurrentStreamingId(null)
+                console.log('🎤 AI response streaming complete')
+            } else if (isStreamingAIRef.current && currentStreamingIdRef.current && text.trim() && !text.startsWith('\nYou: ') && !text.startsWith('\n[AI_COMPLETE]')) {
+                // AI response delta - queue it if message is pending, otherwise update existing message
+                if (pendingAIMessage.current) {
+                    // Check for user input contamination before queueing
+                    if (text.toLowerCase().includes('tell me about') || text.toLowerCase().includes('what is') || text.match(/^[A-Z][a-z\s]*\?$/)) {
+                        console.log('🎤 🚨 CONTAMINATION DETECTED - User input in AI delta:', JSON.stringify(text))
+                        console.log('🎤 🚨 Skipping contaminated delta to prevent mixing')
+                        return
+                    }
+
+                    // Queue the delta
+                    pendingAIMessage.current.deltas.push(text)
+                    console.log('🎤 ✅ Queued AI delta:', JSON.stringify(text.substring(0, 20) + '...'), 'Total queued deltas:', pendingAIMessage.current.deltas.length)
+                } else {
+                    // Check for user input contamination before updating
+                    if (text.toLowerCase().includes('tell me about') || text.toLowerCase().includes('what is') || text.match(/^[A-Z][a-z\s]*\?$/)) {
+                        console.log('🎤 🚨 CONTAMINATION DETECTED - User input in AI update:', JSON.stringify(text))
+                        console.log('🎤 🚨 Skipping contaminated delta to prevent mixing')
+                        return
+                    }
+
+                    // Update existing message (AI message was created immediately)
+                    const updateStreamingMessage = (prev: Message[]) => {
+                        const updatedMessages = [...prev]
+                        const messageIndex = updatedMessages.findIndex(msg => msg.id === currentStreamingIdRef.current)
+
+                        if (messageIndex !== -1) {
+                            updatedMessages[messageIndex] = {
+                                ...updatedMessages[messageIndex],
+                                content: updatedMessages[messageIndex].content + text
+                            }
+                            console.log('🎤 ✅ Updated AI message content, new length:', updatedMessages[messageIndex].content.length)
+                        } else {
+                            console.log('🎤 ❌ Could not find AI message with ID:', currentStreamingIdRef.current)
+                        }
+
+                        return updatedMessages
+                    }
+
+                    setMessages(updateStreamingMessage)
+                    setVoiceMessages(updateStreamingMessage)
+                    console.log('🎤 ✅ Updated AI response delta for ID:', currentStreamingIdRef.current, 'text:', text.substring(0, 20) + '...')
+                }
+            } else {
+                console.log('🎤 ❌ handleTranscript: Text not processed:', JSON.stringify(text))
+                console.log('🎤 ❌ Conditions - isStreamingAI (ref):', isStreamingAIRef.current, 'currentStreamingId (ref):', currentStreamingIdRef.current, 'text.trim():', !!text.trim())
             }
         }
     }
@@ -523,7 +664,9 @@ export function PhilaGuideChat() {
             try {
                 const response = await fetch(`${BACKEND_URL}/api/voice-synthesis`)
                 if (response.ok) {
-                    const voices = await response.json()
+                    const data = await response.json()
+                    // Extract voices array from the response object
+                    const voices = data.voices || data
                     // Ensure voices is an array
                     if (Array.isArray(voices)) {
                         setAvailableVoices(voices)
@@ -533,7 +676,7 @@ export function PhilaGuideChat() {
                             selectedVoiceRef.current = voices[0]
                         }
                     } else {
-                        console.warn('Voices API did not return an array:', voices)
+                        console.warn('Voices API did not return an array:', data)
                         throw new Error('Invalid voices format')
                     }
                 } else {
@@ -721,6 +864,36 @@ export function PhilaGuideChat() {
             }
         }
     }, [abortController])
+
+    // Handle starting a new chat session
+    const handleNewChat = () => {
+        // Clear all messages
+        setMessages([])
+        setVoiceMessages([])
+
+        // Clear input
+        setInput('')
+
+        // Reset loading states
+        setIsLoading(false)
+        setIsVoiceProcessing(false)
+        setStreamingStatus('')
+
+        // Cancel any ongoing requests
+        if (abortController) {
+            abortController.abort()
+            setAbortController(null)
+        }
+
+        // Reset voice mode streaming states
+        setIsStreamingAI(false)
+        setCurrentStreamingId(null)
+        isStreamingAIRef.current = false
+        currentStreamingIdRef.current = null
+        pendingAIMessage.current = null
+
+        console.log('🔄 New chat session started')
+    }
 
     const handleSendMessage = async () => {
         if (!input.trim() || isLoading) return
@@ -1115,7 +1288,7 @@ export function PhilaGuideChat() {
                         </div>
                     </div>
 
-                    {/* NEW: Voice Chat Toggle Button */}
+                    {/* NEW: Voice Chat Toggle Button and Actions */}
                     <div className="flex items-center gap-2">
                         <Button
                             variant="ghost"
@@ -1131,6 +1304,34 @@ export function PhilaGuideChat() {
                             <AudioLines className="w-4 h-4 mr-1" />
                             {isVoiceMode ? 'Text' : 'Voice'}
                         </Button>
+
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 px-3 text-xs rounded-md text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10 transition-all duration-200"
+                                    title="Start new chat session"
+                                >
+                                    <RotateCcw className="w-4 h-4 mr-1" />
+                                    New Chat
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Start New Chat?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will clear your current conversation history. Are you sure you want to start a new chat session?
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleNewChat}>
+                                        Start New Chat
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
 
                         <Button
                             variant="ghost"
@@ -1346,7 +1547,7 @@ export function PhilaGuideChat() {
                                         "transition-all duration-200 flex-shrink-0 rounded-full",
                                         isLoading ? "bg-destructive hover:bg-destructive/90" : "bg-primary hover:bg-primary/90"
                                     )}
-                                >
+                                 >
                                     {isLoading ? (
                                         <div className="w-4 h-4 bg-yellow-400 rounded-sm" />
                                     ) : (
@@ -1355,17 +1556,7 @@ export function PhilaGuideChat() {
                                 </Button>
                             </div>
 
-                            {/* Voice Mode Toggle */}
-                            <div className="flex justify-center">
-                                <Button
-                                    onClick={() => setIsVoiceMode(true)}
-                                    variant="outline"
-                                    size="sm"
-                                    className="text-xs"
-                                >
-                                    🎤 Switch to Voice Chat
-                                </Button>
-                            </div>
+
                         </div>
                     )}
                 </div>
