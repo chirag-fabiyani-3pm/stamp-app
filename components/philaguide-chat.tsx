@@ -1280,19 +1280,13 @@ export function PhilaGuideChat() {
                                     size="icon"
                                     className={cn(
                                         "transition-all duration-200 flex-shrink-0 rounded-full",
-                                        isLoading
-                                            ? "bg-destructive hover:bg-destructive/90"
-                                            : input.trim()
-                                                ? "bg-primary hover:bg-primary/90"
-                                                : "bg-accent/50 hover:bg-accent text-primary-foreground"
+                                        isLoading ? "bg-destructive hover:bg-destructive/90" : "bg-primary hover:bg-primary/90"
                                     )}
                                 >
                                     {isLoading ? (
                                         <div className="w-4 h-4 bg-yellow-400 rounded-sm" />
-                                    ) : input.trim() ? (
-                                        <Send className="w-5 h-5" />
                                     ) : (
-                                        <AudioLines className="w-5 h-5" />
+                                        <Send className="w-5 h-5" />
                                     )}
                                 </Button>
                             </div>
