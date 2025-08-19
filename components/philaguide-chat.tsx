@@ -1546,14 +1546,14 @@ export function PhilaGuideChat() {
                                     className={cn(
                                         "transition-all duration-200 flex-shrink-0 rounded-full",
                                         isLoading
-                                            ? "bg-destructive hover:bg-destructive/90"
+                                            ? "bg-orange-500 hover:bg-orange-600 text-white"
                                             : input.trim()
-                                                ? "bg-primary hover:bg-primary/90"
-                                                : "bg-accent/50 hover:bg-accent text-primary-foreground"
+                                                ? "bg-primary hover:bg-primary/90 text-white"
+                                                : "bg-muted hover:bg-muted/80 text-muted-foreground border border-input"
                                     )}
                                 >
                                     {isLoading ? (
-                                        <div className="w-4 h-4 bg-yellow-400 rounded-sm" />
+                                        <div className="w-4 h-4 bg-white rounded-sm" />
                                     ) : input.trim() ? (
                                         <Send className="w-5 h-5" />
                                     ) : (

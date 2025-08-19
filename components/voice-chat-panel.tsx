@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { AudioLines, Mic, MicOff } from 'lucide-react'
+import { AudioLines, Mic, MicOff, Square } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
@@ -820,7 +820,7 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
                                 }}
                                 disabled={isListening || isCreatingSession}
                                 className={`flex-1 py-3 rounded-lg font-medium transition-all duration-200 ${isListening
-                                    ? 'bg-red-500 hover:bg-red-600 animate-pulse text-white'
+                                    ? 'bg-orange-500 hover:bg-orange-600 animate-pulse text-white'
                                     : 'bg-primary hover:bg-primary/90 text-white'
                                     } disabled:bg-muted disabled:cursor-not-allowed disabled:text-muted-foreground`}
                             >
@@ -854,11 +854,10 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
                                         console.log('🎤 Button clicked: Stop & Process')
                                         stopVoiceChat()
                                     }}
-                                    variant="destructive"
                                     size="icon"
-                                    className="flex-shrink-0"
+                                    className="flex-shrink-0 bg-orange-500 hover:bg-orange-600 text-white border-0"
                                 >
-                                    <MicOff className="w-4 h-4" />
+                                    <Square className="w-4 h-4" />
                                 </Button>
                             )}
                         </div>
