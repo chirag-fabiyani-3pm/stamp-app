@@ -1,6 +1,17 @@
 "use client"
 
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import {
     Avatar,
     AvatarFallback,
     AvatarImage,
@@ -17,6 +28,7 @@ import {
     ChevronRight,
     ExternalLink,
     MessageSquare,
+    RotateCcw,
     Send,
     X
 } from 'lucide-react'
@@ -853,6 +865,36 @@ export function PhilaGuideChat() {
         }
     }, [abortController])
 
+    // Handle starting a new chat session
+    const handleNewChat = () => {
+        // Clear all messages
+        setMessages([])
+        setVoiceMessages([])
+
+        // Clear input
+        setInput('')
+
+        // Reset loading states
+        setIsLoading(false)
+        setIsVoiceProcessing(false)
+        setStreamingStatus('')
+
+        // Cancel any ongoing requests
+        if (abortController) {
+            abortController.abort()
+            setAbortController(null)
+        }
+
+        // Reset voice mode streaming states
+        setIsStreamingAI(false)
+        setCurrentStreamingId(null)
+        isStreamingAIRef.current = false
+        currentStreamingIdRef.current = null
+        pendingAIMessage.current = null
+
+        console.log('🔄 New chat session started')
+    }
+
     const handleSendMessage = async () => {
         if (!input.trim() || isLoading) return
 
@@ -1246,7 +1288,7 @@ export function PhilaGuideChat() {
                         </div>
                     </div>
 
-                    {/* NEW: Voice Chat Toggle Button */}
+                    {/* NEW: Voice Chat Toggle Button and Actions */}
                     <div className="flex items-center gap-2">
                         <Button
                             variant="ghost"
@@ -1262,6 +1304,34 @@ export function PhilaGuideChat() {
                             <AudioLines className="w-4 h-4 mr-1" />
                             {isVoiceMode ? 'Text' : 'Voice'}
                         </Button>
+
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 px-3 text-xs rounded-md text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10 transition-all duration-200"
+                                    title="Start new chat session"
+                                >
+                                    <RotateCcw className="w-4 h-4 mr-1" />
+                                    New Chat
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Start New Chat?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will clear your current conversation history. Are you sure you want to start a new chat session?
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleNewChat}>
+                                        Start New Chat
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
 
                         <Button
                             variant="ghost"
@@ -1492,17 +1562,7 @@ export function PhilaGuideChat() {
                                 </Button>
                             </div>
 
-                            {/* Voice Mode Toggle */}
-                            <div className="flex justify-center">
-                                <Button
-                                    onClick={() => setIsVoiceMode(true)}
-                                    variant="outline"
-                                    size="sm"
-                                    className="text-xs"
-                                >
-                                    🎤 Switch to Voice Chat
-                                </Button>
-                            </div>
+
                         </div>
                     )}
                 </div>
