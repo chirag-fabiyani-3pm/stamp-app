@@ -56,6 +56,8 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
     // Audio recording refs
     const mediaRecorderRef = useRef<MediaRecorder | null>(null)
     const recordingAudioChunksRef = useRef<Blob[]>([])
+    const isProcessingAudioRef = useRef(false)
+    const isInCallbackRef = useRef(false)
 
     // Handle voice selection change
     const handleVoiceChange = (value: string) => {
@@ -374,17 +376,16 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
                             setSessionId(message.sessionId)
                             setSessionReady(true)
                             setIsCreatingSession(false)
+                            console.log('🎤 Session state updated - ID:', message.sessionId, 'Ready: true')
 
                             // Reset streaming state for new session
                             isStreamingResponseRef.current = false
                             setIsStreamingResponse(false)
                             console.log('🎤 Reset streaming state for new session - ref:', isStreamingResponseRef.current)
 
-                            // Auto-start recording immediately after session creation
-                            console.log('🎤 connectToWebSocketServer: Auto-starting recording...')
-                            setTimeout(() => {
-                                startRecordingWithExistingSession()
-                            }, 100) // Small delay to ensure state updates
+                            // Session created successfully
+                            console.log('🎤 connectToWebSocketServer: Session created successfully')
+                            console.log('🎤 Session created, user can now start recording manually')
                             break
 
                         case 'response.text.delta':
@@ -579,7 +580,7 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
 
             ws.onerror = (error) => {
                 console.error('🎤 connectToWebSocketServer: WebSocket error:', error)
-                setDebugInfo('❌ WebSocket connection error')
+                setDebugInfo('❌ WebSocket connection error. Make sure the server is running on port 3002')
                 setIsWebSocketConnected(false)
                 setSessionId(null)
                 setSessionReady(false)
@@ -588,7 +589,7 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
 
             ws.onclose = (event) => {
                 console.log('🎤 connectToWebSocketServer: WebSocket closed:', event.code, event.reason)
-                setDebugInfo('🔌 WebSocket connection closed')
+                setDebugInfo('🔌 WebSocket connection closed. Check if server is still running')
                 setIsWebSocketConnected(false)
                 setWsConnection(null)
                 setSessionId(null)
@@ -598,69 +599,17 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
 
         } catch (error) {
             console.error('🎤 connectToWebSocketServer: Failed to connect:', error)
-            setDebugInfo('❌ Failed to connect to WebSocket server')
+            console.error('🎤 💡 To fix this, run "npm run websocket" in a separate terminal')
+            setDebugInfo('❌ Failed to connect to WebSocket server. Run "npm run websocket" to start the server')
         }
     }, [onTranscript])
 
-    // Process the recorded audio when recording stops
-    const processRecordedAudio = async (audioBlob: Blob) => {
-        try {
-            console.log('🎤 processRecordedAudio: Processing recorded audio...')
 
-            // First, try local speech recognition for navigation commands
-            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-                try {
-                    console.log('🎤 processRecordedAudio: Attempting local speech recognition first...')
-                    const localTranscript = await performLocalSpeechRecognition(audioBlob)
 
-                    if (localTranscript) {
-                        console.log('🎤 processRecordedAudio: Local transcript:', localTranscript)
-                        setLastTranscription(localTranscript)
-                        onTranscript(`\nYou: ${localTranscript}`)
 
-                        // Check if this is a navigation command
-                        const isNavigationCommand = handleNavigationCommand(localTranscript)
-
-                        if (isNavigationCommand) {
-                            console.log('🎤 processRecordedAudio: Navigation command handled locally, not sending to OpenAI')
-                            setDebugInfo('🧭 Navigation command processed locally')
-                            return // Don't send to OpenAI
-                        }
-                    }
-                } catch (localError) {
-                    console.log('🎤 processRecordedAudio: Local speech recognition failed, falling back to OpenAI:', localError)
-                }
-            }
-
-            // Convert WebM/Opus audio to PCM16 format for OpenAI Realtime API
-            console.log('🎤 processRecordedAudio: Converting audio to PCM16 format...')
-            const pcm16Audio = await convertToPCM16(audioBlob)
-            const base64Audio = btoa(String.fromCharCode(...pcm16Audio))
-
-            // Send audio via WebSocket to OpenAI
-            if (wsConnection && isWebSocketConnected && sessionReady && sessionId) {
-                console.log('🎤 processRecordedAudio: Sending PCM16 audio via WebSocket...')
-                wsConnection.send(JSON.stringify({
-                    type: 'input_audio_buffer.append',
-                    audio: base64Audio
-                }))
-                setDebugInfo('🎤 PCM16 audio sent to OpenAI via WebSocket')
-            } else if (!sessionReady || !sessionId) {
-                console.log('🎤 processRecordedAudio: Session not ready yet, audio will be queued')
-                setDebugInfo('⏳ Session not ready, audio will be processed when ready')
-            } else {
-                console.log('🎤 processRecordedAudio: WebSocket not connected')
-                setDebugInfo('❌ WebSocket not connected')
-            }
-
-        } catch (error) {
-            console.error('🎤 processRecordedAudio: Failed to process audio:', error)
-            setDebugInfo('❌ Failed to process audio')
-        }
-    }
 
     // Start recording with existing session (without creating new connection)
-    const startRecordingWithExistingSession = useCallback(async () => {
+    const startRecordingWithExistingSession = async () => {
         try {
             console.log('🎤 startRecordingWithExistingSession: Starting recording with existing session...')
 
@@ -671,6 +620,7 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
 
             if (!wsConnection || !sessionReady || !sessionId) {
                 console.log('🎤 startRecordingWithExistingSession: Session not ready or connection not available')
+                console.log('🎤 WebSocket connection:', !!wsConnection, 'Session ready:', sessionReady, 'Session ID:', sessionId)
                 setDebugInfo('❌ Session not ready for recording')
                 return
             }
@@ -683,20 +633,94 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
                     mimeType: 'audio/webm;codecs=opus'
                 })
 
-                // Store audio chunks
-                const audioChunks: Blob[] = []
+                // Store audio chunks in ref for persistence
+                recordingAudioChunksRef.current = []
 
                 mediaRecorderRef.current.ondataavailable = (event) => {
                     if (event.data.size > 0) {
-                        audioChunks.push(event.data)
+                        recordingAudioChunksRef.current.push(event.data)
+                        console.log('🎤 ondataavailable: Added chunk, total chunks:', recordingAudioChunksRef.current.length)
                     }
                 }
 
+                // Store the media recorder instance to check if it's been recreated
+                const currentMediaRecorder = mediaRecorderRef.current
+
                 mediaRecorderRef.current.onstop = async () => {
                     console.log('🎤 startRecordingWithExistingSession: Recording stopped, processing audio...')
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' })
-                    await processRecordedAudio(audioBlob)
-                    audioChunks.length = 0 // Clear chunks
+                    console.log('🎤 MediaRecorder state:', mediaRecorderRef.current?.state)
+                    console.log('🎤 Processing flag before check:', isProcessingAudioRef.current)
+                    console.log('🎤 Callback flag before check:', isInCallbackRef.current)
+
+                    // Check if this is still the same media recorder instance
+                    if (mediaRecorderRef.current !== currentMediaRecorder) {
+                        console.log('🎤 onstop: MediaRecorder has been recreated, skipping old callback')
+                        return
+                    }
+
+                    // Add a flag to prevent multiple executions
+                    if (isProcessingAudioRef.current) {
+                        console.log('🎤 onstop: Already processing, skipping duplicate call')
+                        return
+                    }
+
+                    // Additional safety check - use a ref to prevent recursion
+                    if (isInCallbackRef.current) {
+                        console.log('🎤 onstop: Already in callback, skipping duplicate call')
+                        return
+                    }
+                    isInCallbackRef.current = true
+
+                    isProcessingAudioRef.current = true
+
+                    const audioBlob = new Blob(recordingAudioChunksRef.current, { type: 'audio/webm' })
+                    console.log('🎤 onstop: Audio blob created, size:', audioBlob.size)
+                    console.log('🎤 onstop: Number of audio chunks used:', recordingAudioChunksRef.current.length)
+
+                    // Process audio directly without calling the function to avoid circular dependency
+                    try {
+                        console.log('🎤 onstop: Processing audio directly...')
+
+                        // Convert WebM/Opus audio to PCM16 format for OpenAI Realtime API
+                        console.log('🎤 onstop: Converting audio to PCM16 format...')
+                        let pcm16Audio: Uint8Array
+                        try {
+                            pcm16Audio = await convertToPCM16(audioBlob)
+                            console.log('🎤 onstop: PCM16 conversion complete, size:', pcm16Audio.length)
+                        } catch (conversionError) {
+                            console.error('🎤 onstop: PCM16 conversion failed:', conversionError)
+                            throw conversionError
+                        }
+
+                        const base64Audio = btoa(String.fromCharCode(...pcm16Audio))
+                        console.log('🎤 onstop: Base64 conversion complete, length:', base64Audio.length)
+
+                        // Send audio via WebSocket to OpenAI
+                        if (wsConnection && isWebSocketConnected && sessionReady && sessionId) {
+                            console.log('🎤 onstop: Sending PCM16 audio via WebSocket...')
+                            wsConnection.send(JSON.stringify({
+                                type: 'input_audio_buffer.append',
+                                audio: base64Audio
+                            }))
+                            setDebugInfo('🎤 PCM16 audio sent to OpenAI via WebSocket')
+                        } else if (!sessionReady || !sessionId) {
+                            console.log('🎤 onstop: Session not ready yet, audio will be queued')
+                            setDebugInfo('⏳ Session not ready, audio will be processed when ready')
+                        } else {
+                            console.log('🎤 onstop: WebSocket not connected')
+                            setDebugInfo('❌ WebSocket not connected')
+                        }
+                    } catch (error) {
+                        console.error('🎤 onstop: Failed to process audio:', error)
+                        setDebugInfo('❌ Failed to process audio')
+                        isProcessingAudioRef.current = false
+                        isInCallbackRef.current = false
+                    }
+
+                    recordingAudioChunksRef.current.length = 0 // Clear chunks
+                    console.log('🎤 onstop: Audio processing complete, chunks cleared')
+                    isProcessingAudioRef.current = false
+                    isInCallbackRef.current = false
                 }
             }
 
@@ -712,7 +736,9 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
             console.error('🎤 startRecordingWithExistingSession: Failed to start recording:', error)
             setDebugInfo('❌ Failed to start recording')
         }
-    }, [wsConnection, sessionReady, sessionId, processRecordedAudio])
+    }
+
+
 
     // Start actual voice chat communication
     const startVoiceChat = useCallback(async () => {
@@ -730,30 +756,37 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
             if (!isWebSocketConnected || !wsConnection) {
                 console.log('🎤 startVoiceChat: Connecting to WebSocket server...')
                 await connectToWebSocketServer()
-                // Session creation and recording start will happen automatically via event handlers
+                // Session creation will happen automatically via event handlers
             }
 
         } catch (error) {
             console.error('🎤 startVoiceChat: Failed to start voice chat:', error)
             setDebugInfo('❌ Failed to start voice chat')
         }
-    }, [isWebSocketConnected, wsConnection, sessionReady, sessionId, connectToWebSocketServer, startRecordingWithExistingSession])
+    }, [isWebSocketConnected, wsConnection, sessionReady, sessionId, connectToWebSocketServer])
 
     // Stop voice chat and process recorded audio
     const stopVoiceChat = async () => {
         try {
             console.log('🎤 stopVoiceChat: Stopping voice chat...')
+            console.log('🎤 MediaRecorder state before stop:', mediaRecorderRef.current?.state)
 
             if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+                console.log('🎤 stopVoiceChat: Calling mediaRecorder.stop()')
                 mediaRecorderRef.current.stop()
                 setIsListening(false)
                 setDebugInfo('🔄 Processing your voice...')
+                console.log('🎤 stopVoiceChat: stop() called, waiting for onstop callback...')
+            } else {
+                console.log('🎤 stopVoiceChat: MediaRecorder not recording, state:', mediaRecorderRef.current?.state)
             }
         } catch (error) {
             console.error('🎤 stopVoiceChat: Failed to stop voice chat:', error)
             setDebugInfo(`❌ Failed to stop: ${error}`)
         }
     }
+
+
 
     // Cleanup on unmount
     useEffect(() => {
@@ -869,14 +902,12 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
                                     ? '🎙️ Listening... Speak clearly'
                                     : isCreatingSession
                                         ? '⏳ Connecting to voice assistant...'
-                                        : '🎤 Click to start voice recording'
+                                        : sessionReady
+                                            ? '🎤 Click "Start Recording" to begin voice chat'
+                                            : '🎤 Click "Start Voice Chat" to connect'
                                 }
                             </div>
-                            {debugInfo && (
-                                <div className="text-xs text-muted-foreground mt-1">
-                                    {debugInfo}
-                                </div>
-                            )}
+
                         </div>
                     </div>
                 </>
