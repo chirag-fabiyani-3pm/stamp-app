@@ -198,28 +198,6 @@ function StampDetailContent() {
     return value ? `${value}${symbol || ''}` : 'N/A'
   }
 
-  const onImageMouseMove = (e: React.MouseEvent) => {
-    if (!imageFrameRef.current) return
-    const rect = imageFrameRef.current.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-    const px = x / rect.width
-    const py = y / rect.height
-    const ry = (px - 0.5) * 10
-    const rx = -(py - 0.5) * 10
-    setTilt({ rx, ry })
-    setLensPos({ x, y })
-  }
-
-  const onImageMouseLeave = () => {
-    setTilt({ rx: 0, ry: 0 })
-    setShowLens(false)
-  }
-
-  const onImageMouseEnter = () => {
-    setShowLens(true)
-  }
-
   const handleShare = async () => {
     const shareUrl = typeof window !== "undefined" ? window.location.href : ""
     const title = stamp?.name || "Stamp Details"
@@ -366,9 +344,6 @@ function StampDetailContent() {
                 transform: `perspective(1000px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`,
                 transition: 'transform 120ms ease-out',
               }}
-              onMouseMove={onImageMouseMove}
-              onMouseEnter={onImageMouseEnter}
-              onMouseLeave={onImageMouseLeave}
             >
               {stamp.colorHex && (
                 <div
@@ -392,11 +367,11 @@ function StampDetailContent() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
 
               <div className="absolute top-3 left-3 flex items-center gap-2">
-                <Badge className="bg-background/80 backdrop-blur border border-white/20 dark:bg-gray-900/60 text-xs">
+                <Badge className="bg-black/70 text-white backdrop-blur-sm border border-white/30 text-xs shadow-sm">
                   {stamp.denominationDisplay || formatDenomination(stamp.denominationValue, stamp.denominationSymbol)}
                 </Badge>
                 {stamp.colorHex && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-background/80 backdrop-blur border border-white/20 px-2 py-1 text-xs">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-black/70 text-white backdrop-blur-sm border border-white/30 px-2 py-1 text-xs shadow-sm">
                     <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: stamp.colorHex }} />
                     {stamp.colorName}
                   </span>
@@ -405,11 +380,11 @@ function StampDetailContent() {
               <div className="absolute top-3 right-3 flex items-center gap-2">
                 <Badge
                   className={cn(
-                    "text-xs px-2 py-0.5 bg-background/80 backdrop-blur border border-white/20",
-                    (stamp.rarityRating || '').toLowerCase().includes('collector approved') && "bg-primary/20 text-primary",
-                    (stamp.rarityRating || '').toLowerCase().includes('rare') && "bg-orange-100 text-orange-800",
-                    (stamp.rarityRating || '').toLowerCase().includes('uncommon') && "bg-yellow-100 text-yellow-800",
-                    (stamp.rarityRating || '').toLowerCase().includes('common') && "bg-green-100 text-green-800"
+                    "text-xs px-2 py-0.5 bg-black/70 text-white backdrop-blur-sm border border-white/30 shadow-sm",
+                    (stamp.rarityRating || '').toLowerCase().includes('collector approved') && "border-primary/60",
+                    (stamp.rarityRating || '').toLowerCase().includes('rare') && "border-orange-400",
+                    (stamp.rarityRating || '').toLowerCase().includes('uncommon') && "border-yellow-400",
+                    (stamp.rarityRating || '').toLowerCase().includes('common') && "border-green-500"
                   )}
                 >
                   {stamp.rarityRating || '—'}
@@ -447,7 +422,7 @@ function StampDetailContent() {
               <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 text-center">
                 <div className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Country</div>
                 <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center justify-center gap-1">
-                  {stamp.countryFlag && stamp.countryFlag.length === 2 ? (
+                  {(stamp.countryFlag && stamp.countryFlag.length === 2) ? (
                     <ReactCountryFlag countryCode={stamp.countryFlag} svg className="" />
                   ) : null}
                   <span className="truncate max-w-[8rem]">{stamp.country || stamp.countryName || '—'}</span>
@@ -492,15 +467,6 @@ function StampDetailContent() {
                   <Button variant="outline" size="sm" onClick={handleShare} className="gap-2">
                     <Share2 className="h-4 w-4" /> Share
                   </Button>
-                  <Button variant={isSaved ? "default" : "outline"} size="sm" onClick={handleToggleSave} className="gap-2">
-                    <Bookmark className="h-4 w-4" /> {isSaved ? "Saved" : "Save"}
-                  </Button>
-                  <ReportDialog
-                    contentType="stamp"
-                    contentId={stamp.id}
-                    contentTitle={stamp.name}
-                    className="ml-1"
-                  />
                 </div>
               </div>
 
@@ -509,14 +475,9 @@ function StampDetailContent() {
                   <span className="flex items-center"><Calendar className="w-3 h-3 mr-1" />{stamp.issueYear}</span>
                 )}
                 <span className="flex items-center">
-                  {stamp.countryFlag && stamp.countryFlag.length === 2 ? (
-                    <ReactCountryFlag countryCode={stamp.countryFlag} svg className="mr-1" />
-                  ) : (
-                    <Globe className="w-3 h-3 mr-1" />
-                  )}
+                  <ReactCountryFlag countryCode={stamp.country || stamp.countryName || ''} svg className="mr-1" />
                   {stamp.country || stamp.countryName}
                 </span>
-                <span className="flex items-center"><Award className="w-3 h-3 mr-1 text-primary" />Approved</span>
               </div>
             </header>
 

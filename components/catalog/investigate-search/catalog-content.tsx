@@ -544,7 +544,7 @@ export function CatalogContent() {
       setTotalStampsCount(localStamps.length)
       setAllStampsLoaded(true)
       // Persist into IndexedDB for subsequent paginated loads
-      await saveStampsToIndexedDB(localStamps)
+      // await saveStampsToIndexedDB(localStamps)
     } catch (error) {
       console.error('Error loading local apiStampData:', error)
       setStamps([])

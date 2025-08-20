@@ -902,11 +902,58 @@ export default function StampObservationManager({
     const [formData, setFormData] = useState<Record<string, any>>(() => {
         const defaultData = initializeFormDataFromCategories(categories);
 
+        // Helper to set a nested value using a path of keys
+        const setNestedValue = (obj: any, path: string[], value: any) => {
+            let current = obj;
+            for (let i = 0; i < path.length - 1; i++) {
+                const key = path[i].toLowerCase();
+                if (!current[key] || typeof current[key] !== 'object') {
+                    current[key] = {};
+                }
+                current = current[key];
+            }
+            const finalKey = path[path.length - 1].toLowerCase();
+            current[finalKey] = value;
+        };
+
         // If we have API data, merge it with the default structure
         if (selectedStamp.apiData) {
             const apiMappedData = mapApiDataToFormStructure(selectedStamp.apiData);
-            // Deep merge the API data with default data
-            return { ...defaultData, ...apiMappedData };
+            const merged: Record<string, any> = { ...defaultData, ...apiMappedData };
+
+            // If detailed form JSON exists, parse and apply values dynamically
+            const detailsJson = (selectedStamp.apiData as any).stampDetailsJson as string | undefined;
+            console.log(detailsJson)
+            if (detailsJson) {
+                try {
+                    const parsed = JSON.parse(detailsJson);
+
+                    const parseApiDataDynamically = (apiData: any[], currentPath: string[] = []) => {
+                        apiData.forEach((item) => {
+                            const key = (item.key || '').toString();
+                            if (!key) return;
+                            const itemPath = [...currentPath, key];
+
+                            if (item.type === 'Category' && Array.isArray(item.children)) {
+                                parseApiDataDynamically(item.children, itemPath);
+                            } else {
+                                const rawValue = typeof item.value === 'string' ? item.value : (item.value ?? '').toString();
+                                if (rawValue && rawValue.trim() !== '') {
+                                    setNestedValue(merged, itemPath, rawValue);
+                                }
+                            }
+                        });
+                    };
+
+                    if (Array.isArray(parsed)) {
+                        parseApiDataDynamically(parsed);
+                    }
+                } catch (err) {
+                    console.error('Error parsing stampDetailsJson for prefill:', err);
+                }
+            }
+
+            return merged;
         }
 
         return defaultData;
@@ -3835,7 +3882,7 @@ export default function StampObservationManager({
             const stampDetailsJson = transformFormDataToApiFormat(formData, categories);
 
             // Get stamp catalog ID from selected stamp API data
-            const stampCatalogId = selectedStamp?.apiData?.id.startsWith('00000000') ? selectedStamp?.id.startsWith('00000000') ? '' : selectedStamp?.id : selectedStamp?.apiData?.id;
+            // const stampCatalogId = selectedStamp?.apiData?.id.startsWith('00000000') ? selectedStamp?.id.startsWith('00000000') ? '' : selectedStamp?.id : selectedStamp?.apiData?.id;
 
             // Get merged stamp data for extracting field values
             const mergedData = getMergedStampData();
@@ -3848,7 +3895,7 @@ export default function StampObservationManager({
 
             // Add all required fields according to new API specification - Enhanced to extract more from formData
             apiFormData.append('UserId', userId);
-            apiFormData.append('StampCatalogId', stampCatalogId);
+            // apiFormData.append('StampCatalogId', stampCatalogId);
             apiFormData.append('StampCode', stampCode || '');
             apiFormData.append('Name', mergedData.name || selectedStamp?.apiData?.name || '');
 
