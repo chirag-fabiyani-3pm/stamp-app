@@ -28,7 +28,7 @@ import {
     ChevronRight,
     ExternalLink,
     MessageSquare,
-    RotateCcw,
+    MessageSquarePlus,
     Send,
     X
 } from 'lucide-react'
@@ -1270,51 +1270,34 @@ export function PhilaGuideChat() {
             {/* Chat button is now in HeaderActions */}
             <div
                 className={cn(
-                    "fixed right-0 top-0 h-full w-full max-w-sm flex flex-col z-50 border-l border-input bg-background/80 backdrop-blur-xl shadow-2xl transition-transform duration-500 ease-in-out",
+                    "fixed right-0 top-0 h-full w-full max-w-sm flex flex-col z-50 border-l border-border bg-background shadow-xl transition-all duration-300 ease-in-out animate-in slide-in-from-right duration-300 delay-100",
                     isOpen ? "translate-x-0" : "translate-x-full"
                 )}
                 data-state={isOpen ? "open" : "closed"}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-input bg-primary text-primary-foreground shadow-sm">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-background/95 backdrop-blur-sm shadow-sm transition-all duration-200 animate-in slide-in-from-top duration-300 delay-150">
                     <div className="flex items-center gap-3 min-w-0">
-                        <Avatar className="w-11 h-11 flex-shrink-0 border-2 border-primary-foreground/30">
+                        <Avatar className="w-9 h-9 flex-shrink-0 border-2 border-primary/20">
                             <AvatarImage src="/images/stamp-bot-avatar.png" alt="PhilaGuide AI" />
-                            <AvatarFallback className="bg-primary-foreground/10 text-primary-foreground text-base dark:text-black">PG</AvatarFallback>
+                            <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">PG</AvatarFallback>
                         </Avatar>
                         <div className="min-w-0">
-                            <h3 className="font-bold text-lg truncate dark:text-black">PhilaGuide AI</h3>
-                            <p className="text-xs opacity-90 truncate dark:text-black">Your intelligent stamp assistant</p>
+                            <h3 className="font-semibold text-base text-foreground truncate">PhilaGuide AI</h3>
                         </div>
                     </div>
 
-                    {/* NEW: Voice Chat Toggle Button and Actions */}
+                    {/* Header Actions */}
                     <div className="flex items-center gap-2">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={toggleVoiceMode}
-                            className={cn(
-                                "h-8 px-3 text-xs rounded-md transition-all duration-200",
-                                isVoiceMode
-                                    ? "bg-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/30"
-                                    : "text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10"
-                            )}
-                        >
-                            <AudioLines className="w-4 h-4 mr-1" />
-                            {isVoiceMode ? 'Text' : 'Voice'}
-                        </Button>
-
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-8 px-3 text-xs rounded-md text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10 transition-all duration-200"
+                                    className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-all duration-200 hover:scale-105 animate-in slide-in-from-top duration-300 delay-200"
                                     title="Start new chat session"
                                 >
-                                    <RotateCcw className="w-4 h-4 mr-1" />
-                                    New Chat
+                                    <MessageSquarePlus className="w-4 h-4" />
                                 </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
@@ -1337,16 +1320,16 @@ export function PhilaGuideChat() {
                             variant="ghost"
                             size="sm"
                             onClick={() => setIsOpen(false)}
-                            className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-800 dark:text-black dark:hover:text-black dark:hover:bg-gray-200"
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-all duration-200 hover:scale-105 animate-in slide-in-from-top duration-300 delay-250"
                         >
-                            <X className="w-5 h-5" />
+                            <X className="w-4 h-4" />
                         </Button>
                     </div>
                 </div>
 
                 {/* Messages */}
-                <ScrollArea className="flex-1 p-4 bg-background/70">
-                    <div className="space-y-4">
+                <ScrollArea className="flex-1 p-6 bg-background animate-in fade-in duration-300 delay-200">
+                    <div className="space-y-6">
                         {/* NEW: Welcome message based on mode */}
                         {(isVoiceMode ? voiceMessages : messages).length === 0 && (
                             <div className="text-center py-8 px-4">
@@ -1405,11 +1388,11 @@ export function PhilaGuideChat() {
                         {/* NEW: Show messages based on current mode */}
                         {(isVoiceMode ? voiceMessages : messages).map((message) => (
                             <div key={message.id} className={cn(
-                                "flex gap-3",
+                                "flex gap-4 animate-in slide-in-from-bottom duration-300",
                                 message.role === 'user' ? "justify-end" : "justify-start"
                             )}>
                                 {message.role === 'assistant' && (
-                                    <Avatar className="w-9 h-9 flex-shrink-0 border border-input">
+                                    <Avatar className="w-9 h-9 flex-shrink-0 border-2 border-primary/20">
                                         <AvatarImage src="/images/stamp-bot-avatar.png" alt="PhilaGuide AI" />
                                         <AvatarFallback className="bg-primary/10 text-primary text-sm">PG</AvatarFallback>
                                     </Avatar>
@@ -1419,10 +1402,10 @@ export function PhilaGuideChat() {
                                     message.role === 'user' ? "order-1" : "order-2"
                                 )}>
                                     <div className={cn(
-                                        "px-4 py-2 text-sm break-words shadow-sm",
+                                        "px-4 py-3 text-sm break-words",
                                         message.role === 'user'
-                                            ? "bg-primary text-primary-foreground dark:text-black rounded-tl-xl rounded-br-xl rounded-tr-sm rounded-bl-sm ml-auto"
-                                            : "bg-muted text-foreground rounded-tr-xl rounded-bl-xl rounded-tl-sm rounded-br-sm mr-auto border border-input"
+                                            ? "bg-primary text-primary-foreground dark:text-black rounded-2xl rounded-bl-md ml-auto"
+                                            : "bg-muted text-foreground rounded-2xl rounded-tl-md mr-auto"
                                     )}>
                                         {message.role === 'assistant' ? (
                                             <MarkdownMessage content={message.content} />
@@ -1469,12 +1452,12 @@ export function PhilaGuideChat() {
 
                         {/* NEW: Show loading state based on current mode */}
                         {(isVoiceMode ? isVoiceProcessing : isLoading) && (
-                            <div className="flex gap-3 justify-start">
-                                <Avatar className="w-9 h-9 flex-shrink-0 border border-input">
+                            <div className="flex gap-4 justify-start animate-in slide-in-from-bottom duration-300">
+                                <Avatar className="w-9 h-9 flex-shrink-0 border-2 border-primary/20">
                                     <AvatarImage src="/images/stamp-bot-avatar.png" alt="PhilaGuide AI" />
                                     <AvatarFallback className="bg-primary/10 text-primary text-sm">PG</AvatarFallback>
                                 </Avatar>
-                                <div className="bg-muted rounded-tr-xl rounded-bl-xl rounded-tl-sm rounded-br-sm px-4 py-2 shadow-sm border border-input">
+                                <div className="bg-muted rounded-2xl rounded-tl-md px-4 py-3">
                                     <div className="flex flex-col gap-1">
                                         <div className="flex gap-1">
                                             <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" />
@@ -1501,63 +1484,89 @@ export function PhilaGuideChat() {
                 </ScrollArea>
 
                 {/* Input */}
-                <div className="p-4 border-t border-input bg-card/60">
+                <div className="p-6 border-t border-border bg-background animate-in slide-in-from-bottom duration-300 delay-250">
                     {isVoiceMode ? (
                         /* NEW: Voice Chat Input Interface */
-                        <div className="space-y-4">
+                        <div className="space-y-4 animate-in slide-in-from-bottom duration-300 delay-300">
                             {/* Voice Input Display */}
-                            <div className="bg-muted/50 rounded-lg p-4 border border-input">
-                                <div className="flex items-center gap-3 mb-3">
-                                    <AudioLines className="w-5 h-5 text-primary" />
-                                    <span className="text-sm font-medium text-foreground">Voice Input</span>
+                            <div className="bg-background rounded-xl border border-border shadow-md animate-in zoom-in duration-300">
+                                <div className="flex items-center justify-between p-4 border-b border-border animate-in slide-in-from-top duration-300 delay-350">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                                            <AudioLines className="w-4 h-4 text-primary" />
+                                        </div>
+                                        <span className="text-sm font-medium text-foreground">Voice Chat</span>
+                                    </div>
                                 </div>
 
                                 {/* VoiceChatPanel Component */}
-                                <VoiceChatPanel
-                                    onTranscript={handleTranscript}
-                                    onClose={() => setIsVoiceMode(false)}
-                                    onVoiceChange={setSelectedVoiceFromPanel}
-                                    onSpeakResponse={speakResponse}
-                                />
+                                <div className="p-4 animate-in fade-in duration-300 delay-400">
+                                    <VoiceChatPanel
+                                        onTranscript={handleTranscript}
+                                        onClose={() => setIsVoiceMode(false)}
+                                        onVoiceChange={setSelectedVoiceFromPanel}
+                                        onSpeakResponse={speakResponse}
+                                    />
+                                </div>
                             </div>
 
-                            {/* Voice Chat Instructions */}
-                            <div className="text-xs text-muted-foreground text-center">
-                                Speak naturally about stamps, values, history, or collecting tips
+                            {/* Voice Chat Instructions and Text Toggle */}
+                            <div className="flex items-center justify-between animate-in slide-in-from-bottom duration-300 delay-500">
+                                <div className="text-xs text-muted-foreground">
+                                    Speak naturally about stamps, values, history, or collecting tips
+                                </div>
+                                <Button
+                                    onClick={() => setIsVoiceMode(false)}
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 px-3 text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200 rounded-md animate-in slide-in-from-bottom duration-300 delay-400"
+                                >
+                                    <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
+                                    Text Chat
+                                </Button>
                             </div>
                         </div>
                     ) : (
                         /* Text Chat Input Interface */
-                        <div className="space-y-2">
-                            <div className="flex gap-2">
+                        <div className="space-y-3 animate-in slide-in-from-bottom duration-300 delay-350">
+                            <div className="flex gap-3">
                                 <Input
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
                                     onKeyDown={handleKeyDown}
                                     placeholder={isLoading ? "AI is processing..." : "Ask PhilaGuide AI..."}
                                     disabled={isLoading}
-                                    className="flex-1 text-sm bg-background border-input px-4 py-2.5 rounded-full focus-visible:ring-offset-0 focus-visible:ring-primary"
+                                    className="flex-1 text-sm bg-background border-border px-4 py-2.5 rounded-full focus-visible:ring-offset-0 focus-visible:ring-primary focus-visible:ring-2 transition-all duration-200 hover:border-primary/50 animate-in slide-in-from-left duration-300 delay-400"
                                 />
+
+                                {/* Voice Toggle Button */}
+                                <Button
+                                    onClick={() => setIsVoiceMode(true)}
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-10 w-10 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200 border border-border hover:border-primary/30 hover:scale-105 animate-in slide-in-from-right duration-300 delay-450"
+                                    title="Switch to voice chat"
+                                >
+                                    <AudioLines className="w-4 h-4" />
+                                </Button>
 
                                 <Button
                                     onClick={handleSendMessage}
                                     disabled={isLoading || !input.trim()}
                                     size="icon"
                                     className={cn(
-                                        "transition-all duration-200 flex-shrink-0 rounded-full",
+                                        "transition-all duration-200 flex-shrink-0 rounded-full h-10 w-10 hover:scale-105 animate-in slide-in-from-right duration-300 delay-500",
                                         isLoading
                                             ? "bg-orange-500 hover:bg-orange-600 text-white"
                                             : input.trim()
                                                 ? "bg-primary hover:bg-primary/90 text-white"
-                                                : "bg-muted hover:bg-muted/80 text-muted-foreground border border-input"
+                                                : "bg-muted hover:bg-muted/80 text-muted-foreground border border-border"
                                     )}
                                 >
                                     {isLoading ? (
                                         <div className="w-4 h-4 bg-white rounded-sm" />
-                                    ) : input.trim() ? (
-                                        <Send className="w-5 h-5" />
                                     ) : (
-                                        <AudioLines className="w-5 h-5" />
+                                        <Send className="w-5 h-5" />
                                     )}
                                 </Button>
                             </div>
