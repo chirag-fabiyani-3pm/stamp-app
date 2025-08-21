@@ -340,7 +340,7 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
             setDebugInfo('🔌 Connecting to WebSocket server...')
 
             // Connect to our WebSocket server
-            const ws = new WebSocket('wss://stamps-of-approval-ai-expert.azurewebsites.net/webrtc')
+            const ws = new WebSocket('wss://decoded-app-stamp-ai-expert-prod.azurewebsites.net/webrtc')
 
             ws.onopen = () => {
                 console.log('🎤 connectToWebSocketServer: Connected to WebSocket server')
