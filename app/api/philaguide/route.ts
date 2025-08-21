@@ -10,7 +10,7 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 })
 
-const ASSISTANT_ID = 'asst_AfsiDbpnx2WjgZV7O97eHhyb'
+const ASSISTANT_ID = 'asst_mPRtgiDOzgjQqqV82twGDgys'
 
 // Thread management - store active threads (in production, use a proper database)
 const activeThreads = new Map<string, string>() // sessionId -> threadId
