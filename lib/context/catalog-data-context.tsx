@@ -306,7 +306,7 @@ export function CatalogDataProvider({ children }: { children: React.ReactNode })
 
         // 3) Nothing in IndexedDB: fetch from backend once to seed
         const jwt = getCookie('stamp_jwt') || undefined
-        const apiData = await fetchStampMasterCatalogAll('bb4e191f-5be2-4f39-9328-ed1bc990f3e4', 200, jwt)
+        const apiData = await fetchStampMasterCatalogAll('3129b91b-df8f-42fe-8dfd-8f7dd64154d6', 200, jwt)
         const converted = apiData.map(convertApiStampToStampData)
 
         if (!isMounted) return

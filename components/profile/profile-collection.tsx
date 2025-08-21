@@ -151,7 +151,7 @@ export default function ProfileCollection() {
       const userData = JSON.parse(userDataStr)
       const jwt = userData.jwt
 
-      const url = new URL('https://3pm-stampapp-prod.azurewebsites.net/api/v1/Stamp')
+      const url = new URL('https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/Stamp')
       url.searchParams.append('pageNumber', page.toString())
       url.searchParams.append('pageSize', pageSize.toString())
       
