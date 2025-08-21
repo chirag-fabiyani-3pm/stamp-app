@@ -11,6 +11,8 @@ interface VoiceChatPanelProps {
     onTranscript: (transcript: string) => void
     onSpeakResponse?: (text: string) => void  // Add this prop for text-to-speech
     onVoiceChange?: (voice: string) => void   // Add this prop for voice selection
+    onListeningChange?: (isListening: boolean) => void  // Callback for listening state changes
+    onTranscribingChange?: (isTranscribing: boolean) => void  // Callback for transcription state changes
 }
 
 
@@ -24,7 +26,7 @@ const VOICE_OPTIONS = [
     { value: 'shimmer', label: 'Shimmer' }
 ]
 
-export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse, onVoiceChange }: VoiceChatPanelProps) {
+export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse, onVoiceChange, onListeningChange, onTranscribingChange }: VoiceChatPanelProps) {
     const router = useRouter()
 
     // Voice chat state
@@ -464,6 +466,7 @@ Keep responses concise, helpful, and always in the user's language. Respond natu
                             setLastTranscription(message.text)
                             setIsStreamingResponse(false) // Reset streaming flag
                             isStreamingResponseRef.current = false // Reset ref
+                            onTranscribingChange?.(false) // Notify parent that transcription is complete
 
                             // If we haven't streamed deltas, send the complete transcript
                             if (!isStreamingResponse) {
@@ -783,6 +786,7 @@ Keep responses concise, helpful, and always in the user's language. Respond natu
                 console.log('🎤 startRecordingWithExistingSession: Starting recording...')
                 mediaRecorderRef.current.start(100) // Record in 100ms chunks
                 setIsListening(true)
+                onListeningChange?.(true) // Notify parent that listening started
                 setDebugInfo('🎤 Recording... Speak now!')
             }
 
@@ -835,16 +839,21 @@ Keep responses concise, helpful, and always in the user's language. Respond natu
                 console.log('🎤 stopVoiceChat: Calling mediaRecorder.stop()')
                 mediaRecorderRef.current.stop()
                 setIsListening(false)
+                onListeningChange?.(false) // Notify parent that listening stopped
+                onTranscribingChange?.(true) // Notify parent that transcription started
                 setDebugInfo('🔄 Processing your voice...')
                 console.log('🎤 stopVoiceChat: stop() called, waiting for onstop callback...')
             } else {
                 console.log('🎤 stopVoiceChat: MediaRecorder not recording, state:', mediaRecorderRef.current?.state)
                 setIsListening(false) // Ensure UI is in correct state
+                onListeningChange?.(false) // Notify parent that listening stopped
             }
         } catch (error) {
             console.error('🎤 stopVoiceChat: Failed to stop voice chat:', error)
             setDebugInfo(`❌ Failed to stop: ${error}`)
             setIsListening(false) // Reset state on error
+            onListeningChange?.(false) // Notify parent 
+            onTranscribingChange?.(false) // Reset transcription state on error
             isProcessingAudioRef.current = false
             isInCallbackRef.current = false
         }

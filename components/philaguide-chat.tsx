@@ -518,6 +518,7 @@ export function PhilaGuideChat() {
     // Voice interaction
     const [isListening, setIsListening] = useState(false)
     const [transcript, setTranscript] = useState('')
+    const [isTranscribing, setIsTranscribing] = useState(false) // Track if voice is being transcribed
     const [isStreamingAI, setIsStreamingAI] = useState(false) // Track if we're in the middle of streaming an AI response
     const [currentStreamingId, setCurrentStreamingId] = useState<string | null>(null) // Track current streaming message ID
     const isStreamingAIRef = useRef(false) // Immediate access to streaming state
@@ -665,13 +666,72 @@ export function PhilaGuideChat() {
                     }
                 }
             } else if (text === '\n[AI_COMPLETE]') {
-                // AI response is complete - mark streaming as finished
+                // AI response is complete - mark streaming as finished and parse for cards
+                const messageId = currentStreamingIdRef.current || currentStreamingId // Store before resetting
+
                 isStreamingAIRef.current = false
                 currentStreamingIdRef.current = null
                 pendingAIMessage.current = null // Clear any pending message
                 setIsStreamingAI(false)
                 setCurrentStreamingId(null)
                 console.log('🎤 AI response streaming complete')
+
+                // Parse the final AI response for stamp cards
+                if (messageId) {
+                    console.log('🎤 Parsing completed AI response for cards, message ID:', messageId)
+
+                    setMessages(prevMessages => {
+                        const updatedMessages = [...prevMessages]
+                        const messageIndex = updatedMessages.findIndex(msg => msg.id === messageId)
+
+                        if (messageIndex !== -1) {
+                            const message = updatedMessages[messageIndex]
+                            console.log('🎤 Found message to parse:', message.content?.substring(0, 100) + '...')
+
+                            // Parse for structured stamp data
+                            const parsedStamps = parseStructuredStampData(message.content || '')
+                            console.log('🎤 Parsed stamps from voice response:', parsedStamps.length)
+
+                            if (parsedStamps.length > 0) {
+                                // Update message with parsed stamp data
+                                updatedMessages[messageIndex] = {
+                                    ...message,
+                                    structuredData: parsedStamps[0], // First stamp for single display
+                                    allStamps: parsedStamps, // All stamps for multi-display
+                                    content: '' // Hide raw content when cards are shown
+                                }
+                                console.log('🎤 ✅ Updated voice message with stamp cards')
+                            }
+                        }
+
+                        return updatedMessages
+                    })
+
+                    // Also update voice messages if in voice mode
+                    if (isVoiceMode) {
+                        setVoiceMessages(prevMessages => {
+                            const updatedMessages = [...prevMessages]
+                            const messageIndex = updatedMessages.findIndex(msg => msg.id === messageId)
+
+                            if (messageIndex !== -1) {
+                                const message = updatedMessages[messageIndex]
+                                const parsedStamps = parseStructuredStampData(message.content || '')
+
+                                if (parsedStamps.length > 0) {
+                                    updatedMessages[messageIndex] = {
+                                        ...message,
+                                        structuredData: parsedStamps[0],
+                                        allStamps: parsedStamps,
+                                        content: ''
+                                    }
+                                    console.log('🎤 ✅ Updated voice message array with stamp cards')
+                                }
+                            }
+
+                            return updatedMessages
+                        })
+                    }
+                }
             } else if (isStreamingAIRef.current && currentStreamingIdRef.current && text.trim() && !text.startsWith('\nYou: ') && !text.startsWith('\n[AI_COMPLETE]')) {
                 // AI response delta - queue it if message is pending, otherwise update existing message
                 if (pendingAIMessage.current) {
@@ -1871,8 +1931,73 @@ export function PhilaGuideChat() {
                             </div>
                         ))}
 
-                        {/* NEW: Show loading state based on current mode */}
-                        {(isVoiceMode ? isVoiceProcessing : isLoading) && (
+                        {/* Voice Recording Indicator */}
+                        {isVoiceMode && isListening && (
+                            <div className="flex gap-4 justify-start animate-in slide-in-from-bottom duration-300">
+                                <Avatar className="w-9 h-9 flex-shrink-0 border-2 border-orange-500/50 bg-orange-50">
+                                    <div className="w-4 h-4 bg-orange-500 rounded-full animate-pulse" />
+                                </Avatar>
+                                <div className="bg-orange-50 border border-orange-200 rounded-2xl rounded-tl-md px-4 py-3 max-w-[85%]">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
+                                        <span className="text-sm text-orange-700 animate-in slide-in-from-left duration-300">
+                                            🎙️ Listening... Speak clearly
+                                        </span>
+                                        {/* Recording indicator */}
+                                        <div className="flex gap-1">
+                                            <div className="w-1 h-3 bg-orange-500 rounded animate-bounce" style={{ animationDelay: '0ms' }} />
+                                            <div className="w-1 h-4 bg-orange-500 rounded animate-bounce" style={{ animationDelay: '150ms' }} />
+                                            <div className="w-1 h-2 bg-orange-500 rounded animate-bounce" style={{ animationDelay: '300ms' }} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Voice Transcription Processing Indicator */}
+                        {isVoiceMode && !isListening && !isStreamingAI && isTranscribing && (
+                            <div className="flex gap-4 justify-start animate-in slide-in-from-bottom duration-300">
+                                <Avatar className="w-9 h-9 flex-shrink-0 border-2 border-purple-500/50 bg-purple-50">
+                                    <div className="w-4 h-4 bg-purple-500 rounded-full animate-pulse" />
+                                </Avatar>
+                                <div className="bg-purple-50 border border-purple-200 rounded-2xl rounded-tl-md px-4 py-3 max-w-[85%]">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" />
+                                        <span className="text-sm text-purple-700 animate-in slide-in-from-left duration-300">
+                                            🔄 Processing your voice...
+                                        </span>
+                                        {/* Processing dots */}
+                                        <div className="flex gap-1">
+                                            <div className="w-1 h-1 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                            <div className="w-1 h-1 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                            <div className="w-1 h-1 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Voice AI Response Indicator */}
+                        {isVoiceMode && isStreamingAI && (
+                            <div className="flex gap-4 justify-start animate-in slide-in-from-bottom duration-300">
+                                <Avatar className="w-9 h-9 flex-shrink-0 border-2 border-blue-500/50 bg-blue-50">
+                                    <div className="w-4 h-4 bg-blue-500 rounded-full animate-spin" />
+                                </Avatar>
+                                <div className="bg-blue-50 border border-blue-200 rounded-2xl rounded-tl-md px-4 py-3 max-w-[85%]">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                                        <span className="text-sm text-blue-700 animate-in slide-in-from-left duration-300">
+                                            🧠 AI is responding...
+                                        </span>
+                                        {/* AI thinking indicator */}
+                                        <span className="text-blue-500 animate-pulse">💭</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Regular Chat Loading Indicator */}
+                        {(!isVoiceMode && isLoading) && (
                             <div className="flex gap-4 justify-start animate-in slide-in-from-bottom duration-300">
                                 <Avatar className="w-9 h-9 flex-shrink-0 border-2 border-primary/20">
                                     <AvatarImage src="/images/stamp-bot-avatar.png" alt="PhilaGuide AI" />
@@ -1959,6 +2084,8 @@ export function PhilaGuideChat() {
                                         onClose={() => setIsVoiceMode(false)}
                                         onVoiceChange={setSelectedVoiceFromPanel}
                                         onSpeakResponse={speakResponse}
+                                        onListeningChange={setIsListening}
+                                        onTranscribingChange={setIsTranscribing}
                                     />
                                 </div>
                             </div>
