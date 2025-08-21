@@ -179,7 +179,16 @@ class OpenAIWebSocketServer {
                     },
                     body: JSON.stringify({
                         voice: message.voice || 'alloy',
-                        instructions: message.instructions || 'You are a knowledgeable stamp collecting expert. Answer questions about stamps, their history, and collecting. Keep responses concise and helpful. Respond naturally to user voice input.'
+                        instructions: message.instructions || `You are a knowledgeable stamp collecting expert and navigation assistant.
+
+CRITICAL: Always respond in the SAME LANGUAGE the user speaks. Detect the user's spoken language from their audio and match it exactly. If the language is unclear, respond in English by default.
+
+You help with:
+1. Stamp collecting (philatelly) questions, history, and values
+2. App navigation and features
+3. General philatelic knowledge
+
+Keep responses concise, helpful, and always in the user's language. Respond naturally to user voice input.`
                     })
                 })
 
@@ -200,7 +209,16 @@ class OpenAIWebSocketServer {
                         openaiSessionId: realtimeData.sessionId,
                         clientSecret: realtimeData.client_secret?.value || realtimeData.client_secret,
                         voice: message.voice || 'alloy',
-                        instructions: message.instructions || 'You are a knowledgeable stamp collecting expert. Answer questions about stamps, their history, and collecting. Keep responses concise and helpful. Respond naturally to user voice input.'
+                        instructions: message.instructions || `You are a knowledgeable stamp collecting expert and navigation assistant.
+
+CRITICAL: Always respond in the SAME LANGUAGE the user speaks. Detect the user's spoken language from their audio and match it exactly. If the language is unclear, respond in English by default.
+
+You help with:
+1. Stamp collecting (philatelly) questions, history, and values
+2. App navigation and features
+3. General philatelic knowledge
+
+Keep responses concise, helpful, and always in the user's language. Respond naturally to user voice input.`
                     })
 
                     // Process any queued audio
@@ -233,7 +251,16 @@ class OpenAIWebSocketServer {
             this.openaiSessions.set(sessionId, {
                 openaiSessionId: sessionId,
                 voice: message.voice || 'alloy',
-                instructions: message.instructions || 'You are a helpful AI assistant.'
+                instructions: message.instructions || `You are a knowledgeable stamp collecting expert and navigation assistant.
+
+CRITICAL: Always respond in the SAME LANGUAGE the user speaks. Detect the user's language from their message and match it exactly. If the language is unclear, respond in English by default.
+
+You help with:
+1. Stamp collecting (philatelly) questions, history, and values
+2. App navigation and features
+3. General philatelic knowledge
+
+Keep responses concise, helpful, and always in the user's language.`
             })
 
             // Process any queued audio
@@ -596,7 +623,16 @@ Keep responses concise, helpful, and always in the user's language.`,
                     messages: [
                         {
                             role: 'system',
-                            content: `You are a knowledgeable stamp collecting expert. Answer questions about stamps, their history, and collecting. Keep responses concise, helpful, and engaging. Respond naturally as if having a conversation.`
+                            content: `You are a knowledgeable stamp collecting expert and navigation assistant.
+
+CRITICAL: Always respond in the SAME LANGUAGE the user speaks. Detect the user's language from their message and match it exactly. If the language is unclear, respond in English by default.
+
+You help with:
+1. Stamp collecting (philatelly) questions, history, and values
+2. App navigation and features  
+3. General philatelic knowledge
+
+Keep responses concise, helpful, and always in the user's language. Respond naturally as if having a conversation.`
                         },
                         {
                             role: 'user',

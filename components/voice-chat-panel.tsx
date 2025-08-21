@@ -364,7 +364,16 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
                                 ws.send(JSON.stringify({
                                     type: 'session.create',
                                     voice: selectedVoice || 'alloy',
-                                    instructions: 'You are a knowledgeable stamp collecting expert. Answer questions about stamps, their history, and collecting. Keep responses concise and helpful. Respond naturally to user voice input.'
+                                    instructions: `You are a knowledgeable stamp collecting expert and navigation assistant.
+
+CRITICAL: Always respond in the SAME LANGUAGE the user speaks. Detect the user's spoken language from their audio and match it exactly. If the language is unclear, respond in English by default.
+
+You help with:
+1. Stamp collecting (philatelly) questions, history, and values
+2. App navigation and features
+3. General philatelic knowledge
+
+Keep responses concise, helpful, and always in the user's language. Respond naturally to user voice input.`
                                 }))
                                 console.log('🎤 connectToWebSocketServer: Session creation request sent')
                             }
