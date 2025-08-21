@@ -11,6 +11,8 @@ interface VoiceChatPanelProps {
     onTranscript: (transcript: string) => void
     onSpeakResponse?: (text: string) => void  // Add this prop for text-to-speech
     onVoiceChange?: (voice: string) => void   // Add this prop for voice selection
+    onListeningChange?: (isListening: boolean) => void  // Callback for listening state changes
+    onTranscribingChange?: (isTranscribing: boolean) => void  // Callback for transcription state changes
 }
 
 
@@ -24,7 +26,7 @@ const VOICE_OPTIONS = [
     { value: 'shimmer', label: 'Shimmer' }
 ]
 
-export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse, onVoiceChange }: VoiceChatPanelProps) {
+export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse, onVoiceChange, onListeningChange, onTranscribingChange }: VoiceChatPanelProps) {
     const router = useRouter()
 
     // Voice chat state
@@ -364,7 +366,16 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
                                 ws.send(JSON.stringify({
                                     type: 'session.create',
                                     voice: selectedVoice || 'alloy',
-                                    instructions: 'You are a knowledgeable stamp collecting expert. Answer questions about stamps, their history, and collecting. Keep responses concise and helpful. Respond naturally to user voice input.'
+                                    instructions: `You are a knowledgeable stamp collecting expert and navigation assistant.
+
+CRITICAL: Always respond in the SAME LANGUAGE the user speaks. Detect the user's spoken language from their audio and match it exactly. If the language is unclear, respond in English by default.
+
+You help with:
+1. Stamp collecting (philatelly) questions, history, and values
+2. App navigation and features
+3. General philatelic knowledge
+
+Keep responses concise, helpful, and always in the user's language. Respond naturally to user voice input.`
                                 }))
                                 console.log('🎤 connectToWebSocketServer: Session creation request sent')
                             }
@@ -455,6 +466,7 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
                             setLastTranscription(message.text)
                             setIsStreamingResponse(false) // Reset streaming flag
                             isStreamingResponseRef.current = false // Reset ref
+                            onTranscribingChange?.(false) // Notify parent that transcription is complete
 
                             // If we haven't streamed deltas, send the complete transcript
                             if (!isStreamingResponse) {
@@ -692,35 +704,80 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
                             throw conversionError
                         }
 
-                        const base64Audio = btoa(String.fromCharCode(...pcm16Audio))
-                        console.log('🎤 onstop: Base64 conversion complete, length:', base64Audio.length)
+                        // Convert to base64 using a browser-native approach for better compatibility
+                        console.log('🎤 onstop: Converting to base64...')
+                        let base64Audio: string
+                        try {
+                            // Use ArrayBuffer-based approach which is safer and more reliable
+                            const buffer = pcm16Audio.buffer.slice(pcm16Audio.byteOffset, pcm16Audio.byteOffset + pcm16Audio.byteLength)
+
+                            // Convert to base64 using a more reliable method
+                            let binary = ''
+                            const bytes = new Uint8Array(buffer)
+                            const chunkSize = 0x8000 // 32KB chunks
+
+                            for (let i = 0; i < bytes.length; i += chunkSize) {
+                                const chunk = bytes.subarray(i, i + chunkSize)
+                                binary += String.fromCharCode(...chunk)
+                            }
+
+                            base64Audio = btoa(binary)
+                            console.log('🎤 onstop: Base64 conversion complete, length:', base64Audio.length)
+                        } catch (base64Error) {
+                            console.error('🎤 onstop: Base64 conversion failed:', base64Error)
+
+                            // Fallback: Try smaller chunks if the main method fails
+                            try {
+                                console.log('🎤 onstop: Trying fallback base64 conversion...')
+                                let binary = ''
+                                const chunkSize = 1024 // 1KB chunks as fallback
+
+                                for (let i = 0; i < pcm16Audio.length; i += chunkSize) {
+                                    const chunk = Array.from(pcm16Audio.slice(i, i + chunkSize))
+                                    binary += String.fromCharCode(...chunk)
+                                }
+
+                                base64Audio = btoa(binary)
+                                console.log('🎤 onstop: Fallback base64 conversion successful, length:', base64Audio.length)
+                            } catch (fallbackError) {
+                                console.error('🎤 onstop: Both base64 methods failed:', fallbackError)
+                                throw fallbackError
+                            }
+                        }
 
                         // Send audio via WebSocket to OpenAI
                         if (wsConnection && isWebSocketConnected && sessionReady && sessionId) {
                             console.log('🎤 onstop: Sending PCM16 audio via WebSocket...')
-                            wsConnection.send(JSON.stringify({
+                            console.log('🎤 onstop: Audio data length:', base64Audio.length, 'first 100 chars:', base64Audio.substring(0, 100))
+                            console.log('🎤 onstop: WebSocket state:', wsConnection.readyState, 'Session ID:', sessionId)
+
+                            const audioMessage = {
                                 type: 'input_audio_buffer.append',
                                 audio: base64Audio
-                            }))
-                            setDebugInfo('🎤 PCM16 audio sent to OpenAI via WebSocket')
+                            }
+
+                            wsConnection.send(JSON.stringify(audioMessage))
+                            console.log('🎤 onstop: Audio message sent successfully')
+                            setDebugInfo('🎤 PCM16 audio sent to OpenAI via WebSocket - waiting for transcription...')
                         } else if (!sessionReady || !sessionId) {
                             console.log('🎤 onstop: Session not ready yet, audio will be queued')
+                            console.log('🎤 onstop: sessionReady:', sessionReady, 'sessionId:', sessionId)
                             setDebugInfo('⏳ Session not ready, audio will be processed when ready')
                         } else {
                             console.log('🎤 onstop: WebSocket not connected')
+                            console.log('🎤 onstop: wsConnection:', !!wsConnection, 'isWebSocketConnected:', isWebSocketConnected)
                             setDebugInfo('❌ WebSocket not connected')
                         }
                     } catch (error) {
                         console.error('🎤 onstop: Failed to process audio:', error)
                         setDebugInfo('❌ Failed to process audio')
+                    } finally {
+                        // Always reset flags regardless of success or failure
+                        recordingAudioChunksRef.current.length = 0 // Clear chunks
+                        console.log('🎤 onstop: Audio processing complete, chunks cleared')
                         isProcessingAudioRef.current = false
                         isInCallbackRef.current = false
                     }
-
-                    recordingAudioChunksRef.current.length = 0 // Clear chunks
-                    console.log('🎤 onstop: Audio processing complete, chunks cleared')
-                    isProcessingAudioRef.current = false
-                    isInCallbackRef.current = false
                 }
             }
 
@@ -729,6 +786,7 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
                 console.log('🎤 startRecordingWithExistingSession: Starting recording...')
                 mediaRecorderRef.current.start(100) // Record in 100ms chunks
                 setIsListening(true)
+                onListeningChange?.(true) // Notify parent that listening started
                 setDebugInfo('🎤 Recording... Speak now!')
             }
 
@@ -771,18 +829,33 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
             console.log('🎤 stopVoiceChat: Stopping voice chat...')
             console.log('🎤 MediaRecorder state before stop:', mediaRecorderRef.current?.state)
 
+            // Prevent multiple calls
+            if (isProcessingAudioRef.current) {
+                console.log('🎤 stopVoiceChat: Already processing audio, ignoring stop request')
+                return
+            }
+
             if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
                 console.log('🎤 stopVoiceChat: Calling mediaRecorder.stop()')
                 mediaRecorderRef.current.stop()
                 setIsListening(false)
+                onListeningChange?.(false) // Notify parent that listening stopped
+                onTranscribingChange?.(true) // Notify parent that transcription started
                 setDebugInfo('🔄 Processing your voice...')
                 console.log('🎤 stopVoiceChat: stop() called, waiting for onstop callback...')
             } else {
                 console.log('🎤 stopVoiceChat: MediaRecorder not recording, state:', mediaRecorderRef.current?.state)
+                setIsListening(false) // Ensure UI is in correct state
+                onListeningChange?.(false) // Notify parent that listening stopped
             }
         } catch (error) {
             console.error('🎤 stopVoiceChat: Failed to stop voice chat:', error)
             setDebugInfo(`❌ Failed to stop: ${error}`)
+            setIsListening(false) // Reset state on error
+            onListeningChange?.(false) // Notify parent 
+            onTranscribingChange?.(false) // Reset transcription state on error
+            isProcessingAudioRef.current = false
+            isInCallbackRef.current = false
         }
     }
 
@@ -791,12 +864,43 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
     // Cleanup on unmount
     useEffect(() => {
         return () => {
+            console.log('🎤 Component unmounting, cleaning up...')
+
+            // Reset all processing flags
+            isProcessingAudioRef.current = false
+            isInCallbackRef.current = false
+
+            // Stop media recorder if it's recording
             if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+                console.log('🎤 Cleanup: Stopping media recorder')
                 mediaRecorderRef.current.stop()
             }
+
+            // Clean up media recorder references
+            if (mediaRecorderRef.current) {
+                console.log('🎤 Cleanup: Clearing media recorder events')
+                mediaRecorderRef.current.ondataavailable = null
+                mediaRecorderRef.current.onstop = null
+                mediaRecorderRef.current = null
+            }
+
+            // Clear audio chunks
+            recordingAudioChunksRef.current.length = 0
+
+            // Close WebSocket connection
             if (wsConnection) {
+                console.log('🎤 Cleanup: Closing WebSocket connection')
                 wsConnection.close()
             }
+
+            // Close audio context
+            if (audioContextRef.current) {
+                console.log('🎤 Cleanup: Closing audio context')
+                audioContextRef.current.close()
+                audioContextRef.current = null
+            }
+
+            console.log('🎤 Component cleanup complete')
         }
     }, [wsConnection])
 
@@ -845,13 +949,20 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
                             <Button
                                 onClick={() => {
                                     console.log('🎤 Button clicked: Start Recording')
+
+                                    // Prevent rapid clicks during processing
+                                    if (isProcessingAudioRef.current || isInCallbackRef.current) {
+                                        console.log('🎤 Button click ignored: Audio processing in progress')
+                                        return
+                                    }
+
                                     if (sessionReady && sessionId) {
                                         startRecordingWithExistingSession()
                                     } else {
                                         startVoiceChat()
                                     }
                                 }}
-                                disabled={isListening || isCreatingSession}
+                                disabled={isListening || isCreatingSession || isProcessingAudioRef.current}
                                 className={`flex-1 py-3 rounded-lg font-medium transition-all duration-200 ${isListening
                                     ? 'bg-orange-500 hover:bg-orange-600 animate-pulse text-white'
                                     : 'bg-primary hover:bg-primary/90 text-white'
@@ -885,10 +996,18 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
                                 <Button
                                     onClick={() => {
                                         console.log('🎤 Button clicked: Stop & Process')
+
+                                        // Prevent rapid clicks during processing
+                                        if (isProcessingAudioRef.current || isInCallbackRef.current) {
+                                            console.log('🎤 Stop button click ignored: Audio processing in progress')
+                                            return
+                                        }
+
                                         stopVoiceChat()
                                     }}
                                     size="icon"
-                                    className="flex-shrink-0 bg-orange-500 hover:bg-orange-600 text-white border-0"
+                                    disabled={isProcessingAudioRef.current || isInCallbackRef.current}
+                                    className="flex-shrink-0 bg-orange-500 hover:bg-orange-600 text-white border-0 disabled:bg-orange-300 disabled:cursor-not-allowed"
                                 >
                                     <Square className="w-4 h-4" />
                                 </Button>

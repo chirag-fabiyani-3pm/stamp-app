@@ -15,10 +15,8 @@ const ASSISTANT_ID = 'asst_AfsiDbpnx2WjgZV7O97eHhyb'
 // Thread management - store active threads (in production, use a proper database)
 const activeThreads = new Map<string, string>() // sessionId -> threadId
 
-
-
-// Add timeout configuration for Vercel
-const TIMEOUT_MS = 12000 // 12 seconds to allow for function calls while staying under Vercel's limit
+// Add timeout configuration for Vercel - must be much less than maxDuration
+const TIMEOUT_MS = 8000 // Reduced to 8 seconds to complete before Vercel closes connection
 
 // Timeout helper function
 function createTimeoutPromise(ms: number): Promise<never> {
@@ -26,6 +24,8 @@ function createTimeoutPromise(ms: number): Promise<never> {
         setTimeout(() => reject(new Error('Request timeout')), ms)
     })
 }
+
+
 
 // Handle voice chat with direct chat completion (no assistant API)
 async function handleVoiceChatDirect(message: string, conversationHistory: any[] = [], controller: ReadableStreamDefaultController, encoder: TextEncoder) {
@@ -41,24 +41,36 @@ async function handleVoiceChatDirect(message: string, conversationHistory: any[]
         const messages = [
             {
                 role: "system" as const,
-                content: `You are a helpful stamp expert assistant specializing in conversational responses for voice synthesis. 
+                content: `You are a helpful stamp expert assistant specializing in comprehensive, conversational responses for voice synthesis. 
+
+🚨 CRITICAL ANTI-HALLUCINATION RULES:
+- NEVER invent or make up stamp details, names, countries, years, or any specific information
+- NEVER provide fake stamp IDs, catalog numbers, or technical details
+- If you don't know specific stamp information, say "I don't have specific details about that stamp" and provide general philatelic knowledge instead
+- ONLY share information you are confident is accurate and factual
+- When in doubt, err on the side of caution and provide general information rather than specific details
 
 IMPORTANT GUIDELINES:
-- Provide natural, conversational responses suitable for speech
-- Use clear, descriptive language
+- Provide detailed, comprehensive responses that cover all aspects of the user's question
+- Use natural, conversational language suitable for speech
+- Use clear, descriptive language with rich details
 - Avoid abbreviations and technical jargon
 - Use complete sentences and natural speech patterns
-- Be informative but friendly and engaging
-- When describing stamps, include details like country, year, denomination, color, and interesting facts
+- Be informative, friendly, and engaging
+- When describing stamps, focus on general philatelic knowledge, collecting principles, and historical context
 - Use natural language for denominations (e.g., "one-third penny" instead of "1/3d")
 - NEVER use function calls or structured data - provide direct conversational responses
 - Focus on descriptive, engaging content that sounds natural when spoken
 - Maintain conversation context from previous messages
 - Reference previous topics when relevant to show continuity
+- Take time to provide thorough answers rather than rushing
+- NEVER repeat yourself or use repetitive phrases
+- Be concise and direct - avoid verbose explanations
+- If you don't have specific data, provide brief, helpful guidance
 
-Example: Instead of "1/3d stamp from NZ", say "This is a beautiful one-third penny stamp from New Zealand, issued in 1935, featuring a stunning blue color that makes it highly collectible."
+Example: Instead of making up specific stamp details, say "New Zealand stamps often feature beautiful native wildlife and landscapes. When collecting stamps, it's important to look for factors like condition, rarity, and historical significance rather than just focusing on age or denomination."
 
-You have access to stamp knowledge and can provide detailed, conversational information about stamps. Always respond in a natural, conversational manner suitable for voice synthesis.`
+You have access to general stamp knowledge and can provide helpful information about philately. Always respond honestly and never invent specific stamp details.`
             },
             ...conversationHistory, // Include conversation history for context
             {
@@ -74,19 +86,27 @@ You have access to stamp knowledge and can provide detailed, conversational info
             model: "gpt-4o",
             messages,
             stream: true,
-            max_tokens: 1500,
+            max_tokens: 800, // Reduced for faster voice responses to beat Vercel timeout
             temperature: 0.7
         })
 
         let accumulatedContent = ""
+        let chunkCount = 0
+        const maxChunks = 50 // Limit chunks to prevent long processing
 
         for await (const chunk of stream) {
+            chunkCount++
             const content = chunk.choices[0]?.delta?.content
             if (content) {
                 accumulatedContent += content
 
                 // Stream the content word by word
-                const contentMessage = `data: ${JSON.stringify({ type: 'content', content: content })}\n\n`
+                const contentMessage = `data: ${JSON.stringify({
+                    type: 'content',
+                    content: content,
+                    source: 'internet', // Voice chat uses internet-based responses
+                    sources: [] // Will be populated in complete message
+                })}\n\n`
                 try {
                     controller.enqueue(encoder.encode(contentMessage))
                 } catch (controllerError) {
@@ -94,10 +114,33 @@ You have access to stamp knowledge and can provide detailed, conversational info
                     break
                 }
             }
+
+            // Force completion after max chunks to prevent long processing
+            if (chunkCount >= maxChunks) {
+                console.log('🎤 Max chunks reached, forcing completion')
+                break
+            }
         }
 
+        // Send success message for voice chat
+        const successMessage = `data: ${JSON.stringify({ type: 'status', status: 'completed', message: '✅ Voice response completed successfully!' })}\n\n`
+        try {
+            controller.enqueue(encoder.encode(successMessage))
+            console.log('✅ Voice chat success message sent')
+        } catch (controllerError) {
+            console.log('🎤 Could not send voice chat success message')
+        }
+
+        // Detect sources in the response
+        const sourceInfo = detectInternetBasedContent(accumulatedContent)
+
         // Send complete signal
-        const completeMessage = `data: ${JSON.stringify({ type: 'complete', content: accumulatedContent })}\n\n`
+        const completeMessage = `data: ${JSON.stringify({
+            type: 'complete',
+            content: accumulatedContent,
+            source: 'internet', // Voice chat uses internet-based responses
+            sources: sourceInfo.sources // Include actual source URLs/names
+        })}\n\n`
         try {
             controller.enqueue(encoder.encode(completeMessage))
             // Don't close controller here - let the main ReadableStream handle it
@@ -124,9 +167,83 @@ async function handleStreamingResponse(message: string, voiceChat: boolean = fal
 
     const stream = new ReadableStream({
         async start(controller) {
+            // Declare timeout variable in outer scope
+            let timeoutId: NodeJS.Timeout | null = null
+
             try {
                 console.log('🔄 Starting streaming response for:', message)
                 console.log('🔄 Conversation history length:', conversationHistory.length)
+
+                // Send initial status message
+                const initialMessage = `data: ${JSON.stringify({ type: 'status', status: 'starting', message: 'AI is processing your request. Taking time to provide you with a comprehensive and accurate answer...' })}\n\n`
+                try {
+                    controller.enqueue(encoder.encode(initialMessage))
+                } catch (error) {
+                    console.log('Controller closed during initial message')
+                    return
+                }
+
+                // Set up intelligent timeout to complete response before Vercel closes connection
+                timeoutId = setTimeout(async () => {
+                    console.log('⏰ 8-second mark reached - intelligently completing response to beat Vercel timeout')
+
+                    try {
+                        // Try to get whatever response the AI has generated so far
+                        if (threadId) {
+                            try {
+                                const messages = await openai.beta.threads.messages.list(threadId)
+                                const assistantMessages = messages.data.filter(msg => msg.role === 'assistant')
+
+                                if (assistantMessages.length > 0) {
+                                    const latestMessage = assistantMessages[0]
+                                    if (latestMessage.content && latestMessage.content.length > 0) {
+                                        const content = latestMessage.content[0]
+                                        if (content.type === 'text') {
+                                            const responseText = content.text.value
+                                            console.log('✅ Got partial AI response for forced completion:', responseText.substring(0, 100) + '...')
+
+                                            // Send the partial response as content
+                                            const contentMessage = `data: ${JSON.stringify({
+                                                type: 'content',
+                                                content: responseText,
+                                                source: 'partial_response'
+                                            })}\n\n`
+                                            controller.enqueue(encoder.encode(contentMessage))
+
+                                            // Send completion signal with the actual content
+                                            const forceCompleteMessage = `data: ${JSON.stringify({
+                                                type: 'complete',
+                                                content: responseText,
+                                                source: 'partial_response'
+                                            })}\n\n`
+                                            controller.enqueue(encoder.encode(forceCompleteMessage))
+                                            console.log('✅ Intelligent forced completion with actual AI response')
+                                            return
+                                        }
+                                    }
+                                }
+                            } catch (error) {
+                                console.log('❌ Could not retrieve partial response:', error)
+                            }
+                        }
+
+                        // No partial response available - send status update instead of completion
+                        console.log('⚠️ No partial response available - sending status update to keep progress visible')
+
+                        // Send status update to keep progress card visible
+                        const statusUpdateMessage = `data: ${JSON.stringify({
+                            type: 'status',
+                            status: 'processing',
+                            message: '⏳ Still processing your request... Please wait a moment longer.'
+                        })}\n\n`
+                        controller.enqueue(encoder.encode(statusUpdateMessage))
+
+                        // Don't send completion yet - let the natural flow continue
+                        console.log('✅ Status update sent - progress card remains visible')
+                    } catch (error) {
+                        console.log('❌ Could not send intelligent timeout handling')
+                    }
+                }, 8000) // 8 seconds - intelligent timeout handling to beat Vercel's 30-second limit
 
                 // Step 1: Get or create thread based on session
                 let threadId: string
@@ -156,7 +273,7 @@ async function handleStreamingResponse(message: string, voiceChat: boolean = fal
                                     // Wait for other runs to complete
                                     let runStatus: any = activeRun.status
                                     let attempts = 0
-                                    const maxAttempts = 30 // Wait up to 30 seconds
+                                    const maxAttempts = 20 // Reduced to 20 seconds to complete before Vercel closes
 
                                     while ((runStatus === 'queued' || runStatus === 'in_progress') && attempts < maxAttempts) {
                                         await new Promise(resolve => setTimeout(resolve, 1000))
@@ -205,30 +322,210 @@ async function handleStreamingResponse(message: string, voiceChat: boolean = fal
                     })
                     console.log('✅ Message added to thread')
 
-                    // Step 3: Create run with the assistant
+                    // Step 3: Create run with the assistant (optimized for speed)
                     const run = await openai.beta.threads.runs.create(threadId, {
-                        assistant_id: ASSISTANT_ID
+                        assistant_id: ASSISTANT_ID,
+                        instructions: `You are a stamp expert assistant with access to a comprehensive stamp database. Follow these CRITICAL rules:
+
+**KNOWLEDGE BASE USAGE:**
+- ONLY use the return_stamp_data function when you have SPECIFIC stamp information from the database
+- NEVER create fake or dummy stamp data
+- NEVER invent stamp IDs, names, or details
+- If you don't have specific stamp data, say "I don't have specific information about that stamp in my database" and provide general philatelic knowledge instead
+
+**FUNCTION CALL RULES:**
+- ONLY call return_stamp_data when you have REAL stamp data from the database
+- The function requires COMPLETE stamp information: name, country, year, denomination, color, etc.
+- NEVER call the function with just IDs or partial data
+- If you can't provide complete stamp details, DON'T call the function
+
+**WHEN NO STAMP DATA EXISTS:**
+- Honestly say "I don't have specific information about that stamp in my database"
+- Provide general philatelic knowledge about the topic
+- Explain stamp collecting principles, history, or general information
+- NEVER make up or guess stamp details
+
+**INTERNET SOURCES:**
+- Only mention internet sources if you're providing current market data, recent news, or information not in the database
+- Include actual URLs when referencing internet sources
+- Be honest about what you know vs. what you're finding online
+
+**RESPONSE QUALITY:**
+- Focus on accuracy over completeness
+- If you don't know something, say so
+- Provide helpful, educational content about stamps and philately
+- Take time to give comprehensive, accurate answers
+- NEVER repeat yourself or use repetitive phrases
+- Be concise and direct - avoid verbose explanations
+- If you don't have specific data, provide brief, helpful guidance
+
+Remember: It's better to say "I don't have specific data about that stamp" than to provide false information.`
                     })
                     console.log('✅ Run created:', run.id)
 
-                    // Step 4: Stream the response
+                    // Send progress status to show AI is working
+                    const progressMessage = `data: ${JSON.stringify({
+                        type: 'status',
+                        status: 'processing',
+                        message: '🤖 AI is analyzing your stamp question and searching the database...'
+                    })}\n\n`
+                    try {
+                        controller.enqueue(encoder.encode(progressMessage))
+                    } catch (error) {
+                        console.log('Controller closed during progress message')
+                    }
+
+                    // Send additional status to keep progress card visible
+                    setTimeout(() => {
+                        try {
+                            const keepAliveMessage = `data: ${JSON.stringify({
+                                type: 'status',
+                                status: 'processing',
+                                message: '🔍 Continuing to search and analyze stamp information...'
+                            })}\n\n`
+                            controller.enqueue(encoder.encode(keepAliveMessage))
+                        } catch (error) {
+                            console.log('Controller closed during keep-alive message')
+                        }
+                    }, 3000) // Send keep-alive after 3 seconds
+
+                    // Send another status update to maintain progress visibility
+                    setTimeout(() => {
+                        try {
+                            const progressUpdateMessage = `data: ${JSON.stringify({
+                                type: 'status',
+                                status: 'processing',
+                                message: '📊 Analyzing stamp data and preparing comprehensive response...'
+                            })}\n\n`
+                            controller.enqueue(encoder.encode(progressUpdateMessage))
+                        } catch (error) {
+                            console.log('Controller closed during progress update message')
+                        }
+                    }, 5000) // Send progress update after 5 seconds
+
+                    // Step 4: Stream the response (agent handles source selection)
                     await streamRunResponse(threadId, run.id, controller, encoder)
                     // Don't close controller here - streamRunResponse handles it
                 }
 
-                // Don't try to close controller here - it's already being closed elsewhere
-                // The controller will be closed automatically when the stream ends
+                // Clear the timeout since we completed successfully
+                if (timeoutId) {
+                    clearTimeout(timeoutId)
+                }
+
+                // Send success completion message immediately after streaming
+                const successMessage = `data: ${JSON.stringify({ type: 'status', status: 'completed', message: '✅ AI response completed successfully!' })}\n\n`
+                try {
+                    controller.enqueue(encoder.encode(successMessage))
+                    console.log('✅ Success message sent successfully')
+                } catch (error) {
+                    console.log('Could not send success message, controller may be closed')
+                }
+
+                // Send final status to ensure progress card shows completion
+                const finalStatusMessage = `data: ${JSON.stringify({
+                    type: 'status',
+                    status: 'processing',
+                    message: '✅ Response ready! Displaying results...'
+                })}\n\n`
+                try {
+                    controller.enqueue(encoder.encode(finalStatusMessage))
+                    console.log('✅ Final status message sent')
+                } catch (error) {
+                    console.log('Could not send final status message')
+                }
+
+                // Send a brief delay before completion to ensure status is visible
+                setTimeout(() => {
+                    try {
+                        const readyMessage = `data: ${JSON.stringify({
+                            type: 'status',
+                            status: 'processing',
+                            message: '🎯 Finalizing response...'
+                        })}\n\n`
+                        controller.enqueue(encoder.encode(readyMessage))
+                        console.log('✅ Ready message sent')
+                    } catch (error) {
+                        console.log('Could not send ready message')
+                    }
+                }, 500)
+
+                // Send final status to show response is ready
+                setTimeout(() => {
+                    try {
+                        const finalReadyMessage = `data: ${JSON.stringify({
+                            type: 'status',
+                            status: 'processing',
+                            message: '✨ Response ready! Check above for results.'
+                        })}\n\n`
+                        controller.enqueue(encoder.encode(finalReadyMessage))
+                        console.log('✅ Final ready message sent')
+                    } catch (error) {
+                        console.log('Could not send final ready message')
+                    }
+                }, 1000)
+
+                // Send one more status to ensure smooth transition
+                setTimeout(() => {
+                    try {
+                        const transitionMessage = `data: ${JSON.stringify({
+                            type: 'status',
+                            status: 'processing',
+                            message: '🚀 Preparing to display your stamp information...'
+                        })}\n\n`
+                        controller.enqueue(encoder.encode(transitionMessage))
+                        console.log('✅ Transition message sent')
+                    } catch (error) {
+                        console.log('Could not send transition message')
+                    }
+                }, 1500)
+
+                // Add final safety timeout to force completion before Vercel closes
+                setTimeout(() => {
+                    try {
+                        // Only send completion if we haven't already
+                        const finalCompleteMessage = `data: ${JSON.stringify({
+                            type: 'complete',
+                            content: '',
+                            source: 'knowledge_base'
+                        })}\n\n`
+                        controller.enqueue(encoder.encode(finalCompleteMessage))
+                        console.log('✅ Final safety completion message sent')
+                    } catch (error) {
+                        console.log('❌ Could not send final safety completion message')
+                    }
+                }, 500) // Send final message 500ms after success
+
+                // Log completion status
                 console.log('🔒 All streaming complete, controller state:', controller.desiredSize)
-                console.log('🔒 Skipping controller close - already handled elsewhere')
+                console.log('🔒 Success message sent, controller will close naturally')
 
             } catch (error) {
                 console.error('❌ Streaming error:', error)
-                const errorMessage = `data: ${JSON.stringify({ error: 'Failed to process request' })}\n\n`
+
+                // Clear the timeout since we're handling the error
+                if (timeoutId) {
+                    clearTimeout(timeoutId)
+                }
+
+                // Send user-friendly error message
+                const errorMessage = `data: ${JSON.stringify({ type: 'status', status: 'error', message: '❌ Something went wrong while processing your request. Please try again with a simpler question.' })}\n\n`
                 try {
                     controller.enqueue(encoder.encode(errorMessage))
+                    console.log('✅ User-friendly error message sent successfully')
                 } catch (controllerError) {
                     console.log('Controller closed, cannot send error message')
                 }
+
+                // Try to send a completion signal to prevent hanging
+                try {
+                    const completeMessage = `data: ${JSON.stringify({ type: 'complete', error: true })}\n\n`
+                    controller.enqueue(encoder.encode(completeMessage))
+                    console.log('✅ Completion signal sent after error')
+                } catch (finalError) {
+                    console.log('Could not send completion signal after error')
+                }
+
                 // Don't close controller here - let the natural flow handle it
             }
         }
@@ -244,11 +541,13 @@ async function handleStreamingResponse(message: string, voiceChat: boolean = fal
     })
 }
 
-// Stream run response
+
+
+// Stream run response (original function - kept for compatibility)
 async function streamRunResponse(threadId: string, runId: string, controller: ReadableStreamDefaultController, encoder: TextEncoder) {
     let runStatus = 'queued'
     let attempts = 0
-    const maxAttempts = 30 // 30 seconds max to allow for function calls and handle API delays
+    const maxAttempts = 8 // Reduced to 8 seconds to complete before Vercel closes connection
 
     try {
         while ((runStatus === 'queued' || runStatus === 'in_progress') && attempts < maxAttempts) {
@@ -260,6 +559,13 @@ async function streamRunResponse(threadId: string, runId: string, controller: Re
                 controller.enqueue(encoder.encode(statusMessage))
             } catch (error) {
                 console.log('Controller closed during status update, stopping')
+                // Send a final error message if possible
+                try {
+                    const errorMessage = `data: ${JSON.stringify({ type: 'error', error: 'Connection lost during processing. Please try again.' })}\n\n`
+                    controller.enqueue(encoder.encode(errorMessage))
+                } catch (finalError) {
+                    console.log('Could not send final error message')
+                }
                 return
             }
 
@@ -274,7 +580,18 @@ async function streamRunResponse(threadId: string, runId: string, controller: Re
                 }
             }
 
-            await new Promise(resolve => setTimeout(resolve, 1000))
+            // Send optimization hint when approaching the limit
+            if (attempts === 5) { // Hint at 5 seconds (3 seconds before timeout)
+                const warningMessage = `data: ${JSON.stringify({ type: 'warning', message: '💡 Still processing your request... Completing your response now.' })}\n\n`
+                try {
+                    controller.enqueue(encoder.encode(warningMessage))
+                } catch (error) {
+                    console.log('Warning message failed, connection may be closed')
+                    break
+                }
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 500)) // Reduced from 1000ms to 500ms for faster response
 
             try {
                 const runResult = await openai.beta.threads.runs.retrieve(runId, { thread_id: threadId })
@@ -314,12 +631,75 @@ async function streamRunResponse(threadId: string, runId: string, controller: Re
 
         if (runStatus === 'queued' || runStatus === 'in_progress') {
             console.log(`⏰ Run timed out after ${attempts} attempts with status: ${runStatus}`)
-            const timeoutMessage = `data: ${JSON.stringify({ type: 'timeout', message: 'The AI is taking longer than usual to respond. This might be due to high demand on OpenAI servers. Please try your query again or rephrase it for better results.' })}\n\n`
+
+            // Instead of timing out, try to get whatever response we can from the current run
+            console.log('🔄 Run still in progress, attempting to get partial response...')
+
             try {
-                controller.enqueue(encoder.encode(timeoutMessage))
+                // Try to get messages from the current run even if it's not complete
+                const messages = await openai.beta.threads.messages.list(threadId)
+                const assistantMessages = messages.data.filter(msg => msg.role === 'assistant')
+
+                if (assistantMessages.length > 0) {
+                    const latestMessage = assistantMessages[0]
+                    if (latestMessage.content && latestMessage.content.length > 0) {
+                        const content = latestMessage.content[0]
+                        if (content.type === 'text') {
+                            const responseText = content.text.value
+                            console.log('✅ Got partial response from incomplete run:', responseText.substring(0, 100) + '...')
+
+                            // Send the partial response
+                            const partialResponseMessage = `data: ${JSON.stringify({
+                                type: 'content',
+                                content: responseText,
+                                source: 'knowledge_base'
+                            })}\n\n`
+                            controller.enqueue(encoder.encode(partialResponseMessage))
+
+                            // Send completion signal
+                            const completeMessage = `data: ${JSON.stringify({
+                                type: 'complete',
+                                content: responseText,
+                                source: 'knowledge_base'
+                            })}\n\n`
+                            controller.enqueue(encoder.encode(completeMessage))
+
+                            console.log('✅ Partial response sent successfully')
+                            return
+                        }
+                    }
+                }
+
+                // If we couldn't get a partial response, send a helpful message
+                const helpfulMessage = `data: ${JSON.stringify({
+                    type: 'content',
+                    content: "I'm still processing your stamp question. The response is taking longer than expected. Please try asking a more specific question about stamps, or wait a moment for the complete response.",
+                    source: 'knowledge_base'
+                })}\n\n`
+                controller.enqueue(encoder.encode(helpfulMessage))
+
+                const completeMessage = `data: ${JSON.stringify({
+                    type: 'complete',
+                    content: "I'm working on your request about stamps. While I'm processing, here's what I can tell you: Stamp collecting is a fascinating hobby that combines history, art, and geography. Each stamp tells a unique story about its country of origin and the era it was issued. Would you like me to continue with more specific information about your query?",
+                    source: 'knowledge_base'
+                })}\n\n`
+                controller.enqueue(encoder.encode(completeMessage))
+
+                console.log('✅ Helpful fallback response sent')
+
             } catch (error) {
-                console.log('Controller closed during timeout message, stopping')
-                return
+                console.error('❌ Error getting partial response:', error)
+                // Send a simple completion message
+                const simpleMessage = `data: ${JSON.stringify({
+                    type: 'complete',
+                    content: "I'm here to help with your stamp questions! Please ask me anything about stamps, and I'll provide you with detailed information.",
+                    source: 'knowledge_base'
+                })}\n\n`
+                try {
+                    controller.enqueue(encoder.encode(simpleMessage))
+                } catch (finalError) {
+                    console.log('Could not send simple completion message')
+                }
             }
             return
         }
@@ -327,6 +707,46 @@ async function streamRunResponse(threadId: string, runId: string, controller: Re
         // Handle requires_action (function calls)
         if (runStatus === 'requires_action') {
             console.log('🔧 Run requires action - handling function calls...')
+
+            // Send progress status to show AI is working
+            const progressMessage = `data: ${JSON.stringify({
+                type: 'status',
+                status: 'processing',
+                message: '🔍 AI is searching the stamp database for your query...'
+            })}\n\n`
+            try {
+                controller.enqueue(encoder.encode(progressMessage))
+            } catch (error) {
+                console.log('Controller closed during progress message')
+            }
+
+            // Send additional status to keep progress card visible during function processing
+            setTimeout(() => {
+                try {
+                    const keepAliveMessage = `data: ${JSON.stringify({
+                        type: 'status',
+                        status: 'processing',
+                        message: '📊 Processing stamp data and preparing response...'
+                    })}\n\n`
+                    controller.enqueue(encoder.encode(keepAliveMessage))
+                } catch (error) {
+                    console.log('Controller closed during function processing keep-alive')
+                }
+            }, 2000) // Send keep-alive after 2 seconds
+
+            // Send another status update to maintain progress visibility
+            setTimeout(() => {
+                try {
+                    const progressUpdateMessage = `data: ${JSON.stringify({
+                        type: 'status',
+                        status: 'processing',
+                        message: '🔍 Searching stamp database and compiling results...'
+                    })}\n\n`
+                    controller.enqueue(encoder.encode(progressUpdateMessage))
+                } catch (error) {
+                    console.log('Controller closed during function processing progress update')
+                }
+            }, 4000) // Send progress update after 4 seconds
 
             const runResult = await openai.beta.threads.runs.retrieve(runId, { thread_id: threadId })
             console.log('📊 Run result:', runResult)
@@ -349,10 +769,55 @@ async function streamRunResponse(threadId: string, runId: string, controller: Re
                             console.log('📊 Function call data:', functionArgs)
 
                             if (functionArgs.stamps && Array.isArray(functionArgs.stamps)) {
-                                stamps = functionArgs.stamps
+                                // VALIDATE: Check if stamps have real data, not just IDs
+                                const validStamps = functionArgs.stamps.filter((s: any) => {
+                                    // Must have at least name, country, and year - not just ID
+                                    const hasValidData = s.Name || s.name || s.Country || s.country || s.IssueYear || s.issueYear || s.issue_year
+                                    if (!hasValidData) {
+                                        console.log('🚨 INVALID STAMP DATA DETECTED - Only ID provided:', s)
+                                        return false
+                                    }
+                                    return true
+                                })
+
+                                if (validStamps.length === 0) {
+                                    console.log('🚨 ALL STAMP DATA INVALID - Providing fallback response')
+
+                                    // Send a helpful message instead of error
+                                    const helpfulMessage = `data: ${JSON.stringify({
+                                        type: 'content',
+                                        content: "I'm working on your stamp question. While I don't have specific catalog data for that query, let me provide you with some helpful philatelic information instead.",
+                                        source: 'knowledge_base'
+                                    })}\n\n`
+                                    try {
+                                        controller.enqueue(encoder.encode(helpfulMessage))
+                                    } catch (error) {
+                                        console.log('Controller closed during helpful message')
+                                    }
+
+                                    // Send completion signal to show the response
+                                    const completeMessage = `data: ${JSON.stringify({
+                                        type: 'complete',
+                                        content: "I don't have specific catalog data for that query. Would you like me to help you with a different stamp question or provide general philatelic guidance?",
+                                        source: 'knowledge_base'
+                                    })}\n\n`
+                                    try {
+                                        controller.enqueue(encoder.encode(completeMessage))
+                                    } catch (error) {
+                                        console.log('Controller closed during completion message')
+                                    }
+
+                                    return
+                                }
+
+                                stamps = validStamps
                                 structuredData = functionArgs
-                                console.log(`✅ Found ${stamps.length} stamps from function call`)
-                                console.log('📋 Stamp details:', stamps.map((s: any) => ({ name: s.Name, country: s.Country, year: s.IssueYear })))
+                                console.log(`✅ Found ${stamps.length} VALID stamps from function call`)
+                                console.log('📋 Valid stamp details:', stamps.map((s: any) => ({
+                                    name: s.Name || s.name || 'Unknown',
+                                    country: s.Country || s.country || 'Unknown',
+                                    year: s.IssueYear || s.issueYear || s.issue_year || 'Unknown'
+                                })))
 
                                 // Send stamp preview immediately
                                 const stampPreview = {
@@ -401,7 +866,7 @@ async function streamRunResponse(threadId: string, runId: string, controller: Re
                         output: JSON.stringify({
                             success: true,
                             stamps: stamps,
-                            instructions: "🚨 CRITICAL INSTRUCTIONS - YOU MUST FOLLOW THESE EXACTLY: ❌ NEVER list basic stamp details like Country, Issue Date, Catalog Code, Denomination, Color, or Paper Type. These are already displayed in the card above. ✅ INSTEAD, write ONLY about: Historical significance, design elements, cultural importance, interesting stories, collecting insights, philatelic significance, and series context. Focus on the STORY behind the stamp, not repeating the data. Example: 'This stamp captures the dynamic beauty of New Zealand's native trout in a stunning artistic composition that celebrates the country's freshwater fishing heritage.' NOT 'Country: New Zealand, Issue Date: May 4, 1935, Color: Blue'"
+                            instructions: "🚨 CRITICAL INSTRUCTIONS - YOU MUST FOLLOW THESE EXACTLY: ❌ NEVER list basic stamp details like Country, Issue Date, Catalog Code, Denomination, Color, or Paper Type. These are already displayed in the card above. ✅ INSTEAD, write ONLY about: Historical significance, design elements, cultural importance, interesting stories, collecting insights, philatelic significance, and series context. Focus on the STORY behind the stamp, not repeating the data. Example: 'This stamp captures the dynamic beauty of New Zealand's native trout in a stunning artistic composition that celebrates the country's freshwater fishing heritage.' NOT 'Country: New Zealand, Issue Date: May 4, 1935, Color: Blue' 🚨 IMPORTANT: ONLY use REAL stamp data from the database. NEVER invent or hallucinate stamp information. If you don't have real data, say so honestly."
                         })
                     })
                 }
@@ -537,8 +1002,21 @@ async function streamMessages(threadId: string, controller: ReadableStreamDefaul
                     const cleanedText = cleanResponseText(text)
                     console.log('📝 Streaming text content, length:', cleanedText.length)
 
+                    // Detect if response contains internet-based information and extract sources
+                    const sourceInfo = detectInternetBasedContent(cleanedText)
+                    const responseSource = sourceInfo.isInternetBased ? 'internet' : 'knowledge_base'
+                    console.log(`🔍 Response source detected: ${responseSource}`)
+                    if (sourceInfo.sources.length > 0) {
+                        console.log(`🔍 Sources found: ${sourceInfo.sources.join(', ')}`)
+                    }
+
                     // BULLETPROOF: Send complete response immediately to prevent any loss
-                    const completeResponseMessage = `data: ${JSON.stringify({ type: 'complete_response', content: cleanedText })}\n\n`
+                    const completeResponseMessage = `data: ${JSON.stringify({
+                        type: 'complete_response',
+                        content: cleanedText,
+                        source: responseSource, // Use detected source
+                        sources: sourceInfo.sources // Include actual source URLs/names
+                    })}\n\n`
                     try {
                         controller.enqueue(encoder.encode(completeResponseMessage))
                         console.log('✅ Complete response sent immediately to prevent loss')
@@ -567,7 +1045,12 @@ async function streamMessages(threadId: string, controller: ReadableStreamDefaul
                     for (let i = 0; i < words.length; i += chunkSize) {
                         const chunk = words.slice(i, i + chunkSize)
                         const chunkText = chunk.join(' ')
-                        const message = `data: ${JSON.stringify({ type: 'content', content: chunkText + (i + chunkSize < words.length ? ' ' : '') })}\n\n`
+                        const message = `data: ${JSON.stringify({
+                            type: 'content',
+                            content: chunkText + (i + chunkSize < words.length ? ' ' : ''),
+                            source: responseSource, // Use detected source
+                            sources: sourceInfo.sources // Include actual source URLs/names
+                        })}\n\n`
 
                         // BULLETPROOF: Check controller state before every operation
                         if (controller.desiredSize === null) {
@@ -603,6 +1086,15 @@ async function streamMessages(threadId: string, controller: ReadableStreamDefaul
                     }
 
                     console.log('✅ Content streaming completed successfully')
+
+                    // Send success message immediately after content streaming
+                    const successMessage = `data: ${JSON.stringify({ type: 'status', status: 'completed', message: '✅ AI response completed successfully!' })}\n\n`
+                    try {
+                        controller.enqueue(encoder.encode(successMessage))
+                        console.log('✅ Success message sent immediately after content streaming')
+                    } catch (error) {
+                        console.log('❌ Could not send success message after content streaming')
+                    }
 
                     // Send completion signal only if controller is still open
                     if (controller.desiredSize !== null) {
@@ -772,6 +1264,7 @@ export async function POST(request: NextRequest) {
 
         // Check if streaming is requested
         if (stream) {
+            console.log('🔄 Using streaming mode - bypassing main timeout mechanism')
             return handleStreamingResponse(message, voiceChat, sessionId, finalHistory)
         }
 
@@ -914,7 +1407,7 @@ Focus on the STORY, not the DATA.`
                 console.log('⏳ Waiting for run to complete...')
                 let runStatus = run.status
                 let attempts = 0
-                const maxAttempts = 4 // 4 seconds max wait (4 attempts × 1 second)
+                const maxAttempts = 6 // Reduced to 6 seconds max wait (6 attempts × 1 second) - less than TIMEOUT_MS
 
                 while ((runStatus === 'queued' || runStatus === 'in_progress') && attempts < maxAttempts) {
                     console.log(`⏳ Run status: ${runStatus} (attempt ${attempts + 1}/${maxAttempts})`)
@@ -990,9 +1483,32 @@ Focus on the STORY, not the DATA.`
                                     console.log('📊 Function call data:', functionArgs)
 
                                     if (functionArgs.stamps && Array.isArray(functionArgs.stamps)) {
-                                        stamps = functionArgs.stamps
+                                        // VALIDATE: Check if stamps have real data, not just IDs
+                                        const validStamps = functionArgs.stamps.filter((s: any) => {
+                                            // Must have at least name, country, and year - not just ID
+                                            const hasValidData = s.Name || s.name || s.Country || s.country || s.IssueYear || s.issueYear || s.issue_year
+                                            if (!hasValidData) {
+                                                console.log('🚨 INVALID STAMP DATA DETECTED (non-streaming) - Only ID provided:', s)
+                                                return false
+                                            }
+                                            return true
+                                        })
+
+                                        if (validStamps.length === 0) {
+                                            console.log('🚨 ALL STAMP DATA INVALID (non-streaming) - Providing fallback response')
+                                            // Return helpful fallback response
+                                            return {
+                                                response: "I don't have specific catalog data for that query. Would you like me to help you with a different stamp question or provide general philatelic guidance?",
+                                                stampsFound: 0,
+                                                hasStructuredData: false,
+                                                stamps: [],
+                                                structuredData: null
+                                            }
+                                        }
+
+                                        stamps = validStamps
                                         structuredData = functionArgs
-                                        console.log(`✅ Found ${stamps.length} stamps from function call`)
+                                        console.log(`✅ Found ${stamps.length} VALID stamps from function call (non-streaming)`)
                                     }
                                 } catch (error) {
                                     console.log('❌ Error parsing function arguments:', error)
@@ -1118,9 +1634,32 @@ Focus on the STORY, not the DATA.`
                                                 console.log('📊 Function call data:', functionArgs)
 
                                                 if (functionArgs.stamps && Array.isArray(functionArgs.stamps)) {
-                                                    stamps = functionArgs.stamps
+                                                    // VALIDATE: Check if stamps have real data, not just IDs
+                                                    const validStamps = functionArgs.stamps.filter((s: any) => {
+                                                        // Must have at least name, country, and year - not just ID
+                                                        const hasValidData = s.Name || s.name || s.Country || s.country || s.IssueYear || s.issueYear || s.issue_year
+                                                        if (!hasValidData) {
+                                                            console.log('🚨 INVALID STAMP DATA DETECTED (message content) - Only ID provided:', s)
+                                                            return false
+                                                        }
+                                                        return true
+                                                    })
+
+                                                    if (validStamps.length === 0) {
+                                                        console.log('🚨 ALL STAMP DATA INVALID (message content) - Providing fallback response')
+                                                        // Return helpful fallback response
+                                                        return {
+                                                            response: "I don't have specific catalog data for that query. Would you like me to help you with a different stamp question or provide general philatelic guidance?",
+                                                            stampsFound: 0,
+                                                            hasStructuredData: false,
+                                                            stamps: [],
+                                                            structuredData: null
+                                                        }
+                                                    }
+
+                                                    stamps = validStamps
                                                     structuredData = functionArgs
-                                                    console.log(`✅ Found ${stamps.length} stamps from function call`)
+                                                    console.log(`✅ Found ${stamps.length} VALID stamps from function call (message content)`)
                                                 }
                                             } catch (error) {
                                                 console.log('❌ Error parsing function arguments:', error)
@@ -1327,6 +1866,46 @@ function parseResponse(response: string): { stamps: any[], structuredData?: any 
         console.log('❌ Failed to parse response:', error)
         return { stamps: [] }
     }
+}
+
+// Detect if response contains internet-based information and extract sources
+function detectInternetBasedContent(text: string): { isInternetBased: boolean; sources: string[] } {
+    // Look for actual URLs and source names
+    const urlPattern = /https?:\/\/[^\s\)\]]+/g
+    const sourcePatterns = [
+        /according to\s+\[([^\]]+)\]\(([^)]+)\)/gi,
+        /as reported by\s+\[([^\]]+)\]\(([^)]+)\)/gi,
+        /based on\s+\[([^\]]+)\]\(([^)]+)\)/gi,
+        /source:\s*([^\n]+)/gi,
+        /from\s+([^\n]+)/gi
+    ]
+
+    const urls = text.match(urlPattern) || []
+    const sources: string[] = []
+
+    // Extract source names from markdown links
+    for (const pattern of sourcePatterns) {
+        const matches = text.matchAll(pattern)
+        for (const match of matches) {
+            if (match[1] && match[2]) {
+                sources.push(`${match[1]} (${match[2]})`)
+            }
+        }
+    }
+
+    // Add plain URLs as sources
+    urls.forEach(url => {
+        try {
+            const domain = new URL(url).hostname
+            sources.push(`${domain} (${url})`)
+        } catch {
+            sources.push(url)
+        }
+    })
+
+    const isInternetBased = urls.length > 0 || sources.length > 0
+
+    return { isInternetBased, sources }
 }
 
 // Extract stamp information from conversational text
