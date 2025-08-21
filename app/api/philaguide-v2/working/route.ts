@@ -22,8 +22,30 @@ export async function POST(request: NextRequest) {
     try {
         const { message, sessionId, isVoiceChat = false } = await request.json()
 
+        // Basic input validation
+        if (!message || typeof message !== 'string') {
+            return NextResponse.json({
+                success: false,
+                error: 'Message is required and must be a string'
+            }, { status: 400 })
+        }
+
+        if (message.length > 2000) {
+            return NextResponse.json({
+                success: false,
+                error: 'Message is too long. Please keep your questions under 2000 characters.'
+            }, { status: 400 })
+        }
+
+        if (!sessionId || typeof sessionId !== 'string') {
+            return NextResponse.json({
+                success: false,
+                error: 'Session ID is required'
+            }, { status: 400 })
+        }
+
         console.log('🚀 Working Philaguide V2 API called with:', {
-            message: message.substring(0, 100) + '...',
+            message: message.substring(0, 100) + (message.length > 100 ? '...' : ''),
             sessionId,
             isVoiceChat,
             hasPreviousContext: activeSessions.has(sessionId)
@@ -72,9 +94,13 @@ export async function POST(request: NextRequest) {
 
 🚨🚨🚨 SEARCH PRIORITY & FALLBACK STRATEGY 🚨🚨🚨
 
-STEP 1: ALWAYS search your knowledge base first using file_search
+STEP 1: For stamp-related queries, ALWAYS search your knowledge base first using file_search
 STEP 2: If NO relevant stamps found in knowledge base, IMMEDIATELY use web_search_preview to find information from the internet
 STEP 3: Provide the best available information from either source
+
+🤖 SIMPLE CONVERSATION RULE:
+- If user message is just a greeting (single word like "Hi", "Hello", "Hey") WITHOUT any stamp context, respond conversationally
+- For ALL other messages including questions about stamps, philatelic topics, or detailed queries, use the full search strategy above
 
 🔍 KNOWLEDGE BASE SEARCH (Primary):
 When you find stamps in your knowledge base, format using this EXACT structure:
@@ -211,10 +237,30 @@ Create clean, readable responses with proper markdown:
         }
 
         console.error('❌ Error in Working Philaguide V2 API:', error)
+        console.error('❌ Error details:', {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined,
+            name: error instanceof Error ? error.name : undefined,
+            type: typeof error
+        })
+
+        // Provide more user-friendly error messages
+        let userErrorMessage = 'I encountered an error while processing your request. Please try again.'
+
+        if (error instanceof Error) {
+            if (error.message.includes('timeout') || error.message.includes('TIMEOUT')) {
+                userErrorMessage = 'The request took too long to process. Please try a more specific question about stamps.'
+            } else if (error.message.includes('rate limit') || error.message.includes('RATE_LIMIT')) {
+                userErrorMessage = 'Too many requests at once. Please wait a moment and try again.'
+            } else if (error.message.includes('vector_store') || error.message.includes('file_search')) {
+                userErrorMessage = 'There was an issue accessing the stamp database. Please try again or ask a different question.'
+            }
+        }
+
         return NextResponse.json({
             success: false,
-            error: error instanceof Error ? error.message : 'Unknown error',
-            details: error
+            error: userErrorMessage,
+            technicalError: error instanceof Error ? error.message : 'Unknown error'
         }, { status: 500 })
     }
 }
