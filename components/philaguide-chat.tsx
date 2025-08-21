@@ -1156,24 +1156,6 @@ export function PhilaGuideChat() {
                 isFromVoice
             })
 
-            // Quick health check before making the main request
-            try {
-                const healthCheckEndpoint = USE_RESPONSES_API ?
-                    `${BACKEND_URL}/api/philaguide-v2/test` :
-                    `${BACKEND_URL}/api/philaguide`
-
-                const healthCheck = await fetch(healthCheckEndpoint, {
-                    method: 'GET',
-                    signal: AbortSignal.timeout(5000) // 5 second timeout for health check
-                })
-                if (!healthCheck.ok) {
-                    throw new Error('Backend health check failed')
-                }
-                console.log('✅ Backend health check passed')
-            } catch (healthError) {
-                console.warn('⚠️ Backend health check failed, proceeding anyway:', healthError)
-            }
-
             // Add a small delay to prevent rapid successive requests
             await new Promise(resolve => setTimeout(resolve, 100))
 
