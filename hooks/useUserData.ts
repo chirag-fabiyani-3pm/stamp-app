@@ -74,7 +74,7 @@ export const useUserData = () => {
       }
       
       // Construct the API URL
-      const apiUrl = `https://3pm-stampapp-prod.azurewebsites.net/api/v1/User/${userId}?id=${userId}`
+      const apiUrl = `https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/User/${userId}?id=${userId}`
       
       // Fetch user data from API
       const response = await fetch(apiUrl, {

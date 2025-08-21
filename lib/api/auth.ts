@@ -1,6 +1,6 @@
 import { ADMIN_ROLE_ID } from '@/lib/constants';
 
-const API_BASE_URL = 'https://3pm-stampapp-prod.azurewebsites.net/api/v1';
+const API_BASE_URL = 'https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1';
 
 // Generate a unique device ID
 function generateDeviceId(): string {

@@ -100,7 +100,7 @@ export default function ProfileSettings() {
       }
 
       // Make DELETE request to the API
-      const response = await fetch(`https://3pm-stampapp-prod.azurewebsites.net/api/v1/User/${userId}?id=${userId}`, {
+      const response = await fetch(`https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/User/${userId}?id=${userId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${jwt}`,

@@ -148,7 +148,7 @@ function StampDetailContent() {
         }
 
         const response = await fetch(
-          `https://3pm-stampapp-prod.azurewebsites.net/api/v1/StampMasterCatalog/${stampId}`,
+          `https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/StampMasterCatalog/${stampId}`,
           {
             method: 'GET',
             headers: {
