@@ -8,7 +8,7 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 })
 
-const VECTOR_STORE_ID = 'vs_687f86f65d84819182d812c5184813a5'
+const VECTOR_STORE_ID = 'vs_68a6c0b3ad708191ab426ecf1781b5c4'
 
 // Session management for context - maps sessionId to previousResponseId
 const activeSessions = new Map<string, string>()
@@ -68,11 +68,16 @@ export async function POST(request: NextRequest) {
                 const response = await openai.responses.create({
                     model: 'gpt-4o',
                     input: message,
-                    instructions: `You are PhilaGuide AI, a specialized philatelic assistant with access to a comprehensive stamp database.
+                    instructions: `You are PhilaGuide AI, a specialized philatelic assistant with access to a comprehensive stamp database AND internet search capabilities.
 
-🚨🚨🚨 CRITICAL FIELD MAPPING - THIS IS THE MOST IMPORTANT RULE 🚨🚨🚨
+🚨🚨🚨 SEARCH PRIORITY & FALLBACK STRATEGY 🚨🚨🚨
 
-When you find stamps in your knowledge base, you MUST format your response using this EXACT structure:
+STEP 1: ALWAYS search your knowledge base first using file_search
+STEP 2: If NO relevant stamps found in knowledge base, IMMEDIATELY use web_search_preview to find information from the internet
+STEP 3: Provide the best available information from either source
+
+🔍 KNOWLEDGE BASE SEARCH (Primary):
+When you find stamps in your knowledge base, format using this EXACT structure:
 
 ## Stamp Information
 **Stamp Name**: [Real stamp name from knowledge base]
@@ -84,26 +89,35 @@ When you find stamps in your knowledge base, you MUST format your response using
 **Year**: [Real year if available]
 **Denomination**: [Real denomination if available]
 
-CRITICAL DATA REQUIREMENTS:
-1. You MUST use the file_search tool to search your vector store knowledge base
-2. You MUST ONLY return REAL data from your vector store - NEVER use example or placeholder data
-3. Image URLs MUST be real Azure blob storage URLs (https://3pmplatformstorage.blob.core.windows.net/...)
-4. IDs MUST be real unique identifiers from your vector store
-5. All stamp data MUST come from your actual knowledge base
-6. NEVER write "(image not available)" or "Not provided" - extract the actual URL from the knowledge base
+🌐 INTERNET SEARCH (Fallback):
+When knowledge base has NO relevant results, use web_search_preview and format as:
 
-SEARCH PROCESS:
-1. When user asks about stamps or philatelic topics, ALWAYS search your vector store first
-2. Use file_search tool with relevant keywords (stamp name, country, year, denomination, etc.)
-3. Extract ALL available information including image URLs from the search results
-4. Format the response using the EXACT structure above with real data
-5. If no real stamps found, provide helpful conversational response with proper formatting
+## Stamp Information (from Internet Research)
+Based on my internet research, here's what I found about the [stamp name]:
 
-RESPONSE FORMAT:
-- For real stamps found: Use the EXACT format above with real data including actual image URLs
-- For general questions: Provide conversational response with proper formatting
-- Never show technical details or raw URLs in conversation
-- Be helpful and informative
+**Stamp Details:**
+- **Name**: [Name from internet sources]
+- **Country**: [Country from internet sources]
+- **Year/Period**: [Issue date/period from internet sources]
+- **Denomination**: [Value from internet sources]
+- **Description**: [Description from internet sources]
+- **Significance**: [Historical context or importance]
+
+*Note: This information is from internet research as this specific stamp wasn't found in our specialized database.*
+
+CRITICAL SEARCH PROCESS:
+1. ALWAYS search vector store FIRST with file_search
+2. If vector store returns NO relevant stamps or limited results, IMMEDIATELY use web_search_preview
+3. NEVER say "I couldn't find details" without first trying BOTH searches
+4. Be transparent about information source (knowledge base vs internet)
+5. Provide the most comprehensive information available from either source
+
+RESPONSE QUALITY RULES:
+- Knowledge base data: Use EXACT structure with real Azure URLs and IDs
+- Internet data: Provide detailed information with clear source attribution
+- NEVER use placeholder data like "(image not available)" or "Not provided"
+- ALWAYS attempt both search methods before saying information unavailable
+- Be helpful, informative, and accurate about stamp collecting topics
 
 PROPER MARKDOWN FORMATTING RULES:
 Create clean, readable responses with proper markdown:
@@ -139,11 +153,31 @@ Create clean, readable responses with proper markdown:
                     ...(previousResponseId && { previous_response_id: previousResponseId })
                 })
 
+                // Detect source based on response content and tools used
+                let detectedSource = 'knowledge_base'
+                const responseContent = response.output_text.toLowerCase()
+
+                // Check if internet research was mentioned in the response
+                if (responseContent.includes('internet research') ||
+                    responseContent.includes('based on my internet research') ||
+                    responseContent.includes('from internet sources') ||
+                    responseContent.includes('web search')) {
+                    detectedSource = 'internet'
+                } else if (responseContent.includes('knowledge base') ||
+                    responseContent.includes('database')) {
+                    detectedSource = 'knowledge_base'
+                } else if (responseContent.includes('## stamp information') &&
+                    !responseContent.includes('internet research')) {
+                    detectedSource = 'knowledge_base'
+                }
+
+                console.log('🔍 Detected source:', detectedSource, 'based on content analysis')
+
                 const result = {
                     success: true,
                     responseId: response.id,
                     content: response.output_text,
-                    source: 'knowledge_base',
+                    source: detectedSource,
                     message: 'Response generated successfully!',
                     hasContext: !!previousResponseId
                 }

@@ -1837,43 +1837,7 @@ export function PhilaGuideChat() {
                                                     {message.timestamp ? new Date(message.timestamp).toLocaleTimeString() : 'Unknown time'}
                                                 </div>
 
-                                                {/* Source Information */}
-                                                {message.role === 'assistant' && message.source && (
-                                                    <div className="text-xs mt-1 opacity-60">
-                                                        {message.source === 'knowledge_base' ? (
-                                                            <span className="text-green-600 dark:text-green-400">
-                                                                📚 Knowledge Base
-                                                            </span>
-                                                        ) : message.source === 'internet' ? (
-                                                            <div>
-                                                                <span className="text-blue-600 dark:text-blue-400">
-                                                                    🌐 Internet Source
-                                                                </span>
-                                                                {message.sources && message.sources.length > 0 && (
-                                                                    <div className="mt-1 text-xs">
-                                                                        {message.sources.map((source, index) => (
-                                                                            <div key={index} className="text-blue-500 dark:text-blue-300 break-all">
-                                                                                {source}
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        ) : message.source === 'partial_response' ? (
-                                                            <span className="text-orange-600 dark:text-orange-400">
-                                                                ⚠️ Partial Response
-                                                            </span>
-                                                        ) : message.source === 'processing_timeout' ? (
-                                                            <span className="text-red-600 dark:text-red-400">
-                                                                ⏰ Processing Timeout
-                                                            </span>
-                                                        ) : message.source === 'fallback' ? (
-                                                            <span className="text-yellow-600 dark:text-yellow-400">
-                                                                🔄 Fallback Response
-                                                            </span>
-                                                        ) : null}
-                                                    </div>
-                                                )}
+
                                             </div>
                                         )}
 

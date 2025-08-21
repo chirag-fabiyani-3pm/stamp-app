@@ -9,7 +9,7 @@ export async function GET() {
 
         // Test basic Responses API connection
         const response = await openai.responses.create({
-            model: 'gpt-5',
+            model: 'gpt-4o',
             input: 'Hello, can you tell me about stamp collecting?'
         })
 
