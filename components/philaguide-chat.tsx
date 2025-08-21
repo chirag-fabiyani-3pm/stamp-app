@@ -1767,15 +1767,15 @@ export function PhilaGuideChat() {
                                                     message.content
                                                 )}
 
-                                                {/* Timestamp */}
-                                                {message.role === 'assistant' && (
-                                                    <div className={cn(
-                                                        "text-xs mt-2 opacity-70",
-                                                        "text-muted-foreground"
-                                                    )}>
-                                                        {message.timestamp ? new Date(message.timestamp).toLocaleTimeString() : 'Unknown time'}
-                                                    </div>
-                                                )}
+                                                {/* Timestamp - Show for both user and assistant messages */}
+                                                <div className={cn(
+                                                    "text-xs mt-2 opacity-70",
+                                                    message.role === 'user'
+                                                        ? "text-primary-foreground/70 dark:text-black/70 text-right"
+                                                        : "text-muted-foreground"
+                                                )}>
+                                                    {message.timestamp ? new Date(message.timestamp).toLocaleTimeString() : 'Unknown time'}
+                                                </div>
 
                                                 {/* Source Information */}
                                                 {message.role === 'assistant' && message.source && (
