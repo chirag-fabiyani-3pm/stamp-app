@@ -136,9 +136,9 @@ function parseStructuredStampData(content: string): StampCard[] {
 
     console.log('🔍 Parsing content for stamps:', content.substring(0, 200) + '...')
 
-    // Split content by stamp sections - look for ## Stamp Information as the main separator
-    const sections = content.split(/## Stamp Information/)
-    console.log('🔍 Found ## Stamp Information sections:', sections.length)
+    // Split content by stamp sections - look for ## Stamp Information and ## Stamp Varieties as separators
+    const sections = content.split(/## (?:Stamp Information|Stamp Varieties)/)
+    console.log('🔍 Found stamp sections:', sections.length)
 
     // Process each section (skip the first empty section)
     sections.slice(1).forEach((section, index) => {
@@ -146,7 +146,7 @@ function parseStructuredStampData(content: string): StampCard[] {
 
         console.log('🔍 Processing section:', index, section.substring(0, 100) + '...')
 
-        // Extract stamp information using regex patterns
+        // Extract stamp information using regex patterns - updated for new structure
         const stampNameMatch = section.match(/\*\*Stamp Name\*\*:\s*([^\n]+)/)
         const countryMatch = section.match(/\*\*Country\*\*:\s*([^\n]+)/)
         const idMatch = section.match(/\*\*ID\*\*:\s*([^\n]+)/)
@@ -155,16 +155,66 @@ function parseStructuredStampData(content: string): StampCard[] {
         const seriesMatch = section.match(/\*\*Series\*\*:\s*([^\n]+)/)
         const yearMatch = section.match(/\*\*Year\*\*:\s*([^\n]+)/)
         const denominationMatch = section.match(/\*\*Denomination\*\*:\s*([^\n]+)/)
+        const catalogNumberMatch = section.match(/\*\*Catalog Number\*\*:\s*([^\n]+)/)
+        const themeMatch = section.match(/\*\*Theme\*\*:\s*([^\n]+)/)
+        const technicalDetailsMatch = section.match(/\*\*Technical Details\*\*:\s*([^\n]+)/)
+
+        // Variety-specific fields
+        const mainStampMatch = section.match(/\*\*Main Stamp\*\*:\s*([^\n]+)/)
+        const varietiesFoundMatch = section.match(/\*\*Varieties Found\*\*:\s*([^\n]+)/)
+        const varietyTypesMatch = section.match(/\*\*Variety Types\*\*:\s*([^\n]+)/)
+        const parentStampIdMatch = section.match(/\*\*Parent Stamp ID\*\*:\s*([^\n]+)/)
+        const relationshipTypeMatch = section.match(/\*\*Relationship Type\*\*:\s*([^\n]+)/)
 
         console.log('🔍 Matches:', {
             name: stampNameMatch?.[1],
             country: countryMatch?.[1],
             id: idMatch?.[1],
             imageUrl: imageUrlMatch?.[2],
-            description: descriptionMatch?.[1]
+            description: descriptionMatch?.[1],
+            catalogNumber: catalogNumberMatch?.[1],
+            theme: themeMatch?.[1],
+            technicalDetails: technicalDetailsMatch?.[1],
+            // Variety fields
+            mainStamp: mainStampMatch?.[1],
+            varietiesFound: varietiesFoundMatch?.[1],
+            varietyTypes: varietyTypesMatch?.[1],
+            parentStampId: parentStampIdMatch?.[1],
+            relationshipType: relationshipTypeMatch?.[1]
         })
 
-        if (stampNameMatch && countryMatch) {
+        // Check if this is a variety response or regular stamp
+        if (mainStampMatch && varietiesFoundMatch) {
+            // This is a variety response
+            const stamp: StampCard = {
+                type: 'card',
+                id: `variety-${index}`, // Generate unique ID for variety cards
+                title: mainStampMatch[1].trim(),
+                subtitle: `Varieties: ${varietiesFoundMatch[1].trim()}`,
+                image: '/images/stamps/no-image-available.png', // Default for variety cards
+                content: [
+                    {
+                        section: 'Variety Information',
+                        text: `Found ${varietiesFoundMatch[1].trim()} varieties of this stamp`
+                    },
+                    {
+                        section: 'Variety Types',
+                        details: [
+                            { label: 'Varieties Found', value: varietiesFoundMatch[1].trim() },
+                            { label: 'Variety Types', value: varietyTypesMatch?.[1]?.trim() || 'Various' },
+                            { label: 'Catalog #', value: catalogNumberMatch?.[1]?.trim() || 'Unknown' },
+                            ...(parentStampIdMatch?.[1] ? [{ label: 'Parent ID', value: parentStampIdMatch[1].trim() }] : []),
+                            ...(relationshipTypeMatch?.[1] ? [{ label: 'Relationship', value: relationshipTypeMatch[1].trim() }] : [])
+                        ]
+                    }
+                ],
+                significance: `Variety collection with ${varietiesFoundMatch[1].trim()} different versions`
+            }
+
+            console.log('🎴 Created variety card:', stamp)
+            stamps.push(stamp)
+        } else if (stampNameMatch && countryMatch) {
+            // This is a regular stamp response
             // Handle missing image URL - try to find any Azure blob storage URL in the section
             let imageUrl = imageUrlMatch?.[2]?.trim()
             if (!imageUrl || imageUrl === 'Not provided' || imageUrl === '(image not available)' || imageUrl === 'View Image') {
@@ -174,7 +224,7 @@ function parseStructuredStampData(content: string): StampCard[] {
 
             const stamp: StampCard = {
                 type: 'card',
-                id: idMatch?.[1]?.trim() || `stamp-${index}`,
+                id: idMatch?.[1]?.trim() || `stamp-${index}`, // CRITICAL: Use 'id' field for UI compatibility
                 title: stampNameMatch[1].trim(),
                 subtitle: `${countryMatch[1].trim()} • ${yearMatch?.[1]?.trim() || 'Unknown Year'}`,
                 image: imageUrl,
@@ -189,7 +239,10 @@ function parseStructuredStampData(content: string): StampCard[] {
                             { label: 'Series', value: seriesMatch?.[1]?.trim() || 'Unknown' },
                             { label: 'Year', value: yearMatch?.[1]?.trim() || 'Unknown' },
                             { label: 'Denomination', value: denominationMatch?.[1]?.trim() || 'Unknown' },
-                            { label: 'Country', value: countryMatch[1].trim() }
+                            { label: 'Country', value: countryMatch[1].trim() },
+                            { label: 'Catalog #', value: catalogNumberMatch?.[1]?.trim() || 'Unknown' },
+                            ...(themeMatch?.[1] ? [{ label: 'Theme', value: themeMatch[1].trim() }] : []),
+                            ...(technicalDetailsMatch?.[1] ? [{ label: 'Technical', value: technicalDetailsMatch[1].trim() }] : [])
                         ]
                     }
                 ],

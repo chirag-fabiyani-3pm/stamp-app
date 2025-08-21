@@ -8,7 +8,7 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 })
 
-const VECTOR_STORE_ID = 'vs_68a6c0b3ad708191ab426ecf1781b5c4'
+const VECTOR_STORE_ID = 'vs_68a700c721648191a8f8bd76ddfcd860'
 
 // Session management for context - maps sessionId to previousResponseId
 const activeSessions = new Map<string, string>()
@@ -106,14 +106,57 @@ STEP 3: Provide the best available information from either source
 When you find stamps in your knowledge base, format using this EXACT structure:
 
 ## Stamp Information
-**Stamp Name**: [Real stamp name from knowledge base]
-**Country**: [Real country from knowledge base]  
-**ID**: [Real ID field from knowledge base - NOT stampId]
-**Image URL**: [Real Azure blob storage URL from knowledge base - MUST be the actual URL, not placeholder text]
-**Description**: [Real description from knowledge base]
-**Series**: [Real series information if available]
-**Year**: [Real year if available]
-**Denomination**: [Real denomination if available]
+**Stamp Name**: [Real 'name' field from knowledge base]
+**Country**: [Real 'countryName' field from knowledge base]  
+**ID**: [Real 'id' field from knowledge base - CRITICAL: Use 'id' NOT 'stampId' for UI compatibility]
+**Image URL**: [Real 'stampImageUrl' from knowledge base OR extract actual Azure blob URL, never use placeholder]
+**Description**: [Combine MULTIPLE description fields: 'description' + 'seriesDescription' + relevant others for comprehensive details]
+**Series**: [Real 'seriesName' field if available]
+**Year**: [Real 'issueYear' field if available]
+**Denomination**: [Real 'denominationDisplay' field if available]
+**Catalog Number**: [Real 'catalogNumber' field if available]
+**Theme**: [Real 'theme' and 'subject' fields if available]
+**Technical Details**: [Combine 'typeName' + 'perforationName' + 'paperTypeName' + 'colorName' if relevant]
+
+🚨 CRITICAL DATA MAPPING RULES:
+1. **ID Field**: ALWAYS use 'id' field (NOT 'stampId') - this is what the UI components expect
+2. **Multiple Descriptions**: Search and combine these description fields for comprehensive results:
+   - 'description' (primary)
+   - 'seriesDescription' 
+   - 'colorDescription'
+   - 'stampGroupDescription'
+   - 'issueContext'
+3. **Search Strategy**: When user queries mention colors, series, techniques, or specific details, search across ALL relevant description fields
+4. **Image URLs**: Extract actual blob storage URLs from 'stampImageUrl' or any other image fields, never use "Not provided"
+
+🎯 VARIETY HANDLING RULES:
+5. **Variety Queries**: When users ask about varieties, errors, or different versions of stamps:
+   - **Primary Search**: Search for stamps with the SAME 'catalogNumber' (e.g., PC10a, PE22a)
+   - **Enhanced Search**: ALSO search for stamps with the SAME 'parentStampId' for direct family relationships
+   - **Dual Strategy**: Use both catalog number grouping AND parent-child relationships for comprehensive variety coverage
+   - **Group Related Varieties**: Group all stamps with identical catalog numbers OR identical parentStampId as related varieties
+   - **Use 'varieties_errors' documents**: For detailed variety information and variety-specific fields
+   - **Include Variety Details**: varietyType, perforationVariety, colorVariety, paperVariety, knownError, majorVariety
+   - **Show Relationship Info**: Indicate if stamps are parent stamps, child varieties, or related instances
+   - **Variety Count**: Show total variety count and types when available
+
+6. **Variety Response Format**: For variety queries, structure response as:
+   ## Stamp Varieties
+   **Main Stamp**: [Name] (Catalog #: [Number])
+   **Parent Stamp ID**: [parentStampId if available]
+   **Varieties Found**: [Count] varieties
+   **Variety Types**: [List variety types found]
+   **Relationship Type**: [Parent/Child/Related Instance]
+   
+   ### Variety Details:
+   **Variety 1**: [Name] - [Variety Type] - [Specific Details] - [Parent/Child status]
+   **Variety 2**: [Name] - [Variety Type] - [Specific Details] - [Parent/Child status]
+   [Continue for all varieties...]
+   
+   ### Relationship Information:
+   **Parent Stamp**: [Main stamp that other varieties are based on]
+   **Child Varieties**: [List of stamps that are variations of the parent]
+   **Related Instances**: [Stamps with same catalog number but different characteristics]
 
 🌐 INTERNET SEARCH (Fallback):
 When knowledge base has NO relevant results, use web_search_preview and format as:

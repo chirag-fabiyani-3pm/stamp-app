@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
 
         // Search the vector store for stamps
         const searchResponse = await openai.beta.assistants.files.search(
-            'vs_68a6c0b3ad708191ab426ecf1781b5c4', // Your vector store ID
+            'vs_68a700c721648191a8f8bd76ddfcd860', // Your vector store ID
             {
                 query: query,
                 max_results: 5
