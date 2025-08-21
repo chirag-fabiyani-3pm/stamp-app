@@ -23,11 +23,7 @@ export const isUserAdmin = (roleMasterId: string): boolean => {
 };
 
 // Use local development server when running locally, otherwise use the configured backend
-export const BACKEND_URL = process.env.NODE_ENV === 'development'
-  ? "http://localhost:3000"
-  : (process.env.NEXT_PUBLIC_BACKEND_URL || "https://stamp-app-backend.onrender.com");
+export const BACKEND_URL = "http://localhost:3000";
 
 // Frontend URL - use local development server when running locally, otherwise use the production URL
-export const FRONTEND_URL = process.env.NODE_ENV === 'development'
-  ? "http://localhost:3000"
-  : (process.env.NEXT_PUBLIC_FRONTEND_URL || "https://stamp-app-sand.vercel.app"); 
+export const FRONTEND_URL = "http://localhost:3000";

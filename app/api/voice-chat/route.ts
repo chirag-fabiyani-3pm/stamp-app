@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
         console.log('🔍 Checking stamp knowledge base for:', message)
 
         try {
-            const stampResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3000'}/api/philaguide`, {
+            const stampResponse = await fetch(`http://localhost:3000/api/philaguide`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
