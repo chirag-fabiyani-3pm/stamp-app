@@ -9,8 +9,7 @@
     "lint": "next lint",
     "generate-icons": "node scripts/generate-pwa-icons.js",
     "update-sw": "node scripts/update-sw-version.js",
-    "websocket": "node server/websocket-server.js",
-    "dev:full": "concurrently \"npm run dev\" \"npm run websocket\""
+    "dev:full": "concurrently \"npm run dev\""
   },
   "dependencies": {
     "@auth/core": "^0.39.1",
