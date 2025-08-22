@@ -1141,39 +1141,99 @@ async function streamMessages(threadId: string, controller: ReadableStreamDefaul
 
 // Generate card format for single stamp
 function generateStampCard(stamp: any) {
-    // Map the vector store fields to card display format
-    const year = stamp.issueYear || stamp.IssueYear || (stamp.issueDate ? stamp.issueDate.split('-')[0] : stamp.IssueDate ? stamp.IssueDate.split('-')[0] : 'Unknown')
-    // Use denominationSymbol if available, otherwise construct from denominationValue
-    const denomination = stamp.denominationSymbol || stamp.DenominationSymbol || `${stamp.denominationValue || stamp.DenominationValue}`
-    const subtitle = `${stamp.country || stamp.Country} • ${year} • ${denomination}`
+    // Debug: Log the stamp object being processed
+    console.log('🎴 generateStampCard called with stamp:', {
+        recordId: stamp.id || stamp.Id,
+        stampId: stamp.stampId || stamp.StampId,
+        name: stamp.Name || stamp.name,
+        country: stamp.Country || stamp.country,
+        imageUrl: stamp.StampImageUrl || stamp.stampImageUrl,
+        year: stamp.IssueYear || stamp.issueYear,
+        denomination: stamp.DenominationSymbol || stamp.denominationSymbol
+    })
 
-    // Handle different possible image URL field names
-    const imageUrl = stamp.stampImageUrl || stamp.StampImageUrl || stamp.image || stamp.StampImage || '/images/stamps/no-image-available.png'
+    // Ensure we're working with a single, complete stamp object
+    // Use ONLY the fields from this specific stamp object, no fallbacks to other sources
 
-    return {
-        type: 'card',
-        id: stamp.id || stamp.Id, // Use lowercase 'id' first, then fallback to 'Id'
-        title: stamp.name || stamp.Name || stamp.catalogNumber || stamp.StampCatalogCode || 'Stamp',
-        subtitle: subtitle,
-        image: imageUrl,
-        content: [
-            {
-                section: 'Overview',
-                text: `${stamp.name || stamp.Name} from ${stamp.country || stamp.Country}, issued in ${year}. Denomination: ${denomination}. Color: ${stamp.color || stamp.Color || 'Unknown'}.`
-            },
-            {
-                section: 'Details',
-                details: [
-                    { label: 'Catalog Code', value: stamp.catalogNumber || stamp.StampCatalogCode || 'N/A' },
-                    { label: 'Issue Date', value: stamp.issueDate || stamp.IssueDate || 'N/A' },
-                    { label: 'Color', value: stamp.color || stamp.Color || 'N/A' },
-                    { label: 'Paper Type', value: stamp.paperType || stamp.PaperType || 'N/A' }
-                ]
-            }
-        ],
-        significance: `A ${stamp.color || stamp.Color || 'colorful'} stamp from ${stamp.country || stamp.Country} issued in ${year}.`,
-        specialNotes: stamp.seriesName || stamp.SeriesName ? `Part of the ${stamp.seriesName || stamp.SeriesName} series.` : ''
+    // Extract year from the stamp's own date fields
+    const year = stamp.IssueYear || stamp.issueYear || (stamp.IssueDate ? stamp.IssueDate.split('-')[0] : stamp.issueDate ? stamp.issueDate.split('-')[0] : 'Unknown')
+
+    // Extract denomination from the stamp's own denomination fields
+    const denomination = stamp.DenominationSymbol || stamp.denominationSymbol || `${stamp.DenominationValue || stamp.denominationValue}`
+
+    // Create subtitle using only this stamp's data
+    const subtitle = `${stamp.Country || stamp.country} • ${year} • ${denomination}`
+
+    // Use ONLY this stamp's image URL - no fallbacks to other sources
+    const imageUrl = stamp.StampImageUrl || stamp.stampImageUrl || stamp.image || stamp.StampImage || '/images/stamps/no-image-available.png'
+
+    // Use ONLY this stamp's ID fields - be specific about which ID to use
+    // For UI cards, we want the record ID, not the stampId
+    const recordId = stamp.id || stamp.Id // Primary record ID for UI
+    const stampId = stamp.stampId || stamp.StampId // Stamp-specific ID for reference
+    const catalogNumber = stamp.StampCatalogCode || stamp.catalogNumber
+
+    // Create content using ONLY this stamp's data
+    const content = []
+
+    // Overview section - use only this stamp's data
+    if (stamp.Name || stamp.name) {
+        content.push({
+            section: 'Overview',
+            text: `${stamp.Name || stamp.name} from ${stamp.Country || stamp.country}, issued in ${year}. Denomination: ${denomination}. Color: ${stamp.Color || stamp.color || 'Unknown'}.`
+        })
     }
+
+    // Details section - use only this stamp's data
+    const details = []
+    if (catalogNumber) details.push({ label: 'Catalog Code', value: catalogNumber })
+    if (stamp.IssueDate || stamp.issueDate) details.push({ label: 'Issue Date', value: stamp.IssueDate || stamp.issueDate })
+    if (stamp.Color || stamp.color) details.push({ label: 'Color', value: stamp.Color || stamp.color })
+    if (stamp.PaperType || stamp.paperType) details.push({ label: 'Paper Type', value: stamp.PaperType || stamp.paperType })
+
+    if (details.length > 0) {
+        content.push({
+            section: 'Details',
+            details: details
+        })
+    }
+
+    // Additional sections if available in this stamp
+    if (stamp.SeriesName || stamp.seriesName) {
+        content.push({
+            section: 'Series',
+            text: `Part of the ${stamp.SeriesName || stamp.seriesName} series.`
+        })
+    }
+
+    if (stamp.Description || stamp.description) {
+        content.push({
+            section: 'Description',
+            text: stamp.Description || stamp.description
+        })
+    }
+
+    const generatedCard = {
+        type: 'card',
+        id: recordId, // Use the record ID for UI (view details button)
+        stampId: stampId, // Keep the stamp-specific ID for reference
+        title: stamp.Name || stamp.name || catalogNumber || 'Stamp',
+        subtitle: subtitle,
+        image: imageUrl, // Use ONLY this stamp's image
+        content: content,
+        significance: `A ${stamp.Color || stamp.color || 'colorful'} stamp from ${stamp.Country || stamp.country} issued in ${year}.`,
+        specialNotes: stamp.SeriesName || stamp.seriesName ? `Part of the ${stamp.SeriesName || stamp.seriesName} series.` : ''
+    }
+
+    // Debug: Log the generated card
+    console.log('🎴 generateStampCard generated card:', {
+        id: generatedCard.id,
+        title: generatedCard.title,
+        image: generatedCard.image,
+        contentSections: generatedCard.content.length
+    })
+
+    return generatedCard
 }
 
 // Generate carousel format for multiple stamps
@@ -1181,47 +1241,102 @@ function generateStampCarousel(stamps: any[]) {
     return {
         type: 'carousel',
         title: `Found ${stamps.length} stamp${stamps.length !== 1 ? 's' : ''}`,
-        items: stamps.map(stamp => {
-            const year = stamp.issueYear || stamp.IssueYear || (stamp.issueDate ? stamp.issueDate.split('-')[0] : stamp.IssueDate ? stamp.IssueDate.split('-')[0] : 'Unknown')
-            // Use denominationSymbol if available, otherwise construct from denominationValue
-            const denomination = stamp.denominationSymbol || stamp.DenominationSymbol || `${stamp.denominationValue || stamp.DenominationValue}`
-            const subtitle = `${stamp.country || stamp.Country} • ${year} • ${denomination}`
+        items: stamps.map((stamp, index) => {
+            // Debug: Log each stamp object being processed for carousel
+            console.log(`🎴 generateStampCarousel processing stamp ${index}:`, {
+                recordId: stamp.id || stamp.Id,
+                stampId: stamp.stampId || stamp.StampId,
+                name: stamp.Name || stamp.name,
+                country: stamp.Country || stamp.country,
+                imageUrl: stamp.StampImageUrl || stamp.stampImageUrl,
+                year: stamp.IssueYear || stamp.issueYear,
+                denomination: stamp.DenominationSymbol || stamp.denominationSymbol
+            })
 
-            // Handle different possible image URL field names
-            const imageUrl = stamp.stampImageUrl || stamp.StampImageUrl || stamp.image || stamp.StampImage || '/images/stamps/no-image-available.png'
+            // For carousel items, use ONLY the data from each specific stamp object
+            // This ensures each carousel item shows complete, consistent data from one stamp
 
-            return {
-                id: stamp.id || stamp.Id, // Use lowercase 'id' first, then fallback to 'Id'
-                title: stamp.name || stamp.Name || stamp.catalogNumber || stamp.StampCatalogCode || 'Stamp',
+            const year = stamp.IssueYear || stamp.issueYear || (stamp.IssueDate ? stamp.IssueDate.split('-')[0] : stamp.issueDate ? stamp.issueDate.split('-')[0] : 'Unknown')
+            const denomination = stamp.DenominationSymbol || stamp.denominationSymbol || `${stamp.DenominationValue || stamp.DenominationValue}`
+            const subtitle = `${stamp.Country || stamp.country} • ${year} • ${denomination}`
+
+            // Use ONLY this stamp's image URL
+            const imageUrl = stamp.StampImageUrl || stamp.stampImageUrl || stamp.image || stamp.StampImage || '/images/stamps/no-image-available.png'
+
+            // Use ONLY this stamp's ID fields - be specific about which ID to use
+            // For UI cards, we want the record ID, not the stampId
+            const recordId = stamp.id || stamp.Id // Primary record ID for UI
+            const stampId = stamp.stampId || stamp.StampId // Stamp-specific ID for reference
+            const catalogNumber = stamp.StampCatalogCode || stamp.catalogNumber
+
+            // Create content using ONLY this stamp's data
+            const content = []
+
+            // Overview section - use only this stamp's data
+            if (stamp.Name || stamp.name) {
+                content.push({
+                    section: 'Overview',
+                    text: `${stamp.Name || stamp.name} from ${stamp.Country || stamp.country}, issued in ${year}. Denomination: ${denomination}. Color: ${stamp.Color || stamp.color || 'Unknown'}.`
+                })
+            }
+
+            // Details section - use only this stamp's data
+            const details = []
+            if (catalogNumber) details.push({ label: 'Catalog Code', value: catalogNumber })
+            if (stamp.IssueDate || stamp.issueDate) details.push({ label: 'Issue Date', value: stamp.IssueDate || stamp.issueDate })
+            if (stamp.Color || stamp.color) details.push({ label: 'Color', value: stamp.Color || stamp.color })
+            if (stamp.PaperType || stamp.paperType) details.push({ label: 'Paper Type', value: stamp.PaperType || stamp.paperType })
+
+            if (details.length > 0) {
+                content.push({
+                    section: 'Details',
+                    details: details
+                })
+            }
+
+            // Additional sections if available in this stamp
+            if (stamp.SeriesName || stamp.seriesName) {
+                content.push({
+                    section: 'Series',
+                    text: `Part of the ${stamp.SeriesName || stamp.seriesName} series.`
+                })
+            }
+
+            if (stamp.Description || stamp.description) {
+                content.push({
+                    section: 'Description',
+                    text: stamp.Description || stamp.description
+                })
+            }
+
+            const carouselItem = {
+                id: recordId, // Use the record ID for UI (view details button)
+                stampId: stampId, // Keep the stamp-specific ID for reference
+                title: stamp.Name || stamp.name || catalogNumber || 'Stamp',
                 subtitle: subtitle,
-                image: imageUrl,
-                // Include the same detailed content as single cards
-                content: [
-                    {
-                        section: 'Overview',
-                        text: `${stamp.name || stamp.Name} from ${stamp.country || stamp.Country}, issued in ${year}. Denomination: ${denomination}. Color: ${stamp.color || stamp.Color || 'Unknown'}.`
-                    },
-                    {
-                        section: 'Details',
-                        details: [
-                            { label: 'Catalog Code', value: stamp.catalogNumber || stamp.StampCatalogCode || 'N/A' },
-                            { label: 'Issue Date', value: stamp.issueDate || stamp.IssueDate || 'N/A' },
-                            { label: 'Color', value: stamp.color || stamp.Color || 'N/A' },
-                            { label: 'Paper Type', value: stamp.paperType || stamp.PaperType || 'N/A' }
-                        ]
-                    }
-                ],
-                significance: `A ${stamp.color || stamp.Color || 'colorful'} stamp from ${stamp.country || stamp.Country} issued in ${year}.`,
-                specialNotes: stamp.seriesName || stamp.SeriesName ? `Part of the ${stamp.seriesName || stamp.SeriesName} series.` : '',
+                image: imageUrl, // Use ONLY this stamp's image
+                content: content, // Use ONLY this stamp's content
+                significance: `A ${stamp.Color || stamp.color || 'colorful'} stamp from ${stamp.Country || stamp.country} issued in ${year}.`,
+                specialNotes: stamp.SeriesName || stamp.seriesName ? `Part of the ${stamp.SeriesName || stamp.seriesName} series.` : '',
                 // Keep existing fields for backward compatibility
-                summary: `${denomination} ${stamp.color || stamp.Color || 'Unknown'}`,
+                summary: `${denomination} ${stamp.Color || stamp.color || 'Unknown'}`,
                 marketValue: 'Value varies by condition',
                 quickFacts: [
-                    `${stamp.country || stamp.Country} ${year}`,
-                    stamp.color || stamp.Color || 'Unknown',
+                    `${stamp.Country || stamp.country} ${year}`,
+                    stamp.Color || stamp.color || 'Unknown',
                     denomination
                 ]
             }
+
+            // Debug: Log the generated carousel item
+            console.log(`🎴 generateStampCarousel generated item ${index}:`, {
+                id: carouselItem.id,
+                title: carouselItem.title,
+                image: carouselItem.image,
+                contentSections: carouselItem.content.length
+            })
+
+            return carouselItem
         })
     }
 }

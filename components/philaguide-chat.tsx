@@ -70,6 +70,7 @@ interface Message {
 interface StampCard {
     type: 'card'
     id?: string
+    stampId?: string
     title: string
     subtitle: string
     image: string
@@ -86,6 +87,7 @@ interface StampCarousel {
     title: string
     items: Array<{
         id: string
+        stampId?: string
         title: string
         subtitle: string
         image: string
@@ -145,11 +147,24 @@ function parseStructuredStampData(content: string): StampCard[] {
         if (!section.trim()) return
 
         console.log('🔍 Processing section:', index, section.substring(0, 100) + '...')
+        console.log('🔍 Raw section content:', section)
 
         // Extract stamp information using regex patterns - updated for new structure
         const stampNameMatch = section.match(/\*\*Stamp Name\*\*:\s*([^\n]+)/)
         const countryMatch = section.match(/\*\*Country\*\*:\s*([^\n]+)/)
-        const idMatch = section.match(/\*\*ID\*\*:\s*([^\n]+)/)
+
+        // Try multiple ID field patterns to be more robust
+        const idMatch = section.match(/\*\*ID\*\*:\s*([^\n]+)/) ||
+            section.match(/\*\*Id\*\*:\s*([^\n]+)/) ||
+            section.match(/ID:\s*([^\n]+)/) ||
+            section.match(/Id:\s*([^\n]+)/)
+
+        // Also capture Stamp ID field for reference
+        const stampIdMatch = section.match(/\*\*Stamp ID\*\*:\s*([^\n]+)/) ||
+            section.match(/\*\*Stamp Id\*\*:\s*([^\n]+)/) ||
+            section.match(/Stamp ID:\s*([^\n]+)/) ||
+            section.match(/Stamp Id:\s*([^\n]+)/)
+
         const imageUrlMatch = section.match(/\*\*Image URL\*\*:\s*\[([^\]]+)\]\(([^)]+)\)/)
         const descriptionMatch = section.match(/\*\*Description\*\*:\s*([^\n]+)/)
         const seriesMatch = section.match(/\*\*Series\*\*:\s*([^\n]+)/)
@@ -170,6 +185,7 @@ function parseStructuredStampData(content: string): StampCard[] {
             name: stampNameMatch?.[1],
             country: countryMatch?.[1],
             id: idMatch?.[1],
+            stampId: stampIdMatch?.[1],
             imageUrl: imageUrlMatch?.[2],
             description: descriptionMatch?.[1],
             catalogNumber: catalogNumberMatch?.[1],
@@ -181,6 +197,15 @@ function parseStructuredStampData(content: string): StampCard[] {
             varietyTypes: varietyTypesMatch?.[1],
             parentStampId: parentStampIdMatch?.[1],
             relationshipType: relationshipTypeMatch?.[1]
+        })
+
+        // Debug: Check if we have the minimum required fields for a card
+        const hasRequiredFields = stampNameMatch && countryMatch
+        console.log('🔍 Has required fields for card:', hasRequiredFields, {
+            hasName: !!stampNameMatch,
+            hasCountry: !!countryMatch,
+            hasId: !!idMatch,
+            hasStampId: !!stampIdMatch
         })
 
         // Check if this is a variety response or regular stamp
@@ -222,9 +247,14 @@ function parseStructuredStampData(content: string): StampCard[] {
                 imageUrl = azureUrlMatch?.[0] || '/images/stamps/no-image-available.png'
             }
 
+            // Generate a fallback ID if none is provided
+            const recordId = idMatch?.[1]?.trim() || `stamp-${index}-${Date.now()}`
+            const stampSpecificId = stampIdMatch?.[1]?.trim() || undefined
+
             const stamp: StampCard = {
                 type: 'card',
-                id: idMatch?.[1]?.trim() || `stamp-${index}`, // CRITICAL: Use 'id' field for UI compatibility
+                id: recordId, // Use extracted ID or fallback
+                stampId: stampSpecificId, // Include stamp-specific ID if available
                 title: stampNameMatch[1].trim(),
                 subtitle: `${countryMatch[1].trim()} • ${yearMatch?.[1]?.trim() || 'Unknown Year'}`,
                 image: imageUrl,
