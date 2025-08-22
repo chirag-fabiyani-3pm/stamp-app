@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     // Create a Realtime session with the correct model name
     // Based on working examples, we use the specific model version
     const session = await openai.beta.realtime.sessions.create({
-      model: 'gpt-4o-realtime-preview-2024-12-17', // Use the correct model name
+      model: 'gpt-4o-realtime-preview-2025-06-03', // Latest stable version
       voice: voice,
       instructions: instructions || `You are a knowledgeable stamp collecting expert and navigation assistant.
 

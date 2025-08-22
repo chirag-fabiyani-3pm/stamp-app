@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
         // Create a realtime voice session according to OpenAI documentation
         const session = await openai.beta.realtime.sessions.create({
-            model: 'gpt-4o-realtime-preview',
+            model: 'gpt-4o-realtime-preview-2025-06-03',
             voice: voice,
             modalities: ['audio', 'text'],
             instructions: instructions || `You are a knowledgeable stamp collecting expert specializing in conversational responses for voice synthesis. 

@@ -283,7 +283,7 @@ IMPORTANT: This is a continuous conversation session. Users can interrupt you at
 
             // Connect to OpenAI Realtime API using the ephemeral token
             // This matches the working example exactly
-            const realtimeResponse = await fetch(`https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17&voice=${selectedVoice}`, {
+            const realtimeResponse = await fetch(`https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2025-06-03&voice=${selectedVoice}`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${sessionData.ephemeralToken}`,

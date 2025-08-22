@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
 
         // Create a Realtime session with OpenAI
         const session = await openai.beta.realtime.sessions.create({
-            model: 'gpt-4o-realtime-preview',
+            model: 'gpt-4o-realtime-preview-2025-06-03',
             voice: voice,
             instructions: instructions || `You are a knowledgeable stamp collecting expert. Answer questions about stamps, their history, and collecting. Keep responses concise and helpful. You can search for stamps using the available functions.`
         })
