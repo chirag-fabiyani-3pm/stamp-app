@@ -32,7 +32,7 @@ export async function POST(
             console.log('🎤 WebRTC POST: Creating new OpenAI session...')
             openaiSession = await openai.beta.realtime.sessions.create({
                 voice: voice || 'alloy',
-                model: 'gpt-4o-realtime-preview',
+                model: 'gpt-4o-realtime-preview-2025-06-03',
                 input_audio_format: 'pcm16',
                 output_audio_format: 'pcm16',
             })
@@ -182,7 +182,7 @@ export async function PUT(
                     }
 
                     // Add context about this being a simulated OpenAI response
-                    // aiResponse += ` (Note: This is a simulated OpenAI response. In production, this would be processed by OpenAI's real-time API using session ${openaiSessionId}. Audio processed at ${timestamp})`
+                    aiResponse += ` (Note: This is a simulated OpenAI response. In production, this would be processed by OpenAI's real-time API using session ${openaiSessionId}. Audio processed at ${timestamp})`
 
                     const responseData = {
                         type: 'response.text.delta',
