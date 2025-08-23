@@ -117,7 +117,7 @@ class NewApiDataChunker {
         this.log('Writing chunk files...');
 
         for (const chunk of chunks) {
-            const filename = `stamp_database_new_api_chunk_${chunk.index.toString().padStart(2, '0')}_${chunk.recordCount}_records.json`;
+            const filename = `catalog_one_chunk_${chunk.index.toString().padStart(2, '0')}_${chunk.recordCount}_records.json`;
             const filepath = path.join(chunkDir, filename);
 
             try {

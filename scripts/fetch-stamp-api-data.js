@@ -12,9 +12,9 @@ const CREDENTIALS = {
     deviceId: "stamp-fetcher-script",
     isAppleDevice: true
 };
-const CATALOG_EXTRACTION_PROCESS_ID = "3129b91b-df8f-42fe-8dfd-8f7dd64154d6";
+const CATALOG_EXTRACTION_PROCESS_ID = "c1a24978-9c0a-4f2b-8478-1a18fc20560f";
 const PAGE_SIZE = 200;
-const EXPECTED_TOTAL_STAMPS = 15124;
+const EXPECTED_TOTAL_STAMPS = 20339;
 
 // Global variables
 let authToken = null;

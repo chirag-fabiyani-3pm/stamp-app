@@ -6,8 +6,8 @@ const path = require('path');
  * This preserves ALL important fields for complete stamp information
  */
 
-const CHUNKS_DIR = 'stamp_database_by_type/chunks';
-const OUTPUT_DIR = 'stamp_database_by_type/comprehensive_vectorstore';
+const CHUNKS_DIR = 'stamp_database_by_type/chunks/catalog_one';
+const OUTPUT_DIR = 'stamp_database_by_type/comprehensive_vectorstore/catalog_one';
 
 // Create output directory
 if (!fs.existsSync(OUTPUT_DIR)) {
@@ -211,7 +211,7 @@ function processChunkFileComprehensive(chunkFile) {
 
         // Create output filename
         const baseName = path.basename(chunkFile, '.json');
-        const outputFile = path.join(OUTPUT_DIR, `comprehensive_${baseName}.json`);
+        const outputFile = path.join(OUTPUT_DIR, `${baseName}.json`);
 
         // Save comprehensive structure
         fs.writeFileSync(outputFile, JSON.stringify(comprehensiveRecords, null, 2));
