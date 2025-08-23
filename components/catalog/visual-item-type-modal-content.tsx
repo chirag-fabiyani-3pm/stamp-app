@@ -3,10 +3,12 @@ import Image from "next/image"
 import { Card, CardContent } from "@/components/ui/card"
 import { ChevronRight } from "lucide-react"
 import { ItemTypeOption, PerforationOption } from "@/types/catalog"
+import { getFirstStampImage } from "@/lib/data/catalog-data"
+import { useCatalogData } from "@/lib/context/catalog-data-context"
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface VisualItemTypeModalContentProps {
-  data: { perforation: PerforationOption, itemTypes: ItemTypeOption[] }
+  data: { perforation: PerforationOption, itemTypes: ItemTypeOption[], countryCode: string, seriesName: string, year: number, currencyCode: string, denominationValue: string, colorCode: string, paperCode: string, watermarkCode: string }
   onItemTypeClick: (itemType: ItemTypeOption) => void
   isLoading: boolean;
 }
@@ -16,6 +18,7 @@ export function VisualItemTypeModalContent({
   onItemTypeClick,
   isLoading
 }: VisualItemTypeModalContentProps) {
+  const { stamps } = useCatalogData()
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -52,7 +55,7 @@ export function VisualItemTypeModalContent({
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
                 <Image
-                  src={itemType.stampImageUrl}
+                  src={getFirstStampImage(stamps, data.countryCode, data.seriesName, data.year, data.currencyCode, data.denominationValue, data.colorCode, data.paperCode, data.watermarkCode, data.perforation.code, itemType.code)}
                   alt={itemType.name}
                   width={60}
                   height={80}

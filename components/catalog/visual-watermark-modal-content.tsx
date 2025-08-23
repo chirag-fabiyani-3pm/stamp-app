@@ -3,10 +3,12 @@ import Image from "next/image"
 import { Card, CardContent } from "@/components/ui/card"
 import { ChevronRight } from "lucide-react"
 import { PerforationOption, WatermarkOption } from "@/types/catalog"
+import { getFirstStampImage } from "@/lib/data/catalog-data"
+import { useCatalogData } from "@/lib/context/catalog-data-context"
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface VisualWatermarkModalContentProps {
-  data: { paper: any, watermarks: WatermarkOption[] } // Assuming paper is passed for context
+  data: { paper: any, watermarks: WatermarkOption[], countryCode: string, seriesName: string, year: number, currencyCode: string, denominationValue: string, colorCode: string }
   onWatermarkClick: (watermark: WatermarkOption) => void
   isLoading: boolean;
 }
@@ -16,6 +18,7 @@ export function VisualWatermarkModalContent({
   onWatermarkClick,
   isLoading
 }: VisualWatermarkModalContentProps) {
+  const { stamps } = useCatalogData()
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -52,7 +55,7 @@ export function VisualWatermarkModalContent({
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
                 <Image
-                  src={watermark.stampImageUrl}
+                  src={getFirstStampImage(stamps, data.countryCode, data.seriesName, data.year, data.currencyCode, data.denominationValue, data.colorCode, data.paper.code, watermark.code)}
                   alt={watermark.name}
                   width={60}
                   height={80}

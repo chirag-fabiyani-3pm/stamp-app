@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { TrendingUp, BookOpen, Share2, Calendar, MapPin, Award, AlertCircle } from "lucide-react"
 import { StampData, ModalType, AdditionalCategoryOption, ParsedStampDetails } from "@/types/catalog"
+
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface StampDetailsModalContentProps {
@@ -112,7 +113,7 @@ export function StampDetailsModalContent({
                   <div className="space-y-3">
                     <div className="flex items-center justify-center flex-shrink-0">
                       <Image
-                        src={stampItem.stampImageUrl}
+                        src={stampItem.stampImageUrl || '/images/stamps/no-image-available.png'}
                         alt={stampItem.name}
                         width={120}
                         height={160}
@@ -226,7 +227,7 @@ export function StampDetailsModalContent({
           {/* Stamp Image */}
           <div className="relative w-full h-72 md:h-96">
             <Image
-              src={stamp.stampImageUrl}
+              src={stamp.stampImageUrl || '/images/stamps/no-image-available.png'}
               alt={stamp.name}
               fill
               className="object-contain rounded-lg border border-border shadow-lg"

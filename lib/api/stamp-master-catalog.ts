@@ -262,4 +262,72 @@ export async function fetchStampMasterCatalogAll(catalogExtractionProcessId: str
   return all
 }
 
+// New function with progress tracking
+export async function fetchStampMasterCatalogWithProgress(
+  catalogExtractionProcessId: string,
+  pageSize = 200,
+  jwt?: string,
+  onProgress?: (progress: {
+    currentPage: number,
+    totalPages: number,
+    totalCount: number,
+    currentItems: number,
+    progress: number,
+    message: string
+  }) => void
+): Promise<StampMasterCatalogItem[]> {
+  let pageNumber = 1
+  const all: StampMasterCatalogItem[] = []
+  let totalCount = 0
+  let totalPages = 1
+
+  // Get first page to determine total count and pages
+  const firstResponse = await fetchStampMasterCatalogPage({ pageNumber, pageSize, catalogExtractionProcessId, jwt })
+  all.push(...(firstResponse.items || []))
+  totalCount = firstResponse.totalCount
+  totalPages = firstResponse.totalPages
+
+  // Report initial progress
+  onProgress?.({
+    currentPage: 1,
+    totalPages,
+    totalCount,
+    currentItems: firstResponse.items.length,
+    progress: Math.round((1 / totalPages) * 100),
+    message: `Loaded page 1 of ${totalPages}`
+  })
+
+  // Continue fetching remaining pages
+  pageNumber = 2
+  while (pageNumber <= totalPages && pageNumber <= 2000) {
+    const response = await fetchStampMasterCatalogPage({ pageNumber, pageSize, catalogExtractionProcessId, jwt })
+    all.push(...(response.items || []))
+
+    // Report progress
+    onProgress?.({
+      currentPage: pageNumber,
+      totalPages,
+      totalCount,
+      currentItems: all.length,
+      progress: Math.round((pageNumber / totalPages) * 100),
+      message: `Loaded page ${pageNumber} of ${totalPages}`
+    })
+
+    if (!response.hasNextPage || (response.items || []).length < pageSize) break
+    pageNumber += 1
+  }
+
+  // Final progress update
+  onProgress?.({
+    currentPage: totalPages,
+    totalPages,
+    totalCount,
+    currentItems: all.length,
+    progress: 100,
+    message: `Successfully loaded ${all.length.toLocaleString()} stamps!`
+  })
+
+  return all
+}
+
 

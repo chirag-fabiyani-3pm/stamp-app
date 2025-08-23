@@ -4,10 +4,12 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ChevronRight, Search } from "lucide-react"
 import { ColorOption, DenominationOption } from "@/types/catalog"
+import { getFirstStampImage } from "@/lib/data/catalog-data"
+import { useCatalogData } from "@/lib/context/catalog-data-context"
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface ColorModalContentProps {
-  data: { denomination: DenominationOption, colors: ColorOption[] }
+  data: { denomination: DenominationOption, colors: ColorOption[], countryCode: string, seriesName: string, year: number, currencyCode: string }
   onColorClick: (color: ColorOption) => void
   isLoading: boolean;
 }
@@ -17,6 +19,7 @@ export function ColorModalContent({
   onColorClick,
   isLoading
 }: ColorModalContentProps) {
+  const { stamps } = useCatalogData()
   const [searchTerm, setSearchTerm] = useState("")
 
   const filteredColors = useMemo(() => {
@@ -84,7 +87,7 @@ export function ColorModalContent({
                     style={{ backgroundColor: color.hex }}
                   />
                   <Image
-                    src={color.stampImageUrl}
+                    src={getFirstStampImage(stamps, data.countryCode, data.seriesName, data.year, data.currencyCode, data.denomination.value, color.code)}
                     alt={color.name}
                     width={50}
                     height={60}

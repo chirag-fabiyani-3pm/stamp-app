@@ -23,7 +23,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { ChevronRight, Search, Filter, Grid, List, ArrowLeft, Home, Share2, RefreshCw } from "lucide-react"
+import { ChevronRight, Search, Filter, Grid, List, ArrowLeft, Home } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
 import {
@@ -45,7 +45,7 @@ import 'reactflow/dist/style.css'
 import dagre from 'dagre'
 
 import { StampDetailsModal } from "./stamp-details-modal"
-import { StampCardSkeleton, StampListSkeleton, GroupCardSkeleton, LoadingStamps } from "./loading-skeletons"
+import { StampCardSkeleton, StampListSkeleton, GroupCardSkeleton, LoadingStamps, DataFetchingProgress, InvestigateSearchSkeleton } from "./loading-skeletons"
 import { GroupNode } from "./group-node"
 import { StampNode } from "./stamp-node"
 
@@ -282,7 +282,13 @@ const GROUPING_FIELDS: { value: GroupingField; label: string; accessor: (s: Stam
 ]
 
 export function CatalogContent() {
-  const { normalizedStamps, dbReady } = useCatalogData()
+  const {
+    normalizedStamps,
+    dbReady,
+    fetchProgress,
+    loadingType,
+    loading: dataLoading
+  } = useCatalogData()
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
@@ -325,7 +331,29 @@ export function CatalogContent() {
   // Get navigation state from URL
   const navigation = useMemo(() => {
     const pathParam = searchParams.get('path')
-    const path = pathParam ? decodeURIComponent(pathParam).split(',').filter(Boolean) : []
+    let path: string[] = []
+
+    if (pathParam) {
+      try {
+        // Path segments are JSON-encoded to handle special characters like commas
+        const decodedPath = decodeURIComponent(pathParam)
+        // Split by a multi-character delimiter that's extremely unlikely to appear in JSON
+        const segments = decodedPath.split('|||').filter(Boolean)
+        path = segments.map(segment => {
+          try {
+            return JSON.parse(segment)
+          } catch (e) {
+            // Fallback for any malformed segments
+            console.warn('Failed to parse path segment:', segment, e)
+            return segment
+          }
+        })
+      } catch (e) {
+        console.warn('Failed to decode path parameter:', pathParam, e)
+        path = []
+      }
+    }
+
     return {
       path,
       level: path.length
@@ -395,9 +423,16 @@ export function CatalogContent() {
       ? new URLSearchParams(window.location.search)
       : new URLSearchParams()
 
-    // Path
+    // Path - JSON encode each segment to handle special characters
     if (newPath.length > 0) {
-      params.set('path', encodeURIComponent(newPath.join(',')))
+      try {
+        const encodedSegments = newPath.map(segment => JSON.stringify(segment))
+        params.set('path', encodeURIComponent(encodedSegments.join('|||')))
+      } catch (e) {
+        console.error('Failed to encode path segments:', newPath, e)
+        // Fallback to simple encoding if JSON fails
+        params.set('path', encodeURIComponent(newPath.join('|||')))
+      }
     } else {
       params.delete('path')
     }
@@ -439,44 +474,6 @@ export function CatalogContent() {
       }
     } catch (error) {
       console.error('Error initializing IndexedDB:', error)
-    }
-  }
-
-  // Force refresh data from API
-  const refreshDataFromAPI = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      
-      // Clear existing data
-      await clearIndexedDB()
-      
-      // Reset state
-      setStamps([])
-      setCurrentOffset(0)
-      setAllStampsLoaded(false)
-      setTotalStampsCount(0)
-      
-      // Initialize with fresh data
-      await initializeIndexedDB()
-      
-      // Reload data
-      await loadInitialStamps()
-      
-      toast({
-        title: "Data Refreshed",
-        description: "Catalog data has been refreshed from server",
-      })
-    } catch (error) {
-      console.error('Error refreshing data:', error)
-      setError('Failed to refresh data from server')
-      toast({
-        title: "Refresh Failed",
-        description: "Unable to refresh data from server",
-        variant: "destructive"
-      })
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -842,26 +839,7 @@ export function CatalogContent() {
     updateURL([])
   }
 
-  // Share current URL
-  const shareCurrentURL = async () => {
-    const currentURL = window.location.href
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: 'Investigate Search - Stamp Collection',
-          url: currentURL
-        })
-      } else {
-        await navigator.clipboard.writeText(currentURL)
-        toast({
-          title: "URL copied to clipboard",
-          description: "You can now share this URL with others",
-        })
-      }
-    } catch (error) {
-      console.error('Error sharing URL:', error)
-    }
-  }
+
 
   const addGroupingLevel = (field: GroupingField) => {
     if (!groupingLevels.includes(field)) {
@@ -1741,56 +1719,37 @@ export function CatalogContent() {
     )
   }
   
-  if (loading && stamps.length === 0) {
+  // Show API data fetching progress overlay
+  if (fetchProgress.isFetching) {
     return (
-      <div className="container mx-auto p-6 space-y-6">
-        {/* Header skeleton */}
-        <div className="flex items-center justify-between">
-          <div>
-            <Skeleton className="h-8 w-32 mb-2" />
-            <Skeleton className="h-4 w-48" />
-          </div>
-          <div className="flex items-center space-x-2">
-            <Skeleton className="h-10 w-10" />
-            <Skeleton className="h-10 w-10" />
-            <Skeleton className="h-10 w-10" />
-            <Skeleton className="h-10 w-10" />
-          </div>
-        </div>
-
-        {/* Controls skeleton */}
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-48" />
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Skeleton className="h-4 w-24 mb-2" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-            <div>
-              <Skeleton className="h-4 w-32 mb-2" />
-              <div className="flex gap-2 mb-2">
-                <Skeleton className="h-6 w-20 rounded-full" />
-                <Skeleton className="h-6 w-24 rounded-full" />
-              </div>
-              <Skeleton className="h-10 w-full" />
-            </div>
-            <Skeleton className="h-4 w-40" />
-          </CardContent>
-        </Card>
-
-        {/* Stamps skeleton */}
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-24" />
-          </CardHeader>
-          <CardContent>
-            <LoadingStamps count={12} type="grid" />
-          </CardContent>
-        </Card>
+      <div className="container mx-auto p-6">
+        <DataFetchingProgress
+          progress={fetchProgress.progress}
+          totalItems={fetchProgress.totalItems}
+          currentItems={fetchProgress.currentItems}
+          currentPage={fetchProgress.currentPage}
+          totalPages={fetchProgress.totalPages}
+          isComplete={fetchProgress.isComplete}
+        />
       </div>
     )
+  }
+
+  // Show IndexedDB loading state
+  if (loadingType === 'indexeddb' && !dbReady) {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Loading Stamp Catalog</h2>
+          <p className="text-muted-foreground mb-6">Retrieving data from local storage...</p>
+        </div>
+        <LoadingStamps count={12} type="grid" />
+      </div>
+    )
+  }
+
+  if (loading && stamps.length === 0 && loadingType === 'none') {
+    return <InvestigateSearchSkeleton />
   }
 
   if (error) {
@@ -1816,23 +1775,6 @@ export function CatalogContent() {
           <p className="text-muted-foreground">Advanced stamp catalog with flexible grouping</p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={refreshDataFromAPI}
-            title="Refresh data from server"
-            disabled={loading}
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={shareCurrentURL}
-            title="Share current view"
-          >
-            <Share2 className="h-4 w-4" />
-          </Button>
           <Button
             variant={viewMode === 'grid' ? 'default' : 'outline'}
             size="icon"

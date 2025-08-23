@@ -12,15 +12,17 @@ import { Search, ChevronRight, BookmarkPlus, Quote, Award, Telescope } from "luc
 import { CountryOption } from "@/types/catalog"
 import isoCountries from "i18n-iso-countries"
 import enLocale from "i18n-iso-countries/langs/en.json"
+import { CountryCatalogSkeleton } from "./investigate-search/loading-skeletons"
 
 isoCountries.registerLocale(enLocale as any)
 
 type CountryCatalogContentProps = {
   countries: CountryOption[]
   onCountryClick: (country: CountryOption) => void
+  loading?: boolean
 }
 
-export function CountryCatalogContent({ countries, onCountryClick }: CountryCatalogContentProps) {
+export function CountryCatalogContent({ countries, onCountryClick, loading = false }: CountryCatalogContentProps) {
   const [searchTerm, setSearchTerm] = useState("")
 
   const filteredCountries = useMemo(() => {
@@ -32,6 +34,10 @@ export function CountryCatalogContent({ countries, onCountryClick }: CountryCata
       country.code.toLowerCase().includes(term)
     )
   }, [searchTerm, countries])
+
+  if (loading) {
+    return <CountryCatalogSkeleton />
+  }
 
   return (
     <section>
@@ -90,7 +96,7 @@ export function CountryCatalogContent({ countries, onCountryClick }: CountryCata
                   </div>
                 </div>
 
-                <div className="absolute bottom-2 left-2 right-2 p-2 rounded-lg bg-black/30 backdrop-blur-sm">
+                <div className="absolute bottom-0 left-0 right-0 px-4 py-2 rounded-lg bg-black/30 backdrop-blur-sm">
                   <h3 className="text-xl font-extrabold text-white leading-tight mb-0.5 flex items-center">
                     {countryCodes.map((code) => (
                       <>

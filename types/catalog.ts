@@ -15,7 +15,7 @@ export interface SeriesOption {
   name: string
   catalogNumber: string
   totalStamps: number
-  stampImageUrl: string
+  featuredStampUrl?: string
   description?: string
   period?: string
   featured?: boolean

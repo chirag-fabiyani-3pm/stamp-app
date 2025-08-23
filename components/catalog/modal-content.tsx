@@ -96,7 +96,7 @@ export default function ModalContent({
                                 >
                                     <div className="flex items-start space-x-3">
                                         <Image
-                                            src={series.stampImageUrl || '/images/stamps/no-image-available.png'}
+                                            src={series.featuredStampUrl || '/images/stamps/no-image-available.png'}
                                             alt={series.name}
                                             width={40}
                                             height={50}

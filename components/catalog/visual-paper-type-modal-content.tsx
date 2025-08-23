@@ -3,10 +3,12 @@ import Image from "next/image"
 import { Card, CardContent } from "@/components/ui/card"
 import { ChevronRight } from "lucide-react"
 import { ColorOption, PaperOption } from "@/types/catalog"
+import { getFirstStampImage } from "@/lib/data/catalog-data"
+import { useCatalogData } from "@/lib/context/catalog-data-context"
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface PaperTypeModalContentProps {
-  data: { color: ColorOption, papers: PaperOption[] }
+  data: { color: ColorOption, papers: PaperOption[], countryCode: string, seriesName: string, year: number, currencyCode: string, denominationValue: string }
   onPaperClick: (paper: PaperOption) => void
   isLoading: boolean;
 }
@@ -16,6 +18,7 @@ export function PaperTypeModalContent({
   onPaperClick,
   isLoading
 }: PaperTypeModalContentProps) {
+  const { stamps } = useCatalogData()
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -52,7 +55,7 @@ export function PaperTypeModalContent({
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
                 <Image
-                  src={paper.stampImageUrl}
+                  src={getFirstStampImage(stamps, data.countryCode, data.seriesName, data.year, data.currencyCode, data.denominationValue, data.color.code, paper.code)}
                   alt={paper.name}
                   width={60}
                   height={80}

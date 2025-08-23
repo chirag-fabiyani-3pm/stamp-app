@@ -56,7 +56,7 @@ export function AdditionalCategoryModalContent({
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
                 <Image
-                  src={category.stampImageUrl}
+                  src={category.stampImageUrl || '/images/stamps/no-image-available.png'}
                   alt={category.name}
                   width={60}
                   height={80}

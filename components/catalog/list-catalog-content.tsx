@@ -21,6 +21,7 @@ import { SeriesModalContent } from "@/components/catalog/series-modal-content"
 import { TypeModalContent } from "@/components/catalog/type-modal-content"
 import { StampGroupModalContent } from "@/components/catalog/stamp-group-modal-content"
 import { Skeleton } from "@/components/ui/skeleton";
+import { ListCatalogSkeleton } from "./investigate-search/loading-skeletons"
 
 export function ListCatalogContent() {
   const { normalizedStamps, stamps: rawStamps, loading: providerLoading } = useCatalogData()
@@ -345,78 +346,7 @@ export function ListCatalogContent() {
   }, [])
 
   if (loading) {
-    return (
-      <div className="min-h-screen p-4">
-        <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 shadow-sm mx-auto mt-4 mb-6 rounded-lg">
-          <div className="p-4 sm:p-6">
-            <div className="text-center mb-4 sm:mb-6">
-              <Skeleton className="h-8 w-2/4 mb-1 mx-auto rounded-md" />
-              <Skeleton className="h-5 w-1/3 mx-auto rounded-md" />
-            </div>
-
-            {/* Layout Toggle */}
-            <div className="flex justify-center mb-4 sm:mb-6">
-              <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                <Skeleton className="h-9 w-44 rounded-lg" />
-                <Skeleton className="h-9 w-44 rounded-lg" />
-              </div>
-            </div>
-
-            <hr className="border-gray-300 dark:border-700 mb-4 sm:mb-6" />
-
-            {/* Search and Filter Controls */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
-              <div className="flex-1">
-                <div className="relative">
-                  <Skeleton className="h-10 w-full pl-9 rounded-md" />
-                </div>
-              </div>
-              
-              <Skeleton className="h-10 w-32 rounded-md" />
-            </div>
-
-            {/* Statistics */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center text-sm border-t border-b border-gray-300 dark:border-gray-700 py-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="text-center">
-                  <Skeleton className="h-6 w-1/2 mx-auto mb-1 rounded-md" />
-                  <Skeleton className="h-4 w-3/4 mx-auto rounded-md" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="container mx-auto px-4 pb-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden">
-              <div className="border-b border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2">
-                <div className="grid grid-cols-2 sm:grid-cols-12 gap-4 text-xs font-semibold uppercase tracking-wide">
-                  <Skeleton className="h-4 w-full col-span-1 sm:col-span-4 rounded-md" />
-                  <Skeleton className="h-4 w-full col-span-1 sm:col-span-2 rounded-md" />
-                  <Skeleton className="h-4 w-full hidden sm:block col-span-2 rounded-md" />
-                  <Skeleton className="h-4 w-full hidden sm:block col-span-3 rounded-md" />
-                  <Skeleton className="h-4 w-4 hidden sm:block col-span-1 rounded-md" />
-                </div>
-              </div>
-              <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                {Array.from({ length: 10 }).map((_, i) => (
-                  <div key={i} className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                    <div className="grid grid-cols-2 sm:grid-cols-12 gap-4 items-center text-sm">
-                      <Skeleton className="h-4 w-3/4 col-span-1 sm:col-span-4 rounded-md" />
-                      <Skeleton className="h-4 w-1/2 col-span-1 sm:col-span-2 rounded-md text-center" />
-                      <Skeleton className="h-4 w-1/2 hidden sm:block col-span-2 rounded-md text-center" />
-                      <Skeleton className="h-4 w-3/4 hidden sm:block col-span-3 rounded-md" />
-                      <Skeleton className="h-4 w-4 hidden sm:block col-span-1 rounded-md" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <ListCatalogSkeleton />
   }
 
   return (
@@ -516,7 +446,7 @@ export function ListCatalogContent() {
                 </div>
                 <div>
                   <div className="text-lg font-bold text-black dark:text-white">
-                    {seriesData[seriesData.length - 1]?.periodEnd - seriesData[0]?.periodStart || 170}
+                    {seriesData.length > 0 ? Math.max(...seriesData.map(s => s.periodEnd || 0)) - Math.min(...seriesData.map(s => s.periodStart || 0)) : 0}
                   </div>
                   <div className="text-xs text-gray-600 dark:text-gray-400">Years Span</div>
                 </div>

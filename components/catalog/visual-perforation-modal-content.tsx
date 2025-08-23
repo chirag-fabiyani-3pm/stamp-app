@@ -3,10 +3,12 @@ import Image from "next/image"
 import { Card, CardContent } from "@/components/ui/card"
 import { ChevronRight } from "lucide-react"
 import { PerforationOption, WatermarkOption } from "@/types/catalog"
+import { getFirstStampImage } from "@/lib/data/catalog-data"
+import { useCatalogData } from "@/lib/context/catalog-data-context"
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface VisualPerforationModalContentProps {
-  data: { watermark: WatermarkOption, perforations: PerforationOption[] }
+  data: { watermark: WatermarkOption, perforations: PerforationOption[], countryCode: string, seriesName: string, year: number, currencyCode: string, denominationValue: string, colorCode: string, paperCode: string }
   onPerforationClick: (perforation: PerforationOption) => void
   isLoading: boolean;
 }
@@ -16,6 +18,7 @@ export function VisualPerforationModalContent({
   onPerforationClick,
   isLoading
 }: VisualPerforationModalContentProps) {
+  const { stamps } = useCatalogData()
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -52,7 +55,7 @@ export function VisualPerforationModalContent({
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
                 <Image
-                  src={perforation.stampImageUrl}
+                  src={getFirstStampImage(stamps, data.countryCode, data.seriesName, data.year, data.currencyCode, data.denominationValue, data.colorCode, data.paperCode, data.watermark.code, perforation.code)}
                   alt={perforation.name}
                   width={60}
                   height={80}

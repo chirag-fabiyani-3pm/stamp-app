@@ -1,12 +1,15 @@
 import React, { useState, useMemo } from "react"
+import Image from "next/image"
 import { Input } from "@/components/ui/input"
 import { Archive, ChevronRight, Coins, Search } from "lucide-react"
 import { CurrencyOption, YearOption } from "@/types/catalog"
+import { getFirstStampImage } from "@/lib/data/catalog-data"
+import { useCatalogData } from "@/lib/context/catalog-data-context"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface CurrencyModalContentProps {
-  data: { year: YearOption, currencies: CurrencyOption[] }
+  data: { year: YearOption, currencies: CurrencyOption[], countryCode: string, seriesName: string }
   onCurrencyClick: (currency: CurrencyOption) => void
   isLoading: boolean;
 }
@@ -16,6 +19,7 @@ export function CurrencyModalContent({
   onCurrencyClick,
   isLoading
 }: CurrencyModalContentProps) {
+  const { stamps } = useCatalogData()
   const [searchTerm, setSearchTerm] = useState("")
 
   const filteredCurrencies = useMemo(() => {
@@ -78,18 +82,19 @@ export function CurrencyModalContent({
       </div>
 
       <div className="w-full overflow-x-auto">
-        <div className="bg-card rounded-lg border border-border shadow-sm w-full min-w-[600px]">
-          {/* Currencies Table Header */}
-          <div className="border-b border-border bg-muted/50 px-4 py-2">
-            <div className="grid grid-cols-8 gap-4 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              <div className="col-span-1 text-center"></div>
-              <div className="col-span-2 text-left">Currency</div>
-              <div className="col-span-2 text-center">Code</div>
-              <div className="col-span-1 text-center">Symbol</div>
-              <div className="col-span-1 text-right">Stamps</div>
-              <div className="col-span-1 text-right"></div>
+                  <div className="bg-card rounded-lg border border-border shadow-sm w-full min-w-[700px]">
+            {/* Currencies Table Header */}
+            <div className="border-b border-border bg-muted/50 px-4 py-2">
+              <div className="grid grid-cols-9 gap-4 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                <div className="col-span-1 text-center">Image</div>
+                <div className="col-span-2 text-left">Currency</div>
+                <div className="col-span-2 text-center">Code</div>
+                <div className="col-span-1 text-center">Symbol</div>
+                <div className="col-span-1 text-right">Stamps</div>
+                <div className="col-span-1 text-right"></div>
+                <div className="col-span-1 text-right"></div>
+              </div>
             </div>
-          </div>
 
           {/* Currencies Rows */}
           <div className="divide-y divide-border">
@@ -99,11 +104,21 @@ export function CurrencyModalContent({
                 className="cursor-pointer px-4 py-3 hover:bg-muted/70 transition-colors"
                 onClick={() => onCurrencyClick(currency)}
               >
-                <div className="grid grid-cols-8 gap-4 items-center text-sm">
-                  <div className="col-span-1 text-center flex items-center justify-center">
-                    <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
-                      <Coins className="h-4 w-4 text-muted-foreground" />
-                    </div>
+                <div className="grid grid-cols-9 gap-4 items-center text-sm">
+                  <div className="col-span-1 text-center">
+                    <Image
+                      src={getFirstStampImage(stamps, data.countryCode, data.seriesName, data.year.year, currency.code)}
+                      alt={`${currency.name} stamps`}
+                      width={40}
+                      height={50}
+                      className="rounded border border-border mx-auto"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        if (target.src !== '/images/stamps/no-image-available.png') {
+                          target.src = '/images/stamps/no-image-available.png';
+                        }
+                      }}
+                    />
                   </div>
                   <div className="col-span-2 font-semibold text-foreground">
                     <div className="flex flex-col">
@@ -123,6 +138,11 @@ export function CurrencyModalContent({
                     <div className="flex items-center justify-end space-x-1">
                       <Archive className="h-4 w-4 text-muted-foreground" />
                       <span>{currency.totalStamps}</span>
+                    </div>
+                  </div>
+                  <div className="col-span-1 text-right flex justify-end">
+                    <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                      <Coins className="h-4 w-4 text-muted-foreground" />
                     </div>
                   </div>
                   <div className="col-span-1 text-right flex justify-end">

@@ -107,7 +107,7 @@ export const generateStampGroupsData = async (countryCode: string): Promise<Seri
       name: `Series ${catalogNumber} - Queen Victoria Chalon`,
       catalogNumber,
       totalStamps: Math.floor(Math.random() * 100) + 20,
-      stampImageUrl: '/images/stamps/no-image-available.png',
+      featuredStampUrl: '/images/stamps/no-image-available.png',
       description: `Premium collection from the ${catalogNumber} series featuring detailed engravings worthy of collector approval`,
       period: '1855-1875',
       featured: i <= 3
@@ -3031,11 +3031,23 @@ export const apiStampData = [
   }
 ]
 
+// Helper function to find first stamp with valid image URL
+const findFirstStampWithImage = (stamps: any[]) => {
+  return stamps.find((stamp: any) => stamp.stampImageUrl && stamp.stampImageUrl.trim() !== '') ||
+         stamps[0]; // fallback to first stamp if none have images
+};
+
 // Helper functions for API data grouping
+
+
 export const groupStampsByCountry = (stamps: any[]) => {
   const grouped = stamps.reduce((acc: any, stamp: any) => {
     const key = stamp.country;
     if (!acc[key]) {
+      // Find the first stamp with a valid image URL for this country
+      const countryStamps = stamps.filter((s: any) => s.country === key);
+      const firstStampWithImage = findFirstStampWithImage(countryStamps);
+
       acc[key] = {
         code: stamp.country,
         name: stamp.countryName,
@@ -3046,14 +3058,14 @@ export const groupStampsByCountry = (stamps: any[]) => {
         firstIssue: Math.min(...stamps.filter((s: any) => s.country === key && s.issueYear).map((s: any) => s.issueYear)).toString(),
         lastIssue: Math.max(...stamps.filter((s: any) => s.country === key && s.issueYear).map((s: any) => s.issueYear)).toString(),
         historicalNote: `Rich philatelic history spanning multiple eras and postal innovations.`,
-        featuredStampUrl: stamp.stampImageUrl || '/images/stamps/no-image-available.png'
+        featuredStampUrl: firstStampWithImage.stampImageUrl || '/images/stamps/no-image-available.png'
       };
     }
     acc[key].stamps.push(stamp);
     acc[key].totalStamps++;
     return acc;
   }, {});
-  
+
   return Object.values(grouped);
 };
 
@@ -3066,7 +3078,12 @@ export const groupStampsBySeries = (stamps: any[], countryCode: string) => {
     }
     
     const key = stamp.seriesName;
+
     if (!acc[key]) {
+      // Find the first stamp with a valid image URL for this series
+      const seriesStamps = countryStamps.filter((s: any) => s.seriesName === key);
+      const firstStampWithImage = findFirstStampWithImage(seriesStamps);
+
       acc[key] = {
         catalogNumber: stamp.seriesId || key.replace(/\s+/g, '_').toLowerCase(),
         name: stamp.seriesName,
@@ -3074,7 +3091,7 @@ export const groupStampsBySeries = (stamps: any[], countryCode: string) => {
         totalStamps: 0,
         stamps: [],
         yearRange: '',
-        featuredStampUrl: stamp.stampImageUrl || '/images/stamps/no-image-available.png'
+        featuredStampUrl: firstStampWithImage.stampImageUrl || '/images/stamps/no-image-available.png'
       };
     }
     acc[key].stamps.push(stamp);
@@ -3103,12 +3120,16 @@ export const groupStampsByYear = (stamps: any[], countryCode: string, seriesName
     
     const key = year.toString();
     if (!acc[key]) {
+      // Find the first stamp with a valid image URL for this year
+      const yearStamps = seriesStamps.filter((s: any) => s.issueYear === year);
+      const firstStampWithImage = findFirstStampWithImage(yearStamps);
+
       acc[key] = {
         year: year,
         description: `Stamps issued in ${year}`,
         totalStamps: 0,
         stamps: [],
-        featuredStampUrl: stamp.stampImageUrl || '/images/stamps/no-image-available.png'
+        featuredStampUrl: firstStampWithImage.stampImageUrl || '/images/stamps/no-image-available.png'
       };
     }
     acc[key].stamps.push(stamp);
@@ -3149,12 +3170,14 @@ export const groupStampsByCurrency = (stamps: any[], countryCode: string, series
 };
 
 export const groupStampsByDenomination = (stamps: any[], countryCode: string, seriesName: string, year: number, currencyCode: string) => {
-  const currencyStamps = stamps.filter(s => 
-    s.country === countryCode && 
-    s.seriesName === seriesName && 
+  const currencyStamps = stamps.filter(s =>
+    s.country === countryCode &&
+    s.seriesName === seriesName &&
     s.issueYear === year &&
     s.currencyCode === currencyCode
   );
+
+
   
   const grouped = currencyStamps.reduce((acc: any, stamp: any) => {
     // If denominationValue is null, this stamp should go directly to details
@@ -3165,14 +3188,22 @@ export const groupStampsByDenomination = (stamps: any[], countryCode: string, se
     const key = stamp.denominationValue;
     
     if (!acc[key]) {
+      // Find the first stamp with a valid image URL for this denomination
+      const denominationStamps = currencyStamps.filter((s: any) => s.denominationValue === key);
+      const firstStampWithImage = findFirstStampWithImage(denominationStamps);
+
       const denominationOption = {
         value: stamp.denominationValue,
         symbol: stamp.denominationSymbol,
         displayName: stamp.denominationDisplay,
         description: stamp.denominationDescription || `${stamp.denominationDisplay} denomination`,
         totalStamps: 0,
-        stamps: []
+        stamps: [],
+        stampImageUrl: firstStampWithImage.stampImageUrl || '/images/stamps/no-image-available.png'
       };
+
+
+
       acc[key] = denominationOption;
     }
     acc[key].stamps.push(stamp);
@@ -3180,8 +3211,7 @@ export const groupStampsByDenomination = (stamps: any[], countryCode: string, se
     return acc;
   }, {});
   
-  const result = Object.values(grouped);
-  return result;
+  return Object.values(grouped);
 };
 
 export const groupStampsByColor = (stamps: any[], countryCode: string, seriesName: string, year: number, currencyCode: string, denominationValue: string) => {
@@ -3230,14 +3260,23 @@ export const groupStampsByPaper = (stamps: any[], countryCode: string, seriesNam
     if (!key) return acc;
     
     if (!acc[key]) {
-      acc[key] = {
+      // Find the first stamp with a valid image URL for this paper type
+      const paperStamps = colorStamps.filter((s: any) => s.paperCode === key);
+      const firstStampWithImage = findFirstStampWithImage(paperStamps);
+
+      const paperOption = {
         code: stamp.paperCode,
         name: stamp.paperName,
         texture: stamp.paperFiber || 'Unknown',
         description: stamp.paperDescription || `${stamp.paperName} type`,
         totalStamps: 0,
-        stamps: []
+        stamps: [],
+        stampImageUrl: firstStampWithImage.stampImageUrl || '/images/stamps/no-image-available.png'
       };
+
+
+
+      acc[key] = paperOption;
     }
     acc[key].stamps.push(stamp);
     acc[key].totalStamps++;
@@ -3332,14 +3371,23 @@ export const groupStampsByItemType = (stamps: any[], countryCode: string, series
     if (!key) return acc;
     
     if (!acc[key]) {
-      acc[key] = {
+      // Find the first stamp with a valid image URL for this item type
+      const itemTypeStamps = perforationStamps.filter((s: any) => s.itemTypeCode === key);
+      const firstStampWithImage = findFirstStampWithImage(itemTypeStamps);
+
+      const itemTypeOption = {
         code: stamp.itemTypeCode,
         name: stamp.itemTypeName,
         description: stamp.itemTypeDescription || `${stamp.itemTypeName} category`,
         totalStamps: 0,
         stamps: [],
         category: stamp.itemFormat || 'Unknown',
+        stampImageUrl: firstStampWithImage.stampImageUrl || '/images/stamps/no-image-available.png'
       };
+
+
+
+      acc[key] = itemTypeOption;
     }
     acc[key].stamps.push(stamp);
     acc[key].totalStamps++;
@@ -3347,6 +3395,20 @@ export const groupStampsByItemType = (stamps: any[], countryCode: string, series
   }, {});
   
   return Object.values(grouped);
+};
+
+// Helper function to find the first stamp with an image for a given grouping level
+export const getFirstStampImage = (stamps: any[], countryCode: string, seriesName?: string, year?: number, currencyCode?: string, denominationValue?: string, colorCode?: string, paperCode?: string, watermarkCodeParam?: string, perforationCode?: string, itemTypeCode?: string) => {
+  const filteredStamps = getStampDetails(stamps, countryCode, seriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCodeParam, perforationCode, itemTypeCode);
+
+  // Find the first stamp that has an image URL and it's not the default no-image placeholder
+  const stampWithImage = filteredStamps.find(stamp =>
+    stamp.stampImageUrl &&
+    stamp.stampImageUrl !== '/images/stamps/no-image-available.png' &&
+    stamp.stampImageUrl !== ''
+  );
+
+  return stampWithImage ? stampWithImage.stampImageUrl : '/images/stamps/no-image-available.png';
 };
 
 // Function to get individual stamps for stamp details

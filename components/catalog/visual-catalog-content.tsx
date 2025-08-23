@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Search, Archive, ChevronRight, X } from "lucide-react"
+import ReactCountryFlag from "react-country-flag"
 import { CountryOption, YearOption, CurrencyOption, DenominationOption, ColorOption, PaperOption, WatermarkOption, PerforationOption, ItemTypeOption, StampData, AdditionalCategoryOption, ModalType, ModalStackItem, SeriesOption } from "@/types/catalog"
 import { groupStampsByCountry, groupStampsBySeries, groupStampsByYear, groupStampsByCurrency, groupStampsByDenomination, groupStampsByColor, groupStampsByPaper, groupStampsByWatermark, groupStampsByPerforation, groupStampsByItemType, getStampDetails, convertApiStampToStampData, generateAdditionalCategoriesData, generateStampsForAdditionalCategory } from "@/lib/data/catalog-data"
 import { useCatalogData } from "@/lib/context/catalog-data-context"
@@ -23,6 +24,7 @@ import { VisualItemTypeModalContent } from "@/components/catalog/visual-item-typ
 import { PaperTypeModalContent as VisualPaperTypeModalContent } from "@/components/catalog/visual-paper-type-modal-content"
 import { StampDetailsModalContent as VisualStampDetailsModalContent } from "@/components/catalog/visual-stamp-details-modal-content"
 import { Skeleton } from "@/components/ui/skeleton"
+import { VisualCatalogSkeleton } from "./investigate-search/loading-skeletons"
 
 export function VisualCatalogContent() {
   const { stamps } = useCatalogData()
@@ -121,7 +123,7 @@ export function VisualCatalogContent() {
       setModalStack(prev => [...prev, {
         type: 'year',
         title: `${series.name}`,
-        data: { series, years },
+        data: { series, years, countryCode, seriesName: series.name },
         stampCode: newStampCode
       }])
     } finally {
@@ -150,7 +152,7 @@ export function VisualCatalogContent() {
       setModalStack(prev => [...prev, {
         type: 'currency',
         title: `${year.year} Issues`,
-        data: { year, currencies },
+        data: { year, currencies, countryCode, seriesName: actualSeriesName },
         stampCode: newStampCode
       }])
     } finally {
@@ -179,7 +181,7 @@ export function VisualCatalogContent() {
       setModalStack(prev => [...prev, {
         type: 'denomination',
         title: `${currency.name} Denominations`,
-        data: { currency, denominations },
+        data: { currency, denominations, countryCode, seriesName: actualSeriesName, year },
         stampCode: newStampCode
       }])
     } finally {
@@ -208,7 +210,7 @@ export function VisualCatalogContent() {
       setModalStack(prev => [...prev, {
         type: 'color',
         title: `${denomination.displayName} Colors`,
-        data: { denomination, colors },
+        data: { denomination, colors, countryCode, seriesName: actualSeriesName, year, currencyCode },
         stampCode: newStampCode
       }])
     } finally {
@@ -237,7 +239,7 @@ export function VisualCatalogContent() {
       setModalStack(prev => [...prev, {
         type: 'paper',
         title: `${color.name} Paper Types`,
-        data: { color, papers },
+        data: { color, papers, countryCode, seriesName: actualSeriesName, year, currencyCode, denominationValue },
         stampCode: newStampCode
       }])
     } finally {
@@ -266,7 +268,7 @@ export function VisualCatalogContent() {
       setModalStack(prev => [...prev, {
         type: 'watermark',
         title: `${paper.name} Watermarks`,
-        data: { paper, watermarks },
+        data: { paper, watermarks, countryCode, seriesName: actualSeriesName, year, currencyCode, denominationValue, colorCode },
         stampCode: newStampCode
       }])
     } finally {
@@ -295,7 +297,7 @@ export function VisualCatalogContent() {
       setModalStack(prev => [...prev, {
         type: 'perforation',
         title: `${watermark.name} Perforations`,
-        data: { watermark, perforations },
+        data: { watermark, perforations, countryCode, seriesName: actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode },
         stampCode: newStampCode
       }])
     } finally {
@@ -324,7 +326,7 @@ export function VisualCatalogContent() {
       setModalStack(prev => [...prev, {
         type: 'itemType',
         title: `${perforation.name} Item Types`,
-        data: { perforation, itemTypes },
+        data: { perforation, itemTypes, countryCode, seriesName: actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode },
         stampCode: newStampCode
       }])
     } finally {
@@ -526,52 +528,7 @@ export function VisualCatalogContent() {
   }, [countries, searchTerm])
 
   if (loading) {
-    return (
-      <div className="min-h-screen p-4 md:p-6">
-        <Card className="mx-auto mt-4 mb-6 w-full max-w-4xl border bg-card text-card-foreground shadow-sm">
-          <CardContent className="p-4 md:p-6">
-            <Skeleton className="h-8 w-1/2 mb-4 mx-auto" />
-            <Skeleton className="h-4 w-3/4 mb-6 mx-auto" />
-            <Skeleton className="h-4 w-full mb-4" />
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="text-center">
-                  <Skeleton className="h-6 w-1/2 mx-auto mb-1" />
-                  <Skeleton className="h-4 w-3/4 mx-auto" />
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="container mx-auto px-0 md:px-4 pb-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-card border border-border rounded shadow-sm">
-              <div className="border-b border-border bg-muted/50 px-4 py-2">
-                <div className="grid grid-cols-12 gap-4 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Skeleton key={i} className="h-4 w-full col-span-2" />
-                  ))}
-                </div>
-              </div>
-              <div className="divide-y divide-border">
-                {Array.from({ length: 10 }).map((_, i) => (
-                  <div key={i} className="px-4 py-3">
-                    <div className="grid grid-cols-12 gap-4 items-center text-sm">
-                      <Skeleton className="h-6 w-6 rounded-full col-span-1" />
-                      <Skeleton className="h-4 w-3/4 col-span-5" />
-                      <Skeleton className="h-4 w-1/2 col-span-2" />
-                      <Skeleton className="h-4 w-full col-span-3" />
-                      <Skeleton className="h-4 w-4 col-span-1" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <VisualCatalogSkeleton />
   }
 
   return (
@@ -659,8 +616,16 @@ export function VisualCatalogContent() {
                   onClick={() => handleCountryClick(country)}
                 >
                   <div className="grid grid-cols-12 gap-3 items-center text-sm">
-                    <div className="col-span-2 text-center">
-                      <span className="text-xl">{country.flag}</span>
+                    <div className="col-span-2 text-center flex items-center justify-center">
+                      <ReactCountryFlag
+                        countryCode={country.code}
+                        svg
+                        style={{
+                          width: '2em',
+                          height: '2em',
+                        }}
+                        title={country.name}
+                      />
                     </div>
                     <div className="col-span-4 font-bold text-foreground">
                       {country.name}

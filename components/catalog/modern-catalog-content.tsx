@@ -35,6 +35,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { CountryCatalogContent } from "@/components/catalog/country-catalog-content";
 import { CatalogDataProvider, useCatalogData } from "@/lib/context/catalog-data-context"
 import { parseStampCode } from "@/lib/utils/parse-stamp-code"
+import { DataFetchingProgress, LoadingStamps } from "./investigate-search/loading-skeletons"
 
 function ModernCatalogContentInner() {
     const router = useRouter()
@@ -58,7 +59,13 @@ function ModernCatalogContentInner() {
     const [isPinnedMinimized, setIsPinnedMinimized] = useState(false)
 
     // Data via shared provider
-    const { stamps, loading: dataLoading, error: dataError } = useCatalogData()
+    const {
+      stamps,
+      loading: dataLoading,
+      error: dataError,
+      fetchProgress,
+      loadingType
+    } = useCatalogData()
     // Data states - derived from API data
     const [countries, setCountries] = useState<CountryOption[]>([])
 
@@ -919,24 +926,83 @@ function ModernCatalogContentInner() {
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
                 {modalStack.length === 0 ? (
                     <>
-                        {/* Visual Catalog Section */}
-                        {activeSection === 'visual' && (
-                            <VisualCatalogContent />
+                        {/* API Data Fetching Progress Overlay */}
+                        {fetchProgress.isFetching && (
+                            <DataFetchingProgress
+                                progress={fetchProgress.progress}
+                                totalItems={fetchProgress.totalItems}
+                                currentItems={fetchProgress.currentItems}
+                                currentPage={fetchProgress.currentPage}
+                                totalPages={fetchProgress.totalPages}
+                                isComplete={fetchProgress.isComplete}
+                            />
                         )}
 
-                        {/* List Catalog Section */}
-                        {activeSection === 'list' && (
-                            <ListCatalogContent />
+                        {/* IndexedDB Loading State */}
+                        {loadingType === 'indexeddb' && !fetchProgress.isFetching && (
+                            <div className="space-y-6">
+                                <div className="text-center">
+                                    <h2 className="text-2xl font-bold mb-4">Loading Stamp Catalog</h2>
+                                    <p className="text-muted-foreground mb-6">Retrieving data from local storage...</p>
+                                </div>
+                                <LoadingStamps
+                                    count={12}
+                                    type={activeSection === 'list' ? 'list' : activeSection === 'investigate' ? 'grid' : 'groups'}
+                                />
+                            </div>
                         )}
 
-                        {/* Investigate Search Section */}
-                        {activeSection === 'investigate' && (
-                            <CatalogContent />
+                        {/* Normal Content - Show when not loading */}
+                        {loadingType === 'none' && !loading && (
+                            <>
+                                {/* Visual Catalog Section */}
+                                {activeSection === 'visual' && (
+                                    <VisualCatalogContent />
+                                )}
+
+                                {/* List Catalog Section */}
+                                {activeSection === 'list' && (
+                                    <ListCatalogContent />
+                                )}
+
+                                {/* Investigate Search Section */}
+                                {activeSection === 'investigate' && (
+                                    <CatalogContent />
+                                )}
+
+                                {/* Country Catalogs Section */}
+                                {activeSection === 'countries' && (
+                                    <CountryCatalogContent countries={countries} onCountryClick={handleCountryClick} />
+                                )}
+                            </>
                         )}
 
-                        {/* Country Catalogs Section */}
-                        {activeSection === 'countries' && (
-                            <CountryCatalogContent countries={countries} onCountryClick={handleCountryClick} />
+                        {/* Regular Loading State (for other operations) */}
+                        {loading && loadingType === 'none' && !fetchProgress.isFetching && (
+                            <div className="space-y-6">
+                                <div className="text-center">
+                                    <h2 className="text-2xl font-bold mb-4">Loading Stamp Catalog</h2>
+                                    <p className="text-muted-foreground mb-6">Preparing your catalog...</p>
+                                </div>
+                                <LoadingStamps
+                                    count={8}
+                                    type={activeSection === 'list' ? 'list' : activeSection === 'investigate' ? 'grid' : 'groups'}
+                                />
+                            </div>
+                        )}
+
+                        {/* Error State */}
+                        {error && (
+                            <div className="text-center py-12">
+                                <div className="text-red-500 mb-4">
+                                    <AlertCircle className="w-12 h-12 mx-auto mb-4" />
+                                    <h2 className="text-xl font-semibold mb-2">Error Loading Catalog</h2>
+                                    <p className="text-muted-foreground">{error}</p>
+                                </div>
+                                <Button onClick={() => window.location.reload()} variant="outline">
+                                    Try Again
+                                </Button>
+                            </div>
                         )}
                     </>
                 ) : null}
