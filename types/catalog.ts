@@ -28,6 +28,7 @@ export interface YearOption {
   lastIssue: string
   highlightedSeries?: string
   historicalEvents?: string[]
+  featuredStampImageUrl?: string
 }
 
 export interface CurrencyOption {
@@ -37,6 +38,7 @@ export interface CurrencyOption {
   totalStamps: number
   country?: string
   description?: string
+  featuredStampImageUrl?: string
 }
 
 export interface DenominationOption {
@@ -47,6 +49,7 @@ export interface DenominationOption {
   stampImageUrl: string
   commonColors?: string[]
   featured?: boolean
+  featuredStampImageUrl?: string
 }
 
 export interface ColorOption {
@@ -57,6 +60,7 @@ export interface ColorOption {
   stampImageUrl: string
   popularity?: number
   description?: string
+  featuredStampImageUrl?: string
 }
 
 export interface PaperOption {
@@ -67,6 +71,7 @@ export interface PaperOption {
   stampImageUrl: string
   texture?: string
   technicalNote?: string
+  featuredStampImageUrl?: string
 }
 
 export interface WatermarkOption {
@@ -77,6 +82,7 @@ export interface WatermarkOption {
   stampImageUrl: string
   pattern?: string
   historicalInfo?: string
+  featuredStampImageUrl?: string
 }
 
 export interface PerforationOption {
@@ -87,6 +93,7 @@ export interface PerforationOption {
   stampImageUrl: string
   style?: string
   technicalDetail?: string
+  featuredStampImageUrl?: string
 }
 
 export interface ItemTypeOption {
@@ -97,6 +104,7 @@ export interface ItemTypeOption {
   stampImageUrl: string
   category?: string
   collectorsNote?: string
+  featuredStampImageUrl?: string
 }
 
 export interface StampData {

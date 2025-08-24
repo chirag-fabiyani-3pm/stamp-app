@@ -188,23 +188,27 @@ export const shouldRefreshData = async (): Promise<boolean> => {
       return true
     }
 
-    // Check if the date has changed
-    const hasDateChanged = today !== lastRefreshDate.trim()
+    // Check if the last refresh date is older than 7 days
+    const lastRefreshDateObj = new Date(lastRefreshDate.trim())
+    const todayObj = new Date(today)
+    const daysDifference = Math.floor((todayObj.getTime() - lastRefreshDateObj.getTime()) / (1000 * 60 * 60 * 24))
+    const shouldRefreshDueToAge = daysDifference > 7
 
     console.log('Date comparison:', {
       today,
       lastRefreshDate: lastRefreshDate.trim(),
-      hasDateChanged,
-      comparison: `${today} !== ${lastRefreshDate.trim()} = ${hasDateChanged}`
+      daysDifference,
+      shouldRefreshDueToAge,
+      comparison: `${daysDifference} days difference, refresh if > 7 days`
     })
 
-    if (hasDateChanged) {
-      console.log(`✅ Date changed from "${lastRefreshDate.trim()}" to "${today}", refreshing data...`)
+    if (shouldRefreshDueToAge) {
+      console.log(`✅ Data is ${daysDifference} days old (older than 7 days), refreshing data...`)
     } else {
-      console.log(`⏸️ Same date "${today}", using cached data`)
+      console.log(`⏸️ Data is ${daysDifference} days old (within 7 days), using cached data`)
     }
 
-    return hasDateChanged
+    return shouldRefreshDueToAge
   } catch (error) {
     console.error('❌ Error checking if data should be refreshed:', error)
     // On error, don't refresh to avoid breaking the app

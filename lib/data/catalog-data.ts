@@ -1,4 +1,5 @@
 import { CountryOption, YearOption, CurrencyOption, DenominationOption, ColorOption, PaperOption, WatermarkOption, PerforationOption, ItemTypeOption, StampData, AdditionalCategoryOption, SeriesOption } from "@/types/catalog"
+import { parseStampCode } from "@/lib/utils/parse-stamp-code"
 
 export const generateCountriesData = async (): Promise<CountryOption[]> => {
   // Simulate API delay
@@ -235,8 +236,8 @@ export const generateStampDetails = async (stampCode: string, itemTypeCode: stri
       seriesName: 'Stamps of Approval Collection',
       issueDate: '1855-01-01',
       issueYear: 1855,
-      denominationValue: parseInt(stampCode.split('.')[4]?.replace(/[^\d]/g, '') || '2'),
-      denominationSymbol: stampCode.split('.')[4]?.replace(/[\d]/g, '') || 'd',
+      denominationValue: parseInt(parseStampCode(stampCode).denominationValue || '2'),
+      denominationSymbol: parseStampCode(stampCode).currencyCode || 'd',
       denominationCurrency: 'GBP',
       color: 'Royal Blue',
       paperType: 'Pure White',
@@ -347,8 +348,8 @@ export const generateStampsForAdditionalCategory = async (baseStampCode: string,
       seriesName: 'Stamps of Approval Collection',
       issueDate: '1855-01-01',
       issueYear: 1855,
-      denominationValue: parseInt(baseStampCode.split('.')[4]?.replace(/[^\d]/g, '') || '2'),
-      denominationSymbol: baseStampCode.split('.')[4]?.replace(/[\d]/g, '') || 'd',
+      denominationValue: parseInt(parseStampCode(baseStampCode).denominationValue || '2'),
+      denominationSymbol: parseStampCode(baseStampCode).currencyCode || 'd',
       denominationCurrency: 'GBP',
       color: 'Royal Blue',
       paperType: 'Pure White',
@@ -3032,7 +3033,7 @@ export const apiStampData = [
 ]
 
 // Helper function to find first stamp with valid image URL
-const findFirstStampWithImage = (stamps: any[]) => {
+export const findFirstStampWithImage = (stamps: any[]) => {
   return stamps.find((stamp: any) => stamp.stampImageUrl && stamp.stampImageUrl.trim() !== '') ||
          stamps[0]; // fallback to first stamp if none have images
 };
@@ -3397,20 +3398,6 @@ export const groupStampsByItemType = (stamps: any[], countryCode: string, series
   return Object.values(grouped);
 };
 
-// Helper function to find the first stamp with an image for a given grouping level
-export const getFirstStampImage = (stamps: any[], countryCode: string, seriesName?: string, year?: number, currencyCode?: string, denominationValue?: string, colorCode?: string, paperCode?: string, watermarkCodeParam?: string, perforationCode?: string, itemTypeCode?: string) => {
-  const filteredStamps = getStampDetails(stamps, countryCode, seriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCodeParam, perforationCode, itemTypeCode);
-
-  // Find the first stamp that has an image URL and it's not the default no-image placeholder
-  const stampWithImage = filteredStamps.find(stamp =>
-    stamp.stampImageUrl &&
-    stamp.stampImageUrl !== '/images/stamps/no-image-available.png' &&
-    stamp.stampImageUrl !== ''
-  );
-
-  return stampWithImage ? stampWithImage.stampImageUrl : '/images/stamps/no-image-available.png';
-};
-
 // Function to get individual stamps for stamp details
 export const getStampDetails = (stamps: any[], countryCode: string, seriesName?: string, year?: number, currencyCode?: string, denominationValue?: string, colorCode?: string, paperCode?: string, watermarkCodeParam?: string, perforationCode?: string, itemTypeCode?: string) => {
   const watermarkCode = watermarkCodeParam === null ? 'NoWmk' : watermarkCodeParam;
@@ -3503,11 +3490,12 @@ export const convertApiStampToStampData = (apiStamp: any) => {
       printingMethod: apiStamp.printingMethod,
       designer: apiStamp.designer,
       printer: apiStamp.printer,
-      catalogPrice: `${apiStamp.currencySymbol}${apiStamp.mintValue}` || '',
-      currentMarketValue: `${apiStamp.currencySymbol}${apiStamp.mintValue}` || '',
+      catalogPrice: (apiStamp.mintValue && isNaN(Number(apiStamp.mintValue))) ? `${apiStamp.currencySymbol}${apiStamp.mintValue}` : '-',
+      currentMarketValue: '-',
       postalHistoryType: apiStamp.postalHistoryType,
       errorType: apiStamp.errorType,
       specialNotes: apiStamp.specialNotes,
+      estimatedValue: (apiStamp.mintValue && isNaN(Number(apiStamp.mintValue))) ? `${apiStamp.currencySymbol}${apiStamp.mintValue}` : '-',
     }),
     estimatedMarketValue: apiStamp.mintValue || 0,
     actualPrice: apiStamp.usedValue || 0,

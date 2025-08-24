@@ -135,7 +135,7 @@ export function StampDetailsModalContent({
                       <p className="text-xs text-muted-foreground break-words">{stampItem.issueDate}</p>
                       <div className="mt-2 overflow-hidden">
                         <code className="bg-muted px-2 py-1 rounded text-xs break-all whitespace-pre-wrap word-break overflow-wrap-break-word max-w-full block text-foreground">
-                          {decodeURIComponent(stampCode)}
+                          {decodeURIComponent(stampCode).split('|||').join('.')}
                         </code>
                       </div>
                       <Button variant="outline" size="sm" className="mt-2">
@@ -425,7 +425,7 @@ export function StampDetailsModalContent({
                     Catalog
                   </div>
                   <div className="text-lg font-bold text-foreground">
-                    ${parsedDetails.catalogPrice || "150.00"}
+                    ${parsedDetails.catalogPrice || "Not Available"}
                   </div>
                 </div>
                 <div className="bg-background rounded-lg p-3 border border-border">
@@ -433,7 +433,7 @@ export function StampDetailsModalContent({
                     Estimate
                   </div>
                   <div className="text-lg font-bold text-blue-600">
-                    ${parsedDetails.estimatedValue || "120.00"}
+                    ${parsedDetails.estimatedValue || "Not Available"}
                   </div>
                 </div>
                 <div className="bg-background rounded-lg p-3 border border-border">
@@ -441,7 +441,7 @@ export function StampDetailsModalContent({
                     Current
                   </div>
                   <div className="text-lg font-bold text-green-600">
-                    ${parsedDetails.currentMarketValue || "125.00"}
+                    ${parsedDetails.currentMarketValue || "Not Available"}
                   </div>
                 </div>
               </div>
@@ -479,7 +479,7 @@ export function StampDetailsModalContent({
                   Recent Sales History
                 </h4>
                 <div className="space-y-2">
-                  {parsedDetails.recentSales?.map((sale: any, index: number) => (
+                  {parsedDetails.recentSales?.length ? parsedDetails.recentSales.map((sale: any, index: number) => (
                     <div
                       key={index}
                       className="flex justify-between items-center py-2 border-b border-border last:border-0"
@@ -491,7 +491,7 @@ export function StampDetailsModalContent({
                         ${sale.adjustedPrice}
                       </div>
                     </div>
-                  ))}
+                  )) : <div className="text-sm text-muted-foreground">No recent sales history available.</div>}
                 </div>
               </div>
             </CardContent>

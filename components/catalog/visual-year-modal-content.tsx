@@ -4,7 +4,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Archive, Calendar, ChevronRight, Search } from "lucide-react"
 import { SeriesOption, YearOption } from "@/types/catalog"
-import { getFirstStampImage } from "@/lib/data/catalog-data"
 import { useCatalogData } from "@/lib/context/catalog-data-context"
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -105,7 +104,7 @@ export function YearModalContent({
                 <div className="grid grid-cols-5 gap-4 items-center text-sm">
                   <div className="col-span-1 text-center">
                     <Image
-                      src={getFirstStampImage(stamps, data.countryCode, data.seriesName, year.year)}
+                      src={year.featuredStampImageUrl || '/images/stamps/no-image-available.png'}
                       alt={`${year.year} stamps`}
                       width={40}
                       height={50}

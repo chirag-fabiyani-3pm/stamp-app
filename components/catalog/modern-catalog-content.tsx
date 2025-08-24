@@ -35,6 +35,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { CountryCatalogContent } from "@/components/catalog/country-catalog-content";
 import { CatalogDataProvider, useCatalogData } from "@/lib/context/catalog-data-context"
 import { parseStampCode } from "@/lib/utils/parse-stamp-code"
+import { useChatContext } from "@/components/chat-provider"
 import { DataFetchingProgress, LoadingStamps } from "./investigate-search/loading-skeletons"
 
 function ModernCatalogContentInner() {
@@ -53,6 +54,7 @@ function ModernCatalogContentInner() {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false) // State for mobile menu
 
     const isMobile = useIsMobile()
+    const { isOpen: isChatOpen } = useChatContext()
 
     // Pinned stamp state for comparison
     const [pinnedStamp, setPinnedStamp] = useState<StampData | null>(null)
@@ -126,7 +128,7 @@ function ModernCatalogContentInner() {
             const years = groupStampsByYear(stamps, currentStampCode, series.name)
             // Use the series name directly, encoded to avoid issues with special characters
             const encodedSeriesName = encodeURIComponent(series.name)
-            const newStampCode = `${currentStampCode}.${encodedSeriesName}`
+            const newStampCode = `${currentStampCode}|||${encodedSeriesName}`
             setModalStack(prev => [...prev, {
                 type: 'series',
                 title: `${series.name} Timeline`,
@@ -142,7 +144,7 @@ function ModernCatalogContentInner() {
         setLoadingModalContent(true);
         try {
             // Extract series name from the stamp code
-            const pathParts = currentStampCode.split('.')
+            const pathParts = currentStampCode.split('|||')
             const countryCode = pathParts[0]
             const encodedSeriesName = pathParts[1] // This is the encoded series name
             
@@ -160,13 +162,13 @@ function ModernCatalogContentInner() {
                         type: 'stampDetails',
                         title: `${year.year} Stamps`,
                         data: { stamps: convertedStamps },
-                        stampCode: `${currentStampCode}.${year.year}`
+                        stampCode: `${currentStampCode}|||${year.year}`
                     }])
                     return
                 }
             }
             
-            const newStampCode = `${currentStampCode}.${year.year}`
+            const newStampCode = `${currentStampCode}|||${year.year}`
             setModalStack(prev => [...prev, {
                 type: 'year',
                 title: `${year.year} Collection`,
@@ -182,7 +184,7 @@ function ModernCatalogContentInner() {
         setLoadingModalContent(true);
         try {
             // Extract parameters from stamp code
-            const pathParts = currentStampCode.split('.')
+            const pathParts = currentStampCode.split('|||')
             const countryCode = pathParts[0]
             const encodedSeriesName = pathParts[1]
             const year = parseInt(pathParts[2])
@@ -200,13 +202,13 @@ function ModernCatalogContentInner() {
                         type: 'stampDetails',
                         title: `${currency.name} Stamps`,
                         data: { stamps: stampsList.map(convertApiStampToStampData) },
-                        stampCode: `${currentStampCode}.${currency.code}`
+                        stampCode: `${currentStampCode}|||${currency.code}`
                     }])
                     return
                 }
             }
             
-            const newStampCode = `${currentStampCode}.${currency.code}`
+            const newStampCode = `${currentStampCode}|||${currency.code}`
             setModalStack(prev => [...prev, {
                 type: 'currency',
                 title: `${currency.name} Values`,
@@ -222,7 +224,7 @@ function ModernCatalogContentInner() {
         setLoadingModalContent(true);
         try {
             // Extract parameters from stamp code
-            const pathParts = currentStampCode.split('.')
+            const pathParts = currentStampCode.split('|||')
             const countryCode = pathParts[0]
             const encodedSeriesName = pathParts[1]
             const year = parseInt(pathParts[2])
@@ -241,13 +243,13 @@ function ModernCatalogContentInner() {
                         type: 'stampDetails',
                         title: `${denomination.displayName} Stamps`,
                         data: { stamps: stampsList.map(convertApiStampToStampData) },
-                        stampCode: `${currentStampCode}.${denomination.value}${denomination.symbol}`
+                        stampCode: `${currentStampCode}|||${denomination.value}${denomination.symbol}`
                     }])
                     return
                 }
             }
             
-            const newStampCode = `${currentStampCode}.${denomination.value}${denomination.symbol}`
+            const newStampCode = `${currentStampCode}|||${denomination.value}${denomination.symbol}`
             setModalStack(prev => [...prev, {
                 type: 'denomination',
                 title: `${denomination.displayName} Color Variations`,
@@ -275,13 +277,13 @@ function ModernCatalogContentInner() {
                         type: 'stampDetails',
                         title: `${color.name} Stamps`,
                         data: { stamps: convertedStamps },
-                        stampCode: `${currentStampCode}.${color.code}`
+                        stampCode: `${currentStampCode}|||${color.code}`
                     }])
                     return
                 }
             }
             
-            const newStampCode = `${currentStampCode}.${color.code}`
+            const newStampCode = `${currentStampCode}|||${color.code}`
             setModalStack(prev => [...prev, {
                 type: 'color',
                 title: `${color.name} Paper Types`,
@@ -308,13 +310,13 @@ function ModernCatalogContentInner() {
                         type: 'stampDetails',
                         title: `${paper.name} Stamps`,
                         data: { stamps: stampsList.map(convertApiStampToStampData) },
-                        stampCode: `${currentStampCode}.${paper.code}`
+                        stampCode: `${currentStampCode}|||${paper.code}`
                     }])
                     return
                 }
             }
             
-            const newStampCode = `${currentStampCode}.${paper.code}`
+            const newStampCode = `${currentStampCode}|||${paper.code}`
             setModalStack(prev => [...prev, {
                 type: 'paper',
                 title: `${paper.name} Watermarks`,
@@ -341,13 +343,13 @@ function ModernCatalogContentInner() {
                         type: 'stampDetails',
                         title: `${watermark.name} Stamps`,
                         data: { stamps: stampsList.map(convertApiStampToStampData) },
-                        stampCode: `${currentStampCode}.${watermark.code}`
+                        stampCode: `${currentStampCode}|||${watermark.code}`
                     }])
                     return
                 }
             }
             
-            const newStampCode = `${currentStampCode}.${watermark.code}`
+            const newStampCode = `${currentStampCode}|||${watermark.code}`
             setModalStack(prev => [...prev, {
                 type: 'watermark',
                 title: `Perforation Specifications`,
@@ -374,13 +376,13 @@ function ModernCatalogContentInner() {
                         type: 'stampDetails',
                         title: `${perforation.name} Stamps`,
                         data: { stamps: stampsList.map(convertApiStampToStampData) },
-                        stampCode: `${currentStampCode}.${perforation.code}`
+                        stampCode: `${currentStampCode}|||${perforation.code}`
                     }])
                     return
                 }
             }
             
-            const newStampCode = `${currentStampCode}.${perforation.code}`
+            const newStampCode = `${currentStampCode}|||${perforation.code}`
             setModalStack(prev => [...prev, {
                 type: 'perforation',
                 title: `Condition Categories`,
@@ -400,7 +402,7 @@ function ModernCatalogContentInner() {
             const stampsList = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemType.code)
             
             // Always go directly to stamp details - additional categories will be handled within the stamp details modal
-            const newStampCode = `${currentStampCode}.${itemType.code}`
+            const newStampCode = `${currentStampCode}|||${itemType.code}`
             setModalStack(prev => [...prev, {
                 type: 'stampDetails',
                 title: `Approved Collection`,
@@ -442,7 +444,7 @@ function ModernCatalogContentInner() {
             type: 'stampDetails',
             title: `${stamp.name}`,
             data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-            stampCode: baseStampCode ? `${baseStampCode}.${stamp.catalogNumber}` : (stamp.stampCode || ''),
+            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.catalogNumber}` : (stamp.stampCode || ''),
             selectedAdditionalCategories: currentSelectedCategories
         }])
     }
@@ -585,7 +587,7 @@ function ModernCatalogContentInner() {
                         selectedAdditionalCategories: currentSelectedCategories,
                         // showAsIndividualCards: true
                     },
-                    stampCode: `${currentStampCode}.${category.code}`,
+                    stampCode: `${currentStampCode}|||${category.code}`,
                     selectedAdditionalCategories: currentSelectedCategories,
                 }])
         } finally {
@@ -1010,8 +1012,14 @@ function ModernCatalogContentInner() {
 
             {/* Premium Modal */}
             <div className="fixed inset-0 z-50 overflow-auto bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" style={{ display: modalStack.length > 0 ? 'block' : 'none' }}>
-                <div className="fixed inset-0 z-50 grid place-items-center p-4">
-                    <div className="relative w-full max-w-7xl h-[95vh] max-h-[95vh] overflow-y-auto bg-gradient-to-br from-orange-50 to-white dark:from-gray-900 dark:to-gray-950 border-0 shadow-2xl rounded-lg">
+                <div className={cn(
+                    "fixed inset-0 z-50 grid place-items-center p-4",
+                    isChatOpen && "pr-[28rem]" // Leave space for chat modal (28rem = 448px, which is max-w-sm + padding)
+                )}>
+                    <div className={cn(
+                        "relative w-full max-w-7xl h-[95vh] max-h-[95vh] overflow-y-auto bg-gradient-to-br from-orange-50 to-white dark:from-gray-900 dark:to-gray-950 border-0 shadow-2xl rounded-lg",
+                        isChatOpen && "max-w-6xl" // Reduce max width when chat is open
+                    )}>
                         <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-4 md:pb-6 mb-4 md:mb-6 px-6 py-4">
                             <div>
                                 <h3 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1 md:mb-2">
@@ -1022,7 +1030,7 @@ function ModernCatalogContentInner() {
                                         <span>Level {modalStack.length}</span>
                                         <span>•</span>
                                         <code className="bg-primary/10 dark:bg-primary/20 px-2 py-1 rounded font-mono text-xs text-primary dark:text-amber-300 break-all">
-                                            {decodeURIComponent(modalStack[modalStack.length - 1].stampCode)}
+                                            {decodeURIComponent(modalStack[modalStack.length - 1].stampCode).split('|||').join('.')}
                                         </code>
 
                                     </div>

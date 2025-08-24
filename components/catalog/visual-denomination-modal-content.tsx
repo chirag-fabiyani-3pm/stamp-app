@@ -4,7 +4,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ChevronRight, Search } from "lucide-react"
 import { DenominationOption, CurrencyOption } from "@/types/catalog"
-import { getFirstStampImage } from "@/lib/data/catalog-data"
 import { useCatalogData } from "@/lib/context/catalog-data-context"
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -80,7 +79,7 @@ export function DenominationModalContent({
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
                 <Image
-                  src={getFirstStampImage(stamps, data.countryCode, data.seriesName, data.year, data.currency.code, denomination.value)}
+                  src={denomination.featuredStampImageUrl || '/images/stamps/no-image-available.png'}
                   alt={denomination.displayName}
                   width={50}
                   height={60}

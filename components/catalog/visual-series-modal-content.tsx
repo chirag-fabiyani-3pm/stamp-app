@@ -4,7 +4,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Search, ChevronRight } from "lucide-react"
 import { CountryOption, SeriesOption } from "@/types/catalog"
-import { getFirstStampImage } from "@/lib/data/catalog-data"
 import { useCatalogData } from "@/lib/context/catalog-data-context"
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -79,7 +78,7 @@ export function SeriesModalContent({
             <CardContent className="p-4">
               <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-3">
                 <Image
-                  src={getFirstStampImage(stamps, data.country.code, series.name)}
+                  src={series.featuredStampUrl || '/images/stamps/no-image-available.png'}
                   alt={series.name}
                   width={60}
                   height={80}

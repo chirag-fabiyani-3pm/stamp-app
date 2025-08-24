@@ -3,7 +3,6 @@ import Image from "next/image"
 import { Card, CardContent } from "@/components/ui/card"
 import { ChevronRight } from "lucide-react"
 import { ColorOption, PaperOption } from "@/types/catalog"
-import { getFirstStampImage } from "@/lib/data/catalog-data"
 import { useCatalogData } from "@/lib/context/catalog-data-context"
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -55,7 +54,7 @@ export function PaperTypeModalContent({
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
                 <Image
-                  src={getFirstStampImage(stamps, data.countryCode, data.seriesName, data.year, data.currencyCode, data.denominationValue, data.color.code, paper.code)}
+                  src={paper.featuredStampImageUrl || '/images/stamps/no-image-available.png'}
                   alt={paper.name}
                   width={60}
                   height={80}

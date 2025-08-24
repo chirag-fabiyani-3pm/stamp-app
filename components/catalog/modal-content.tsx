@@ -8,12 +8,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import ReactCountryFlag from "react-country-flag"
 
-const formatStampCode = (stampCode: string, watermarkCode: string | null | undefined): string => {
-  if (watermarkCode === null) {
-    return stampCode.replace('.null.', '.NoWmk.');
-  }
-  return stampCode;
-};
+const formatStampCode = (stampCode: string | null | undefined): string => {
+    if (!stampCode || typeof stampCode !== 'string') return ''
+    // Assuming the watermark is the 8th part (index 7) of the stampCode if it's null
+    const parts = stampCode.split('|||')
+    if (parts.length > 7 && (parts[7] === 'null' || parts[7] == null || parts[7] === '')) {
+        parts[7] = 'NoWmk'
+    }
+    return parts.join('.')
+}
 
 interface ModalContentProps {
     modalItem: ModalStackItem
@@ -568,7 +571,7 @@ export default function ModalContent({
                             </div>
                         </div>
                         <code className="bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-700 rounded-lg px-2 py-0.5 md:px-4 md:py-2 text-green-800 dark:text-green-200 font-mono text-xs break-all">
-                            SOA-{formatStampCode(decodeURIComponent(stampCode), decodedStampCode.split('.')[7])}
+                            SOA-{formatStampCode(decodeURIComponent(stampCode))}
                         </code>
                         <p className="text-green-700 dark:text-green-300 text-xs mt-2">
                             This unique identifier confirms authentication and approval in our premium catalog system.
@@ -974,7 +977,7 @@ export default function ModalContent({
                                         {stamp.issueYear}
                                     </span>
                                     <span className="flex items-center">
-                                        <ReactCountryFlag countryCode={decodedStampCode?.split('.')[0]} svg className="mr-1" />
+                                        <ReactCountryFlag countryCode={decodedStampCode?.split('|||')[0]} svg className="mr-1" />
                                         {stamp.country}
                                     </span>
                                     <span className="flex items-center">
@@ -1065,7 +1068,7 @@ export default function ModalContent({
                             <section className="bg-primary/5 dark:bg-primary/10 rounded-xl p-4">
                                 <h2 className="text-lg md:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">Stamps of Approval ID</h2>
                                 <code className="bg-white dark:bg-gray-800 border border-primary/20 dark:border-primary/30 rounded-lg p-3 text-xs font-mono block break-all text-primary dark:text-amber-300">
-                                    SOA-{formatStampCode(decodeURIComponent(modalItem.stampCode), decodedStampCode.split('.')[7])}
+                                    SOA-{formatStampCode(decodeURIComponent(modalItem.stampCode))}
                                 </code>
                                 <p className="text-primary/70 dark:text-amber-400 text-xs mt-2">
                                     This unique identifier confirms authentication and approval in our premium catalog system.

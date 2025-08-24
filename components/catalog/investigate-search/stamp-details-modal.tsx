@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card"
 const formatStampCode = (stampCode: string | null | undefined): string => {
   if (!stampCode || typeof stampCode !== 'string') return ''
   // Assuming the watermark is the 8th part (index 7) of the stampCode if it's null
-  const parts = stampCode.split('.')
+  const parts = stampCode.split('|||')
   if (parts.length > 7 && (parts[7] === 'null' || parts[7] == null || parts[7] === '')) {
     parts[7] = 'NoWmk'
   }

@@ -4,7 +4,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ChevronRight, Search } from "lucide-react"
 import { ColorOption, DenominationOption } from "@/types/catalog"
-import { getFirstStampImage } from "@/lib/data/catalog-data"
 import { useCatalogData } from "@/lib/context/catalog-data-context"
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -87,7 +86,7 @@ export function ColorModalContent({
                     style={{ backgroundColor: color.hex }}
                   />
                   <Image
-                    src={getFirstStampImage(stamps, data.countryCode, data.seriesName, data.year, data.currencyCode, data.denomination.value, color.code)}
+                    src={color.featuredStampImageUrl || '/images/stamps/no-image-available.png'}
                     alt={color.name}
                     width={50}
                     height={60}

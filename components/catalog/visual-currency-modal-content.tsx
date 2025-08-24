@@ -3,7 +3,6 @@ import Image from "next/image"
 import { Input } from "@/components/ui/input"
 import { Archive, ChevronRight, Coins, Search } from "lucide-react"
 import { CurrencyOption, YearOption } from "@/types/catalog"
-import { getFirstStampImage } from "@/lib/data/catalog-data"
 import { useCatalogData } from "@/lib/context/catalog-data-context"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton";
@@ -107,7 +106,7 @@ export function CurrencyModalContent({
                 <div className="grid grid-cols-9 gap-4 items-center text-sm">
                   <div className="col-span-1 text-center">
                     <Image
-                      src={getFirstStampImage(stamps, data.countryCode, data.seriesName, data.year.year, currency.code)}
+                      src={currency.featuredStampImageUrl || '/images/stamps/no-image-available.png'}
                       alt={`${currency.name} stamps`}
                       width={40}
                       height={50}

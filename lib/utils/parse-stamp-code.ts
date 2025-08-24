@@ -13,7 +13,7 @@ export type ParsedStampCode = {
 }
 
 export function parseStampCode(stampCode: string): ParsedStampCode {
-  const parts = (stampCode || "").split('.')
+  const parts = (stampCode || "").split('|||')
 
   const countryCode = parts[0] || ''
   const encodedSeriesName = parts[1] || ''

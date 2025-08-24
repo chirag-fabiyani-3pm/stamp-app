@@ -89,11 +89,14 @@ interface StampDetailData {
   stampDetailsJson?: string
 }
 
-const formatStampCode = (stampCode: string, watermarkCode: string | null | undefined): string => {
-  if (watermarkCode === null) {
-    return stampCode.replace('.null.', '.NoWmk.')
+const formatStampCode = (stampCode: string | null | undefined): string => {
+  if (!stampCode || typeof stampCode !== 'string') return ''
+  // Assuming the watermark is the 8th part (index 7) of the stampCode if it's null
+  const parts = stampCode.split('|||')
+  if (parts.length > 7 && (parts[7] === 'null' || parts[7] == null || parts[7] === '')) {
+    parts[7] = 'NoWmk'
   }
-  return stampCode
+  return parts.join('.')
 }
 
 function StampDetailContent() {
@@ -604,7 +607,7 @@ function StampDetailContent() {
                 <section className="bg-primary/5 dark:bg-primary/10 rounded-2xl p-5">
                   <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Stamps of Approval ID</h2>
                   <code className="bg-white dark:bg-gray-800 border border-primary/20 dark:border-primary/30 rounded-lg p-3 text-xs font-mono block break-all text-primary dark:text-amber-300">
-                    {`SOA-${formatStampCode(decodeURIComponent(stamp.stampCode || ''), stamp.watermarkCode ?? undefined)}`}
+                    {`SOA-${formatStampCode(decodeURIComponent(stamp.stampCode || ''))}`}
                   </code>
                   <p className="text-primary/70 dark:text-amber-400 text-xs mt-2">This unique identifier confirms authentication and approval in our premium catalog system.</p>
                 </section>
