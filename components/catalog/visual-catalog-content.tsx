@@ -211,12 +211,12 @@ export function VisualCatalogContent() {
             type: 'stampDetails',
             title: `${denomination.displayName} Stamps`,
             data: { stamps: stampsList.map(convertApiStampToStampData) },
-            stampCode: `${currentStampCode}|||${denomination.value}${denomination.symbol}`
+            stampCode: `${currentStampCode}|||${denomination.value}`
           }])
           return
         }
       }
-      const newStampCode = `${currentStampCode}|||${denomination.value}${denomination.symbol}`
+      const newStampCode = `${currentStampCode}|||${denomination.value}`
       setModalStack(prev => [...prev, {
         type: 'color',
         title: `${denomination.displayName} Colors`,

@@ -14,6 +14,7 @@ import {
   Share2,
   Bookmark,
   Maximize2,
+  X,
 } from "lucide-react"
 import Image from "next/image"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -125,7 +126,7 @@ function StampDetailContent() {
 
         // Get JWT from localStorage first, then check query parameters as fallback
         let jwt = null
-        
+
         // Try localStorage first
         const userDataStr = localStorage.getItem('stamp_user_data')
         if (userDataStr) {
@@ -136,7 +137,7 @@ function StampDetailContent() {
             console.warn('Failed to parse user data from localStorage:', parseError)
           }
         }
-        
+
         // If no JWT from localStorage, check query parameters
         if (!jwt) {
           const jwtFromQuery = searchParams.get('jwt')
@@ -293,7 +294,7 @@ function StampDetailContent() {
             <p className="text-sm text-muted-foreground">Error loading stamp information</p>
           </div>
         </div>
-        
+
         <Card>
           <CardContent className="p-6 text-center">
             <div className="text-red-600 mb-4">
@@ -531,7 +532,7 @@ function StampDetailContent() {
                       <div>
                         <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">Color</dt>
                         <dd className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                          {stamp.colorHex && <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: stamp.colorHex }} />} {stamp.colorName || '—'}
+                          {stamp.colorHex && <span className="inline-block w-3 h-3 rounded-full border border-gray-300 dark:border-gray-600" style={{ backgroundColor: stamp.colorHex }} />} {stamp.colorName || '—'}
                         </dd>
                       </div>
                       <div>
@@ -554,12 +555,15 @@ function StampDetailContent() {
                       </div>
                     </div>
                   </div>
-                  {(stamp.sizeWidth || stamp.sizeHeight) && (
+                  {(!isNaN(Number(stamp.sizeWidth)) || !isNaN(Number(stamp.sizeHeight))) ? (
                     <div className="mt-3">
                       <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">Size</dt>
-                      <dd className="text-base font-semibold text-gray-900 dark:text-gray-100">{[stamp.sizeWidth, stamp.sizeHeight].filter(Boolean).join(' × ')}</dd>
+                      <dd className="text-base font-semibold text-gray-900 dark:text-gray-100">{[stamp.sizeWidth, stamp.sizeHeight].filter(s => !isNaN(Number(s))).join(' × ')}</dd>
                     </div>
-                  )}
+                  ) : <div className="mt-3">
+                    <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">Size</dt>
+                    <dd className="text-base font-semibold text-gray-900 dark:text-gray-100">Unknown</dd>
+                  </div>}
                 </section>
               </TabsContent>
 
@@ -568,11 +572,11 @@ function StampDetailContent() {
                   <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Market Insights</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
                     <div>
-                      <div className="text-xl md:text-3xl font-bold text-green-700 dark:text-green-300">{typeof stamp.mintValue === 'number' ? `$${stamp.mintValue}` : '—'}</div>
+                      <div className="text-xl md:text-3xl font-bold text-green-700 dark:text-green-300">{stamp.mintValue && typeof stamp.mintValue === 'number' ? `$${stamp.mintValue}` : '—'}</div>
                       <div className="text-xs text-green-700/80 dark:text-green-300/80">Mint Value</div>
                     </div>
                     <div>
-                      <div className="text-xl md:text-3xl font-bold text-blue-700 dark:text-blue-300">{typeof stamp.usedValue === 'number' ? `$${stamp.usedValue}` : '—'}</div>
+                      <div className="text-xl md:text-3xl font-bold text-blue-700 dark:text-blue-300">{stamp.usedValue && typeof stamp.usedValue === 'number' ? `$${stamp.usedValue}` : '—'}</div>
                       <div className="text-xs text-blue-700/80 dark:text-blue-300/80">Used Value</div>
                     </div>
                     <div>
@@ -595,7 +599,7 @@ function StampDetailContent() {
                       {stamp.priceTrend && (
                         <span className="inline-block text-xs px-2 py-1 rounded bg-white/70 dark:bg-black/20 border border-white/40 dark:border-white/10 mr-2">Trend: {stamp.priceTrend}</span>
                       )}
-                      {stamp.marketNotes && (
+                      {stamp.marketNotes && stamp.marketNotes !== "N/A" && (
                         <p className="text-xs mt-2 text-gray-800 dark:text-gray-200">{stamp.marketNotes}</p>
                       )}
                     </div>
@@ -631,7 +635,18 @@ function StampDetailContent() {
       <Dialog open={isLightboxOpen} onOpenChange={setIsLightboxOpen}>
         <DialogContent className="max-w-5xl p-0">
           <DialogHeader className="px-6 pt-6">
-            <DialogTitle className="text-base">{stamp.name}</DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-base">{stamp.name}</DialogTitle>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setIsLightboxOpen(false)}
+                aria-label="Close image popup"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </DialogHeader>
           <div className="px-6 pb-6">
             <div className="relative w-full aspect-[3/2] rounded-xl overflow-hidden bg-muted">

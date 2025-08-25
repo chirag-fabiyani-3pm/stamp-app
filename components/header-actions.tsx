@@ -114,13 +114,7 @@ export function HeaderActions({ setIsOpen }: HeaderActionsProps) {
 
         <ModeToggle />
 
-        <button
-          onClick={() => setIsOpen(true)}
-          className="mr-2.5 hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors duration-300 ease-in-out group"
-        >
-          <MessageSquare className="w-4 h-4 mr-1 opacity-90 group-hover:opacity-100 transition-opacity" />
-          <span className="text-sm font-medium">AI Chat</span>
-        </button>
+        {/* Chat button will be conditionally rendered after auth check */}
 
         {/* Default to sign in button during SSR */}
         <Link href="/login">
@@ -154,13 +148,15 @@ export function HeaderActions({ setIsOpen }: HeaderActionsProps) {
 
       <ModeToggle />
 
-      <button
-        onClick={() => setIsOpen(true)}
-        className="mr-2.5 hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors duration-300 ease-in-out group"
-      >
-        <MessageSquare className="w-4 h-4 mr-1 opacity-90 group-hover:opacity-100 transition-opacity" />
-        <span className="text-sm font-medium">AI Chat</span>
-      </button>
+      {isLoggedIn && (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="mr-2.5 hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors duration-300 ease-in-out group"
+        >
+          <MessageSquare className="w-4 h-4 mr-1 opacity-90 group-hover:opacity-100 transition-opacity" />
+          <span className="text-sm font-medium">AI Chat</span>
+        </button>
+      )}
 
       {isLoggedIn ? (
         <DropdownMenu>
@@ -229,16 +225,18 @@ export function HeaderActions({ setIsOpen }: HeaderActionsProps) {
               </Link>
             </div>
 
-            <button
-              onClick={() => {
-                setIsOpen(true);
-                setIsSheetOpen(false);
-              }}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors bg-primary/10 text-primary hover:bg-primary/20 md:hidden"
-            >
-              <MessageSquare className="w-4 h-4 mr-1 opacity-70 group-hover:opacity-100 transition-opacity" />
-              <span className="text-xs">AI Chat</span>
-            </button>
+            {isLoggedIn && (
+              <button
+                onClick={() => {
+                  setIsOpen(true);
+                  setIsSheetOpen(false);
+                }}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors bg-primary/10 text-primary hover:bg-primary/20 md:hidden"
+              >
+                <MessageSquare className="w-4 h-4 mr-1 opacity-70 group-hover:opacity-100 transition-opacity" />
+                <span className="text-xs">AI Chat</span>
+              </button>
+            )}
 
             {isLoggedIn && (
               <>

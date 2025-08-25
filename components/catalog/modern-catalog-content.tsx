@@ -243,13 +243,13 @@ function ModernCatalogContentInner() {
                         type: 'stampDetails',
                         title: `${denomination.displayName} Stamps`,
                         data: { stamps: stampsList.map(convertApiStampToStampData) },
-                        stampCode: `${currentStampCode}|||${denomination.value}${denomination.symbol}`
+                        stampCode: `${currentStampCode}|||${denomination.value}`
                     }])
                     return
                 }
             }
             
-            const newStampCode = `${currentStampCode}|||${denomination.value}${denomination.symbol}`
+            const newStampCode = `${currentStampCode}|||${denomination.value}`
             setModalStack(prev => [...prev, {
                 type: 'denomination',
                 title: `${denomination.displayName} Color Variations`,

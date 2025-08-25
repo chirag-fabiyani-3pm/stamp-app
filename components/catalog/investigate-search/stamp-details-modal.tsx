@@ -67,7 +67,7 @@ export function StampDetailsModal({ selectedStamp, isModalOpen, setIsModalOpen }
           <Button
             variant="ghost"
             size="sm"
-            className="absolute right-2 top-2 h-8 w-8 p-0 md:hidden"
+            className="absolute right-2 top-2 h-8 w-8 p-0"
             onClick={() => setIsModalOpen(false)}
           >
             <X className="h-4 w-4" />
@@ -106,7 +106,7 @@ export function StampDetailsModal({ selectedStamp, isModalOpen, setIsModalOpen }
                     <span className="text-xs font-medium text-blue-600">Year</span>
                   </div>
                   <p className="text-xs md:text-sm font-semibold">
-                    {selectedStamp.issueYear || 'Unknown'}
+                    {(selectedStamp.issueYear && isNaN(selectedStamp.issueYear)) ? 'Unknown' : selectedStamp.issueYear}
                   </p>
                 </Card>
 
@@ -157,7 +157,7 @@ export function StampDetailsModal({ selectedStamp, isModalOpen, setIsModalOpen }
                   </div>
 
                   <div className="flex justify-between items-start gap-3">
-                    <span className="text-xs text-muted-foreground">Catalog #:</span>
+                    <span className="text-xs text-muted-foreground">Stamp Catalog #:</span>
                     <span className="text-xs font-medium text-right font-mono">
                       #{selectedStamp.catalogNumber}
                     </span>
@@ -170,19 +170,10 @@ export function StampDetailsModal({ selectedStamp, isModalOpen, setIsModalOpen }
                     </span>
                   </div>
 
-                  {selectedStamp.catalogName && (
-                    <div className="flex justify-between items-start gap-3">
-                      <span className="text-xs text-muted-foreground">Catalog:</span>
-                      <span className="text-xs font-medium text-right break-words max-w-[65%]">
-                        {selectedStamp.catalogName}
-                      </span>
-                    </div>
-                  )}
-
                   <div className="flex justify-between items-start gap-3">
                     <span className="text-xs text-muted-foreground">Issue Date:</span>
                     <span className="text-xs font-medium text-right">
-                      {selectedStamp.issueDate ? formatDate(selectedStamp.issueDate) : 'Unknown'}
+                      {(selectedStamp.issueDate && !isNaN(new Date(selectedStamp.issueDate).getTime())) ? formatDate(selectedStamp.issueDate) : 'Unknown'}
                     </span>
                   </div>
                 </div>
@@ -206,14 +197,14 @@ export function StampDetailsModal({ selectedStamp, isModalOpen, setIsModalOpen }
                   <div className="flex justify-between items-start gap-3">
                     <span className="text-xs text-muted-foreground">Currency:</span>
                     <span className="text-xs font-medium text-right">
-                      {selectedStamp.denominationCurrency}
+                      {selectedStamp.denominationCurrency || 'Not specified'}
                     </span>
                   </div>
                 </div>
               </div>
 
               {/* Market Information */}
-              {(selectedStamp.estimatedMarketValue || selectedStamp.actualPrice) && (
+              {(!!selectedStamp.estimatedMarketValue || !!selectedStamp.actualPrice) && (
                 <div className="space-y-3">
                   <h3 className="text-sm font-semibold text-foreground border-b pb-1.5 flex items-center gap-1.5">
                     <DollarSign className="h-3.5 w-3.5" />
