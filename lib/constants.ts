@@ -26,8 +26,3 @@ export const isUserAdmin = (roleMasterId: string): boolean => {
 export const BACKEND_URL = process.env.NODE_ENV === 'development'
   ? "http://localhost:3000"
   : (process.env.NEXT_PUBLIC_BACKEND_URL || "https://decoded-app-stamp-ai-expert-prod.azurewebsites.net");
-
-// Frontend URL - use local development server when running locally, otherwise use the production URL
-export const FRONTEND_URL = process.env.NODE_ENV === 'development'
-  ? "http://localhost:3000"
-  : (process.env.NEXT_PUBLIC_FRONTEND_URL || "https://stamp-app-sand.vercel.app"); 

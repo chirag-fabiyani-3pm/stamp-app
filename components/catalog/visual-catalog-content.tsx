@@ -26,6 +26,16 @@ import { StampDetailsModalContent as VisualStampDetailsModalContent } from "@/co
 import { Skeleton } from "@/components/ui/skeleton"
 import { VisualCatalogSkeleton } from "./investigate-search/loading-skeletons"
 
+const formatStampCode = (stampCode: string | null | undefined): string => {
+  if (!stampCode || typeof stampCode !== 'string') return ''
+  // Assuming the watermark is the 8th part (index 7) of the stampCode if it's null
+  const parts = stampCode.split('|||')
+  if (parts.length > 7 && (parts[7] === 'null' || parts[7] == null || parts[7] === '')) {
+    parts[7] = 'NoWmk'
+  }
+  return parts.join('.')
+}
+
 export function VisualCatalogContent() {
   const { stamps } = useCatalogData()
   const [loading, setLoading] = useState(true)
@@ -671,7 +681,7 @@ export function VisualCatalogContent() {
                     {modal.title}
                   </DialogTitle>
                   <p className="text-xs text-muted-foreground mt-1 break-words">
-                    Stamp Code: <code className="bg-muted px-1 py-0.5 rounded text-xs text-foreground break-all">{decodeURIComponent(modal.stampCode)}</code>
+                    Stamp Code: <code className="bg-muted px-1 py-0.5 rounded text-xs text-foreground break-all">{formatStampCode(decodeURIComponent(modal.stampCode))}</code>
                   </p>
                 </div>
                 <Button variant="ghost" size="sm" onClick={closeModal} className="text-muted-foreground hover:bg-muted/70 w-8 h-8 p-0">
