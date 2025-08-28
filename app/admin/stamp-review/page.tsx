@@ -110,7 +110,7 @@ const fetchStampsForReview = async (
   }
 
   const response = await fetch(
-    `https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/StampMasterCatalog?pageNumber=${pageNumber}&pageSize=${pageSize}`,
+    `https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/StampMasterCatalog?pageNumber=${pageNumber}&pageSize=${pageSize}&catalogExtractionProcessId=254c793b-16d0-40a3-8b10-66d987b54474`,
     {
       method: "GET",
       headers: {
