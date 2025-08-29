@@ -29,6 +29,7 @@ import {
   Calendar,
   Trash2,
   AlertTriangle,
+  Upload,
 } from "lucide-react"
 
 // API Response Types
@@ -71,7 +72,7 @@ interface StampReviewResponse {
 import type { StampMasterCatalogItem } from "@/lib/api/stamp-master-catalog"
 
 // Editable stamp data for the popup - uses actual API type
-type EditableStampData = StampMasterCatalogItem & { publish: boolean; isPublished: boolean; publishNotes?: string }
+type EditableStampData = StampMasterCatalogItem & { publish: boolean; isPublished: boolean; publishNotes?: string; stampFileAttachment?: File }
 
 // JWT helper function
 const getJWT = (): string | null => {
@@ -97,6 +98,273 @@ const getJWT = (): string | null => {
     }
   }
   return null
+}
+
+// Key mapping from GET API response keys (camelCase) to form data keys (PascalCase)
+const keyMapping: Record<string, string> = {
+  'id': 'Id',
+  'catalogExtractionProcessId': 'CatalogExtractionProcessId',
+  'similarityScore': 'SimilarityScore',
+  'stampId': 'StampId',
+  'isInstance': 'IsInstance',
+  'parentStampId': 'ParentStampId',
+  'catalogNumber': 'CatalogNumber',
+  'stampCode': 'StampCode',
+  'name': 'Name',
+  'description': 'Description',
+  'country': 'Country',
+  'countryName': 'CountryName',
+  'countryFlag': 'CountryFlag',
+  'seriesId': 'SeriesId',
+  'seriesName': 'SeriesName',
+  'seriesDescription': 'SeriesDescription',
+  'typeId': 'TypeId',
+  'typeName': 'TypeName',
+  'typeDescription': 'TypeDescription',
+  'stampGroupId': 'StampGroupId',
+  'stampGroupName': 'StampGroupName',
+  'stampGroupDescription': 'StampGroupDescription',
+  'releaseId': 'ReleaseId',
+  'releaseName': 'ReleaseName',
+  'releaseDateRange': 'ReleaseDateRange',
+  'releaseDescription': 'ReleaseDescription',
+  'categoryId': 'CategoryId',
+  'categoryName': 'CategoryName',
+  'categoryCode': 'CategoryCode',
+  'categoryDescription': 'CategoryDescription',
+  'paperTypeId': 'PaperTypeId',
+  'paperTypeName': 'PaperTypeName',
+  'paperTypeCode': 'PaperTypeCode',
+  'paperTypeDescription': 'PaperTypeDescription',
+  'currencyCode': 'CurrencyCode',
+  'currencyName': 'CurrencyName',
+  'currencySymbol': 'CurrencySymbol',
+  'currencyDescription': 'CurrencyDescription',
+  'denominationValue': 'DenominationValue',
+  'denominationSymbol': 'DenominationSymbol',
+  'denominationDisplay': 'DenominationDisplay',
+  'denominationDescription': 'DenominationDescription',
+  'colorCode': 'ColorCode',
+  'colorName': 'ColorName',
+  'colorHex': 'ColorHex',
+  'colorDescription': 'ColorDescription',
+  'colorVariant': 'ColorVariant',
+  'paperCode': 'PaperCode',
+  'paperName': 'PaperName',
+  'paperDescription': 'PaperDescription',
+  'paperFiber': 'PaperFiber',
+  'paperThickness': 'PaperThickness',
+  'paperOpacity': 'PaperOpacity',
+  'watermarkCode': 'WatermarkCode',
+  'watermarkName': 'WatermarkName',
+  'watermarkDescription': 'WatermarkDescription',
+  'watermarkPosition': 'WatermarkPosition',
+  'watermarkClarity': 'WatermarkClarity',
+  'perforationCode': 'PerforationCode',
+  'perforationName': 'PerforationName',
+  'perforationMeasurement': 'PerforationMeasurement',
+  'perforationGauge': 'PerforationGauge',
+  'perforationCleanCut': 'PerforationCleanCut',
+  'perforationComb': 'PerforationComb',
+  'itemTypeCode': 'ItemTypeCode',
+  'itemTypeName': 'ItemTypeName',
+  'itemTypeDescription': 'ItemTypeDescription',
+  'itemFormat': 'ItemFormat',
+  'issueDate': 'IssueDate',
+  'issueYear': 'IssueYear',
+  'issueMonth': 'IssueMonth',
+  'issueDay': 'IssueDay',
+  'firstDayIssue': 'FirstDayIssue',
+  'periodStart': 'PeriodStart',
+  'periodEnd': 'PeriodEnd',
+  'issueLocation': 'IssueLocation',
+  'issuePurpose': 'IssuePurpose',
+  'issueContext': 'IssueContext',
+  'printingMethod': 'PrintingMethod',
+  'printingProcess': 'PrintingProcess',
+  'printingQuality': 'PrintingQuality',
+  'designer': 'Designer',
+  'designerNotes': 'DesignerNotes',
+  'printer': 'Printer',
+  'printerLocation': 'PrinterLocation',
+  'printerReputation': 'PrinterReputation',
+  'engraver': 'Engraver',
+  'dieNumber': 'DieNumber',
+  'plateNumber': 'PlateNumber',
+  'plateCharacteristics': 'PlateCharacteristics',
+  'paperManufacturer': 'PaperManufacturer',
+  'gumType': 'GumType',
+  'gumCondition': 'GumCondition',
+  'sizeWidth': 'SizeWidth',
+  'sizeHeight': 'SizeHeight',
+  'sizeFormat': 'SizeFormat',
+  'theme': 'Theme',
+  'themeCategory': 'ThemeCategory',
+  'subject': 'Subject',
+  'artisticStyle': 'ArtisticStyle',
+  'printRun': 'PrintRun',
+  'estimatedPrintRun': 'EstimatedPrintRun',
+  'sheetsPrinted': 'SheetsPrinted',
+  'stampsPerSheet': 'StampsPerSheet',
+  'positionVarieties': 'PositionVarieties',
+  'plateVariety': 'PlateVariety',
+  'stampImageUrl': 'StampImageUrl',
+  'stampImageAlt': 'StampImageAlt',
+  'stampImageHighRes': 'StampImageHighRes',
+  'watermarkImageUrl': 'WatermarkImageUrl',
+  'perforationImageUrl': 'PerforationImageUrl',
+  'rarityRating': 'RarityRating',
+  'rarityScale': 'RarityScale',
+  'rarityScore': 'RarityScore',
+  'hasVarieties': 'HasVarieties',
+  'varietyCount': 'VarietyCount',
+  'varietyType': 'VarietyType',
+  'perforationVariety': 'PerforationVariety',
+  'colorVariety': 'ColorVariety',
+  'paperVariety': 'PaperVariety',
+  'watermarkVariety': 'WatermarkVariety',
+  'knownError': 'KnownError',
+  'majorVariety': 'MajorVariety',
+  'postalHistoryType': 'PostalHistoryType',
+  'postmarkType': 'PostmarkType',
+  'proofType': 'ProofType',
+  'essayType': 'EssayType',
+  'errorType': 'ErrorType',
+  'authenticationRequired': 'AuthenticationRequired',
+  'expertCommittee': 'ExpertCommittee',
+  'authenticationPoint': 'AuthenticationPoint',
+  'certificateAvailable': 'CertificateAvailable',
+  'commonForgery': 'CommonForgery',
+  'historicalSignificance': 'HistoricalSignificance',
+  'culturalImportance': 'CulturalImportance',
+  'philatelicImportance': 'PhilatelicImportance',
+  'collectingPopularity': 'CollectingPopularity',
+  'exhibitionFrequency': 'ExhibitionFrequency',
+  'researchStatus': 'ResearchStatus',
+  'bibliography': 'Bibliography',
+  'specialNotes': 'SpecialNotes',
+  'collectorNotes': 'CollectorNotes',
+  'conditionNotes': 'ConditionNotes',
+  'rarityNotes': 'RarityNotes',
+  'marketNotes': 'MarketNotes',
+  'researchNotes': 'ResearchNotes',
+  'instanceCatalogCode': 'InstanceCatalogCode',
+  'instanceDescription': 'InstanceDescription',
+  'condition': 'Condition',
+  'conditionGrade': 'ConditionGrade',
+  'conditionDescription': 'ConditionDescription',
+  'conditionDetails': 'ConditionDetails',
+  'usageState': 'UsageState',
+  'usageDescription': 'UsageDescription',
+  'usageCode': 'UsageCode',
+  'gumConditionSpecific': 'GumConditionSpecific',
+  'gumDescription': 'GumDescription',
+  'gumQuality': 'GumQuality',
+  'centering': 'Centering',
+  'centeringScore': 'CenteringScore',
+  'centeringDescription': 'CenteringDescription',
+  'margins': 'Margins',
+  'marginMeasurements': 'MarginMeasurements',
+  'colorFreshness': 'ColorFreshness',
+  'colorIntensity': 'ColorIntensity',
+  'colorDescriptionSpecific': 'ColorDescriptionSpecific',
+  'paperCondition': 'PaperCondition',
+  'paperFreshness': 'PaperFreshness',
+  'surfaceCondition': 'SurfaceCondition',
+  'perforationsCondition': 'PerforationsCondition',
+  'perforationTips': 'PerforationTips',
+  'faults': 'Faults',
+  'repairs': 'Repairs',
+  'alterations': 'Alterations',
+  'grade': 'Grade',
+  'gradingService': 'GradingService',
+  'certification': 'Certification',
+  'certificateNumber': 'CertificateNumber',
+  'expertOpinion': 'ExpertOpinion',
+  'postmarkTypeInInstance': 'PostmarkTypeInInstance',
+  'postmarkLocation': 'PostmarkLocation',
+  'postmarkDate': 'PostmarkDate',
+  'postmarkClarity': 'PostmarkClarity',
+  'postmarkPosition': 'PostmarkPosition',
+  'postmarkDescription': 'PostmarkDescription',
+  'mintValue': 'MintValue',
+  'usedValue': 'UsedValue',
+  'finestUsedValue': 'FinestUsedValue',
+  'priceMultiplier': 'PriceMultiplier',
+  'priceFactors': 'PriceFactors',
+  'instanceRarity': 'InstanceRarity',
+  'conditionRarity': 'ConditionRarity',
+  'availability': 'Availability',
+  'marketFrequency': 'MarketFrequency',
+  'auctionFrequency': 'AuctionFrequency',
+  'lastAuctionDate': 'LastAuctionDate',
+  'lastAuctionPrice': 'LastAuctionPrice',
+  'priceTrend': 'PriceTrend',
+  'instanceNotes': 'InstanceNotes',
+  'investmentNotes': 'InvestmentNotes',
+  'exhibitionSuitability': 'ExhibitionSuitability',
+  'photographicQuality': 'PhotographicQuality',
+  'varietyTypeInInstance': 'VarietyTypeInInstance',
+  'varietyDescription': 'VarietyDescription',
+  'varietyPosition': 'VarietyPosition',
+  'varietySeverity': 'VarietySeverity',
+  'varietyVisibility': 'VarietyVisibility',
+  'varietyRarity': 'VarietyRarity',
+  'varietyNotes': 'VarietyNotes',
+  'stampVectorJson': 'StampVectorJson',
+  'stampDetailsJson': 'StampDetailsJson',
+  'alternativeNames': 'AlternativeNames',
+  'plateFlaws': 'PlateFlaws',
+  'stampImageVariants': 'StampImageVariants',
+  'recentSales': 'RecentSales',
+  'primaryReferences': 'PrimaryReferences',
+  'researchPapers': 'ResearchPapers',
+  'exhibitionLiterature': 'ExhibitionLiterature',
+  'onlineResources': 'OnlineResources',
+  'isPublished': 'IsPublished',
+  'publishNotes': 'PublishNotes',
+  'pageNumber': 'PageNumber',
+  'stampFileAttachment': 'StampFileAttachment'
+}
+
+// Function to convert camelCase data to PascalCase FormData
+const convertToFormData = (data: Record<string, any>): FormData => {
+  const formData = new FormData()
+
+  Object.entries(data).forEach(([key, value]) => {
+    // Skip undefined/null values
+    if (value === undefined || value === null) {
+      return
+    }
+
+    // Map the key to PascalCase
+    const formKey = keyMapping[key] || key
+
+    // Handle special cases for nested objects
+    if (key === 'stampVector' && typeof value === 'object') {
+      if (value.memory) {
+        if (value.memory.length !== undefined) {
+          formData.append('StampVector.Memory.Length', String(value.memory.length))
+        }
+        if (value.memory.isEmpty !== undefined) {
+          formData.append('StampVector.Memory.IsEmpty', String(value.memory.isEmpty))
+        }
+      }
+    } else if (key === 'publish' && value === true) {
+      // Handle publish flag - convert to IsPublished
+      formData.append('IsPublished', 'true')
+    } else if (Array.isArray(value)) {
+      // Handle arrays (like stampImageVariants)
+      formData.append(formKey, JSON.stringify(value))
+    } else if (key === 'stampFileAttachment') {
+      formData.append(formKey, value)
+    } else {
+      // Handle all other values
+      formData.append(formKey, String(value))
+    }
+  })
+
+  return formData
 }
 
 // API Functions
@@ -133,15 +401,18 @@ const updateStamp = async (stampId: string, stampData: Partial<EditableStampData
     throw new Error("Authentication required. Please log in again.")
   }
 
+  // Convert the stamp data to FormData with PascalCase keys
+  const formData = convertToFormData(stampData)
+
   const response = await fetch(
     `https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/StampMasterCatalog/${stampId}`,
     {
       method: "PUT",
       headers: {
-        'Authorization': `Bearer ${jwt}`,
-        'Content-Type': 'application/json'
+        'Authorization': `Bearer ${jwt}`
+        // Note: Don't set Content-Type for FormData - browser will set it with boundary
       },
-      body: JSON.stringify(stampData)
+      body: formData
     }
   )
 
@@ -773,16 +1044,6 @@ export default function StampReviewPage() {
                     <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="id">id</Label>
-                        <Input
-                          id="id"
-                          value={editFormData.id || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, id: e.target.value }))}
-                          disabled
-                          className="bg-muted"
-                        />
-                      </div>
-                      <div className="space-y-2">
                         <Label htmlFor="catalogExtractionProcessId">catalogExtractionProcessId</Label>
                         <Input
                           id="catalogExtractionProcessId"
@@ -875,6 +1136,57 @@ export default function StampReviewPage() {
                           disabled={selectedStamp?.isPublished}
                           className={selectedStamp?.isPublished ? "bg-muted" : ""}
                         />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stamp Image Upload */}
+                  <div className="border-b pb-4">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <Upload className="h-5 w-5" />
+                      Stamp Image Upload
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="stampFileAttachment">Upload New Stamp Image</Label>
+                        <Input
+                          id="stampFileAttachment"
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) {
+                              setEditFormData(prev => ({
+                                ...prev,
+                                stampFileAttachment: file
+                              }))
+                            }
+                          }}
+                          disabled={selectedStamp?.isPublished}
+                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Upload a new image to replace the current stamp image. Supported formats: JPG, PNG, GIF, WebP
+                        </p>
+                        {editFormData.stampFileAttachment && (
+                          <div className="flex items-center gap-2 p-2 bg-muted rounded-md">
+                            <ImageIcon className="h-4 w-4" />
+                            <span className="text-sm">
+                              Selected: {(editFormData.stampFileAttachment as File).name}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditFormData(prev => ({
+                                ...prev,
+                                stampFileAttachment: undefined
+                              }))}
+                              disabled={selectedStamp?.isPublished}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -1,4 +1,4 @@
-import { ADMIN_ROLE_ID } from '@/lib/constants';
+import { ADMIN_ROLE_ID, SUPER_ADMIN_ROLE_ID } from '@/lib/constants';
 
 const API_BASE_URL = 'https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1';
 
@@ -295,7 +295,7 @@ export function isAdmin(): boolean {
   if (!userData) return false;
   
   // Check if the user has the admin role ID
-  return userData.roleMasterId === ADMIN_ROLE_ID;
+  return userData.roleMasterId === ADMIN_ROLE_ID || userData.roleMasterId === SUPER_ADMIN_ROLE_ID;
 }
 
 // Get user display name
