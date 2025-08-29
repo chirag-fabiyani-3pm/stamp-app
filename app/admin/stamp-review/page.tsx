@@ -640,7 +640,7 @@ export default function StampReviewPage() {
       stamp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       stamp.seriesName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       stamp.catalogNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      stamp.stampCatalogCode.toLowerCase().includes(searchTerm.toLowerCase())
+      stamp.stampCatalogCode?.toLowerCase().includes(searchTerm.toLowerCase())
 
     const matchesCountry = countryFilter === "all" || stamp.country === countryFilter
     const matchesStatus = statusFilter === "all" ||
@@ -795,6 +795,7 @@ export default function StampReviewPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[50px]">Actions</TableHead>
+                      <TableHead className="w-[60px]">Page</TableHead>
                       <TableHead className="min-w-[200px] max-w-[250px]">Stamp</TableHead>
                       <TableHead className="w-[120px]">Country</TableHead>
                       <TableHead className="w-[80px]">Year</TableHead>
@@ -808,7 +809,7 @@ export default function StampReviewPage() {
                   <TableBody>
                     {filteredStamps.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                           No stamps found matching your criteria.
                         </TableCell>
                       </TableRow>
@@ -843,6 +844,11 @@ export default function StampReviewPage() {
                                     <Trash2 className="h-4 w-4" />
                                   </Button>
                                 </div>
+                              </TableCell>
+                              <TableCell className="w-[60px]">
+                                <Badge variant="outline" className="font-mono">
+                                  {stamp.pageNumber}
+                                </Badge>
                               </TableCell>
                           <TableCell className="min-w-[200px] max-w-[250px]">
                             <div className="font-medium text-sm overflow-hidden text-ellipsis whitespace-nowrap pr-2" title={stamp.name}>
