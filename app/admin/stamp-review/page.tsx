@@ -1044,6 +1044,16 @@ export default function StampReviewPage() {
                     <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
+                        <Label htmlFor="id">id</Label>
+                        <Input
+                          id="id"
+                          value={editFormData.id || ""}
+                          onChange={(e) => setEditFormData(prev => ({ ...prev, id: e.target.value }))}
+                          disabled
+                          className="bg-muted"
+                        />
+                      </div>
+                      <div className="space-y-2">
                         <Label htmlFor="catalogExtractionProcessId">catalogExtractionProcessId</Label>
                         <Input
                           id="catalogExtractionProcessId"
