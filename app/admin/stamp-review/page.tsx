@@ -56,6 +56,8 @@ interface StampReviewItem {
   updatedAt: string
   isPublished: boolean
   publishNotes?: string
+  pageNumber?: number
+  stampId?: string
 }
 
 interface StampReviewResponse {
@@ -66,6 +68,87 @@ interface StampReviewResponse {
   totalPages: number
   hasPreviousPage: boolean
   hasNextPage: boolean
+}
+
+interface StampInstanceItem extends StampReviewItem {
+  // Instances have the same structure but may have additional instance-specific fields
+  parentStampId?: string
+  instanceCatalogCode?: string
+  instanceDescription?: string
+  condition?: string
+  pageNumber?: number
+  description?: string
+
+  // Additional properties used in the form
+  stampFileAttachment?: File
+  countryName?: string
+  countryFlag?: string
+  issueLocation?: string
+  seriesId?: string
+  seriesDescription?: string
+  typeId?: string
+  typeName?: string
+  typeDescription?: string
+  stampGroupId?: string
+  stampGroupName?: string
+  stampGroupDescription?: string
+  releaseId?: string
+  releaseName?: string
+  releaseDateRange?: string
+  releaseDescription?: string
+  categoryId?: string
+  categoryName?: string
+  categoryCode?: string
+  categoryDescription?: string
+  paperTypeId?: string
+  paperTypeName?: string
+  paperTypeCode?: string
+  paperTypeDescription?: string
+  itemTypeCode?: string
+  itemTypeName?: string
+  itemTypeDescription?: string
+  itemFormat?: string
+  currencyCode?: string
+  currencyName?: string
+  currencySymbol?: string
+  currencyDescription?: string
+  denominationDisplay?: string
+  denominationDescription?: string
+  colorCode?: string
+  colorName?: string
+  colorHex?: string
+  colorDescription?: string
+  colorVariant?: string
+  paperCode?: string
+  paperName?: string
+  paperDescription?: string
+  paperFiber?: string
+  paperThickness?: string
+  paperOpacity?: string
+  watermarkCode?: string
+  watermarkName?: string
+  watermarkDescription?: string
+  watermarkPosition?: string
+  watermarkClarity?: string
+  perforationCode?: string
+  perforationName?: string
+  perforationMeasurement?: string
+  perforationGauge?: string
+  perforationCleanCut?: boolean
+  perforationComb?: boolean
+  issueMonth?: number
+  issueDay?: number
+  firstDayIssue?: boolean
+  periodStart?: number
+  periodEnd?: number
+  issuePurpose?: string
+  issueContext?: string
+  stampVectorJson?: string
+  stampDetailsJson?: string
+  alternativeNames?: string
+  plateFlaws?: string
+  recentSales?: string
+  stampImageVariants?: any[]
 }
 
 // Import the actual StampMasterCatalogItem type
@@ -378,7 +461,7 @@ const fetchStampsForReview = async (
   }
 
   const response = await fetch(
-    `https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/StampMasterCatalog?pageNumber=${pageNumber}&pageSize=${pageSize}&catalogExtractionProcessId=254c793b-16d0-40a3-8b10-66d987b54474`,
+    `https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/StampMasterCatalog/BaseStamps?pageNumber=${pageNumber}&pageSize=${pageSize}&catalogExtractionProcessId=254c793b-16d0-40a3-8b10-66d987b54474`,
     {
       method: "GET",
       headers: {
@@ -449,6 +532,81 @@ const deleteStamp = async (stampId: string): Promise<void> => {
   }
 }
 
+const fetchStampInstances = async (stampId: string): Promise<StampInstanceItem[]> => {
+  const jwt = getJWT()
+  if (!jwt) {
+    throw new Error("Authentication required. Please log in again.")
+  }
+
+  const response = await fetch(
+    `https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/StampMasterCatalog/Instances/${stampId}`,
+    {
+      method: "GET",
+      headers: {
+        'Authorization': `Bearer ${jwt}`,
+        'Content-Type': 'application/json'
+      }
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  const data = await response.json()
+  return data.items || data || []
+}
+
+const updateStampInstance = async (instanceId: string, instanceData: Partial<StampInstanceItem>): Promise<StampInstanceItem> => {
+  const jwt = getJWT()
+  if (!jwt) {
+    throw new Error("Authentication required. Please log in again.")
+  }
+
+  // Convert the instance data to FormData with PascalCase keys
+  const formData = convertToFormData(instanceData)
+
+  const response = await fetch(
+    `https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/StampMasterCatalog/${instanceId}`,
+    {
+      method: "PUT",
+      headers: {
+        'Authorization': `Bearer ${jwt}`
+        // Note: Don't set Content-Type for FormData - browser will set it with boundary
+      },
+      body: formData
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  return response.json()
+}
+
+const deleteStampInstance = async (instanceId: string): Promise<void> => {
+  const jwt = getJWT()
+  if (!jwt) {
+    throw new Error("Authentication required. Please log in again.")
+  }
+
+  const response = await fetch(
+    `https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/StampMasterCatalog/${instanceId}`,
+    {
+      method: "DELETE",
+      headers: {
+        'Authorization': `Bearer ${jwt}`,
+        'Content-Type': 'application/json'
+      }
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+}
+
 export default function StampReviewPage() {
   const [stamps, setStamps] = useState<StampReviewItem[]>([])
   const [pageNumber, setPageNumber] = useState(1)
@@ -470,6 +628,21 @@ export default function StampReviewPage() {
   const [editFormData, setEditFormData] = useState<Partial<EditableStampData>>({})
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  // Stamp instances states
+  const [stampInstances, setStampInstances] = useState<StampInstanceItem[]>([])
+  const [isLoadingInstances, setIsLoadingInstances] = useState(false)
+
+  // Instance edit states
+  const [selectedInstance, setSelectedInstance] = useState<StampInstanceItem | null>(null)
+  const [isInstanceEditModalOpen, setIsInstanceEditModalOpen] = useState(false)
+  const [instanceEditFormData, setInstanceEditFormData] = useState<Partial<StampInstanceItem>>({})
+  const [isUpdatingInstance, setIsUpdatingInstance] = useState(false)
+
+  // Instance delete states
+  const [isInstanceDeleteDialogOpen, setIsInstanceDeleteDialogOpen] = useState(false)
+  const [isDeletingInstance, setIsDeletingInstance] = useState(false)
+  const [instanceToDelete, setInstanceToDelete] = useState<StampInstanceItem | null>(null)
 
   // Publish Notes Modal states
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false)
@@ -628,10 +801,109 @@ export default function StampReviewPage() {
   }
 
   // Handle opening edit modal
-  const handleEditStamp = (stamp: StampReviewItem) => {
+  const handleEditStamp = async (stamp: StampReviewItem) => {
     setSelectedStamp(stamp as unknown as EditableStampData)
     setEditFormData({ ...stamp } as unknown as Partial<EditableStampData>)
     setIsEditModalOpen(true)
+
+    // Fetch stamp instances
+    try {
+      setIsLoadingInstances(true)
+      const stampIdToUse = stamp.stampId || stamp.id
+      const instances = await fetchStampInstances(stampIdToUse)
+      setStampInstances(instances)
+    } catch (error) {
+      console.error("Error loading stamp instances:", error)
+      toast({
+        title: "Failed to Load Instances",
+        description: error instanceof Error ? error.message : "Unable to fetch stamp instances. Please try again.",
+        variant: "destructive",
+        duration: 5000,
+      })
+      setStampInstances([])
+    } finally {
+      setIsLoadingInstances(false)
+    }
+  }
+
+  // Handle editing stamp instance
+  const handleEditInstance = (instance: StampInstanceItem) => {
+    setSelectedInstance(instance)
+    setInstanceEditFormData({ ...instance })
+    setIsInstanceEditModalOpen(true)
+  }
+
+  // Handle saving instance changes
+  const handleSaveInstance = async () => {
+    if (!selectedInstance) return
+
+    try {
+      setIsUpdatingInstance(true)
+      const updatedInstance = await updateStampInstance(selectedInstance.id, instanceEditFormData)
+
+      // Update local state
+      setStampInstances(prev => prev.map(instance =>
+        instance.id === selectedInstance.id ? updatedInstance : instance
+      ))
+
+      setIsInstanceEditModalOpen(false)
+      setSelectedInstance(null)
+      setInstanceEditFormData({})
+
+      toast({
+        title: "Instance Updated",
+        description: "The stamp instance details have been successfully updated.",
+        duration: 3000,
+      })
+    } catch (error) {
+      console.error("Error updating instance:", error)
+      toast({
+        title: "Update Failed",
+        description: error instanceof Error ? error.message : "Unable to update stamp instance. Please try again.",
+        variant: "destructive",
+        duration: 5000,
+      })
+    } finally {
+      setIsUpdatingInstance(false)
+    }
+  }
+
+  // Handle opening delete instance dialog
+  const handleOpenInstanceDeleteDialog = (instance: StampInstanceItem) => {
+    setInstanceToDelete(instance)
+    setIsInstanceDeleteDialogOpen(true)
+  }
+
+  // Handle deleting stamp instance
+  const handleDeleteInstance = async () => {
+    if (!instanceToDelete) return
+
+    try {
+      setIsDeletingInstance(true)
+      await deleteStampInstance(instanceToDelete.id)
+
+      // Remove from local state
+      setStampInstances(prev => prev.filter(instance => instance.id !== instanceToDelete.id))
+
+      setIsInstanceDeleteDialogOpen(false)
+      setInstanceToDelete(null)
+
+      toast({
+        title: "Instance Deleted",
+        description: "The stamp instance has been successfully deleted.",
+        duration: 3000,
+      })
+    } catch (error) {
+      console.error("Error deleting instance:", error)
+      toast({
+        title: "Delete Failed",
+        description: error instanceof Error ? error.message : "Unable to delete stamp instance. Please try again.",
+        variant: "destructive",
+        duration: 5000,
+      })
+    } finally {
+      setIsDeletingInstance(false)
+    }
   }
 
   // Filter stamps based on search and filters
@@ -655,7 +927,7 @@ export default function StampReviewPage() {
 
   // Format denomination
   const formatDenomination = (value: number, symbol: string) => {
-    return `${symbol}${value}`
+    return `${value}${symbol}`
   }
 
   // Handle pagination
@@ -1003,8 +1275,15 @@ export default function StampReviewPage() {
       </Card>
 
       {/* Edit Stamp Modal */}
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <Dialog open={isEditModalOpen} onOpenChange={(open) => {
+        setIsEditModalOpen(open)
+        if (!open) {
+          // Clear instances data when modal closes
+          setStampInstances([])
+          setIsLoadingInstances(false)
+        }
+      }}>
+        <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Edit className="h-5 w-5" />
@@ -1016,39 +1295,102 @@ export default function StampReviewPage() {
           </DialogHeader>
 
           {selectedStamp && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Image */}
-              <div className="space-y-4">
-                <div className="aspect-square bg-muted rounded-lg flex items-center justify-center">
-                  {selectedStamp.stampImageUrl ? (
-                    <img
-                      src={selectedStamp.stampImageUrl}
-                      alt={selectedStamp.name}
-                      className="max-w-full max-h-full object-contain rounded-lg"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none'
-                        e.currentTarget.nextElementSibling?.classList.remove('hidden')
-                      }}
-                    />
-                  ) : (
-                    <div className="text-center text-muted-foreground">
-                      <ImageIcon className="h-12 w-12 mx-auto mb-2" />
-                      <p className="text-sm">No image available</p>
+            <div className="space-y-8">
+              {/* Top Section: Image and Basic Info */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Stamp Image */}
+                <div className="lg:col-span-1">
+                  <div className="sticky top-0">
+                    <div className="aspect-square bg-muted rounded-xl flex items-center justify-center shadow-sm">
+                      {selectedStamp.stampImageUrl ? (
+                        <img
+                          src={selectedStamp.stampImageUrl}
+                          alt={selectedStamp.name}
+                          className="max-w-full max-h-full object-contain rounded-lg"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none'
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                          }}
+                        />
+                      ) : (
+                        <div className="text-center text-muted-foreground">
+                          <ImageIcon className="h-16 w-16 mx-auto mb-3" />
+                          <p className="text-sm font-medium">No image available</p>
+                        </div>
+                      )}
+                      <div className="hidden text-center text-muted-foreground">
+                        <ImageIcon className="h-16 w-16 mx-auto mb-3" />
+                        <p className="text-sm font-medium">Image not available</p>
+                      </div>
                     </div>
-                  )}
-                  <div className="hidden text-center text-muted-foreground">
-                    <ImageIcon className="h-12 w-12 mx-auto mb-2" />
-                    <p className="text-sm">Image not available</p>
+                  </div>
+                </div>
+
+                {/* Basic Information Summary */}
+                <div className="lg:col-span-2 space-y-6">
+                  <div className="bg-muted/30 rounded-xl p-6 border">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <Eye className="h-5 w-5" />
+                      Stamp Overview
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Name</label>
+                          <p className="text-sm font-medium">{selectedStamp.name}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Catalog Number</label>
+                          <p className="text-sm font-mono">{selectedStamp.catalogNumber}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Country</label>
+                          <p className="text-sm">{selectedStamp.country}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Issue Year</label>
+                          <p className="text-sm">{selectedStamp.issueYear}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Denomination</label>
+                          <p className="text-sm font-medium">
+                            {selectedStamp.denominationValue}{selectedStamp.denominationSymbol}
+                          </p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Series</label>
+                          <p className="text-sm">{selectedStamp.seriesName}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Status</label>
+                          <div className="mt-1">
+                            {selectedStamp.isPublished ? (
+                              <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                Published
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline">Draft</Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* All Fields Form - Single Continuous View */}
-              <div className="max-h-[70vh] overflow-y-auto space-y-6">
+              {/* Detailed Form Sections */}
+              <div className="space-y-8">
                   {/* Basic Information */}
-                  <div className="border-b pb-4">
-                    <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-muted/20 rounded-xl p-6 border">
+                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                      <Edit className="h-5 w-5" />
+                      Basic Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       <div className="space-y-2">
                         <Label htmlFor="id">id</Label>
                         <Input
@@ -1157,8 +1499,8 @@ export default function StampReviewPage() {
                   </div>
 
                   {/* Stamp Image Upload */}
-                  <div className="border-b pb-4">
-                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <div className="bg-muted/20 rounded-xl p-6 border">
+                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
                       <Upload className="h-5 w-5" />
                       Stamp Image Upload
                     </h3>
@@ -1208,9 +1550,12 @@ export default function StampReviewPage() {
                   </div>
 
                   {/* Country & Geographic Information */}
-                  <div className="border-b pb-4">
-                    <h3 className="text-lg font-semibold mb-4">Country & Geographic Information</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-muted/20 rounded-xl p-6 border">
+                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                      <MapPin className="h-5 w-5" />
+                      Country & Geographic Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       <div className="space-y-2">
                         <Label htmlFor="country">country</Label>
                         <Input
@@ -1255,9 +1600,12 @@ export default function StampReviewPage() {
                   </div>
 
                   {/* Series & Classification */}
-                  <div className="border-b pb-4">
-                    <h3 className="text-lg font-semibold mb-4">Series & Classification</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-muted/20 rounded-xl p-6 border">
+                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                      <Calendar className="h-5 w-5" />
+                      Series & Classification
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       <div className="space-y-2">
                         <Label htmlFor="seriesId">seriesId</Label>
                         <Input
@@ -1469,9 +1817,12 @@ export default function StampReviewPage() {
                   </div>
 
                   {/* Currency & Denomination */}
-                  <div className="border-b pb-4">
-                    <h3 className="text-lg font-semibold mb-4">Currency & Denomination</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-muted/20 rounded-xl p-6 border">
+                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                      <span className="text-lg">💰</span>
+                      Currency & Denomination
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       <div className="space-y-2">
                         <Label htmlFor="currencyCode">currencyCode</Label>
                         <Input
@@ -1542,9 +1893,12 @@ export default function StampReviewPage() {
                   </div>
 
                   {/* Physical Characteristics */}
-                  <div className="border-b pb-4">
-                    <h3 className="text-lg font-semibold mb-4">Physical Characteristics</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-muted/20 rounded-xl p-6 border">
+                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                      <span className="text-lg">🎨</span>
+                      Physical Characteristics
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       <div className="space-y-2">
                         <Label htmlFor="colorCode">colorCode</Label>
                         <Input
@@ -1734,9 +2088,12 @@ export default function StampReviewPage() {
                   </div>
 
                   {/* Issue & Date Information */}
-                  <div className="border-b pb-4">
-                    <h3 className="text-lg font-semibold mb-4">Issue & Date Information</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-muted/20 rounded-xl p-6 border">
+                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                      <Calendar className="h-5 w-5" />
+                      Issue & Date Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       <div className="space-y-2">
                         <Label htmlFor="issueDate">issueDate</Label>
                         <Input
@@ -1832,9 +2189,12 @@ export default function StampReviewPage() {
                   </div>
 
                   {/* Technical & JSON Data */}
-                  <div className="border-b pb-4">
-                    <h3 className="text-lg font-semibold mb-4">Technical & JSON Data</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-muted/20 rounded-xl p-6 border">
+                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                      <span className="text-lg">⚙️</span>
+                      Technical & JSON Data
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       <div className="space-y-2">
                         <Label htmlFor="stampVectorJson">stampVectorJson</Label>
                         <Textarea
@@ -1908,21 +2268,143 @@ export default function StampReviewPage() {
             </div>
           )}
 
-          <div className="flex justify-between gap-2 mt-6">
+          {/* Stamp Instances Table */}
+          {selectedStamp && (
+            <div className="mt-8 bg-muted/10 rounded-xl p-6 border">
+              <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                <Eye className="h-6 w-6" />
+                Stamp Instances
+                {isLoadingInstances && (
+                  <RefreshCw className="h-5 w-5 animate-spin" />
+                )}
+              </h3>
+
+              {isLoadingInstances ? (
+                <div className="flex items-center justify-center py-8">
+                  <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+                  <span>Loading instances...</span>
+                </div>
+              ) : stampInstances.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No instances found for this stamp.</p>
+                </div>
+              ) : (
+                <div className="border rounded-lg overflow-hidden shadow-sm">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead className="w-[100px] font-semibold">Actions</TableHead>
+                        <TableHead className="w-[60px] font-semibold">Page</TableHead>
+                        <TableHead className="min-w-[200px] max-w-[250px] font-semibold">Stamp</TableHead>
+                        <TableHead className="w-[120px] font-semibold">Country</TableHead>
+                        <TableHead className="w-[80px] font-semibold">Year</TableHead>
+                        <TableHead className="w-[120px] font-semibold">Catalog Number</TableHead>
+                        <TableHead className="w-[140px] font-semibold">Stamp Code</TableHead>
+                        <TableHead className="w-[100px] font-semibold">Denomination</TableHead>
+                        <TableHead className="w-[120px] font-semibold">Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {stampInstances.map((instance) => (
+                        <TableRow key={instance.id}>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditInstance(instance)}
+                                title="Edit Instance"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleOpenInstanceDeleteDialog(instance)}
+                                title="Delete Instance"
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                          <TableCell className="w-[60px]">
+                            <Badge variant="outline" className="font-mono">
+                              {instance.pageNumber}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="min-w-[200px] max-w-[250px]">
+                            <div className="font-medium text-sm overflow-hidden text-ellipsis whitespace-nowrap pr-2" title={instance.name}>
+                              {instance.name}
+                            </div>
+                          </TableCell>
+                          <TableCell className="w-[120px]">
+                            <div className="flex items-center gap-1 overflow-hidden">
+                              <MapPin className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                              <span className="overflow-hidden text-ellipsis whitespace-nowrap">{instance.country}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="w-[80px]">
+                            <div className="flex items-center gap-1 whitespace-nowrap">
+                              <Calendar className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                              <span>{instance.issueYear}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="w-[120px]">
+                            <div className="overflow-hidden text-ellipsis whitespace-nowrap" title={instance.catalogNumber}>
+                              <Badge variant="outline" className="font-mono text-xs max-w-full">
+                                <span className="overflow-hidden text-ellipsis whitespace-nowrap">{instance.catalogNumber}</span>
+                              </Badge>
+                            </div>
+                          </TableCell>
+                          <TableCell className="w-[140px]">
+                            <div className="overflow-hidden text-ellipsis whitespace-nowrap" title={instance.stampCatalogCode}>
+                              <Badge className="font-mono text-xs max-w-full">
+                                <span className="overflow-hidden text-ellipsis whitespace-nowrap">{instance.stampCatalogCode}</span>
+                              </Badge>
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-medium w-[100px] whitespace-nowrap">
+                            {formatDenomination(instance.denominationValue, instance.denominationSymbol)}
+                          </TableCell>
+                          <TableCell className="w-[120px]">
+                            {instance.isPublished ? (
+                              <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                Published
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline">Draft</Badge>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex justify-between items-center gap-4 mt-8 pt-6 border-t">
             <Button
               variant="destructive"
               onClick={() => setIsDeleteDialogOpen(true)}
               disabled={isUpdating || selectedStamp?.isPublished}
+              size="lg"
+              className="px-6"
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Delete Stamp
             </Button>
 
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <Button
                 variant="outline"
                 onClick={() => setIsEditModalOpen(false)}
                 disabled={isUpdating}
+                size="lg"
+                className="px-6"
               >
                 <X className="h-4 w-4 mr-2" />
                 Cancel
@@ -1930,6 +2412,8 @@ export default function StampReviewPage() {
               <Button
                 onClick={handleSaveStamp}
                 disabled={isUpdating || selectedStamp?.isPublished}
+                size="lg"
+                className="px-6"
               >
                 {isUpdating ? (
                   <>
@@ -2058,6 +2542,956 @@ export default function StampReviewPage() {
                 <>
                   <CheckCircle2 className="h-4 w-4 mr-2" />
                   Approve Stamp
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Instance Edit Modal */}
+      <Dialog open={isInstanceEditModalOpen} onOpenChange={setIsInstanceEditModalOpen}>
+        <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="h-5 w-5" />
+              Edit Stamp Instance
+            </DialogTitle>
+            <DialogDescription>
+              Modify the details of this stamp instance
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedInstance && (
+            <div className="space-y-8">
+              {/* Top Section: Image and Basic Info */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Stamp Image */}
+                <div className="lg:col-span-1">
+                  <div className="sticky top-0">
+                    <div className="aspect-square bg-muted rounded-xl flex items-center justify-center shadow-sm">
+                      {selectedInstance.stampImageUrl ? (
+                        <img
+                          src={selectedInstance.stampImageUrl}
+                          alt={selectedInstance.name}
+                          className="max-w-full max-h-full object-contain rounded-lg"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none'
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                          }}
+                        />
+                      ) : (
+                        <div className="text-center text-muted-foreground">
+                          <ImageIcon className="h-16 w-16 mx-auto mb-3" />
+                          <p className="text-sm font-medium">No image available</p>
+                        </div>
+                      )}
+                      <div className="hidden text-center text-muted-foreground">
+                        <ImageIcon className="h-16 w-16 mx-auto mb-3" />
+                        <p className="text-sm font-medium">Image not available</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Basic Information Summary */}
+                <div className="lg:col-span-2 space-y-6">
+                  <div className="bg-muted/30 rounded-xl p-6 border">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <Eye className="h-5 w-5" />
+                      Instance Overview
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Name</label>
+                          <p className="text-sm font-medium">{selectedInstance.name}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Catalog Number</label>
+                          <p className="text-sm font-mono">{selectedInstance.catalogNumber}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Country</label>
+                          <p className="text-sm">{selectedInstance.country}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Issue Year</label>
+                          <p className="text-sm">{selectedInstance.issueYear}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Denomination</label>
+                          <p className="text-sm font-medium">
+                            {selectedInstance.denominationValue || 0}{selectedInstance.denominationSymbol}
+                          </p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Series</label>
+                          <p className="text-sm">{selectedInstance.seriesName}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Status</label>
+                          <div className="mt-1">
+                            {selectedInstance.isPublished ? (
+                              <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                Published
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline">Draft</Badge>
+                            )}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Condition</label>
+                          <p className="text-sm">{selectedInstance.condition || 'Not specified'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Detailed Form Sections - Same as Base Stamp */}
+              <div className="space-y-8">
+                  {/* Basic Information */}
+                  <div className="bg-muted/20 rounded-xl p-6 border">
+                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                      <Edit className="h-5 w-5" />
+                      Basic Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="instance-id">ID</Label>
+                    <Input
+                      id="instance-id"
+                      value={instanceEditFormData.id || ""}
+                      disabled
+                      className="bg-muted"
+                    />
+                  </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-name">name</Label>
+                        <Input
+                          id="instance-name"
+                          value={instanceEditFormData.name || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, name: e.target.value }))}
+                          disabled={selectedInstance?.isPublished}
+                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-catalogNumber">catalogNumber</Label>
+                        <Input
+                          id="instance-catalogNumber"
+                          value={instanceEditFormData.catalogNumber || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, catalogNumber: e.target.value }))}
+                          disabled={selectedInstance?.isPublished}
+                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-country">country</Label>
+                        <Input
+                          id="instance-country"
+                          value={instanceEditFormData.country || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, country: e.target.value }))}
+                          disabled={selectedInstance?.isPublished}
+                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-issueYear">issueYear</Label>
+                        <Input
+                          id="instance-issueYear"
+                          type="number"
+                          value={instanceEditFormData.issueYear || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, issueYear: Number(e.target.value) }))}
+                          disabled={selectedInstance?.isPublished}
+                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-condition">condition</Label>
+                        <Input
+                          id="instance-condition"
+                          value={instanceEditFormData.condition || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, condition: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-description">description</Label>
+                        <Textarea
+                          id="instance-description"
+                          value={instanceEditFormData.description || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, description: e.target.value }))}
+                          rows={3}
+                          disabled={selectedInstance?.isPublished}
+                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-instanceDescription">instanceDescription</Label>
+                        <Textarea
+                          id="instance-instanceDescription"
+                          value={instanceEditFormData.instanceDescription || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, instanceDescription: e.target.value }))}
+                          rows={3}
+                        />
+                      </div>
+                </div>
+              </div>
+
+                  {/* Stamp Image Upload */}
+                  <div className="bg-muted/20 rounded-xl p-6 border">
+                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                      <Upload className="h-5 w-5" />
+                      Stamp Image Upload
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-stampFileAttachment">Upload New Stamp Image</Label>
+                        <Input
+                          id="instance-stampFileAttachment"
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) {
+                              setInstanceEditFormData(prev => ({
+                                ...prev,
+                                stampFileAttachment: file
+                              }))
+                            }
+                          }}
+                          disabled={selectedInstance?.isPublished}
+                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Upload a new image to replace the current stamp image. Supported formats: JPG, PNG, GIF, WebP
+                        </p>
+                        {instanceEditFormData.stampFileAttachment && (
+                          <div className="flex items-center gap-2 p-2 bg-muted rounded-md">
+                            <ImageIcon className="h-4 w-4" />
+                            <span className="text-sm">
+                              Selected: {(instanceEditFormData.stampFileAttachment as File).name}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setInstanceEditFormData(prev => ({
+                                ...prev,
+                                stampFileAttachment: undefined
+                              }))}
+                              disabled={selectedInstance?.isPublished}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Country & Geographic Information */}
+                  <div className="bg-muted/20 rounded-xl p-6 border">
+                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                      <MapPin className="h-5 w-5" />
+                      Country & Geographic Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-countryName">countryName</Label>
+                        <Input
+                          id="instance-countryName"
+                          value={instanceEditFormData.countryName || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, countryName: e.target.value }))}
+                          disabled={selectedInstance?.isPublished}
+                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-countryFlag">countryFlag</Label>
+                        <Input
+                          id="instance-countryFlag"
+                          value={instanceEditFormData.countryFlag || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, countryFlag: e.target.value }))}
+                          disabled={selectedInstance?.isPublished}
+                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-issueLocation">issueLocation</Label>
+                        <Input
+                          id="instance-issueLocation"
+                          value={instanceEditFormData.issueLocation || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, issueLocation: e.target.value }))}
+                          disabled={selectedInstance?.isPublished}
+                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Series & Classification */}
+                  <div className="bg-muted/20 rounded-xl p-6 border">
+                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                      <Calendar className="h-5 w-5" />
+                      Series & Classification
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-seriesId">seriesId</Label>
+                        <Input
+                          id="instance-seriesId"
+                          value={instanceEditFormData.seriesId || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, seriesId: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-seriesName">seriesName</Label>
+                        <Input
+                          id="instance-seriesName"
+                          value={instanceEditFormData.seriesName || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, seriesName: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-seriesDescription">seriesDescription</Label>
+                        <Textarea
+                          id="instance-seriesDescription"
+                          value={instanceEditFormData.seriesDescription || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, seriesDescription: e.target.value }))}
+                          rows={2}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-typeId">typeId</Label>
+                        <Input
+                          id="instance-typeId"
+                          value={instanceEditFormData.typeId || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, typeId: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-typeName">typeName</Label>
+                        <Input
+                          id="instance-typeName"
+                          value={instanceEditFormData.typeName || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, typeName: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-typeDescription">typeDescription</Label>
+                        <Textarea
+                          id="instance-typeDescription"
+                          value={instanceEditFormData.typeDescription || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, typeDescription: e.target.value }))}
+                          rows={2}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-stampGroupId">stampGroupId</Label>
+                        <Input
+                          id="instance-stampGroupId"
+                          value={instanceEditFormData.stampGroupId || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, stampGroupId: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-stampGroupName">stampGroupName</Label>
+                        <Input
+                          id="instance-stampGroupName"
+                          value={instanceEditFormData.stampGroupName || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, stampGroupName: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-stampGroupDescription">stampGroupDescription</Label>
+                        <Textarea
+                          id="instance-stampGroupDescription"
+                          value={instanceEditFormData.stampGroupDescription || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, stampGroupDescription: e.target.value }))}
+                          rows={2}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Currency & Denomination */}
+                  <div className="bg-muted/20 rounded-xl p-6 border">
+                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                      <span className="text-lg">💰</span>
+                      Currency & Denomination
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-currencyCode">currencyCode</Label>
+                        <Input
+                          id="instance-currencyCode"
+                          value={instanceEditFormData.currencyCode || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, currencyCode: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-currencyName">currencyName</Label>
+                        <Input
+                          id="instance-currencyName"
+                          value={instanceEditFormData.currencyName || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, currencyName: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-currencySymbol">currencySymbol</Label>
+                        <Input
+                          id="instance-currencySymbol"
+                          value={instanceEditFormData.currencySymbol || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, currencySymbol: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-currencyDescription">currencyDescription</Label>
+                        <Textarea
+                          id="instance-currencyDescription"
+                          value={instanceEditFormData.currencyDescription || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, currencyDescription: e.target.value }))}
+                          rows={2}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-denominationValue">denominationValue</Label>
+                        <Input
+                          id="instance-denominationValue"
+                          type="number"
+                          value={instanceEditFormData.denominationValue ?? ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, denominationValue: e.target.value === "" ? undefined : Number(e.target.value) }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-denominationSymbol">denominationSymbol</Label>
+                        <Input
+                          id="instance-denominationSymbol"
+                          value={instanceEditFormData.denominationSymbol || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, denominationSymbol: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-denominationDisplay">denominationDisplay</Label>
+                        <Input
+                          id="instance-denominationDisplay"
+                          value={instanceEditFormData.denominationDisplay || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, denominationDisplay: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-denominationDescription">denominationDescription</Label>
+                        <Textarea
+                          id="instance-denominationDescription"
+                          value={instanceEditFormData.denominationDescription || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, denominationDescription: e.target.value }))}
+                          rows={2}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Physical Characteristics */}
+                  <div className="bg-muted/20 rounded-xl p-6 border">
+                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                      <span className="text-lg">🎨</span>
+                      Physical Characteristics
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-colorCode">colorCode</Label>
+                        <Input
+                          id="instance-colorCode"
+                          value={instanceEditFormData.colorCode || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, colorCode: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-colorName">colorName</Label>
+                        <Input
+                          id="instance-colorName"
+                          value={instanceEditFormData.colorName || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, colorName: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-colorHex">colorHex</Label>
+                        <Input
+                          id="instance-colorHex"
+                          value={instanceEditFormData.colorHex || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, colorHex: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-colorDescription">colorDescription</Label>
+                        <Textarea
+                          id="instance-colorDescription"
+                          value={instanceEditFormData.colorDescription || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, colorDescription: e.target.value }))}
+                          rows={2}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-colorVariant">colorVariant</Label>
+                        <Input
+                          id="instance-colorVariant"
+                          value={instanceEditFormData.colorVariant || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, colorVariant: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-paperCode">paperCode</Label>
+                        <Input
+                          id="instance-paperCode"
+                          value={instanceEditFormData.paperCode || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, paperCode: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-paperName">paperName</Label>
+                        <Input
+                          id="instance-paperName"
+                          value={instanceEditFormData.paperName || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, paperName: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-paperDescription">paperDescription</Label>
+                        <Textarea
+                          id="instance-paperDescription"
+                          value={instanceEditFormData.paperDescription || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, paperDescription: e.target.value }))}
+                          rows={2}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-paperFiber">paperFiber</Label>
+                        <Input
+                          id="instance-paperFiber"
+                          value={instanceEditFormData.paperFiber || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, paperFiber: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-paperThickness">paperThickness</Label>
+                        <Input
+                          id="instance-paperThickness"
+                          value={instanceEditFormData.paperThickness || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, paperThickness: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-paperOpacity">paperOpacity</Label>
+                        <Input
+                          id="instance-paperOpacity"
+                          value={instanceEditFormData.paperOpacity || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, paperOpacity: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-watermarkCode">watermarkCode</Label>
+                        <Input
+                          id="instance-watermarkCode"
+                          value={instanceEditFormData.watermarkCode || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, watermarkCode: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-watermarkName">watermarkName</Label>
+                        <Input
+                          id="instance-watermarkName"
+                          value={instanceEditFormData.watermarkName || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, watermarkName: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-watermarkDescription">watermarkDescription</Label>
+                        <Textarea
+                          id="instance-watermarkDescription"
+                          value={instanceEditFormData.watermarkDescription || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, watermarkDescription: e.target.value }))}
+                          rows={2}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-watermarkPosition">watermarkPosition</Label>
+                        <Input
+                          id="instance-watermarkPosition"
+                          value={instanceEditFormData.watermarkPosition || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, watermarkPosition: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-watermarkClarity">watermarkClarity</Label>
+                        <Input
+                          id="instance-watermarkClarity"
+                          value={instanceEditFormData.watermarkClarity || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, watermarkClarity: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-perforationCode">perforationCode</Label>
+                        <Input
+                          id="instance-perforationCode"
+                          value={instanceEditFormData.perforationCode || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, perforationCode: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-perforationName">perforationName</Label>
+                        <Input
+                          id="instance-perforationName"
+                          value={instanceEditFormData.perforationName || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, perforationName: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-perforationMeasurement">perforationMeasurement</Label>
+                        <Input
+                          id="instance-perforationMeasurement"
+                          value={instanceEditFormData.perforationMeasurement || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, perforationMeasurement: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-perforationGauge">perforationGauge</Label>
+                        <Input
+                          id="instance-perforationGauge"
+                          value={instanceEditFormData.perforationGauge || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, perforationGauge: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-perforationCleanCut">perforationCleanCut</Label>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="instance-perforationCleanCut"
+                            checked={instanceEditFormData.perforationCleanCut || false}
+                            onCheckedChange={(checked) => setInstanceEditFormData(prev => ({ ...prev, perforationCleanCut: checked as boolean }))}
+                            disabled={selectedInstance?.isPublished}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-perforationComb">perforationComb</Label>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="instance-perforationComb"
+                            checked={instanceEditFormData.perforationComb || false}
+                            onCheckedChange={(checked) => setInstanceEditFormData(prev => ({ ...prev, perforationComb: checked as boolean }))}
+                            disabled={selectedInstance?.isPublished}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Issue & Date Information */}
+                  <div className="bg-muted/20 rounded-xl p-6 border">
+                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                      <Calendar className="h-5 w-5" />
+                      Issue & Date Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-issueDate">issueDate</Label>
+                        <Input
+                          id="instance-issueDate"
+                          value={instanceEditFormData.issueDate || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, issueDate: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-issueYear">issueYear</Label>
+                        <Input
+                          id="instance-issueYear"
+                          type="number"
+                          value={instanceEditFormData.issueYear || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, issueYear: Number(e.target.value) }))}
+                          disabled={selectedInstance?.isPublished}
+                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-issueMonth">issueMonth</Label>
+                        <Input
+                          id="instance-issueMonth"
+                          type="number"
+                          value={instanceEditFormData.issueMonth || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, issueMonth: Number(e.target.value) }))}
+                          disabled={selectedInstance?.isPublished}
+                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-issueDay">issueDay</Label>
+                        <Input
+                          id="instance-issueDay"
+                          type="number"
+                          value={instanceEditFormData.issueDay || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, issueDay: Number(e.target.value) }))}
+                          disabled={selectedInstance?.isPublished}
+                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-firstDayIssue">firstDayIssue</Label>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="instance-firstDayIssue"
+                            checked={instanceEditFormData.firstDayIssue || false}
+                            onCheckedChange={(checked) => setInstanceEditFormData(prev => ({ ...prev, firstDayIssue: checked as boolean }))}
+                            disabled={selectedInstance?.isPublished}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-periodStart">periodStart</Label>
+                        <Input
+                          id="instance-periodStart"
+                          type="number"
+                          value={instanceEditFormData.periodStart || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, periodStart: Number(e.target.value) }))}
+                          disabled={selectedInstance?.isPublished}
+                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-periodEnd">periodEnd</Label>
+                        <Input
+                          id="instance-periodEnd"
+                          type="number"
+                          value={instanceEditFormData.periodEnd || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, periodEnd: Number(e.target.value) }))}
+                          disabled={selectedInstance?.isPublished}
+                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-issuePurpose">issuePurpose</Label>
+                        <Input
+                          id="instance-issuePurpose"
+                          value={instanceEditFormData.issuePurpose || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, issuePurpose: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-issueContext">issueContext</Label>
+                        <Textarea
+                          id="instance-issueContext"
+                          value={instanceEditFormData.issueContext || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, issueContext: e.target.value }))}
+                          rows={2}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Technical & JSON Data */}
+                  <div className="bg-muted/20 rounded-xl p-6 border">
+                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                      <span className="text-lg">⚙️</span>
+                      Technical & JSON Data
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-stampVectorJson">stampVectorJson</Label>
+                        <Textarea
+                          id="instance-stampVectorJson"
+                          value={instanceEditFormData.stampVectorJson || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, stampVectorJson: e.target.value }))}
+                          rows={6}
+                          className="font-mono text-xs"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-stampDetailsJson">stampDetailsJson</Label>
+                        <Textarea
+                          id="instance-stampDetailsJson"
+                          value={instanceEditFormData.stampDetailsJson || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, stampDetailsJson: e.target.value }))}
+                          rows={6}
+                          className="font-mono text-xs"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-alternativeNames">alternativeNames</Label>
+                        <Textarea
+                          id="instance-alternativeNames"
+                          value={instanceEditFormData.alternativeNames || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, alternativeNames: e.target.value }))}
+                          rows={3}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-plateFlaws">plateFlaws</Label>
+                        <Textarea
+                          id="instance-plateFlaws"
+                          value={instanceEditFormData.plateFlaws || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, plateFlaws: e.target.value }))}
+                          rows={3}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-recentSales">recentSales</Label>
+                        <Textarea
+                          id="instance-recentSales"
+                          value={instanceEditFormData.recentSales || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, recentSales: e.target.value }))}
+                          rows={4}
+                          className="font-mono text-xs"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-stampImageVariants">stampImageVariants (JSON Array)</Label>
+                        <Textarea
+                          id="instance-stampImageVariants"
+                          value={instanceEditFormData.stampImageVariants ? JSON.stringify(instanceEditFormData.stampImageVariants, null, 2) : ""}
+                          onChange={(e) => {
+                            try {
+                              const parsed = JSON.parse(e.target.value || "[]");
+                              setInstanceEditFormData(prev => ({ ...prev, stampImageVariants: Array.isArray(parsed) ? parsed : [] }));
+                            } catch {
+                              // Invalid JSON, keep as string for now
+                              setInstanceEditFormData(prev => ({ ...prev, stampImageVariants: [] }));
+                            }
+                          }}
+                          rows={4}
+                          className="font-mono text-xs"
+                          placeholder="Enter JSON array of image variants"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+              {/* Instance Status */}
+              <div className="bg-muted/20 rounded-xl p-6 border">
+                <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5" />
+                  Status & Publishing
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="instance-isPublished">Published Status</Label>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="instance-isPublished"
+                        checked={instanceEditFormData.isPublished || false}
+                        onCheckedChange={(checked) => setInstanceEditFormData(prev => ({ ...prev, isPublished: checked as boolean }))}
+                      />
+                      <span className="text-sm">Published</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="instance-publishNotes">Publish Notes</Label>
+                    <Textarea
+                      id="instance-publishNotes"
+                      value={instanceEditFormData.publishNotes || ""}
+                      onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, publishNotes: e.target.value }))}
+                      rows={2}
+                      placeholder="Notes about publishing this instance..."
+                    />
+                  </div>
+                </div>
+              </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-between items-center gap-4 mt-8 pt-6 border-t">
+            <Button
+              variant="destructive"
+              onClick={() => setIsInstanceDeleteDialogOpen(true)}
+              disabled={isUpdatingInstance || selectedInstance?.isPublished}
+              size="lg"
+              className="px-6"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Instance
+            </Button>
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setIsInstanceEditModalOpen(false)}
+                disabled={isUpdatingInstance}
+                size="lg"
+                className="px-6"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveInstance}
+                disabled={isUpdatingInstance || selectedInstance?.isPublished}
+                size="lg"
+                className="px-6"
+              >
+                {isUpdatingInstance ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Instance Delete Confirmation Dialog */}
+      <Dialog open={isInstanceDeleteDialogOpen} onOpenChange={setIsInstanceDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Delete Stamp Instance
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this stamp instance? This action cannot be undone.
+              <br />
+              <br />
+              <strong>Instance:</strong> {instanceToDelete?.name}
+              <br />
+              <strong>Catalog Number:</strong> {instanceToDelete?.catalogNumber}
+              <br />
+              <strong>Condition:</strong> {instanceToDelete?.condition || 'Not specified'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex justify-end gap-2 mt-6">
+            <Button
+              variant="outline"
+              onClick={() => setIsInstanceDeleteDialogOpen(false)}
+              disabled={isDeletingInstance}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteInstance}
+              disabled={isDeletingInstance}
+            >
+              {isDeletingInstance ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Instance
                 </>
               )}
             </Button>
