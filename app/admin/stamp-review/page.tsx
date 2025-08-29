@@ -479,7 +479,7 @@ export default function StampReviewPage() {
   const { toast } = useToast()
 
   // Load stamps data
-  const loadStamps = async (page: number = 1, refresh: boolean = false) => {
+  const loadStamps = async (page: number = 1, refresh: boolean = false, pageSizeOverride?: number) => {
     try {
       if (refresh) {
         setIsRefreshing(true)
@@ -487,10 +487,10 @@ export default function StampReviewPage() {
         setIsLoading(true)
       }
 
-      const response = await fetchStampsForReview(page, pageSize)
+      const response = await fetchStampsForReview(page, pageSizeOverride ?? pageSize)
       setStamps(response.items || [])
       setPageNumber(response.pageNumber || page)
-      setPageSize(response.pageSize || pageSize)
+      // Don't override the user-selected pageSize with API response
       setTotalCount(response.totalCount || 0)
       setTotalPages(response.totalPages || 0)
 
@@ -667,7 +667,7 @@ export default function StampReviewPage() {
   const handlePageSizeChange = (newPageSize: number) => {
     setPageSize(newPageSize)
     setPageNumber(1)
-    loadStamps(1)
+    loadStamps(1, false, newPageSize)
   }
 
   // Refresh data
