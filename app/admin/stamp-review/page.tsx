@@ -3216,10 +3216,10 @@ export default function StampReviewPage() {
                         <TableHead className="w-[100px] font-semibold">Actions</TableHead>
                         <TableHead className="w-[60px] font-semibold">Page</TableHead>
                         <TableHead className="min-w-[200px] max-w-[250px] font-semibold">Stamp</TableHead>
-                        <TableHead className="w-[120px] font-semibold">Country</TableHead>
-                        <TableHead className="w-[80px] font-semibold">Year</TableHead>
+                        <TableHead className="w-[120px] font-semibold">Mint</TableHead>
+                        <TableHead className="w-[80px] font-semibold">Used</TableHead>
+                        <TableHead className="w-[140px] font-semibold">Finest Used</TableHead>
                         <TableHead className="w-[120px] font-semibold">Catalog Number</TableHead>
-                        <TableHead className="w-[140px] font-semibold">Stamp Code</TableHead>
                         <TableHead className="w-[100px] font-semibold">Denomination</TableHead>
                         <TableHead className="w-[120px] font-semibold">Status</TableHead>
                       </TableRow>
@@ -3260,27 +3260,23 @@ export default function StampReviewPage() {
                           </TableCell>
                           <TableCell className="w-[120px]">
                             <div className="flex items-center gap-1 overflow-hidden">
-                              <MapPin className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                              <span className="overflow-hidden text-ellipsis whitespace-nowrap">{instance.country}</span>
+                              <span className="overflow-hidden text-ellipsis whitespace-nowrap">{instance.mintValue || '-'}</span>
                             </div>
                           </TableCell>
                           <TableCell className="w-[80px]">
                             <div className="flex items-center gap-1 whitespace-nowrap">
-                              <Calendar className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                              <span>{instance.issueYear}</span>
+                              <span>{instance.usedValue || '-'}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="w-[80px]">
+                            <div className="flex items-center gap-1 whitespace-nowrap">
+                              <span>{instance.finestUsedValue || '-'}</span>
                             </div>
                           </TableCell>
                           <TableCell className="w-[120px]">
                             <div className="overflow-hidden text-ellipsis whitespace-nowrap" title={instance.catalogNumber}>
                               <Badge variant="outline" className="font-mono text-xs max-w-full">
                                 <span className="overflow-hidden text-ellipsis whitespace-nowrap">{instance.catalogNumber}</span>
-                              </Badge>
-                            </div>
-                          </TableCell>
-                          <TableCell className="w-[140px]">
-                            <div className="overflow-hidden text-ellipsis whitespace-nowrap" title={instance.stampCatalogCode}>
-                              <Badge className="font-mono text-xs max-w-full">
-                                <span className="overflow-hidden text-ellipsis whitespace-nowrap">{instance.stampCatalogCode}</span>
                               </Badge>
                             </div>
                           </TableCell>
