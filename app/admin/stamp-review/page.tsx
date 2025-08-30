@@ -1120,6 +1120,9 @@ export default function StampReviewPage() {
                         </div>
                       </TableHead>
                       <TableHead className="min-w-[200px] max-w-[250px]">Stamp</TableHead>
+                      <TableHead className="w-[120px]">Mint</TableHead>
+                      <TableHead className="w-[80px]">Used</TableHead>
+                      <TableHead className="w-[80px]">Finest Used</TableHead>
                       <TableHead className="w-[120px]">Country</TableHead>
                       <TableHead className="w-[80px]">Year</TableHead>
                       <TableHead className="w-[120px]">Catalog Number</TableHead>
@@ -1176,6 +1179,21 @@ export default function StampReviewPage() {
                           <TableCell className="min-w-[200px] max-w-[250px]">
                             <div className="font-medium text-sm overflow-hidden text-ellipsis whitespace-nowrap pr-2" title={stamp.name}>
                               {stamp.name}
+                            </div>
+                          </TableCell>
+                          <TableCell className="w-[120px]">
+                            <div className="flex items-center gap-1 overflow-hidden">
+                              <span className="overflow-hidden text-ellipsis whitespace-nowrap">{stamp.mintValue || '-'}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="w-[80px]">
+                            <div className="flex items-center gap-1 whitespace-nowrap">
+                              <span>{stamp.usedValue || '-'}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="w-[80px]">
+                            <div className="flex items-center gap-1 whitespace-nowrap">
+                              <span>{stamp.finestUsedValue || '-'}</span>
                             </div>
                           </TableCell>
                           <TableCell className="w-[120px]">
@@ -1597,51 +1615,6 @@ export default function StampReviewPage() {
                           </div>
                         )}
                       </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="stampImageAlt">stampImageAlt</Label>
-                        <Input
-                          id="stampImageAlt"
-                          value={editFormData.stampImageAlt || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, stampImageAlt: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                          placeholder="Alt text for stamp image"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="stampImageHighRes">stampImageHighRes</Label>
-                        <Input
-                          id="stampImageHighRes"
-                          value={editFormData.stampImageHighRes || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, stampImageHighRes: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                          placeholder="High resolution image URL"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="watermarkImageUrl">watermarkImageUrl</Label>
-                        <Input
-                          id="watermarkImageUrl"
-                          value={editFormData.watermarkImageUrl || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, watermarkImageUrl: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                          placeholder="Watermark image URL"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="perforationImageUrl">perforationImageUrl</Label>
-                        <Input
-                          id="perforationImageUrl"
-                          value={editFormData.perforationImageUrl || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, perforationImageUrl: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                          placeholder="Perforation image URL"
-                        />
-                      </div>
                     </div>
                   </div>
 
@@ -1672,26 +1645,6 @@ export default function StampReviewPage() {
                           className={selectedStamp?.isPublished ? "bg-muted" : ""}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="countryFlag">countryFlag</Label>
-                        <Input
-                          id="countryFlag"
-                          value={editFormData.countryFlag || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, countryFlag: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="issueLocation">issueLocation</Label>
-                        <Input
-                          id="issueLocation"
-                          value={editFormData.issueLocation || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, issueLocation: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
                     </div>
                   </div>
 
@@ -1702,14 +1655,6 @@ export default function StampReviewPage() {
                       Series & Classification
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="seriesId">seriesId</Label>
-                        <Input
-                          id="seriesId"
-                          value={editFormData.seriesId || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, seriesId: e.target.value }))}
-                        />
-                      </div>
                       <div className="space-y-2">
                         <Label htmlFor="seriesName">seriesName</Label>
                         <Input
@@ -1728,36 +1673,11 @@ export default function StampReviewPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="typeId">typeId</Label>
-                        <Input
-                          id="typeId"
-                          value={editFormData.typeId || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, typeId: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
                         <Label htmlFor="typeName">typeName</Label>
                         <Input
                           id="typeName"
                           value={editFormData.typeName || ""}
                           onChange={(e) => setEditFormData(prev => ({ ...prev, typeName: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="typeDescription">typeDescription</Label>
-                        <Textarea
-                          id="typeDescription"
-                          value={editFormData.typeDescription || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, typeDescription: e.target.value }))}
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="stampGroupId">stampGroupId</Label>
-                        <Input
-                          id="stampGroupId"
-                          value={editFormData.stampGroupId || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, stampGroupId: e.target.value }))}
                         />
                       </div>
                       <div className="space-y-2">
@@ -1778,27 +1698,11 @@ export default function StampReviewPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="releaseId">releaseId</Label>
-                        <Input
-                          id="releaseId"
-                          value={editFormData.releaseId || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, releaseId: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
                         <Label htmlFor="releaseName">releaseName</Label>
                         <Input
                           id="releaseName"
                           value={editFormData.releaseName || ""}
                           onChange={(e) => setEditFormData(prev => ({ ...prev, releaseName: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="releaseDateRange">releaseDateRange</Label>
-                        <Input
-                          id="releaseDateRange"
-                          value={editFormData.releaseDateRange || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, releaseDateRange: e.target.value }))}
                         />
                       </div>
                       <div className="space-y-2">
@@ -1808,14 +1712,6 @@ export default function StampReviewPage() {
                           value={editFormData.releaseDescription || ""}
                           onChange={(e) => setEditFormData(prev => ({ ...prev, releaseDescription: e.target.value }))}
                           rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="categoryId">categoryId</Label>
-                        <Input
-                          id="categoryId"
-                          value={editFormData.categoryId || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, categoryId: e.target.value }))}
                         />
                       </div>
                       <div className="space-y-2">
@@ -1835,23 +1731,6 @@ export default function StampReviewPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="categoryDescription">categoryDescription</Label>
-                        <Textarea
-                          id="categoryDescription"
-                          value={editFormData.categoryDescription || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, categoryDescription: e.target.value }))}
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="paperTypeId">paperTypeId</Label>
-                        <Input
-                          id="paperTypeId"
-                          value={editFormData.paperTypeId || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, paperTypeId: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
                         <Label htmlFor="paperTypeName">paperTypeName</Label>
                         <Input
                           id="paperTypeName"
@@ -1868,15 +1747,6 @@ export default function StampReviewPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="paperTypeDescription">paperTypeDescription</Label>
-                        <Textarea
-                          id="paperTypeDescription"
-                          value={editFormData.paperTypeDescription || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, paperTypeDescription: e.target.value }))}
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
                         <Label htmlFor="itemTypeCode">itemTypeCode</Label>
                         <Input
                           id="itemTypeCode"
@@ -1890,23 +1760,6 @@ export default function StampReviewPage() {
                           id="itemTypeName"
                           value={editFormData.itemTypeName || ""}
                           onChange={(e) => setEditFormData(prev => ({ ...prev, itemTypeName: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="itemTypeDescription">itemTypeDescription</Label>
-                        <Textarea
-                          id="itemTypeDescription"
-                          value={editFormData.itemTypeDescription || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, itemTypeDescription: e.target.value }))}
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="itemFormat">itemFormat</Label>
-                        <Input
-                          id="itemFormat"
-                          value={editFormData.itemFormat || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, itemFormat: e.target.value }))}
                         />
                       </div>
                     </div>
@@ -1944,15 +1797,6 @@ export default function StampReviewPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="currencyDescription">currencyDescription</Label>
-                        <Textarea
-                          id="currencyDescription"
-                          value={editFormData.currencyDescription || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, currencyDescription: e.target.value }))}
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
                         <Label htmlFor="denominationValue">denominationValue</Label>
                         <Input
                           id="denominationValue"
@@ -1974,15 +1818,6 @@ export default function StampReviewPage() {
                           id="denominationDisplay"
                           value={editFormData.denominationDisplay || ""}
                           onChange={(e) => setEditFormData(prev => ({ ...prev, denominationDisplay: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="denominationDescription">denominationDescription</Label>
-                        <Textarea
-                          id="denominationDescription"
-                          value={editFormData.denominationDescription || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, denominationDescription: e.target.value }))}
-                          rows={2}
                         />
                       </div>
                     </div>
@@ -2020,23 +1855,6 @@ export default function StampReviewPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="colorDescription">colorDescription</Label>
-                        <Textarea
-                          id="colorDescription"
-                          value={editFormData.colorDescription || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, colorDescription: e.target.value }))}
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="colorVariant">colorVariant</Label>
-                        <Input
-                          id="colorVariant"
-                          value={editFormData.colorVariant || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, colorVariant: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
                         <Label htmlFor="paperCode">paperCode</Label>
                         <Input
                           id="paperCode"
@@ -2050,39 +1868,6 @@ export default function StampReviewPage() {
                           id="paperName"
                           value={editFormData.paperName || ""}
                           onChange={(e) => setEditFormData(prev => ({ ...prev, paperName: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="paperDescription">paperDescription</Label>
-                        <Textarea
-                          id="paperDescription"
-                          value={editFormData.paperDescription || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, paperDescription: e.target.value }))}
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="paperFiber">paperFiber</Label>
-                        <Input
-                          id="paperFiber"
-                          value={editFormData.paperFiber || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, paperFiber: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="paperThickness">paperThickness</Label>
-                        <Input
-                          id="paperThickness"
-                          value={editFormData.paperThickness || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, paperThickness: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="paperOpacity">paperOpacity</Label>
-                        <Input
-                          id="paperOpacity"
-                          value={editFormData.paperOpacity || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, paperOpacity: e.target.value }))}
                         />
                       </div>
                       <div className="space-y-2">
@@ -2102,31 +1887,6 @@ export default function StampReviewPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="watermarkDescription">watermarkDescription</Label>
-                        <Textarea
-                          id="watermarkDescription"
-                          value={editFormData.watermarkDescription || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, watermarkDescription: e.target.value }))}
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="watermarkPosition">watermarkPosition</Label>
-                        <Input
-                          id="watermarkPosition"
-                          value={editFormData.watermarkPosition || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, watermarkPosition: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="watermarkClarity">watermarkClarity</Label>
-                        <Input
-                          id="watermarkClarity"
-                          value={editFormData.watermarkClarity || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, watermarkClarity: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
                         <Label htmlFor="perforationCode">perforationCode</Label>
                         <Input
                           id="perforationCode"
@@ -2141,44 +1901,6 @@ export default function StampReviewPage() {
                           value={editFormData.perforationName || ""}
                           onChange={(e) => setEditFormData(prev => ({ ...prev, perforationName: e.target.value }))}
                         />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="perforationMeasurement">perforationMeasurement</Label>
-                        <Input
-                          id="perforationMeasurement"
-                          value={editFormData.perforationMeasurement || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, perforationMeasurement: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="perforationGauge">perforationGauge</Label>
-                        <Input
-                          id="perforationGauge"
-                          value={editFormData.perforationGauge || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, perforationGauge: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="perforationCleanCut">perforationCleanCut</Label>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="perforationCleanCut"
-                            checked={editFormData.perforationCleanCut || false}
-                            onCheckedChange={(checked) => setEditFormData(prev => ({ ...prev, perforationCleanCut: checked as boolean }))}
-                            disabled={selectedStamp?.isPublished}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="perforationComb">perforationComb</Label>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="perforationComb"
-                            checked={editFormData.perforationComb || false}
-                            onCheckedChange={(checked) => setEditFormData(prev => ({ ...prev, perforationComb: checked as boolean }))}
-                            disabled={selectedStamp?.isPublished}
-                          />
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -2227,514 +1949,6 @@ export default function StampReviewPage() {
                           type="number"
                           value={editFormData.issueDay || ""}
                           onChange={(e) => setEditFormData(prev => ({ ...prev, issueDay: Number(e.target.value) }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="firstDayIssue">firstDayIssue</Label>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="firstDayIssue"
-                            checked={editFormData.firstDayIssue || false}
-                            onCheckedChange={(checked) => setEditFormData(prev => ({ ...prev, firstDayIssue: checked as boolean }))}
-                            disabled={selectedStamp?.isPublished}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="periodStart">periodStart</Label>
-                        <Input
-                          id="periodStart"
-                          type="number"
-                          value={editFormData.periodStart || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, periodStart: Number(e.target.value) }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="periodEnd">periodEnd</Label>
-                        <Input
-                          id="periodEnd"
-                          type="number"
-                          value={editFormData.periodEnd || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, periodEnd: Number(e.target.value) }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="issuePurpose">issuePurpose</Label>
-                        <Input
-                          id="issuePurpose"
-                          value={editFormData.issuePurpose || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, issuePurpose: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="issueContext">issueContext</Label>
-                        <Textarea
-                          id="issueContext"
-                          value={editFormData.issueContext || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, issueContext: e.target.value }))}
-                          rows={2}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Printing & Production */}
-                  <div className="bg-muted/20 rounded-xl p-6 border">
-                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                      <span className="text-lg">🖨️</span>
-                      Printing & Production
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="printingMethod">printingMethod</Label>
-                        <Input
-                          id="printingMethod"
-                          value={editFormData.printingMethod || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, printingMethod: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="printingProcess">printingProcess</Label>
-                        <Input
-                          id="printingProcess"
-                          value={editFormData.printingProcess || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, printingProcess: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="printingQuality">printingQuality</Label>
-                        <Input
-                          id="printingQuality"
-                          value={editFormData.printingQuality || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, printingQuality: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="designer">designer</Label>
-                        <Input
-                          id="designer"
-                          value={editFormData.designer || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, designer: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="designerNotes">designerNotes</Label>
-                        <Textarea
-                          id="designerNotes"
-                          value={editFormData.designerNotes || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, designerNotes: e.target.value }))}
-                          rows={2}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="printer">printer</Label>
-                        <Input
-                          id="printer"
-                          value={editFormData.printer || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, printer: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="printerLocation">printerLocation</Label>
-                        <Input
-                          id="printerLocation"
-                          value={editFormData.printerLocation || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, printerLocation: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="printerReputation">printerReputation</Label>
-                        <Input
-                          id="printerReputation"
-                          value={editFormData.printerReputation || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, printerReputation: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="engraver">engraver</Label>
-                        <Input
-                          id="engraver"
-                          value={editFormData.engraver || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, engraver: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="dieNumber">dieNumber</Label>
-                        <Input
-                          id="dieNumber"
-                          value={editFormData.dieNumber || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, dieNumber: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="plateNumber">plateNumber</Label>
-                        <Input
-                          id="plateNumber"
-                          value={editFormData.plateNumber || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, plateNumber: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="plateCharacteristics">plateCharacteristics</Label>
-                        <Textarea
-                          id="plateCharacteristics"
-                          value={editFormData.plateCharacteristics || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, plateCharacteristics: e.target.value }))}
-                          rows={2}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="paperManufacturer">paperManufacturer</Label>
-                        <Input
-                          id="paperManufacturer"
-                          value={editFormData.paperManufacturer || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, paperManufacturer: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="gumType">gumType</Label>
-                        <Input
-                          id="gumType"
-                          value={editFormData.gumType || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, gumType: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="gumCondition">gumCondition</Label>
-                        <Input
-                          id="gumCondition"
-                          value={editFormData.gumCondition || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, gumCondition: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Size & Format */}
-                  <div className="bg-muted/20 rounded-xl p-6 border">
-                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                      <span className="text-lg">📐</span>
-                      Size & Format
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="sizeWidth">sizeWidth</Label>
-                        <Input
-                          id="sizeWidth"
-                          value={editFormData.sizeWidth || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, sizeWidth: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="sizeHeight">sizeHeight</Label>
-                        <Input
-                          id="sizeHeight"
-                          value={editFormData.sizeHeight || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, sizeHeight: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="sizeFormat">sizeFormat</Label>
-                        <Input
-                          id="sizeFormat"
-                          value={editFormData.sizeFormat || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, sizeFormat: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Theme & Subject */}
-                  <div className="bg-muted/20 rounded-xl p-6 border">
-                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                      <span className="text-lg">🎨</span>
-                      Theme & Subject
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="theme">theme</Label>
-                        <Input
-                          id="theme"
-                          value={editFormData.theme || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, theme: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="themeCategory">themeCategory</Label>
-                        <Input
-                          id="themeCategory"
-                          value={editFormData.themeCategory || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, themeCategory: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="subject">subject</Label>
-                        <Input
-                          id="subject"
-                          value={editFormData.subject || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, subject: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="artisticStyle">artisticStyle</Label>
-                        <Input
-                          id="artisticStyle"
-                          value={editFormData.artisticStyle || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, artisticStyle: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Production Details */}
-                  <div className="bg-muted/20 rounded-xl p-6 border">
-                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                      <span className="text-lg">🏭</span>
-                      Production Details
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="printRun">printRun</Label>
-                        <Input
-                          id="printRun"
-                          value={editFormData.printRun || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, printRun: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="estimatedPrintRun">estimatedPrintRun</Label>
-                        <Input
-                          id="estimatedPrintRun"
-                          type="number"
-                          value={editFormData.estimatedPrintRun || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, estimatedPrintRun: Number(e.target.value) }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="sheetsPrinted">sheetsPrinted</Label>
-                        <Input
-                          id="sheetsPrinted"
-                          value={editFormData.sheetsPrinted || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, sheetsPrinted: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="stampsPerSheet">stampsPerSheet</Label>
-                        <Input
-                          id="stampsPerSheet"
-                          type="number"
-                          value={editFormData.stampsPerSheet || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, stampsPerSheet: Number(e.target.value) }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="positionVarieties">positionVarieties</Label>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="positionVarieties"
-                            checked={editFormData.positionVarieties || false}
-                            onCheckedChange={(checked) => setEditFormData(prev => ({ ...prev, positionVarieties: checked as boolean }))}
-                            disabled={selectedStamp?.isPublished}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="plateVariety">plateVariety</Label>
-                        <Input
-                          id="plateVariety"
-                          value={editFormData.plateVariety || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, plateVariety: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Rarity & Value */}
-                  <div className="bg-muted/20 rounded-xl p-6 border">
-                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                      <span className="text-lg">💎</span>
-                      Rarity & Value
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="rarityRating">rarityRating</Label>
-                        <Input
-                          id="rarityRating"
-                          value={editFormData.rarityRating || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, rarityRating: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="rarityScale">rarityScale</Label>
-                        <Input
-                          id="rarityScale"
-                          value={editFormData.rarityScale || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, rarityScale: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="rarityScore">rarityScore</Label>
-                        <Input
-                          id="rarityScore"
-                          type="number"
-                          value={editFormData.rarityScore || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, rarityScore: Number(e.target.value) }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="hasVarieties">hasVarieties</Label>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="hasVarieties"
-                            checked={editFormData.hasVarieties || false}
-                            onCheckedChange={(checked) => setEditFormData(prev => ({ ...prev, hasVarieties: checked as boolean }))}
-                            disabled={selectedStamp?.isPublished}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="varietyCount">varietyCount</Label>
-                        <Input
-                          id="varietyCount"
-                          type="number"
-                          value={editFormData.varietyCount || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, varietyCount: Number(e.target.value) }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="varietyType">varietyType</Label>
-                        <Input
-                          id="varietyType"
-                          value={editFormData.varietyType || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, varietyType: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="perforationVariety">perforationVariety</Label>
-                        <Input
-                          id="perforationVariety"
-                          value={editFormData.perforationVariety || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, perforationVariety: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="colorVariety">colorVariety</Label>
-                        <Input
-                          id="colorVariety"
-                          value={editFormData.colorVariety || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, colorVariety: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="paperVariety">paperVariety</Label>
-                        <Input
-                          id="paperVariety"
-                          value={editFormData.paperVariety || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, paperVariety: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="watermarkVariety">watermarkVariety</Label>
-                        <Input
-                          id="watermarkVariety"
-                          value={editFormData.watermarkVariety || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, watermarkVariety: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="knownError">knownError</Label>
-                        <Input
-                          id="knownError"
-                          value={editFormData.knownError || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, knownError: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="majorVariety">majorVariety</Label>
-                        <Input
-                          id="majorVariety"
-                          value={editFormData.majorVariety || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, majorVariety: e.target.value }))}
                           disabled={selectedStamp?.isPublished}
                           className={selectedStamp?.isPublished ? "bg-muted" : ""}
                         />
@@ -2799,264 +2013,6 @@ export default function StampReviewPage() {
                           className={selectedStamp?.isPublished ? "bg-muted" : ""}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="authenticationRequired">authenticationRequired</Label>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="authenticationRequired"
-                            checked={editFormData.authenticationRequired || false}
-                            onCheckedChange={(checked) => setEditFormData(prev => ({ ...prev, authenticationRequired: checked as boolean }))}
-                            disabled={selectedStamp?.isPublished}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="expertCommittee">expertCommittee</Label>
-                        <Input
-                          id="expertCommittee"
-                          value={editFormData.expertCommittee || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, expertCommittee: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="authenticationPoint">authenticationPoint</Label>
-                        <Input
-                          id="authenticationPoint"
-                          value={editFormData.authenticationPoint || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, authenticationPoint: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="certificateAvailable">certificateAvailable</Label>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="certificateAvailable"
-                            checked={editFormData.certificateAvailable || false}
-                            onCheckedChange={(checked) => setEditFormData(prev => ({ ...prev, certificateAvailable: checked as boolean }))}
-                            disabled={selectedStamp?.isPublished}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="commonForgery">commonForgery</Label>
-                        <Input
-                          id="commonForgery"
-                          value={editFormData.commonForgery || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, commonForgery: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="historicalSignificance">historicalSignificance</Label>
-                        <Textarea
-                          id="historicalSignificance"
-                          value={editFormData.historicalSignificance || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, historicalSignificance: e.target.value }))}
-                          rows={2}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="culturalImportance">culturalImportance</Label>
-                        <Textarea
-                          id="culturalImportance"
-                          value={editFormData.culturalImportance || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, culturalImportance: e.target.value }))}
-                          rows={2}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="philatelicImportance">philatelicImportance</Label>
-                        <Textarea
-                          id="philatelicImportance"
-                          value={editFormData.philatelicImportance || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, philatelicImportance: e.target.value }))}
-                          rows={2}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="collectingPopularity">collectingPopularity</Label>
-                        <Input
-                          id="collectingPopularity"
-                          value={editFormData.collectingPopularity || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, collectingPopularity: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="exhibitionFrequency">exhibitionFrequency</Label>
-                        <Input
-                          id="exhibitionFrequency"
-                          value={editFormData.exhibitionFrequency || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, exhibitionFrequency: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="researchStatus">researchStatus</Label>
-                        <Input
-                          id="researchStatus"
-                          value={editFormData.researchStatus || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, researchStatus: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Technical & JSON Data */}
-                  <div className="bg-muted/20 rounded-xl p-6 border">
-                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                      <span className="text-lg">⚙️</span>
-                      Technical & JSON Data
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="stampVectorJson">stampVectorJson</Label>
-                        <Textarea
-                          id="stampVectorJson"
-                          value={editFormData.stampVectorJson || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, stampVectorJson: e.target.value }))}
-                          rows={6}
-                          className="font-mono text-xs"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="stampDetailsJson">stampDetailsJson</Label>
-                        <Textarea
-                          id="stampDetailsJson"
-                          value={editFormData.stampDetailsJson || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, stampDetailsJson: e.target.value }))}
-                          rows={6}
-                          className="font-mono text-xs"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="alternativeNames">alternativeNames</Label>
-                        <Textarea
-                          id="alternativeNames"
-                          value={editFormData.alternativeNames || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, alternativeNames: e.target.value }))}
-                          rows={3}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="plateFlaws">plateFlaws</Label>
-                        <Textarea
-                          id="plateFlaws"
-                          value={editFormData.plateFlaws || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, plateFlaws: e.target.value }))}
-                          rows={3}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="recentSales">recentSales</Label>
-                        <Textarea
-                          id="recentSales"
-                          value={editFormData.recentSales || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, recentSales: e.target.value }))}
-                          rows={4}
-                          className="font-mono text-xs"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="stampImageVariants">stampImageVariants (JSON Array)</Label>
-                        <Textarea
-                          id="stampImageVariants"
-                          value={editFormData.stampImageVariants ? JSON.stringify(editFormData.stampImageVariants, null, 2) : ""}
-                          onChange={(e) => {
-                            try {
-                              const parsed = JSON.parse(e.target.value || "[]");
-                              setEditFormData(prev => ({ ...prev, stampImageVariants: Array.isArray(parsed) ? parsed : [] }));
-                            } catch {
-                              // Invalid JSON, keep as string for now
-                              setEditFormData(prev => ({ ...prev, stampImageVariants: [] }));
-                            }
-                          }}
-                          rows={4}
-                          className="font-mono text-xs"
-                          placeholder="Enter JSON array of image variants"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="bibliography">bibliography</Label>
-                        <Textarea
-                          id="bibliography"
-                          value={editFormData.bibliography || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, bibliography: e.target.value }))}
-                          rows={3}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="specialNotes">specialNotes</Label>
-                        <Textarea
-                          id="specialNotes"
-                          value={editFormData.specialNotes || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, specialNotes: e.target.value }))}
-                          rows={3}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="collectorNotes">collectorNotes</Label>
-                        <Textarea
-                          id="collectorNotes"
-                          value={editFormData.collectorNotes || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, collectorNotes: e.target.value }))}
-                          rows={3}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="rarityNotes">rarityNotes</Label>
-                        <Textarea
-                          id="rarityNotes"
-                          value={editFormData.rarityNotes || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, rarityNotes: e.target.value }))}
-                          rows={3}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="marketNotes">marketNotes</Label>
-                        <Textarea
-                          id="marketNotes"
-                          value={editFormData.marketNotes || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, marketNotes: e.target.value }))}
-                          rows={3}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="researchNotes">researchNotes</Label>
-                        <Textarea
-                          id="researchNotes"
-                          value={editFormData.researchNotes || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, researchNotes: e.target.value }))}
-                          rows={3}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
                     </div>
                   </div>
 
@@ -3096,88 +2052,6 @@ export default function StampReviewPage() {
                           type="number"
                           value={editFormData.finestUsedValue || ""}
                           onChange={(e) => setEditFormData(prev => ({ ...prev, finestUsedValue: Number(e.target.value) }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="priceMultiplier">priceMultiplier</Label>
-                        <Input
-                          id="priceMultiplier"
-                          type="number"
-                          value={editFormData.priceMultiplier || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, priceMultiplier: Number(e.target.value) }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="priceFactors">priceFactors</Label>
-                        <Input
-                          id="priceFactors"
-                          value={editFormData.priceFactors || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, priceFactors: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="priceTrend">priceTrend</Label>
-                        <Input
-                          id="priceTrend"
-                          value={editFormData.priceTrend || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, priceTrend: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="availability">availability</Label>
-                        <Input
-                          id="availability"
-                          value={editFormData.availability || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, availability: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="marketFrequency">marketFrequency</Label>
-                        <Input
-                          id="marketFrequency"
-                          value={editFormData.marketFrequency || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, marketFrequency: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="auctionFrequency">auctionFrequency</Label>
-                        <Input
-                          id="auctionFrequency"
-                          value={editFormData.auctionFrequency || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, auctionFrequency: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="lastAuctionDate">lastAuctionDate</Label>
-                        <Input
-                          id="lastAuctionDate"
-                          value={editFormData.lastAuctionDate || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, lastAuctionDate: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="lastAuctionPrice">lastAuctionPrice</Label>
-                        <Input
-                          id="lastAuctionPrice"
-                          type="number"
-                          value={editFormData.lastAuctionPrice || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, lastAuctionPrice: Number(e.target.value) }))}
                           disabled={selectedStamp?.isPublished}
                           className={selectedStamp?.isPublished ? "bg-muted" : ""}
                         />
@@ -3630,14 +2504,6 @@ export default function StampReviewPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="instance-condition">condition</Label>
-                        <Input
-                          id="instance-condition"
-                          value={instanceEditFormData.condition || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, condition: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
                         <Label htmlFor="instance-description">description</Label>
                         <Textarea
                           id="instance-description"
@@ -3646,15 +2512,6 @@ export default function StampReviewPage() {
                           rows={3}
                           disabled={selectedInstance?.isPublished}
                           className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-instanceDescription">instanceDescription</Label>
-                        <Textarea
-                          id="instance-instanceDescription"
-                          value={instanceEditFormData.instanceDescription || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, instanceDescription: e.target.value }))}
-                          rows={3}
                         />
                       </div>
                 </div>
@@ -3708,51 +2565,6 @@ export default function StampReviewPage() {
                           </div>
                         )}
                       </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-stampImageAlt">stampImageAlt</Label>
-                        <Input
-                          id="instance-stampImageAlt"
-                          value={instanceEditFormData.stampImageAlt || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, stampImageAlt: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                          placeholder="Alt text for stamp image"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-stampImageHighRes">stampImageHighRes</Label>
-                        <Input
-                          id="instance-stampImageHighRes"
-                          value={instanceEditFormData.stampImageHighRes || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, stampImageHighRes: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                          placeholder="High resolution image URL"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-watermarkImageUrl">watermarkImageUrl</Label>
-                        <Input
-                          id="instance-watermarkImageUrl"
-                          value={instanceEditFormData.watermarkImageUrl || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, watermarkImageUrl: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                          placeholder="Watermark image URL"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-perforationImageUrl">perforationImageUrl</Label>
-                        <Input
-                          id="instance-perforationImageUrl"
-                          value={instanceEditFormData.perforationImageUrl || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, perforationImageUrl: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                          placeholder="Perforation image URL"
-                        />
-                      </div>
                     </div>
                   </div>
 
@@ -3783,16 +2595,6 @@ export default function StampReviewPage() {
                           className={selectedInstance?.isPublished ? "bg-muted" : ""}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-issueLocation">issueLocation</Label>
-                        <Input
-                          id="instance-issueLocation"
-                          value={instanceEditFormData.issueLocation || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, issueLocation: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
                     </div>
                   </div>
 
@@ -3803,14 +2605,6 @@ export default function StampReviewPage() {
                       Series & Classification
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-seriesId">seriesId</Label>
-                        <Input
-                          id="instance-seriesId"
-                          value={instanceEditFormData.seriesId || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, seriesId: e.target.value }))}
-                        />
-                      </div>
                       <div className="space-y-2">
                         <Label htmlFor="instance-seriesName">seriesName</Label>
                         <Input
@@ -3826,14 +2620,6 @@ export default function StampReviewPage() {
                           value={instanceEditFormData.seriesDescription || ""}
                           onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, seriesDescription: e.target.value }))}
                           rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-typeId">typeId</Label>
-                        <Input
-                          id="instance-typeId"
-                          value={instanceEditFormData.typeId || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, typeId: e.target.value }))}
                         />
                       </div>
                       <div className="space-y-2">
@@ -3854,14 +2640,6 @@ export default function StampReviewPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="instance-stampGroupId">stampGroupId</Label>
-                        <Input
-                          id="instance-stampGroupId"
-                          value={instanceEditFormData.stampGroupId || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, stampGroupId: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
                         <Label htmlFor="instance-stampGroupName">stampGroupName</Label>
                         <Input
                           id="instance-stampGroupName"
@@ -3869,15 +2647,7 @@ export default function StampReviewPage() {
                           onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, stampGroupName: e.target.value }))}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-stampGroupDescription">stampGroupDescription</Label>
-                        <Textarea
-                          id="instance-stampGroupDescription"
-                          value={instanceEditFormData.stampGroupDescription || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, stampGroupDescription: e.target.value }))}
-                          rows={2}
-                        />
-                      </div>
+
                     </div>
                   </div>
 
@@ -3913,15 +2683,6 @@ export default function StampReviewPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="instance-currencyDescription">currencyDescription</Label>
-                        <Textarea
-                          id="instance-currencyDescription"
-                          value={instanceEditFormData.currencyDescription || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, currencyDescription: e.target.value }))}
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
                         <Label htmlFor="instance-denominationValue">denominationValue</Label>
                         <Input
                           id="instance-denominationValue"
@@ -3944,15 +2705,6 @@ export default function StampReviewPage() {
                           id="instance-denominationDisplay"
                           value={instanceEditFormData.denominationDisplay || ""}
                           onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, denominationDisplay: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-denominationDescription">denominationDescription</Label>
-                        <Textarea
-                          id="instance-denominationDescription"
-                          value={instanceEditFormData.denominationDescription || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, denominationDescription: e.target.value }))}
-                          rows={2}
                         />
                       </div>
                     </div>
@@ -3990,23 +2742,6 @@ export default function StampReviewPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="instance-colorDescription">colorDescription</Label>
-                        <Textarea
-                          id="instance-colorDescription"
-                          value={instanceEditFormData.colorDescription || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, colorDescription: e.target.value }))}
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-colorVariant">colorVariant</Label>
-                        <Input
-                          id="instance-colorVariant"
-                          value={instanceEditFormData.colorVariant || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, colorVariant: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
                         <Label htmlFor="instance-paperCode">paperCode</Label>
                         <Input
                           id="instance-paperCode"
@@ -4020,39 +2755,6 @@ export default function StampReviewPage() {
                           id="instance-paperName"
                           value={instanceEditFormData.paperName || ""}
                           onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, paperName: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-paperDescription">paperDescription</Label>
-                        <Textarea
-                          id="instance-paperDescription"
-                          value={instanceEditFormData.paperDescription || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, paperDescription: e.target.value }))}
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-paperFiber">paperFiber</Label>
-                        <Input
-                          id="instance-paperFiber"
-                          value={instanceEditFormData.paperFiber || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, paperFiber: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-paperThickness">paperThickness</Label>
-                        <Input
-                          id="instance-paperThickness"
-                          value={instanceEditFormData.paperThickness || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, paperThickness: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-paperOpacity">paperOpacity</Label>
-                        <Input
-                          id="instance-paperOpacity"
-                          value={instanceEditFormData.paperOpacity || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, paperOpacity: e.target.value }))}
                         />
                       </div>
                       <div className="space-y-2">
@@ -4072,31 +2774,6 @@ export default function StampReviewPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="instance-watermarkDescription">watermarkDescription</Label>
-                        <Textarea
-                          id="instance-watermarkDescription"
-                          value={instanceEditFormData.watermarkDescription || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, watermarkDescription: e.target.value }))}
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-watermarkPosition">watermarkPosition</Label>
-                        <Input
-                          id="instance-watermarkPosition"
-                          value={instanceEditFormData.watermarkPosition || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, watermarkPosition: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-watermarkClarity">watermarkClarity</Label>
-                        <Input
-                          id="instance-watermarkClarity"
-                          value={instanceEditFormData.watermarkClarity || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, watermarkClarity: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
                         <Label htmlFor="instance-perforationCode">perforationCode</Label>
                         <Input
                           id="instance-perforationCode"
@@ -4111,44 +2788,6 @@ export default function StampReviewPage() {
                           value={instanceEditFormData.perforationName || ""}
                           onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, perforationName: e.target.value }))}
                         />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-perforationMeasurement">perforationMeasurement</Label>
-                        <Input
-                          id="instance-perforationMeasurement"
-                          value={instanceEditFormData.perforationMeasurement || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, perforationMeasurement: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-perforationGauge">perforationGauge</Label>
-                        <Input
-                          id="instance-perforationGauge"
-                          value={instanceEditFormData.perforationGauge || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, perforationGauge: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-perforationCleanCut">perforationCleanCut</Label>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="instance-perforationCleanCut"
-                            checked={instanceEditFormData.perforationCleanCut || false}
-                            onCheckedChange={(checked) => setInstanceEditFormData(prev => ({ ...prev, perforationCleanCut: checked as boolean }))}
-                            disabled={selectedInstance?.isPublished}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-perforationComb">perforationComb</Label>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="instance-perforationComb"
-                            checked={instanceEditFormData.perforationComb || false}
-                            onCheckedChange={(checked) => setInstanceEditFormData(prev => ({ ...prev, perforationComb: checked as boolean }))}
-                            disabled={selectedInstance?.isPublished}
-                          />
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -4197,514 +2836,6 @@ export default function StampReviewPage() {
                           type="number"
                           value={instanceEditFormData.issueDay || ""}
                           onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, issueDay: Number(e.target.value) }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-firstDayIssue">firstDayIssue</Label>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="instance-firstDayIssue"
-                            checked={instanceEditFormData.firstDayIssue || false}
-                            onCheckedChange={(checked) => setInstanceEditFormData(prev => ({ ...prev, firstDayIssue: checked as boolean }))}
-                            disabled={selectedInstance?.isPublished}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-periodStart">periodStart</Label>
-                        <Input
-                          id="instance-periodStart"
-                          type="number"
-                          value={instanceEditFormData.periodStart || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, periodStart: Number(e.target.value) }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-periodEnd">periodEnd</Label>
-                        <Input
-                          id="instance-periodEnd"
-                          type="number"
-                          value={instanceEditFormData.periodEnd || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, periodEnd: Number(e.target.value) }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-issuePurpose">issuePurpose</Label>
-                        <Input
-                          id="instance-issuePurpose"
-                          value={instanceEditFormData.issuePurpose || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, issuePurpose: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-issueContext">issueContext</Label>
-                        <Textarea
-                          id="instance-issueContext"
-                          value={instanceEditFormData.issueContext || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, issueContext: e.target.value }))}
-                          rows={2}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Printing & Production */}
-                  <div className="bg-muted/20 rounded-xl p-6 border">
-                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                      <span className="text-lg">🖨️</span>
-                      Printing & Production
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-printingMethod">printingMethod</Label>
-                        <Input
-                          id="instance-printingMethod"
-                          value={instanceEditFormData.printingMethod || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, printingMethod: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-printingProcess">printingProcess</Label>
-                        <Input
-                          id="instance-printingProcess"
-                          value={instanceEditFormData.printingProcess || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, printingProcess: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-printingQuality">printingQuality</Label>
-                        <Input
-                          id="instance-printingQuality"
-                          value={instanceEditFormData.printingQuality || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, printingQuality: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-designer">designer</Label>
-                        <Input
-                          id="instance-designer"
-                          value={instanceEditFormData.designer || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, designer: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-designerNotes">designerNotes</Label>
-                        <Textarea
-                          id="instance-designerNotes"
-                          value={instanceEditFormData.designerNotes || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, designerNotes: e.target.value }))}
-                          rows={2}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-printer">printer</Label>
-                        <Input
-                          id="instance-printer"
-                          value={instanceEditFormData.printer || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, printer: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-printerLocation">printerLocation</Label>
-                        <Input
-                          id="instance-printerLocation"
-                          value={instanceEditFormData.printerLocation || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, printerLocation: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-printerReputation">printerReputation</Label>
-                        <Input
-                          id="instance-printerReputation"
-                          value={instanceEditFormData.printerReputation || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, printerReputation: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-engraver">engraver</Label>
-                        <Input
-                          id="instance-engraver"
-                          value={instanceEditFormData.engraver || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, engraver: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-dieNumber">dieNumber</Label>
-                        <Input
-                          id="instance-dieNumber"
-                          value={instanceEditFormData.dieNumber || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, dieNumber: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-plateNumber">plateNumber</Label>
-                        <Input
-                          id="instance-plateNumber"
-                          value={instanceEditFormData.plateNumber || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, plateNumber: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-plateCharacteristics">plateCharacteristics</Label>
-                        <Textarea
-                          id="instance-plateCharacteristics"
-                          value={instanceEditFormData.plateCharacteristics || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, plateCharacteristics: e.target.value }))}
-                          rows={2}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-paperManufacturer">paperManufacturer</Label>
-                        <Input
-                          id="instance-paperManufacturer"
-                          value={instanceEditFormData.paperManufacturer || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, paperManufacturer: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-gumType">gumType</Label>
-                        <Input
-                          id="instance-gumType"
-                          value={instanceEditFormData.gumType || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, gumType: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-gumCondition">gumCondition</Label>
-                        <Input
-                          id="instance-gumCondition"
-                          value={instanceEditFormData.gumCondition || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, gumCondition: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Size & Format */}
-                  <div className="bg-muted/20 rounded-xl p-6 border">
-                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                      <span className="text-lg">📐</span>
-                      Size & Format
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-sizeWidth">sizeWidth</Label>
-                        <Input
-                          id="instance-sizeWidth"
-                          value={instanceEditFormData.sizeWidth || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, sizeWidth: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-sizeHeight">sizeHeight</Label>
-                        <Input
-                          id="instance-sizeHeight"
-                          value={instanceEditFormData.sizeHeight || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, sizeHeight: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-sizeFormat">sizeFormat</Label>
-                        <Input
-                          id="instance-sizeFormat"
-                          value={instanceEditFormData.sizeFormat || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, sizeFormat: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Theme & Subject */}
-                  <div className="bg-muted/20 rounded-xl p-6 border">
-                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                      <span className="text-lg">🎨</span>
-                      Theme & Subject
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-theme">theme</Label>
-                        <Input
-                          id="instance-theme"
-                          value={instanceEditFormData.theme || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, theme: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-themeCategory">themeCategory</Label>
-                        <Input
-                          id="instance-themeCategory"
-                          value={instanceEditFormData.themeCategory || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, themeCategory: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-subject">subject</Label>
-                        <Input
-                          id="instance-subject"
-                          value={instanceEditFormData.subject || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, subject: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-artisticStyle">artisticStyle</Label>
-                        <Input
-                          id="instance-artisticStyle"
-                          value={instanceEditFormData.artisticStyle || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, artisticStyle: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Production Details */}
-                  <div className="bg-muted/20 rounded-xl p-6 border">
-                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                      <span className="text-lg">🏭</span>
-                      Production Details
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-printRun">printRun</Label>
-                        <Input
-                          id="instance-printRun"
-                          value={instanceEditFormData.printRun || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, printRun: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-estimatedPrintRun">estimatedPrintRun</Label>
-                        <Input
-                          id="instance-estimatedPrintRun"
-                          type="number"
-                          value={instanceEditFormData.estimatedPrintRun || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, estimatedPrintRun: Number(e.target.value) }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-sheetsPrinted">sheetsPrinted</Label>
-                        <Input
-                          id="instance-sheetsPrinted"
-                          value={instanceEditFormData.sheetsPrinted || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, sheetsPrinted: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-stampsPerSheet">stampsPerSheet</Label>
-                        <Input
-                          id="instance-stampsPerSheet"
-                          type="number"
-                          value={instanceEditFormData.stampsPerSheet || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, stampsPerSheet: Number(e.target.value) }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-positionVarieties">positionVarieties</Label>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="instance-positionVarieties"
-                            checked={instanceEditFormData.positionVarieties || false}
-                            onCheckedChange={(checked) => setInstanceEditFormData(prev => ({ ...prev, positionVarieties: checked as boolean }))}
-                            disabled={selectedInstance?.isPublished}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-plateVariety">plateVariety</Label>
-                        <Input
-                          id="instance-plateVariety"
-                          value={instanceEditFormData.plateVariety || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, plateVariety: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Rarity & Value */}
-                  <div className="bg-muted/20 rounded-xl p-6 border">
-                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                      <span className="text-lg">💎</span>
-                      Rarity & Value
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-rarityRating">rarityRating</Label>
-                        <Input
-                          id="instance-rarityRating"
-                          value={instanceEditFormData.rarityRating || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, rarityRating: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-rarityScale">rarityScale</Label>
-                        <Input
-                          id="instance-rarityScale"
-                          value={instanceEditFormData.rarityScale || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, rarityScale: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-rarityScore">rarityScore</Label>
-                        <Input
-                          id="instance-rarityScore"
-                          type="number"
-                          value={instanceEditFormData.rarityScore || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, rarityScore: Number(e.target.value) }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-hasVarieties">hasVarieties</Label>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="instance-hasVarieties"
-                            checked={instanceEditFormData.hasVarieties || false}
-                            onCheckedChange={(checked) => setInstanceEditFormData(prev => ({ ...prev, hasVarieties: checked as boolean }))}
-                            disabled={selectedInstance?.isPublished}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-varietyCount">varietyCount</Label>
-                        <Input
-                          id="instance-varietyCount"
-                          type="number"
-                          value={instanceEditFormData.varietyCount || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, varietyCount: Number(e.target.value) }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-varietyType">varietyType</Label>
-                        <Input
-                          id="instance-varietyType"
-                          value={instanceEditFormData.varietyType || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, varietyType: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-perforationVariety">perforationVariety</Label>
-                        <Input
-                          id="instance-perforationVariety"
-                          value={instanceEditFormData.perforationVariety || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, perforationVariety: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-colorVariety">colorVariety</Label>
-                        <Input
-                          id="instance-colorVariety"
-                          value={instanceEditFormData.colorVariety || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, colorVariety: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-paperVariety">paperVariety</Label>
-                        <Input
-                          id="instance-paperVariety"
-                          value={instanceEditFormData.paperVariety || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, paperVariety: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-watermarkVariety">watermarkVariety</Label>
-                        <Input
-                          id="instance-watermarkVariety"
-                          value={instanceEditFormData.watermarkVariety || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, watermarkVariety: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-knownError">knownError</Label>
-                        <Input
-                          id="instance-knownError"
-                          value={instanceEditFormData.knownError || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, knownError: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-majorVariety">majorVariety</Label>
-                        <Input
-                          id="instance-majorVariety"
-                          value={instanceEditFormData.majorVariety || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, majorVariety: e.target.value }))}
                           disabled={selectedInstance?.isPublished}
                           className={selectedInstance?.isPublished ? "bg-muted" : ""}
                         />
@@ -4769,121 +2900,6 @@ export default function StampReviewPage() {
                           className={selectedInstance?.isPublished ? "bg-muted" : ""}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-authenticationRequired">authenticationRequired</Label>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="instance-authenticationRequired"
-                            checked={instanceEditFormData.authenticationRequired || false}
-                            onCheckedChange={(checked) => setInstanceEditFormData(prev => ({ ...prev, authenticationRequired: checked as boolean }))}
-                            disabled={selectedInstance?.isPublished}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-expertCommittee">expertCommittee</Label>
-                        <Input
-                          id="instance-expertCommittee"
-                          value={instanceEditFormData.expertCommittee || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, expertCommittee: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-authenticationPoint">authenticationPoint</Label>
-                        <Input
-                          id="instance-authenticationPoint"
-                          value={instanceEditFormData.authenticationPoint || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, authenticationPoint: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-certificateAvailable">certificateAvailable</Label>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="instance-certificateAvailable"
-                            checked={instanceEditFormData.certificateAvailable || false}
-                            onCheckedChange={(checked) => setInstanceEditFormData(prev => ({ ...prev, certificateAvailable: checked as boolean }))}
-                            disabled={selectedInstance?.isPublished}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-commonForgery">commonForgery</Label>
-                        <Input
-                          id="instance-commonForgery"
-                          value={instanceEditFormData.commonForgery || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, commonForgery: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-historicalSignificance">historicalSignificance</Label>
-                        <Textarea
-                          id="instance-historicalSignificance"
-                          value={instanceEditFormData.historicalSignificance || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, historicalSignificance: e.target.value }))}
-                          rows={2}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-culturalImportance">culturalImportance</Label>
-                        <Textarea
-                          id="instance-culturalImportance"
-                          value={instanceEditFormData.culturalImportance || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, culturalImportance: e.target.value }))}
-                          rows={2}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-philatelicImportance">philatelicImportance</Label>
-                        <Textarea
-                          id="instance-philatelicImportance"
-                          value={instanceEditFormData.philatelicImportance || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, philatelicImportance: e.target.value }))}
-                          rows={2}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-collectingPopularity">collectingPopularity</Label>
-                        <Input
-                          id="instance-collectingPopularity"
-                          value={instanceEditFormData.collectingPopularity || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, collectingPopularity: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-exhibitionFrequency">exhibitionFrequency</Label>
-                        <Input
-                          id="instance-exhibitionFrequency"
-                          value={instanceEditFormData.exhibitionFrequency || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, exhibitionFrequency: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-researchStatus">researchStatus</Label>
-                        <Input
-                          id="instance-researchStatus"
-                          value={instanceEditFormData.researchStatus || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, researchStatus: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
                     </div>
                   </div>
 
@@ -4923,231 +2939,6 @@ export default function StampReviewPage() {
                           type="number"
                           value={instanceEditFormData.finestUsedValue || ""}
                           onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, finestUsedValue: Number(e.target.value) }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-priceMultiplier">priceMultiplier</Label>
-                        <Input
-                          id="instance-priceMultiplier"
-                          type="number"
-                          value={instanceEditFormData.priceMultiplier || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, priceMultiplier: Number(e.target.value) }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-priceFactors">priceFactors</Label>
-                        <Input
-                          id="instance-priceFactors"
-                          value={instanceEditFormData.priceFactors || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, priceFactors: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-priceTrend">priceTrend</Label>
-                        <Input
-                          id="instance-priceTrend"
-                          value={instanceEditFormData.priceTrend || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, priceTrend: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-availability">availability</Label>
-                        <Input
-                          id="instance-availability"
-                          value={instanceEditFormData.availability || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, availability: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-marketFrequency">marketFrequency</Label>
-                        <Input
-                          id="instance-marketFrequency"
-                          value={instanceEditFormData.marketFrequency || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, marketFrequency: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-auctionFrequency">auctionFrequency</Label>
-                        <Input
-                          id="instance-auctionFrequency"
-                          value={instanceEditFormData.auctionFrequency || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, auctionFrequency: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-lastAuctionDate">lastAuctionDate</Label>
-                        <Input
-                          id="instance-lastAuctionDate"
-                          value={instanceEditFormData.lastAuctionDate || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, lastAuctionDate: e.target.value }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-lastAuctionPrice">lastAuctionPrice</Label>
-                        <Input
-                          id="instance-lastAuctionPrice"
-                          type="number"
-                          value={instanceEditFormData.lastAuctionPrice || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, lastAuctionPrice: Number(e.target.value) }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Technical & JSON Data */}
-                  <div className="bg-muted/20 rounded-xl p-6 border">
-                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                      <span className="text-lg">⚙️</span>
-                      Technical & JSON Data
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-stampVectorJson">stampVectorJson</Label>
-                        <Textarea
-                          id="instance-stampVectorJson"
-                          value={instanceEditFormData.stampVectorJson || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, stampVectorJson: e.target.value }))}
-                          rows={6}
-                          className="font-mono text-xs"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-stampDetailsJson">stampDetailsJson</Label>
-                        <Textarea
-                          id="instance-stampDetailsJson"
-                          value={instanceEditFormData.stampDetailsJson || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, stampDetailsJson: e.target.value }))}
-                          rows={6}
-                          className="font-mono text-xs"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-alternativeNames">alternativeNames</Label>
-                        <Textarea
-                          id="instance-alternativeNames"
-                          value={instanceEditFormData.alternativeNames || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, alternativeNames: e.target.value }))}
-                          rows={3}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-plateFlaws">plateFlaws</Label>
-                        <Textarea
-                          id="instance-plateFlaws"
-                          value={instanceEditFormData.plateFlaws || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, plateFlaws: e.target.value }))}
-                          rows={3}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-recentSales">recentSales</Label>
-                        <Textarea
-                          id="instance-recentSales"
-                          value={instanceEditFormData.recentSales || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, recentSales: e.target.value }))}
-                          rows={4}
-                          className="font-mono text-xs"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-stampImageVariants">stampImageVariants (JSON Array)</Label>
-                        <Textarea
-                          id="instance-stampImageVariants"
-                          value={instanceEditFormData.stampImageVariants ? JSON.stringify(instanceEditFormData.stampImageVariants, null, 2) : ""}
-                          onChange={(e) => {
-                            try {
-                              const parsed = JSON.parse(e.target.value || "[]");
-                              setInstanceEditFormData(prev => ({ ...prev, stampImageVariants: Array.isArray(parsed) ? parsed : [] }));
-                            } catch {
-                              // Invalid JSON, keep as string for now
-                              setInstanceEditFormData(prev => ({ ...prev, stampImageVariants: [] }));
-                            }
-                          }}
-                          rows={4}
-                          className="font-mono text-xs"
-                          placeholder="Enter JSON array of image variants"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-bibliography">bibliography</Label>
-                        <Textarea
-                          id="instance-bibliography"
-                          value={instanceEditFormData.bibliography || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, bibliography: e.target.value }))}
-                          rows={3}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-specialNotes">specialNotes</Label>
-                        <Textarea
-                          id="instance-specialNotes"
-                          value={instanceEditFormData.specialNotes || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, specialNotes: e.target.value }))}
-                          rows={3}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-collectorNotes">collectorNotes</Label>
-                        <Textarea
-                          id="instance-collectorNotes"
-                          value={instanceEditFormData.collectorNotes || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, collectorNotes: e.target.value }))}
-                          rows={3}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-rarityNotes">rarityNotes</Label>
-                        <Textarea
-                          id="instance-rarityNotes"
-                          value={instanceEditFormData.rarityNotes || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, rarityNotes: e.target.value }))}
-                          rows={3}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-marketNotes">marketNotes</Label>
-                        <Textarea
-                          id="instance-marketNotes"
-                          value={instanceEditFormData.marketNotes || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, marketNotes: e.target.value }))}
-                          rows={3}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-researchNotes">researchNotes</Label>
-                        <Textarea
-                          id="instance-researchNotes"
-                          value={instanceEditFormData.researchNotes || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, researchNotes: e.target.value }))}
-                          rows={3}
                           disabled={selectedInstance?.isPublished}
                           className={selectedInstance?.isPublished ? "bg-muted" : ""}
                         />
