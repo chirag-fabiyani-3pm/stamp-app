@@ -2647,7 +2647,57 @@ export default function StampReviewPage() {
                           onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, stampGroupName: e.target.value }))}
                         />
                       </div>
-
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-stampGroupDescription">stampGroupDescription</Label>
+                        <Textarea
+                          id="instance-stampGroupDescription"
+                          value={instanceEditFormData.stampGroupDescription || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, stampGroupDescription: e.target.value }))}
+                          rows={2}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-releaseName">releaseName</Label>
+                        <Input
+                          id="instance-releaseName"
+                          value={instanceEditFormData.releaseName || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, releaseName: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-releaseDescription">releaseDescription</Label>
+                        <Textarea
+                          id="instance-releaseDescription"
+                          value={instanceEditFormData.releaseDescription || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, releaseDescription: e.target.value }))}
+                          rows={2}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-categoryName">categoryName</Label>
+                        <Input
+                          id="instance-categoryName"
+                          value={instanceEditFormData.categoryName || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, categoryName: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-categoryCode">categoryCode</Label>
+                        <Input
+                          id="instance-categoryCode"
+                          value={instanceEditFormData.categoryCode || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, categoryCode: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-categoryDescription">categoryDescription</Label>
+                        <Textarea
+                          id="instance-categoryDescription"
+                          value={instanceEditFormData.categoryDescription || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, categoryDescription: e.target.value }))}
+                          rows={2}
+                        />
+                      </div>
                     </div>
                   </div>
 
