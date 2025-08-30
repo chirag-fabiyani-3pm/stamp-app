@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from "react"
 import Image from "next/image"
-import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Archive, Calendar, ChevronRight, Search } from "lucide-react"
 import { SeriesOption, YearOption } from "@/types/catalog"

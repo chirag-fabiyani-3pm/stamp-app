@@ -8,8 +8,6 @@ import { Badge } from "@/components/ui/badge"
 import {
   ArrowLeft,
   Calendar,
-  Award,
-  Globe,
   FileText,
   Share2,
   Bookmark,
@@ -35,7 +33,6 @@ import {
   BreadcrumbSeparator,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb"
-import { ReportDialog } from "@/components/report-dialog"
 import { toast } from "@/components/ui/use-toast"
 
 interface StampDetailData {

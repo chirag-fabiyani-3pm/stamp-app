@@ -3,7 +3,7 @@ import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { TrendingUp, BookOpen, Share2, Calendar, MapPin, Award, AlertCircle } from "lucide-react"
+import { TrendingUp, AlertCircle } from "lucide-react"
 import { StampData, ModalType, AdditionalCategoryOption, ParsedStampDetails } from "@/types/catalog"
 
 import { Skeleton } from "@/components/ui/skeleton";

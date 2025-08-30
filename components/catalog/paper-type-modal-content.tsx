@@ -1,9 +1,7 @@
-import React, { useState, useEffect, useMemo } from "react"
-import { Button } from "@/components/ui/button"
+import React, { useState, useMemo } from "react"
 import { Input } from "@/components/ui/input"
-import { BookOpen, ChevronRight, Search } from "lucide-react"
+import { BookOpen, Search } from "lucide-react"
 import { PaperTypeData, StampData } from "@/types/catalog"
-import { getStampsForPaperType } from "@/lib/data/list-catalog-data"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface PaperTypeModalContentProps {

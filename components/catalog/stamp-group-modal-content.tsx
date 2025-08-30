@@ -2,7 +2,6 @@ import React from "react"
 import { StampGroupData, StampData } from "@/types/catalog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import Image from "next/image"
-import { getStampsForStampGroup } from "@/lib/data/list-catalog-data"
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface StampGroupModalContentProps {

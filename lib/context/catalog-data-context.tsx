@@ -3,7 +3,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react"
 import { convertApiStampToStampData } from "@/lib/data/catalog-data"
 import {
-  checkIndexedDBEmpty,
   saveStampsToIndexedDB,
   getStampsFromIndexedDB,
   getRawStampsFromIndexedDB,
@@ -14,7 +13,7 @@ import {
   forceCleanupUnusedIndexes
 } from "@/lib/data/investigate-search-db"
 import { StampData } from "@/types/catalog"
-import { fetchStampMasterCatalogAll, fetchStampMasterCatalogWithProgress } from "@/lib/api/stamp-master-catalog"
+import { fetchStampMasterCatalogWithProgress } from "@/lib/api/stamp-master-catalog"
 import { getCookie } from "@/lib/utils/cookies"
 
 type CatalogDataContextValue = {

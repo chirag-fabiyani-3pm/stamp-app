@@ -45,7 +45,7 @@ import 'reactflow/dist/style.css'
 import dagre from 'dagre'
 
 import { StampDetailsModal } from "./stamp-details-modal"
-import { StampCardSkeleton, StampListSkeleton, GroupCardSkeleton, LoadingStamps, DataFetchingProgress, InvestigateSearchSkeleton } from "./loading-skeletons"
+import { LoadingStamps, DataFetchingProgress, InvestigateSearchSkeleton } from "./loading-skeletons"
 import { GroupNode } from "./group-node"
 import { StampNode } from "./stamp-node"
 
@@ -53,27 +53,20 @@ import {
   StampData,
   GroupedStamps,
   GroupingField,
-  NavigationState,
 } from "@/types/catalog"
 
 import {
-  openDB,
   saveStampsToIndexedDB,
   getStampsFromIndexedDB,
   getPaginatedStampsFromIndexedDB,
   getTotalStampsCountFromIndexedDB,
-  clearIndexedDB,
-  checkIndexedDBEmpty,
-  recreateIndexedDB
+  checkIndexedDBEmpty
 } from "@/lib/data/investigate-search-db"
 
-import {
-  mapApiStampToStampData,
-  fetchAllStampsFromAPI
-} from "@/lib/api/investigate-search-api"
+
+
 // Use shared data provider instead of importing apiStampData directly
 import { useCatalogData } from "@/lib/context/catalog-data-context"
-import { Skeleton } from "@/components/ui/skeleton"
 
 
 // Override ReactFlow default styles to match theme

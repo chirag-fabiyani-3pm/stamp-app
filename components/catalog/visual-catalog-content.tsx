@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Search, Archive, ChevronRight, X } from "lucide-react"
 import ReactCountryFlag from "react-country-flag"
 import { CountryOption, YearOption, CurrencyOption, DenominationOption, ColorOption, PaperOption, WatermarkOption, PerforationOption, ItemTypeOption, StampData, AdditionalCategoryOption, ModalType, ModalStackItem, SeriesOption } from "@/types/catalog"
-import { groupStampsByCountry, groupStampsBySeries, groupStampsByYear, groupStampsByCurrency, groupStampsByDenomination, groupStampsByColor, groupStampsByPaper, groupStampsByWatermark, groupStampsByPerforation, groupStampsByItemType, getStampDetails, convertApiStampToStampData, generateAdditionalCategoriesData, generateStampsForAdditionalCategory } from "@/lib/data/catalog-data"
+import { groupStampsByCountry, groupStampsBySeries, groupStampsByYear, groupStampsByCurrency, groupStampsByDenomination, groupStampsByColor, groupStampsByPaper, groupStampsByWatermark, groupStampsByPerforation, groupStampsByItemType, getStampDetails, convertApiStampToStampData } from "@/lib/data/catalog-data"
 import { useCatalogData } from "@/lib/context/catalog-data-context"
 import { parseStampCode } from "@/lib/utils/parse-stamp-code"
 import { TraditionalPinnedStampCard } from "@/components/catalog/traditional-pinned-stamp-card"

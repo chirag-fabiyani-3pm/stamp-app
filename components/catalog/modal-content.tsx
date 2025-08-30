@@ -2,10 +2,10 @@ import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { AlertCircle, Award, BookOpen, Calendar, ChevronRight, Clock, Coins, ExternalLink, FileText, Gem, Globe, Palette, Package, Quote, Star, Stamp, Zap, Menu, Layers, Share2 } from "lucide-react"
+import { AlertCircle, Award, BookOpen, Calendar, ChevronRight, Clock, Coins, FileText, Gem, Globe, Palette, Package, Quote, Star, Zap, Menu, Layers } from "lucide-react"
 import { AdditionalCategoryOption, ColorOption, CurrencyOption, DenominationOption, ItemTypeOption, ModalStackItem, PaperOption, PerforationOption, StampData, WatermarkOption, YearOption, ParsedStampDetails, SeriesOption } from "@/types/catalog"
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import ReactCountryFlag from "react-country-flag"
 
 const formatStampCode = (stampCode: string | null | undefined): string => {

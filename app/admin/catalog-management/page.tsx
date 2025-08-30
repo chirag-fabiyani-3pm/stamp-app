@@ -18,11 +18,9 @@ import {
   CheckCircle2,
   Clock,
   BookOpen,
-  DollarSign,
   AlertCircle,
   RefreshCw,
   Search,
-  Filter,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -33,7 +31,6 @@ import {
   Eye,
   Calendar,
   MapPin,
-  Tag,
   Image as ImageIcon,
   FileText,
   X,
@@ -654,7 +651,7 @@ const getJWT = (): string | null => {
 
     // Try to get from cookies
     const cookies = document.cookie.split(';');
-    for (let cookie of cookies) {
+    for (const cookie of cookies) {
       const [name, value] = cookie.trim().split('=');
       if (name === 'stamp_jwt') {
         return value;

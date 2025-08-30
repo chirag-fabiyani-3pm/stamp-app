@@ -3,7 +3,7 @@
 
 "use client"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useMemo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 
 // Multi-parameter approach functions

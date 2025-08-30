@@ -1,14 +1,13 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
-import { Calendar, BookOpen, Archive, Eye, ArrowLeft, Home, Sparkles, Coins, Palette, Grid, Filter, Share2, Layers, Globe, Star, Zap, Gem, Heart, Navigation, MapPin, Clock, DollarSign, FileText, Package, Menu, User, Settings, X, TrendingUp, AlertCircle, Play, Camera, Image as ImageIcon, ExternalLink, Stamp, List, MenuSquare, PanelLeft, AlignJustify, GripVertical, PanelRightOpen, AlignLeft, GripHorizontal, MoreHorizontal, MoreVertical, EllipsisVertical, SlidersHorizontal, Rows2, Grid3x3, LayoutGrid, Telescope } from "lucide-react"
-import Image from "next/image"
+import { Archive, Eye, ArrowLeft, Home, Globe, X, AlertCircle, LayoutGrid } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { CountryOption, YearOption, CurrencyOption, DenominationOption, ColorOption, PaperOption, WatermarkOption, PerforationOption, ItemTypeOption, StampData, ModalType, ModalStackItem, FeaturedStory, AdditionalCategoryOption, SeriesOption } from "@/types/catalog"
+import { CountryOption, YearOption, CurrencyOption, DenominationOption, ColorOption, PaperOption, WatermarkOption, PerforationOption, ItemTypeOption, StampData, ModalType, ModalStackItem, AdditionalCategoryOption, SeriesOption } from "@/types/catalog"
 import { 
     groupStampsByCountry, 
     groupStampsBySeries, 

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { BookOpen, ChevronRight, Search } from "lucide-react"
 import { CategoryData, PaperTypeData, ReleaseData } from "@/types/catalog"
-import { getCategoriesForRelease, getPaperTypesForCategory } from "@/lib/data/list-catalog-data"
+import { getPaperTypesForCategory } from "@/lib/data/list-catalog-data"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface ReleaseModalContentProps {

@@ -2,19 +2,13 @@
 
 import React, { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+
+
 import { Progress } from "@/components/ui/progress"
-import { Check, Camera, Upload, RotateCcw, AlertCircle, Loader2, X, CheckCircle } from "lucide-react"
+import { Check, Camera, Upload, RotateCcw, AlertCircle, Loader2, CheckCircle } from "lucide-react"
 import Image from "next/image"
 import StampViewer from "@/components/scan/stamp-viewer"
 import ReferenceInfo from "@/components/scan/reference-info"
@@ -24,7 +18,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog"
 import { AuthGuard } from "@/components/auth/route-guard"
 import { useToast } from "@/hooks/use-toast"
@@ -146,7 +139,7 @@ const getJWT = (): string | null => {
 
     // Try to get from cookies
     const cookies = document.cookie.split(';');
-    for (let cookie of cookies) {
+    for (const cookie of cookies) {
       const [name, value] = cookie.trim().split('=');
       if (name === 'stamp_jwt') {
         return value;

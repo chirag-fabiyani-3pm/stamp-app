@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
 
                 let accumulatedContent = ''
                 let structuredData: any = null
-                let foundStamps: number = 0
+                const foundStamps: number = 0
                 let rawStampData: any[] = [] // Store the raw stamp data from function calls
                 let processedStampData: any[] = [] // Store the processed stamp data from preview
 
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
                         const color = stamp.color || stamp.Color || 'Unknown'
 
                         // Use the actual image URL from the knowledge base
-                        let finalImageUrl = stamp.stampImageUrl || stamp.StampImageUrl || '/images/stamps/stamp.png'
+                        const finalImageUrl = stamp.stampImageUrl || stamp.StampImageUrl || '/images/stamps/stamp.png'
 
                         // Create natural conversational response with stamp details and uniqueness
                         const uniqueness = getStampUniqueness(stamp)

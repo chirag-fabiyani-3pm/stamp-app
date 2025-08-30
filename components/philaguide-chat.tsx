@@ -1264,7 +1264,7 @@ export function PhilaGuideChat() {
 
             let accumulatedContent = ''
             let structuredData: any = null
-            let foundStamps: number = 0
+            const foundStamps: number = 0
             let assistantMessageId: string | null = null
             let stampPreview: any = null
 

@@ -1,17 +1,8 @@
-import { SeriesData, TypeData, StampGroupData, CountryData, YearData, ReleaseData, CategoryData, PaperTypeData, StampData, StampInstance, ParsedStampDetails, StampDetailData } from "@/types/catalog"
+import { SeriesData, TypeData, StampGroupData, CountryData, YearData, ReleaseData, CategoryData, PaperTypeData, StampData, ParsedStampDetails, StampDetailData } from "@/types/catalog"
 import {
     apiStampData,
     groupStampsByCountry,
     groupStampsBySeries,
-    groupStampsByYear,
-    groupStampsByCurrency,
-    groupStampsByDenomination,
-    groupStampsByColor,
-    groupStampsByPaper,
-    groupStampsByWatermark,
-    groupStampsByPerforation,
-    groupStampsByItemType,
-    getStampDetails,
     convertApiStampToStampData
 } from "@/lib/data/catalog-data"
 

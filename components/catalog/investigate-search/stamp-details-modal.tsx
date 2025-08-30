@@ -1,6 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/components/ui/use-toast"
 import Image from "next/image"
 import { X, Tag, Calendar, MapPin, Palette, FileText, DollarSign } from "lucide-react"

@@ -7,7 +7,7 @@ import ReactCountryFlag from "react-country-flag"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Search, ChevronRight, BookmarkPlus, Quote, Award, Telescope } from "lucide-react"
+import { Search, ChevronRight, Quote } from "lucide-react"
 
 import { CountryOption } from "@/types/catalog"
 import isoCountries from "i18n-iso-countries"
@@ -29,7 +29,7 @@ export function CountryCatalogContent({ countries, onCountryClick, loading = fal
     if (!searchTerm) return countries
     const term = searchTerm.toLowerCase()
     return countries.filter((country) =>
-      country.name.toLowerCase().includes(term) ||
+      (country.name && country.name.toLowerCase().includes(term)) ||
       country.description?.toLowerCase().includes(term) ||
       country.code.toLowerCase().includes(term)
     )
@@ -61,7 +61,7 @@ export function CountryCatalogContent({ countries, onCountryClick, loading = fal
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
         {filteredCountries.map((country) => {
-          const countriesForFlag = country.name.includes(',') ? country.name.split(',').map(c => c.trim()) : [country.name]
+          const countriesForFlag = country.name && country.name.includes(',') ? country.name.split(',').map(c => c.trim()) : [country.name || '']
           const countryCodes: string[] = []
           countriesForFlag.forEach(country => {
             countryCodes.push(isoCountries.getAlpha2Code(country, "en") || "")
@@ -75,7 +75,7 @@ export function CountryCatalogContent({ countries, onCountryClick, loading = fal
               <div className="relative h-56 overflow-hidden w-full">
                 <Image
                   src={country.featuredStampUrl || "/images/stamps/no-image-available.png"}
-                  alt={`Premium stamps from ${country.name}`}
+                  alt={`Premium stamps from ${country.name || 'Unknown Country'}`}
                   fill
                   className="object-contain transition-transform duration-700 group-hover:scale-110"
                   sizes="(max-width: 768px) 100vw, 50vw"
@@ -109,12 +109,12 @@ export function CountryCatalogContent({ countries, onCountryClick, loading = fal
                               height: '1.2em',
                               marginRight: '0.5em',
                             }}
-                            title={country.name}
+                            title={country.name || 'Unknown Country'}
                             className="rounded-sm"
                           /> : <></>}
                       </>
                     ))}
-                    {country.name}
+                    {country.name || 'Unknown Country'}
                   </h3>
                   <p className="text-gray-200 text-sm line-clamp-2">{country.description}</p>
                   <div className="flex items-center justify-between mt-2">

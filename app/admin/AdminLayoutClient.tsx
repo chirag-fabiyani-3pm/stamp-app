@@ -5,17 +5,9 @@ import type React from "react"
 import { useState } from "react"
 import AdminSidebar from "@/components/admin/admin-sidebar"
 import { Button } from "@/components/ui/button"
-import { Bell, Menu, X } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { ModeToggle } from "@/components/mode-toggle"
+import { X } from "lucide-react"
+
+
 import Link from "next/link"
 import { AdminGuard } from "@/components/auth/route-guard"
 import { getUserDisplayName, getUserAvatar, signOut } from "@/lib/api/auth"

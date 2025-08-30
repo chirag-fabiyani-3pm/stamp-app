@@ -2,7 +2,7 @@ import React from "react"
 import Image from "next/image"
 import { Card, CardContent } from "@/components/ui/card"
 import { ChevronRight } from "lucide-react"
-import { PerforationOption, WatermarkOption } from "@/types/catalog"
+import { WatermarkOption } from "@/types/catalog"
 import { useCatalogData } from "@/lib/context/catalog-data-context"
 import { Skeleton } from "@/components/ui/skeleton";
 

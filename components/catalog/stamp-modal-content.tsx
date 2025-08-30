@@ -1,11 +1,8 @@
 import React from "react"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import { BookOpen, Share2, Calendar, MapPin, Award } from "lucide-react"
-import { StampData, ParsedStampDetails, StampDetailData } from "@/types/catalog"
-import { parseStampDetails, createStampDetailData } from "@/lib/data/list-catalog-data"
+import { StampData } from "@/types/catalog"
+import { createStampDetailData } from "@/lib/data/list-catalog-data"
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface StampModalContentProps {
