@@ -2,11 +2,12 @@ import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { AlertCircle, Award, BookOpen, Calendar, ChevronRight, Clock, Coins, FileText, Gem, Globe, Palette, Package, Quote, Star, Zap, Menu, Layers } from "lucide-react"
+import { AlertCircle, Award, BookOpen, Calendar, ChevronRight, Clock, Coins, FileText, Gem, Globe, Palette, Package, Quote, Star, Zap, Menu, Layers, Loader2 } from "lucide-react"
 import { AdditionalCategoryOption, ColorOption, CurrencyOption, DenominationOption, ItemTypeOption, ModalStackItem, PaperOption, PerforationOption, StampData, WatermarkOption, YearOption, ParsedStampDetails, SeriesOption } from "@/types/catalog"
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import ReactCountryFlag from "react-country-flag"
+import { useState, useMemo, useEffect, useRef, useCallback } from "react"
 
 const formatStampCode = (stampCode: string | null | undefined): string => {
     if (!stampCode || typeof stampCode !== 'string') return ''
@@ -54,6 +55,47 @@ export default function ModalContent({
     const { type, data, stampCode } = modalItem
     const decodedStampCode = decodeURIComponent(stampCode);
 
+    // Pagination state for country series
+    const [displayedCount, setDisplayedCount] = useState(20)
+    const [isLoadingMore, setIsLoadingMore] = useState(false)
+    const loaderRef = useRef<HTMLDivElement>(null)
+
+    // Pagination logic
+    const loadMore = useCallback(() => {
+        if (isLoadingMore) return
+        setIsLoadingMore(true)
+        // Simulate loading delay for better UX
+        setTimeout(() => {
+            setDisplayedCount(prev => prev + 20)
+            setIsLoadingMore(false)
+        }, 300)
+    }, [isLoadingMore])
+
+    // Intersection Observer for infinite scroll
+    useEffect(() => {
+        if (type !== 'country') return
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && !isLoadingMore) {
+                    loadMore()
+                }
+            },
+            { threshold: 1.0 }
+        )
+
+        const currentLoader = loaderRef.current
+        if (currentLoader) {
+            observer.observe(currentLoader)
+        }
+
+        return () => {
+            if (currentLoader) {
+                observer.unobserve(currentLoader)
+            }
+        }
+    }, [type, isLoadingMore, loadMore])
+
     if (isLoading) {
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
@@ -78,6 +120,12 @@ export default function ModalContent({
     switch (type) {
         case 'country':
             const countryData = data as { country: any, series: SeriesOption[] };
+            const displayedSeries = useMemo(() => {
+                return countryData.series.slice(0, displayedCount)
+            }, [countryData.series, displayedCount])
+
+            const hasMore = displayedCount < countryData.series.length
+
             return (
                 <div className="space-y-6 md:space-y-8">
                     {/* Hero Section */}
@@ -91,7 +139,7 @@ export default function ModalContent({
                     <div>
                         <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 md:mb-6">Series</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-                            {countryData.series.map((series: SeriesOption) => (
+                            {displayedSeries.map((series: SeriesOption) => (
                                 <div
                                     key={series.id}
                                     className="group cursor-pointer bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-all duration-200 p-3 md:p-4 border border-gray-100 dark:border-gray-700 hover:border-primary/30 dark:hover:border-amber-600"
@@ -124,6 +172,28 @@ export default function ModalContent({
                                 </div>
                             ))}
                         </div>
+
+                        {/* Infinite scroll loader */}
+                        {hasMore && (
+                            <div
+                                ref={loaderRef}
+                                className="flex justify-center items-center py-8"
+                            >
+                                <div className="flex items-center space-x-2 text-muted-foreground">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <span className="text-sm">Loading more series...</span>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* No more results indicator */}
+                        {!hasMore && displayedSeries.length > 20 && (
+                            <div className="text-center py-8">
+                                <p className="text-sm text-muted-foreground">
+                                    Showing all {displayedSeries.length} series
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
             )
