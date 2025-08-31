@@ -916,9 +916,9 @@ export default function StampReviewPage() {
   // Filter stamps based on search and filters
   const filteredStamps = stamps.filter(stamp => {
     const matchesSearch =
-      stamp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      stamp.seriesName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      stamp.catalogNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      stamp.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      stamp.seriesName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      stamp.catalogNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       stamp.stampCatalogCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       stamp.pageNumber?.toString().includes(searchTerm)
 
