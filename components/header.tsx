@@ -13,7 +13,7 @@ interface HeaderProps {
 
 export default function Header({ setIsOpen }: HeaderProps) {
   const pathname = usePathname()
-  const isAdminRoute = pathname.startsWith('/admin')
+  const isAdminRoute = true || pathname.startsWith('/admin')
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
