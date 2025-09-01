@@ -377,7 +377,7 @@ export function CatalogDataProvider({ children }: { children: React.ReactNode })
 
         // Use the new function with real progress tracking
         const apiData = await fetchStampMasterCatalogWithProgress(
-          'c1a24978-9c0a-4f2b-8478-1a18fc20560f',
+          '254c793b-16d0-40a3-8b10-66d987b54474',
           200,
           jwt,
           (progressData) => {
