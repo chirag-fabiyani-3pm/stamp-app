@@ -1476,8 +1476,6 @@ export default function StampReviewPage() {
                           id="catalogExtractionProcessId"
                           value={editFormData.catalogExtractionProcessId || ""}
                           onChange={(e) => setEditFormData(prev => ({ ...prev, catalogExtractionProcessId: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
                         />
                       </div>
                       <div className="space-y-2">
@@ -1488,8 +1486,6 @@ export default function StampReviewPage() {
                           step="0.01"
                           value={editFormData.similarityScore || ""}
                           onChange={(e) => setEditFormData(prev => ({ ...prev, similarityScore: Number(e.target.value) }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
                         />
                       </div>
                       <div className="space-y-2">
@@ -1498,8 +1494,6 @@ export default function StampReviewPage() {
                           id="stampId"
                           value={editFormData.stampId || ""}
                           onChange={(e) => setEditFormData(prev => ({ ...prev, stampId: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
                         />
                       </div>
                       <div className="space-y-2">
@@ -1509,7 +1503,6 @@ export default function StampReviewPage() {
                             id="isInstance"
                             checked={editFormData.isInstance || false}
                             onCheckedChange={(checked) => setEditFormData(prev => ({ ...prev, isInstance: checked as boolean }))}
-                            disabled={selectedStamp?.isPublished}
                           />
                         </div>
                       </div>
@@ -1519,8 +1512,6 @@ export default function StampReviewPage() {
                           id="parentStampId"
                           value={editFormData.parentStampId || ""}
                           onChange={(e) => setEditFormData(prev => ({ ...prev, parentStampId: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
                         />
                       </div>
                       <div className="space-y-2">
@@ -1529,8 +1520,6 @@ export default function StampReviewPage() {
                           id="catalogNumber"
                           value={editFormData.catalogNumber || ""}
                           onChange={(e) => setEditFormData(prev => ({ ...prev, catalogNumber: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
                         />
                       </div>
                       <div className="space-y-2">
@@ -1539,8 +1528,6 @@ export default function StampReviewPage() {
                           id="stampCode"
                           value={editFormData.stampCode || ""}
                           onChange={(e) => setEditFormData(prev => ({ ...prev, stampCode: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
                         />
                       </div>
                       <div className="space-y-2">
@@ -1549,8 +1536,6 @@ export default function StampReviewPage() {
                           id="name"
                           value={editFormData.name || ""}
                           onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
                         />
                       </div>
                       <div className="space-y-2">
@@ -1560,8 +1545,6 @@ export default function StampReviewPage() {
                           value={editFormData.description || ""}
                           onChange={(e) => setEditFormData(prev => ({ ...prev, description: e.target.value }))}
                           rows={3}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
                         />
                       </div>
                     </div>
@@ -1589,8 +1572,6 @@ export default function StampReviewPage() {
                               }))
                             }
                           }}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
                         />
                         <p className="text-xs text-muted-foreground">
                           Upload a new image to replace the current stamp image. Supported formats: JPG, PNG, GIF, WebP
@@ -1608,7 +1589,6 @@ export default function StampReviewPage() {
                                 ...prev,
                                 stampFileAttachment: undefined
                               }))}
-                              disabled={selectedStamp?.isPublished}
                             >
                               <X className="h-4 w-4" />
                             </Button>
@@ -1631,8 +1611,6 @@ export default function StampReviewPage() {
                           id="country"
                           value={editFormData.country || ""}
                           onChange={(e) => setEditFormData(prev => ({ ...prev, country: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
                         />
                       </div>
                       <div className="space-y-2">
@@ -1641,8 +1619,6 @@ export default function StampReviewPage() {
                           id="countryName"
                           value={editFormData.countryName || ""}
                           onChange={(e) => setEditFormData(prev => ({ ...prev, countryName: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
                         />
                       </div>
                     </div>
@@ -1919,8 +1895,6 @@ export default function StampReviewPage() {
                           type="number"
                           value={editFormData.issueYear || ""}
                           onChange={(e) => setEditFormData(prev => ({ ...prev, issueYear: Number(e.target.value) }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
                         />
                       </div>
                     </div>
@@ -2000,8 +1974,6 @@ export default function StampReviewPage() {
                           type="number"
                           value={editFormData.mintValue || ""}
                           onChange={(e) => setEditFormData(prev => ({ ...prev, mintValue: Number(e.target.value) }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
                         />
                       </div>
                       <div className="space-y-2">
@@ -2011,8 +1983,6 @@ export default function StampReviewPage() {
                           type="number"
                           value={editFormData.finestUsedValue || ""}
                           onChange={(e) => setEditFormData(prev => ({ ...prev, finestUsedValue: Number(e.target.value) }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
                         />
                       </div>
                       <div className="space-y-2">
@@ -2022,8 +1992,6 @@ export default function StampReviewPage() {
                           type="number"
                           value={editFormData.usedValue || ""}
                           onChange={(e) => setEditFormData(prev => ({ ...prev, usedValue: Number(e.target.value) }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
                         />
                       </div>
                     </div>
@@ -2146,7 +2114,7 @@ export default function StampReviewPage() {
             <Button
               variant="destructive"
               onClick={() => setIsDeleteDialogOpen(true)}
-              disabled={isUpdating || selectedStamp?.isPublished}
+              disabled={isUpdating}
               size="lg"
               className="px-6"
             >
@@ -2167,7 +2135,7 @@ export default function StampReviewPage() {
               </Button>
               <Button
                 onClick={handleSaveStamp}
-                disabled={isUpdating || selectedStamp?.isPublished}
+                disabled={isUpdating}
                 size="lg"
                 className="px-6"
               >
@@ -2433,8 +2401,6 @@ export default function StampReviewPage() {
                       id="instance-name"
                       value={instanceEditFormData.name || ""}
                       onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, name: e.target.value }))}
-                      disabled={selectedInstance?.isPublished}
-                      className={selectedInstance?.isPublished ? "bg-muted" : ""}
                     />
                   </div>
                   <div className="space-y-2">
@@ -2443,8 +2409,6 @@ export default function StampReviewPage() {
                       id="instance-catalogNumber"
                       value={instanceEditFormData.catalogNumber || ""}
                       onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, catalogNumber: e.target.value }))}
-                      disabled={selectedInstance?.isPublished}
-                      className={selectedInstance?.isPublished ? "bg-muted" : ""}
                     />
                   </div>
                 </div>
@@ -2472,8 +2436,6 @@ export default function StampReviewPage() {
                               }))
                             }
                           }}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
                         />
                         <p className="text-xs text-muted-foreground">
                           Upload a new image to replace the current stamp image. Supported formats: JPG, PNG, GIF, WebP
@@ -2491,7 +2453,6 @@ export default function StampReviewPage() {
                                 ...prev,
                                 stampFileAttachment: undefined
                               }))}
-                              disabled={selectedInstance?.isPublished}
                             >
                               <X className="h-4 w-4" />
                             </Button>
@@ -2515,8 +2476,6 @@ export default function StampReviewPage() {
                           type="number"
                           value={instanceEditFormData.mintValue || ""}
                           onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, mintValue: Number(e.target.value) }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
                         />
                       </div>
                       <div className="space-y-2">
@@ -2526,8 +2485,6 @@ export default function StampReviewPage() {
                           type="number"
                           value={instanceEditFormData.finestUsedValue || ""}
                           onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, finestUsedValue: Number(e.target.value) }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
                         />
                       </div>
                       <div className="space-y-2">
@@ -2537,8 +2494,6 @@ export default function StampReviewPage() {
                           type="number"
                           value={instanceEditFormData.usedValue || ""}
                           onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, usedValue: Number(e.target.value) }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
                         />
                       </div>
                     </div>
@@ -2582,7 +2537,7 @@ export default function StampReviewPage() {
             <Button
               variant="destructive"
               onClick={() => setIsInstanceDeleteDialogOpen(true)}
-              disabled={isUpdatingInstance || selectedInstance?.isPublished}
+              disabled={isUpdatingInstance}
               size="lg"
               className="px-6"
             >
@@ -2603,7 +2558,7 @@ export default function StampReviewPage() {
               </Button>
               <Button
                 onClick={handleSaveInstance}
-                disabled={isUpdatingInstance || selectedInstance?.isPublished}
+                disabled={isUpdatingInstance}
                 size="lg"
                 className="px-6"
               >
