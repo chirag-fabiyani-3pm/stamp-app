@@ -13,7 +13,6 @@ export type ParsedStampCode = {
 
 export function parseStampCode(stampCode: string): ParsedStampCode {
   const parts = (stampCode || "").split('|||')
-  console.log("Parts", stampCode, parts)
 
   const countryCode = parts[0] || ''
   const encodedSeriesName = decodeURIComponent(parts[1] || '')

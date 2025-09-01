@@ -54,7 +54,7 @@ export function PaperTypeModalContent({
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
                 <Image
-                  src={paper.featuredStampImageUrl || '/images/stamps/no-image-available.png'}
+                  src={paper.featuredStampUrl || '/images/stamps/no-image-available.png'}
                   alt={paper.name}
                   width={60}
                   height={80}

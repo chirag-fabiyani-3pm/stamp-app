@@ -86,7 +86,7 @@ export function ColorModalContent({
                     style={{ backgroundColor: color.hex }}
                   />
                   <Image
-                    src={color.featuredStampImageUrl || '/images/stamps/no-image-available.png'}
+                    src={color.featuredStampUrl || '/images/stamps/no-image-available.png'}
                     alt={color.name}
                     width={50}
                     height={60}

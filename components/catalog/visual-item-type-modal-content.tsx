@@ -54,7 +54,7 @@ export function VisualItemTypeModalContent({
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
                 <Image
-                  src={itemType.featuredStampImageUrl || '/images/stamps/no-image-available.png'}
+                  src={itemType.featuredStampUrl || '/images/stamps/no-image-available.png'}
                   alt={itemType.name}
                   width={60}
                   height={80}

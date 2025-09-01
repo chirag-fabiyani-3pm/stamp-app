@@ -6,6 +6,7 @@ import { AlertCircle, Award, BookOpen, Calendar, ChevronRight, Clock, Coins, Fil
 import { AdditionalCategoryOption, ColorOption, CurrencyOption, DenominationOption, ItemTypeOption, ModalStackItem, PaperOption, PerforationOption, StampData, WatermarkOption, YearOption, ParsedStampDetails, SeriesOption } from "@/types/catalog"
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import ReactCountryFlag from "react-country-flag"
 import { useState, useMemo, useEffect, useRef, useCallback } from "react"
 
@@ -59,6 +60,10 @@ export default function ModalContent({
     const [displayedCount, setDisplayedCount] = useState(20)
     const [isLoadingMore, setIsLoadingMore] = useState(false)
     const loaderRef = useRef<HTMLDivElement>(null)
+    const countryData = data as { country: any, series: SeriesOption[] };
+    const displayedSeries = useMemo(() => {
+        return countryData?.series ? countryData?.series?.slice?.(0, displayedCount) : []
+    }, [countryData?.series, displayedCount])
 
     // Pagination logic
     const loadMore = useCallback(() => {
@@ -73,25 +78,27 @@ export default function ModalContent({
 
     // Intersection Observer for infinite scroll
     useEffect(() => {
-        if (type !== 'country') return
+        let observer: any, currentLoader: any;
+        if (type === 'country') {
 
-        const observer = new IntersectionObserver(
-            (entries) => {
-                if (entries[0].isIntersecting && !isLoadingMore) {
-                    loadMore()
-                }
-            },
-            { threshold: 1.0 }
-        )
+            observer = new IntersectionObserver(
+                (entries) => {
+                    if (entries[0].isIntersecting && !isLoadingMore) {
+                        loadMore()
+                    }
+                },
+                { threshold: 1.0 }
+            )
 
-        const currentLoader = loaderRef.current
-        if (currentLoader) {
-            observer.observe(currentLoader)
+            currentLoader = loaderRef.current
+            if (currentLoader) {
+                observer.observe(currentLoader)
+            }
         }
 
         return () => {
             if (currentLoader) {
-                observer.unobserve(currentLoader)
+                observer?.unobserve(currentLoader)
             }
         }
     }, [type, isLoadingMore, loadMore])
@@ -119,11 +126,6 @@ export default function ModalContent({
 
     switch (type) {
         case 'country':
-            const countryData = data as { country: any, series: SeriesOption[] };
-            const displayedSeries = useMemo(() => {
-                return countryData.series.slice(0, displayedCount)
-            }, [countryData.series, displayedCount])
-
             const hasMore = displayedCount < countryData.series.length
 
             return (
@@ -160,13 +162,19 @@ export default function ModalContent({
                                             }}
                                         />
                                         <div className="flex-1 min-w-0">
-                                            <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate group-hover:text-primary transition-colors">
-                                                {series.name}
-                                            </h4>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{series.catalogNumber}</p>
-                                            <Badge variant="secondary" className="mt-2 text-xs">
-                                                {series.totalStamps}
-                                            </Badge>
+                                            <span className="flex items-center justify-between">
+                                                <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate group-hover:text-primary transition-colors">
+                                                    {series.name}
+                                                </h4>
+                                                <Badge variant="secondary" className="text-xs">
+                                                    {series.totalStamps}
+                                                </Badge>
+                                            </span>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                {(series?.description as any)?.length > 75 
+                                                    ? `${(series?.description as any)?.substring(0, 75)}...` 
+                                                    : series?.description}
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -305,7 +313,7 @@ export default function ModalContent({
                             >
                                 <div className="relative w-14 h-16 md:w-16 md:h-20 mx-auto mb-3">
                                     <Image
-                                        src={denomination.stampImageUrl || '/images/stamps/no-image-available.png'}
+                                        src={denomination.featuredStampUrl || '/images/stamps/no-image-available.png'}
                                         alt={denomination.displayName}
                                         fill
                                         className="object-cover rounded border"
@@ -401,7 +409,7 @@ export default function ModalContent({
                                     <div className="flex items-start space-x-4 mb-4">
                                         <div className="relative w-16 h-20 md:w-20 md:h-24 flex-shrink-0">
                                             <Image
-                                                src={paper.stampImageUrl || '/images/stamps/no-image-available.png'}
+                                                src={paper.featuredStampUrl || '/images/stamps/no-image-available.png'}
                                                 alt={paper.name}
                                                 fill
                                                 className="object-cover rounded border shadow-sm"
@@ -575,7 +583,7 @@ export default function ModalContent({
                                     <div className="flex items-start space-x-4 mb-4">
                                         <div className="relative w-16 h-20 md:w-20 md:h-24 flex-shrink-0">
                                             <Image
-                                                src={itemType.stampImageUrl || '/images/stamps/no-image-available.png'}
+                                                src={itemType.featuredStampUrl || '/images/stamps/no-image-available.png'}
                                                 alt={itemType.name}
                                                 fill
                                                 className="object-cover rounded border shadow-sm"
@@ -916,123 +924,112 @@ export default function ModalContent({
                                 </Badge>
                             </div>
 
-                            {/* Additional Categories */}
-                            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 p-4">
-                                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
-                                    <Layers className="w-4 h-4 mr-2 text-primary" />
-                                    Explore Additional Categories
-                                </h3>
-                                <p className="text-gray-600 dark:text-gray-300 mb-4 text-xs leading-relaxed">
-                                    Discover specialized varieties and collecting opportunities that have earned collector approval across different categories.
-                                </p>
+                            {/* Stamp Instances */}
+                            {stamp.instances && stamp.instances.length > 0 ? (
+                                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 p-4">
+                                    <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+                                        <Layers className="w-4 h-4 mr-2 text-primary" />
+                                        Stamp Instances
+                                    </h3>
+                                    <p className="text-gray-600 dark:text-gray-300 mb-4 text-xs leading-relaxed">
+                                        Discover the different varieties and instances of this stamp with their catalog values.
+                                    </p>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                    {!selectedAdditionalCategories.includes('postalHistory') && (
-                                        <button
-                                            className="group p-3 bg-gradient-to-br from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 dark:from-blue-950 dark:to-indigo-900 dark:hover:from-blue-900 dark:hover:to-indigo-800 rounded-lg border border-blue-200 hover:border-blue-300 dark:border-blue-700 dark:hover:border-blue-600 text-left transition-all duration-200 hover:shadow-sm"
-                                            onClick={() => onAdditionalCategoryClick('postalHistory', stamp.stampCode ?? '')}
-                                        >
-                                            <div className="flex items-center space-x-2">
-                                                <Globe className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
-                                                <div>
-                                                    <div className="font-semibold text-blue-900 dark:text-blue-100 text-xs">Postal History</div>
-                                                    <div className="text-blue-700 dark:text-blue-300 text-xs">Covers & Usage</div>
-                                                </div>
-                                            </div>
-                                        </button>
-                                    )}
-
-                                    {!selectedAdditionalCategories.includes('postmarks') && (
-                                        <button
-                                            className="group p-3 bg-gradient-to-br from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 dark:from-purple-950 dark:to-pink-900 dark:hover:from-purple-900 dark:hover:to-pink-800 rounded-lg border border-purple-200 hover:border-purple-300 dark:border-purple-700 dark:hover:border-purple-600 text-left transition-all duration-200 hover:shadow-sm"
-                                            onClick={() => onAdditionalCategoryClick('postmarks', stamp.stampCode ?? '')}
-                                        >
-                                            <div className="flex items-center space-x-2">
-                                                <Clock className="w-4 h-4 text-purple-600 group-hover:scale-110 transition-transform" />
-                                                <div>
-                                                    <div className="font-semibold text-purple-900 dark:text-purple-100 text-xs">Postmarks</div>
-                                                    <div className="text-purple-700 dark:text-purple-300 text-xs">Cancellations</div>
-                                                </div>
-                                            </div>
-                                        </button>
-                                    )}
-
-                                    {!selectedAdditionalCategories.includes('proofs') && (
-                                        <button
-                                            className="group p-3 bg-gradient-to-br from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 dark:from-emerald-950 dark:to-teal-900 dark:hover:from-emerald-900 dark:hover:to-teal-800 rounded-lg border border-emerald-200 hover:border-emerald-300 dark:border-emerald-700 dark:hover:border-emerald-600 text-left transition-all duration-200 hover:shadow-sm"
-                                            onClick={() => onAdditionalCategoryClick('proofs', stamp.stampCode ?? '')}
-                                        >
-                                            <div className="flex items-center space-x-2">
-                                                <FileText className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" />
-                                                <div>
-                                                    <div className="font-semibold text-emerald-900 dark:text-emerald-100 text-xs">Proofs</div>
-                                                    <div className="text-emerald-700 dark:text-emerald-300 text-xs">Printer Proofs</div>
-                                                </div>
-                                            </div>
-                                        </button>
-                                    )}
-
-                                    {!selectedAdditionalCategories.includes('essays') && (
-                                        <button
-                                            className="group p-3 bg-gradient-to-br from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 dark:from-amber-950 dark:to-orange-900 dark:hover:from-amber-900 dark:hover:to-orange-800 rounded-lg border border-amber-200 hover:border-amber-300 dark:border-amber-700 dark:hover:border-amber-600 text-left transition-all duration-200 hover:shadow-sm"
-                                            onClick={() => onAdditionalCategoryClick('essays', stamp.stampCode ?? '')}
-                                        >
-                                            <div className="flex items-center space-x-2">
-                                                <Palette className="w-4 h-4 text-amber-600 group-hover:scale-110 transition-transform" />
-                                                <div>
-                                                    <div className="font-semibold text-amber-900 dark:text-amber-100 text-xs">Essays</div>
-                                                    <div className="text-amber-700 dark:text-amber-300 text-xs">Design Studies</div>
-                                                </div>
-                                            </div>
-                                        </button>
-                                    )}
-
-                                    {!selectedAdditionalCategories.includes('onPiece') && (
-                                        <button
-                                            className="group p-3 bg-gradient-to-br from-gray-50 to-slate-50 hover:from-gray-100 hover:to-slate-100 dark:from-gray-950 dark:to-slate-900 dark:hover:from-gray-900 dark:hover:to-slate-800 rounded-lg border border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600 text-left transition-all duration-200 hover:shadow-sm"
-                                            onClick={() => onAdditionalCategoryClick('onPiece', stamp.stampCode ?? '')}
-                                        >
-                                            <div className="flex items-center space-x-2">
-                                                <Package className="w-4 h-4 text-gray-600 group-hover:scale-110 transition-transform" />
-                                                <div>
-                                                    <div className="font-semibold text-gray-900 dark:text-gray-100 text-xs">On Piece</div>
-                                                    <div className="text-gray-700 dark:text-gray-300 text-xs">Fragments</div>
-                                                </div>
-                                            </div>
-                                        </button>
-                                    )}
-
-                                    {!selectedAdditionalCategories.includes('errors') && (
-                                        <button
-                                            className="group p-3 bg-gradient-to-br from-red-50 to-rose-50 hover:from-red-100 hover:to-rose-100 dark:from-red-950 dark:to-rose-900 dark:hover:from-red-900 dark:hover:to-rose-800 rounded-lg border border-red-200 hover:border-red-300 dark:border-red-700 dark:hover:border-red-600 text-left transition-all duration-200 hover:shadow-sm"
-                                            onClick={() => onAdditionalCategoryClick('errors', stamp.stampCode ?? '')}
-                                        >
-                                            <div className="flex items-center space-x-2">
-                                                <AlertCircle className="w-4 h-4 text-red-600 group-hover:scale-110 transition-transform" />
-                                                <div>
-                                                    <div className="font-semibold text-red-900 dark:text-red-100 text-xs">Errors</div>
-                                                    <div className="text-red-700 dark:text-red-300 text-xs">Varieties</div>
-                                                </div>
-                                            </div>
-                                        </button>
-                                    )}
-
-                                    {!selectedAdditionalCategories.includes('other') && (
-                                        <button
-                                            className="group p-3 bg-gradient-to-br from-violet-50 to-indigo-50 hover:from-violet-100 hover:to-indigo-100 dark:from-violet-950 dark:to-indigo-900 dark:hover:from-violet-900 dark:hover:to-indigo-800 rounded-lg border border-violet-200 hover:border-violet-300 dark:border-violet-700 dark:hover:border-violet-600 text-left transition-all duration-200 hover:shadow-sm"
-                                            onClick={() => onAdditionalCategoryClick('other', stamp.stampCode ?? '')}
-                                        >
-                                            <div className="flex items-center space-x-2">
-                                                <Menu className="w-4 h-4 text-violet-600 group-hover:scale-110 transition-transform" />
-                                                <div>
-                                                    <div className="font-semibold text-violet-900 dark:text-violet-100 text-xs">Other</div>
-                                                    <div className="text-violet-700 dark:text-violet-300 text-xs">Specialists</div>
-                                                </div>
-                                            </div>
-                                        </button>
-                                    )}
+                                    <div className="border rounded-lg overflow-hidden dark:border-gray-700">
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow className="bg-gray-50 dark:bg-gray-800 hidden sm:table-row">
+                                                    <TableHead className="text-left py-3 px-4 font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Instance</TableHead>
+                                                    <TableHead className="text-center py-3 px-4 font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Mint</TableHead>
+                                                    <TableHead className="text-center py-3 px-4 font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Finest Used</TableHead>
+                                                    <TableHead className="text-center py-3 px-4 font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Used</TableHead>
+                                                </TableRow>
+                                                <TableRow className="bg-gray-50 dark:bg-gray-800 sm:hidden">
+                                                    <TableHead className="text-gray-700 dark:text-gray-300 w-1/2">Instance</TableHead>
+                                                    <TableHead className="text-center text-gray-700 dark:text-gray-300 w-1/2">Values</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {stamp.instances.map((instance) => (
+                                                    <TableRow 
+                                                        key={instance.id}
+                                                        className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                                                    >
+                                                        <TableCell className="py-3 px-4 font-medium text-black dark:text-gray-100 hidden sm:table-cell">
+                                                            <div className="flex flex-col gap-1">
+                                                                <span className="font-medium">{(instance as any).name}{(instance as any).catalogNumber ? ` (${(instance as any).catalogNumber})` : ''}</span>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell className="py-3 px-4 text-center hidden sm:table-cell">
+                                                            <span className="bg-green-100 text-green-800 px-2 py-1 text-xs font-medium rounded dark:bg-green-700 dark:text-green-200">
+                                                                {instance.mintValue ? `$${instance.mintValue}` : '-'}
+                                                            </span>
+                                                        </TableCell>
+                                                        <TableCell className="py-3 px-4 text-center hidden sm:table-cell">
+                                                            <span className="bg-blue-100 text-blue-800 px-2 py-1 text-xs font-medium rounded dark:bg-blue-700 dark:text-blue-200">
+                                                                {instance.finestUsedValue ? `$${instance.finestUsedValue}` : '-'}
+                                                            </span>
+                                                        </TableCell>
+                                                        <TableCell className="py-3 px-4 text-center hidden sm:table-cell">
+                                                            <span className="bg-orange-100 text-orange-800 px-2 py-1 text-xs font-medium rounded dark:bg-orange-700 dark:text-orange-200">
+                                                                {instance.usedValue ? `$${instance.usedValue}` : '-'}
+                                                            </span>
+                                                        </TableCell>
+                                                        <TableCell className="py-3 px-4 sm:hidden w-1/2">
+                                                            <div className="flex flex-col gap-1">
+                                                                <span className="font-medium text-black dark:text-gray-100 text-sm">{instance.code}</span>
+                                                                <span className="text-gray-500 dark:text-gray-400 text-xs">{instance.description}</span>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell className="py-3 px-4 sm:hidden w-1/2 text-right">
+                                                            <div className="space-y-1">
+                                                                <div className="text-xs">
+                                                                    <span className="bg-green-100 text-green-800 px-2 py-1 text-xs font-medium rounded dark:bg-green-700 dark:text-green-200 block mb-1">
+                                                                        Mint: {instance.mintValue ? `$${instance.mintValue}` : '-'}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="text-xs">
+                                                                    <span className="bg-blue-100 text-blue-800 px-2 py-1 text-xs font-medium rounded dark:bg-blue-700 dark:text-blue-200 block mb-1">
+                                                                        Finest Used: {instance.finestUsedValue ? `$${instance.finestUsedValue}` : '-'}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="text-xs">
+                                                                    <span className="bg-orange-100 text-orange-800 px-2 py-1 text-xs font-medium rounded dark:bg-orange-700 dark:text-orange-200 block">
+                                                                        Used: {instance.usedValue ? `$${instance.usedValue}` : '-'}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 p-4">
+                                    <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+                                        <Layers className="w-4 h-4 mr-2 text-primary" />
+                                        Stamp Instances
+                                    </h3>
+                                    
+                                    {/* Empty State */}
+                                    <div className="flex flex-col items-center justify-center py-8 px-4">
+                                        <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+                                            <Package className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+                                        </div>
+                                        <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">No Instances Available</h4>
+                                        <p className="text-gray-600 dark:text-gray-400 text-sm text-center max-w-md leading-relaxed">
+                                            This stamp doesn't have multiple instances or varieties catalogued. The main stamp information shows the primary catalog details.
+                                        </p>
+                                        <div className="mt-4 px-3 py-1.5 bg-gray-50 dark:bg-gray-700 rounded-full">
+                                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                                                Single Instance Stamp
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Authentication Details */}
@@ -1092,11 +1089,11 @@ export default function ModalContent({
                                         </div>
                                         <div>
                                             <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">Watermark</dt>
-                                            <dd className="text-base font-semibold text-gray-900 dark:text-gray-100">{(JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).watermark}</dd>
+                                            <dd className="text-base font-semibold text-gray-900 dark:text-gray-100">{(JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).watermark || 'Watermark Info Not Available'}</dd>
                                         </div>
                                         <div>
                                             <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">Printing Method</dt>
-                                            <dd className="text-base font-semibold text-gray-900 dark:text-gray-100">{(JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).printingMethod}</dd>
+                                            <dd className="text-base font-semibold text-gray-900 dark:text-gray-100">{(JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).printingMethod || 'Printing Method Info Not Available'}</dd>
                                         </div>
                                     </div>
                                 </div>
@@ -1110,26 +1107,16 @@ export default function ModalContent({
 
                                 <div className="grid grid-cols-3 gap-2 text-center">
                                     <div>
-                                        <div className="text-xl md:text-3xl font-bold text-green-600 dark:text-green-400 mb-0.5">{(JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).catalogPrice}</div>
-                                        <div className="text-xs text-green-700 dark:text-green-300">Catalog Price</div>
+                                        <div className="text-xl md:text-3xl font-bold text-green-600 dark:text-green-400 mb-0.5">{stamp.mintValue ? `$${stamp.mintValue.toFixed(2)}` : '-'}</div>
+                                        <div className="text-xs text-green-700 dark:text-green-300">Mint Value</div>
                                     </div>
                                     <div>
-                                        <div className="text-xl md:text-3xl font-bold text-blue-600 dark:text-blue-400 mb-0.5">{(JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).currentMarketValue}</div>
-                                        <div className="text-xs text-blue-700 dark:text-blue-300">Current Market</div>
+                                        <div className="text-xl md:text-3xl font-bold text-blue-600 dark:text-blue-400 mb-0.5">{stamp.finestUsedValue ? `$${stamp.finestUsedValue.toFixed(2)}` : '-'}</div>
+                                        <div className="text-xs text-blue-700 dark:text-blue-300">Finest Used Value</div>
                                     </div>
                                     <div>
-                                        <Badge
-                                            className={cn(
-                                                "text-sm px-2 py-0.5",
-                                                (JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).rarity?.toLowerCase().includes('collector approved') && "bg-primary/10 text-primary",
-                                                (JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).rarity?.toLowerCase().includes('rare') && "bg-orange-100 text-orange-800",
-                                                (JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).rarity?.toLowerCase().includes('uncommon') && "bg-yellow-100 text-yellow-800",
-                                                (JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).rarity?.toLowerCase().includes('common') && "bg-green-100 text-green-800"
-                                            )}
-                                        >
-                                            {(JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).rarity}
-                                        </Badge>
-                                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Status</div>
+                                        <div className="text-xl md:text-3xl font-bold text-orange-600 dark:text-orange-400 mb-0.5">{stamp.usedValue ? `$${stamp.usedValue.toFixed(2)}` : '-'}</div>
+                                        <div className="text-xs text-orange-800 dark:text-orang-300">Used Value</div>
                                     </div>
                                 </div>
                             </section>

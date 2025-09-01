@@ -156,23 +156,16 @@ export function StampDetailsModal({ selectedStamp, isModalOpen, setIsModalOpen }
                   </div>
 
                   <div className="flex justify-between items-start gap-3">
-                    <span className="text-xs text-muted-foreground">Stamp Catalog #:</span>
+                    <span className="text-xs text-muted-foreground">Stamp Catalog Code:</span>
                     <span className="text-xs font-medium text-right font-mono">
-                      #{selectedStamp.catalogNumber}
+                      {selectedStamp.catalogNumber}
                     </span>
                   </div>
 
                   <div className="flex justify-between items-start gap-3">
-                    <span className="text-xs text-muted-foreground">Stamp Code:</span>
-                    <span className="text-xs font-medium text-right font-mono">
-                      {formatStampCode(selectedStamp.stampCode)}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between items-start gap-3">
-                    <span className="text-xs text-muted-foreground">Issue Date:</span>
+                    <span className="text-xs text-muted-foreground">Issue Year:</span>
                     <span className="text-xs font-medium text-right">
-                      {(selectedStamp.issueDate && !isNaN(new Date(selectedStamp.issueDate).getTime())) ? formatDate(selectedStamp.issueDate) : 'Unknown'}
+                      {selectedStamp.issueYear}
                     </span>
                   </div>
                 </div>
@@ -203,7 +196,7 @@ export function StampDetailsModal({ selectedStamp, isModalOpen, setIsModalOpen }
               </div>
 
               {/* Market Information */}
-              {(!!selectedStamp.estimatedMarketValue || !!selectedStamp.actualPrice) && (
+              {(!!selectedStamp.mintValue || !!selectedStamp.finestUsedValue || !!selectedStamp.usedValue) && (
                 <div className="space-y-3">
                   <h3 className="text-sm font-semibold text-foreground border-b pb-1.5 flex items-center gap-1.5">
                     <DollarSign className="h-3.5 w-3.5" />
@@ -211,61 +204,35 @@ export function StampDetailsModal({ selectedStamp, isModalOpen, setIsModalOpen }
                   </h3>
 
                   <div className="space-y-2">
-                    {selectedStamp.estimatedMarketValue && (
+                    {selectedStamp.mintValue && (
                       <div className="flex justify-between items-start gap-3">
-                        <span className="text-xs text-muted-foreground">Estimated Value:</span>
+                        <span className="text-xs text-muted-foreground">Mint Value:</span>
                         <span className="text-xs font-semibold text-green-600">
-                          ${selectedStamp.estimatedMarketValue.toFixed(2)}
+                          ${selectedStamp.mintValue.toFixed(2)}
                         </span>
                       </div>
                     )}
 
-                    {selectedStamp.actualPrice && (
+                    {selectedStamp.finestUsedValue && (
                       <div className="flex justify-between items-start gap-3">
-                        <span className="text-xs text-muted-foreground">Actual Price:</span>
+                        <span className="text-xs text-muted-foreground">Finest Used Value:</span>
                         <span className="text-xs font-semibold text-blue-600">
-                          ${selectedStamp.actualPrice.toFixed(2)}
+                          ${selectedStamp.finestUsedValue.toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+
+                    {selectedStamp.usedValue && (
+                      <div className="flex justify-between items-start gap-3">
+                        <span className="text-xs text-muted-foreground">Used Value:</span>
+                        <span className="text-xs font-semibold text-orange-600">
+                          ${selectedStamp.usedValue.toFixed(2)}
                         </span>
                       </div>
                     )}
                   </div>
                 </div>
               )}
-
-              {/* Action Buttons */}
-              <div className="flex gap-2 pt-3 border-t">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 text-xs h-8"
-                  onClick={() => {
-                    const stampInfo = `${selectedStamp.name} (${selectedStamp.catalogNumber})\n${selectedStamp.country}, ${selectedStamp.issueYear}\n${formatDenomination(selectedStamp.denominationValue, selectedStamp.denominationSymbol)}`
-                    navigator.clipboard.writeText(stampInfo)
-                    toast({
-                      title: "Copied!",
-                      description: "Stamp info copied to clipboard",
-                    })
-                  }}
-                >
-                  Copy Info
-                </Button>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 text-xs h-8"
-                  onClick={() => {
-                    if (navigator.share) {
-                      navigator.share({
-                        title: selectedStamp.name,
-                        text: `Check out this stamp: ${selectedStamp.name} from ${selectedStamp.country}`,
-                      })
-                    }
-                  }}
-                >
-                  Share
-                </Button>
-              </div>
             </div>
           </div>
         </div>

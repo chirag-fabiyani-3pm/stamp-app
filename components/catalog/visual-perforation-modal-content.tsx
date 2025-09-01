@@ -54,7 +54,7 @@ export function VisualPerforationModalContent({
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
                 <Image
-                  src={perforation.featuredStampImageUrl || '/images/stamps/no-image-available.png'}
+                  src={perforation.featuredStampUrl || '/images/stamps/no-image-available.png'}
                   alt={perforation.name}
                   width={60}
                   height={80}

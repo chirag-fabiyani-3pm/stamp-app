@@ -79,7 +79,7 @@ export function DenominationModalContent({
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
                 <Image
-                  src={denomination.featuredStampImageUrl || '/images/stamps/no-image-available.png'}
+                  src={denomination.featuredStampUrl || '/images/stamps/no-image-available.png'}
                   alt={denomination.displayName}
                   width={50}
                   height={60}

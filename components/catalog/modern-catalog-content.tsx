@@ -128,6 +128,8 @@ function ModernCatalogContentInner() {
 
             if(years?.length === 1 && (years[0] as any)?.stamps?.length === 1) {
                 const stamp = convertApiStampToStampData((years[0] as any)?.stamps[0])
+                const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+                stamp.instances = instances as never;
                 const currentModal = modalStack[modalStack.length - 1]
                 const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
                 const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
@@ -171,6 +173,8 @@ function ModernCatalogContentInner() {
             // If no currencies available, show stamp details directly
             if(currencies?.length === 1 && (currencies[0] as any)?.stamps?.length === 1) {
                 const stamp = convertApiStampToStampData((currencies[0] as any)?.stamps[0])
+                const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+                stamp.instances = instances as never;
                 const currentModal = modalStack[modalStack.length - 1]
                 const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
                 const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
@@ -214,6 +218,9 @@ function ModernCatalogContentInner() {
             // Check if there are no denominations (broken hierarchy)
             if(denominations?.length === 1 && (denominations[0] as any)?.stamps?.length === 1) {
                 const stamp = convertApiStampToStampData((denominations[0] as any)?.stamps[0])
+                const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+                stamp.instances = instances as never;
+                console.log('Hello', stamp)
                 const currentModal = modalStack[modalStack.length - 1]
                 const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
                 const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
@@ -258,6 +265,8 @@ function ModernCatalogContentInner() {
             // If no colors available, show stamp details directly
             if(colors?.length === 1 && (colors[0] as any)?.stamps?.length === 1) {
                 const stamp = convertApiStampToStampData((colors[0] as any)?.stamps[0])
+                const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+                stamp.instances = instances as never;
                 const currentModal = modalStack[modalStack.length - 1]
                 const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
                 const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
@@ -294,6 +303,8 @@ function ModernCatalogContentInner() {
             // If no papers available, show stamp details directly
             if(papers?.length === 1 && (papers[0] as any)?.stamps?.length === 1) {
                 const stamp = convertApiStampToStampData((papers[0] as any)?.stamps[0])
+                const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+                stamp.instances = instances as never;
                 const currentModal = modalStack[modalStack.length - 1]
                 const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
                 const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
@@ -330,6 +341,8 @@ function ModernCatalogContentInner() {
             // If no watermarks available, show stamp details directly
             if(watermarks?.length === 1 && (watermarks[0] as any)?.stamps?.length === 1) {
                 const stamp = convertApiStampToStampData((watermarks[0] as any)?.stamps[0])
+                const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+                stamp.instances = instances as never;
                 const currentModal = modalStack[modalStack.length - 1]
                 const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
                 const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
@@ -366,6 +379,8 @@ function ModernCatalogContentInner() {
             // If no perforations available, show stamp details directly
             if(perforations?.length === 1 && (perforations[0] as any)?.stamps?.length === 1) {
                 const stamp = convertApiStampToStampData((perforations[0] as any)?.stamps[0])
+                const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+                stamp.instances = instances as never;
                 const currentModal = modalStack[modalStack.length - 1]
                 const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
                 const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
@@ -402,6 +417,8 @@ function ModernCatalogContentInner() {
             // If no item types available, show stamp details directly
             if(itemTypes?.length === 1 && (itemTypes[0] as any)?.stamps?.length === 1) {
                 const stamp = convertApiStampToStampData((itemTypes[0] as any)?.stamps[0])
+                const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+                stamp.instances = instances as never;
                 const currentModal = modalStack[modalStack.length - 1]
                 const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
                 const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
@@ -437,6 +454,8 @@ function ModernCatalogContentInner() {
 
             if(stampsList?.length === 1) {
                 const stamp = convertApiStampToStampData(stampsList[0])
+                const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+                stamp.instances = instances as never;
                 const currentModal = modalStack[modalStack.length - 1]
                 const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
                 const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
@@ -489,6 +508,8 @@ function ModernCatalogContentInner() {
         const currentModal = modalStack[modalStack.length - 1]
         const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
         const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
+        const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+        stamp.instances = instances as never;
 
         setModalStack(prev => [...prev, {
             type: 'stampDetails',

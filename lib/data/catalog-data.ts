@@ -6,46 +6,46 @@ export const generateCountriesData = async (): Promise<CountryOption[]> => {
   await new Promise(resolve => setTimeout(resolve, 500))
 
   return [
-    { 
-      code: 'GB', 
-      name: 'Great Britain', 
-      flag: '🇬🇧', 
-      totalStamps: 18950, 
-      firstIssue: '1840', 
-      lastIssue: '2024', 
+    {
+      code: 'GB',
+      name: 'Great Britain',
+      flag: '🇬🇧',
+      totalStamps: 18950,
+      firstIssue: '1840',
+      lastIssue: '2024',
       featuredStampUrl: '/images/stamps/no-image-available.png',
       description: 'The birthplace of postal excellence',
       historicalNote: 'Home to the world\'s first adhesive postage stamp, the Penny Black, issued on May 1, 1840, setting the gold standard for philatelic approval.'
     },
-  {
-    code: 'US',
-    name: 'United States',
-    flag: '🇺🇸',
-      totalStamps: 22100, 
-    firstIssue: '1847',
-    lastIssue: '2024',
+    {
+      code: 'US',
+      name: 'United States',
+      flag: '🇺🇸',
+      totalStamps: 22100,
+      firstIssue: '1847',
+      lastIssue: '2024',
       featuredStampUrl: '/images/stamps/no-image-available.png',
       description: 'American innovation in stamp design',
       historicalNote: 'The first U.S. stamps featured Benjamin Franklin and George Washington, establishing an enduring tradition of honoring national figures with philatelic approval.'
     },
-    { 
-      code: 'FR', 
-      name: 'France', 
-      flag: '🇫🇷', 
-      totalStamps: 14200, 
-      firstIssue: '1849', 
-    lastIssue: '2024',
+    {
+      code: 'FR',
+      name: 'France',
+      flag: '🇫🇷',
+      totalStamps: 14200,
+      firstIssue: '1849',
+      lastIssue: '2024',
       featuredStampUrl: '/images/stamps/no-image-available.png',
       description: 'Artistic elegance in every issue',
       historicalNote: 'French stamps have long been celebrated for their artistic beauty and technical precision, earning worldwide approval from collectors and designers alike.'
     },
-    { 
-      code: 'DE', 
-      name: 'Germany', 
-      flag: '🇩🇪', 
-      totalStamps: 16750, 
-      firstIssue: '1872', 
-    lastIssue: '2024',
+    {
+      code: 'DE',
+      name: 'Germany',
+      flag: '🇩🇪',
+      totalStamps: 16750,
+      firstIssue: '1872',
+      lastIssue: '2024',
       featuredStampUrl: '/images/stamps/no-image-available.png',
       description: 'Precision and innovation combined',
       historicalNote: 'German stamps reflect the nation\'s commitment to engineering excellence and design precision, consistently earning approval for their technical quality.'
@@ -54,48 +54,48 @@ export const generateCountriesData = async (): Promise<CountryOption[]> => {
       code: 'AU',
       name: 'Australia',
       flag: '🇦🇺',
-        totalStamps: 12380, 
+      totalStamps: 12380,
       firstIssue: '1856',
       lastIssue: '2024',
-        featuredStampUrl: '/images/stamps/no-image-available.png',
-        description: 'Natural wonders on stamps',
-        historicalNote: 'Australian stamps showcase the continent\'s unique flora and fauna, earning international approval for their vibrant depictions of natural heritage.'
-      },
-      { 
-        code: 'CA', 
-        name: 'Canada', 
-        flag: '🇨🇦', 
-        totalStamps: 9840, 
-        firstIssue: '1851', 
+      featuredStampUrl: '/images/stamps/no-image-available.png',
+      description: 'Natural wonders on stamps',
+      historicalNote: 'Australian stamps showcase the continent\'s unique flora and fauna, earning international approval for their vibrant depictions of natural heritage.'
+    },
+    {
+      code: 'CA',
+      name: 'Canada',
+      flag: '🇨🇦',
+      totalStamps: 9840,
+      firstIssue: '1851',
       lastIssue: '2024',
-        featuredStampUrl: '/images/stamps/no-image-available.png',
-        description: 'Natural majesty preserved in miniature',
-        historicalNote: 'The famous "Three-penny Beaver" was the world\'s first stamp to feature an animal, earning immediate approval and setting a new standard for wildlife on stamps.'
-      },
-      { 
-        code: 'JP', 
-        name: 'Japan', 
-        flag: '🇯🇵', 
-        totalStamps: 13560, 
-        firstIssue: '1871', 
+      featuredStampUrl: '/images/stamps/no-image-available.png',
+      description: 'Natural majesty preserved in miniature',
+      historicalNote: 'The famous "Three-penny Beaver" was the world\'s first stamp to feature an animal, earning immediate approval and setting a new standard for wildlife on stamps.'
+    },
+    {
+      code: 'JP',
+      name: 'Japan',
+      flag: '🇯🇵',
+      totalStamps: 13560,
+      firstIssue: '1871',
       lastIssue: '2024',
-        featuredStampUrl: '/images/stamps/no-image-available.png',
-        description: 'Where tradition meets innovation',
-        historicalNote: 'Japanese stamps beautifully blend traditional artistic elements with modern design principles, earning approval for their cultural authenticity and aesthetic excellence.'
-      },
-      { 
-        code: 'CH', 
-        name: 'Switzerland', 
-        flag: '🇨🇭', 
-        totalStamps: 8920, 
-        firstIssue: '1850', 
-        lastIssue: '2024', 
-        featuredStampUrl: '/images/stamps/no-image-available.png',
-        description: 'Alpine precision meets design excellence',
-        historicalNote: 'Swiss stamps are universally approved for their exceptional quality, innovative security features, and meticulous attention to detail that reflects the nation\'s commitment to excellence.'
-      }
-    ]
-  }
+      featuredStampUrl: '/images/stamps/no-image-available.png',
+      description: 'Where tradition meets innovation',
+      historicalNote: 'Japanese stamps beautifully blend traditional artistic elements with modern design principles, earning approval for their cultural authenticity and aesthetic excellence.'
+    },
+    {
+      code: 'CH',
+      name: 'Switzerland',
+      flag: '🇨🇭',
+      totalStamps: 8920,
+      firstIssue: '1850',
+      lastIssue: '2024',
+      featuredStampUrl: '/images/stamps/no-image-available.png',
+      description: 'Alpine precision meets design excellence',
+      historicalNote: 'Swiss stamps are universally approved for their exceptional quality, innovative security features, and meticulous attention to detail that reflects the nation\'s commitment to excellence.'
+    }
+  ]
+}
 
 export const generateStampGroupsData = async (countryCode: string): Promise<SeriesOption[]> => {
   // Simulate API delay
@@ -220,10 +220,10 @@ export const generateItemTypesData = async (stampCode: string, perforationCode: 
   ]
 }
 
-export const generateStampDetails = async (stampCode: string, itemTypeCode: string): Promise<StampData[]> => {
+export const generateStampDetails = async (stampCode: string, itemTypeCode: string): Promise<any[]> => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 300))
-  const stamps: StampData[] = []
+  const stamps: any[] = []
   for (let i = 1; i <= Math.floor(Math.random() * 8) + 3; i++) {
     stamps.push({
       id: `${stampCode}-${itemTypeCode}-${i}`,
@@ -316,10 +316,10 @@ export const generateAdditionalCategoriesData = async (categoryType: string, sta
   return categoryMap[categoryType] || []
 }
 
-export const generateStampsForAdditionalCategory = async (baseStampCode: string, categoryType: string, categoryCode: string): Promise<StampData[]> => {
+export const generateStampsForAdditionalCategory = async (baseStampCode: string, categoryType: string, categoryCode: string): Promise<any[]> => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 300))
-  const stamps: StampData[] = []
+  const stamps: any[] = []
   const count = Math.floor(Math.random() * 6) + 3
   for (let i = 1; i <= count; i++) {
     let categoryMultiplier = 1.0
@@ -375,14 +375,11 @@ export const generateStampsForAdditionalCategory = async (baseStampCode: string,
         specialNotes: `${categoryName} variant with ${categoryCode} characteristics that have earned prestigious collector approval`
       }),
       stampCode: `${baseStampCode}.${categoryCode}`,
-      estimatedMarketValue: Math.floor(finalPrice),
       rarity: categoryMultiplier > 10 ? 'Collector Approved' : categoryMultiplier > 5 ? 'Rare' : categoryMultiplier > 2 ? 'Uncommon' : 'Common',
       story: `This exceptional ${categoryName} specimen represents a remarkable example of ${categoryCode} that has earned its place in our collection through meticulous evaluation and expert approval.`,
       status: 1,
-      userId: 'dummyUser',
       stampCatalogId: null,
       publisher: 'Unknown Publisher',
-      actualPrice: Math.floor(finalPrice * 0.75),
       condition: ['Superb', 'Very Fine', 'Fine'][Math.floor(Math.random() * 3)],
       stampGroupId: `group-${baseStampCode}`,
       instances: []
@@ -419,7 +416,7 @@ export const featuredStories = [
     category: 'Artistic Heritage',
     excerpt: 'Explore how master printers created the vibrant colors that have earned stamps their enduring approval through the centuries.'
   }
-] 
+]
 
 // API Data Structure - Dummy Data for Testing
 export const apiStampData = [
@@ -431,7 +428,7 @@ export const apiStampData = [
     stampCode: 'NZ.1855.1d.DeepCarmineRed.LargeStar.WmkW1.Imperf.PerkinsBacon.StA1a',
     name: '1d Deep carmine-red',
     description: "1855 imperforate 1d stamp with a distinctive 'dried blood' deep carmine-red color, printed by Perkins, Bacon & Co. in London with Large Star watermark (W.1). Part of the Full-Face Queens series, representing one of the initial New Zealand stamps printed outside the colony.",
-    alternativeNames: [ '1d Deep carmine', 'Full-Face Queen 1d Red' ],
+    alternativeNames: ['1d Deep carmine', 'Full-Face Queen 1d Red'],
     country: 'NZ',
     countryName: 'New Zealand',
     countryFlag: '🇳🇿',
@@ -512,7 +509,7 @@ export const apiStampData = [
     dieNumber: 'Unknown',
     plateNumber: 'Unknown',
     plateCharacteristics: 'London prints with re-entries noted',
-    plateFlaws: [ 'Re-entries' ],
+    plateFlaws: ['Re-entries'],
     paperManufacturer: 'Unknown',
     gumType: 'Original gum',
     gumCondition: 'Variable',
@@ -532,7 +529,7 @@ export const apiStampData = [
     rarityRating: 'very rare',
     rarityScale: '1-10',
     rarityScore: 9,
-    recentSales: [ [Object], [Object], [Object] ],
+    recentSales: [[Object], [Object], [Object]],
     hasVarieties: true,
     varietyCount: 3,
     varietyType: 'color, watermark, perforation',
@@ -559,10 +556,10 @@ export const apiStampData = [
     exhibitionFrequency: 'Frequently exhibited in classic and colonial collections',
     researchStatus: 'Well researched with ongoing studies on varieties and printings',
     bibliography: 'NZ Stamp Catalogue, RPSL publications, Perkins Bacon archives',
-    primaryReferences: [ 'NZ Stamp Catalogue 2024', 'RPSL Expert Committee Reports' ],
-    researchPapers: [ 'Studies on Perkins Bacon printings of NZ 1855 issues' ],
-    exhibitionLiterature: [ 'Exhibition catalogues featuring Full-Face Queens' ],
-    onlineResources: [ 'NZ Philatelic Society website', 'RPSL database' ],
+    primaryReferences: ['NZ Stamp Catalogue 2024', 'RPSL Expert Committee Reports'],
+    researchPapers: ['Studies on Perkins Bacon printings of NZ 1855 issues'],
+    exhibitionLiterature: ['Exhibition catalogues featuring Full-Face Queens'],
+    onlineResources: ['NZ Philatelic Society website', 'RPSL database'],
     specialNotes: "Distinctive 'dried blood' hue unique to this printing; plates shipped from London and used locally by J. Richardson and J. Davies",
     collectorNotes: 'Extremely valuable mint and used examples; re-entries and on cover examples command premium prices',
     conditionNotes: 'Prices reflect extremely fine condition; faults significantly reduce value',
@@ -581,7 +578,7 @@ export const apiStampData = [
     stampCode: 'NZ.1855.1d.Red.Imperf.LargeStar.WmkW1.PBCL.A1a',
     name: '1d Deep Carmine-Red',
     description: "1855 (July 20 at Auckland) imperforate 1d stamp with Large Star watermark (W.1), printed by Perkins, Bacon & Co., London. Known for its distinctive 'dried blood' hue, part of the Full-Face Queens series. This particular variety features various re-entries.",
-    alternativeNames: [ 'Full-Face Queens 1d Red', 'Re-entries, various' ],
+    alternativeNames: ['Full-Face Queens 1d Red', 'Re-entries, various'],
     country: 'NZ',
     countryName: 'New Zealand',
     countryFlag: '🇳🇿',
@@ -662,7 +659,7 @@ export const apiStampData = [
     dieNumber: 'Unknown',
     plateNumber: 'Unknown',
     plateCharacteristics: 'Re-entries present on plates',
-    plateFlaws: [ 'Re-entries, various' ],
+    plateFlaws: ['Re-entries, various'],
     paperManufacturer: 'Unknown',
     gumType: 'Original gum',
     gumCondition: 'Variable',
@@ -682,7 +679,7 @@ export const apiStampData = [
     rarityRating: 'rare',
     rarityScale: '1-10',
     rarityScore: 8,
-    recentSales: [ [Object] ],
+    recentSales: [[Object]],
     hasVarieties: true,
     varietyCount: 5,
     varietyType: 'plate and color',
@@ -709,10 +706,10 @@ export const apiStampData = [
     exhibitionFrequency: 'Frequent in major philatelic exhibitions',
     researchStatus: 'Well researched with ongoing studies on plate varieties',
     bibliography: 'NZ Stamp Catalogue, Perkins Bacon Archives',
-    primaryReferences: [ 'NZ Stamp Catalogue 2024', 'Perkins Bacon Printing Records' ],
-    researchPapers: [ 'Studies on Full-Face Queens Plate Varieties' ],
-    exhibitionLiterature: [ 'NZ Philatelic Exhibitions 2020-2024' ],
-    onlineResources: [ 'NZ Stamp Collectors Forum', 'Perkins Bacon Historical Society' ],
+    primaryReferences: ['NZ Stamp Catalogue 2024', 'Perkins Bacon Printing Records'],
+    researchPapers: ['Studies on Full-Face Queens Plate Varieties'],
+    exhibitionLiterature: ['NZ Philatelic Exhibitions 2020-2024'],
+    onlineResources: ['NZ Stamp Collectors Forum', 'Perkins Bacon Historical Society'],
     specialNotes: "Distinctive 'dried blood' hue unique to this printing",
     collectorNotes: 'Highly sought after for re-entry varieties and condition',
     conditionNotes: 'Prices reflect extremely fine condition; faults reduce value significantly',
@@ -731,7 +728,7 @@ export const apiStampData = [
     stampCode: 'NZ.1855.1d.Red.Imperf.LargeStar.WmkW1.PB&Co.A1a',
     name: 'On cover, pair or two singles',
     description: "1d Deep carmine-red stamp from the Full-Face Queens series, imperforate with Large Star watermark (W.1), printed by Perkins, Bacon & Co., London. Noted for its distinctive 'dried blood' hue, used on cover, pairs or two singles.",
-    alternativeNames: [ '1d Deep carmine-red', 'Full-Face Queens 1d Red', 'A1a' ],
+    alternativeNames: ['1d Deep carmine-red', 'Full-Face Queens 1d Red', 'A1a'],
     country: 'NZ',
     countryName: 'New Zealand',
     countryFlag: '🇳🇿',
@@ -812,7 +809,7 @@ export const apiStampData = [
     dieNumber: 'Unknown',
     plateNumber: 'Unknown',
     plateCharacteristics: 'London prints with re-entries noted',
-    plateFlaws: [ 're-entries' ],
+    plateFlaws: ['re-entries'],
     paperManufacturer: 'Unknown',
     gumType: 'Original gum',
     gumCondition: 'Variable',
@@ -832,7 +829,7 @@ export const apiStampData = [
     rarityRating: 'rare',
     rarityScale: '1-10',
     rarityScore: 8,
-    recentSales: [ [Object] ],
+    recentSales: [[Object]],
     hasVarieties: true,
     varietyCount: 3,
     varietyType: 'color, watermark, perforation',
@@ -867,7 +864,7 @@ export const apiStampData = [
       'Studies on Perkins, Bacon & Co. printings',
       'Analysis of Large Star watermark varieties'
     ],
-    exhibitionLiterature: [ 'NZ Philatelic Exhibitions 2010-2020' ],
+    exhibitionLiterature: ['NZ Philatelic Exhibitions 2010-2020'],
     onlineResources: [
       'NZ Stamp Collectors Association website',
       'RPSL online archive'
@@ -975,7 +972,7 @@ export const apiStampData = [
     dieNumber: 'Unknown',
     plateNumber: 'Unknown',
     plateCharacteristics: 'Plates shipped from London and used by J. Richardson and later J. Davies in New Zealand',
-    plateFlaws: [ 'Re-entries noted' ],
+    plateFlaws: ['Re-entries noted'],
     paperManufacturer: 'Unknown',
     gumType: 'Original gum',
     gumCondition: 'Variable',
@@ -995,7 +992,7 @@ export const apiStampData = [
     rarityRating: 'very rare',
     rarityScale: '1-10',
     rarityScore: 9,
-    recentSales: [ [Object] ],
+    recentSales: [[Object]],
     hasVarieties: true,
     varietyCount: 3,
     varietyType: 'color and cancellation',
@@ -1026,9 +1023,9 @@ export const apiStampData = [
       'New Zealand Stamp Catalogue 2024',
       'RPSL Expert Committee Reports'
     ],
-    researchPapers: [ 'Study on Perkins Bacon printings of New Zealand' ],
-    exhibitionLiterature: [ 'Exhibition catalogue 2023 NZ Classics' ],
-    onlineResources: [ 'NZ Philatelic Society website' ],
+    researchPapers: ['Study on Perkins Bacon printings of New Zealand'],
+    exhibitionLiterature: ['Exhibition catalogue 2023 NZ Classics'],
+    onlineResources: ['NZ Philatelic Society website'],
     specialNotes: "Distinctive 'dried blood' hue unique to this printing",
     collectorNotes: "Highly sought after especially with 'Cancelled' obliteration",
     conditionNotes: 'Prices reflect extremely fine condition examples',
@@ -1151,7 +1148,7 @@ export const apiStampData = [
     rarityRating: 'extremely rare',
     rarityScale: '1-10',
     rarityScore: 9,
-    recentSales: [ [Object] ],
+    recentSales: [[Object]],
     hasVarieties: false,
     varietyCount: 0,
     varietyType: 'None',
@@ -1178,7 +1175,7 @@ export const apiStampData = [
     exhibitionFrequency: 'Rarely exhibited due to scarcity',
     researchStatus: 'Limited research, recognized as trial print',
     bibliography: 'NZ Philatelic literature on Full-Face Queens series',
-    primaryReferences: [ 'NZ Philatelic Society publications' ],
+    primaryReferences: ['NZ Philatelic Society publications'],
     researchPapers: [],
     exhibitionLiterature: [],
     onlineResources: [],
@@ -1200,7 +1197,7 @@ export const apiStampData = [
     stampCode: 'NZ.1855.12.17.1d.Red.Blue.NoWmk.Richardson.Imperf.A1c',
     name: '1d Bright red (on blue)',
     description: 'Imperforate 1d stamp printed on deep blue paper without watermark, printed by Richardson in 1855 (17 December)',
-    alternativeNames: [ '1d Red on Blue', 'Bright Red on Deep Blue Paper' ],
+    alternativeNames: ['1d Red on Blue', 'Bright Red on Deep Blue Paper'],
     country: 'NZ',
     countryName: 'New Zealand',
     countryFlag: '🇳🇿',
@@ -1281,7 +1278,7 @@ export const apiStampData = [
     dieNumber: 'Unknown',
     plateNumber: 'Unknown',
     plateCharacteristics: 'Controlled by J. Richardson, plates shipped from London',
-    plateFlaws: [ 'Re-entries noted in some varieties' ],
+    plateFlaws: ['Re-entries noted in some varieties'],
     paperManufacturer: 'Unknown, deep blue paper chosen by Richardson',
     gumType: 'Original gum',
     gumCondition: 'Variable, condition affects pricing',
@@ -1301,7 +1298,7 @@ export const apiStampData = [
     rarityRating: 'rare',
     rarityScale: '1-10',
     rarityScore: 7,
-    recentSales: [ [Object] ],
+    recentSales: [[Object]],
     hasVarieties: true,
     varietyCount: 4,
     varietyType: 'color, watermark, re-entries',
@@ -1332,9 +1329,9 @@ export const apiStampData = [
       'New Zealand Stamp Catalogue 2007',
       'RPSNZ Expert Committee Reports'
     ],
-    researchPapers: [ 'Studies on Richardson printings of New Zealand' ],
-    exhibitionLiterature: [ 'NZ Philatelic Exhibitions 2010-2020' ],
-    onlineResources: [ 'New Zealand Philatelic Society website' ],
+    researchPapers: ['Studies on Richardson printings of New Zealand'],
+    exhibitionLiterature: ['NZ Philatelic Exhibitions 2010-2020'],
+    onlineResources: ['New Zealand Philatelic Society website'],
     specialNotes: 'Deep blue paper chosen for smoother surface, differentiates from later white paper printings',
     collectorNotes: 'Condition greatly affects value; imperforate nature and paper color are key identifiers',
     conditionNotes: 'Prices reflect extremely fine examples; faults reduce value significantly',
@@ -1353,7 +1350,7 @@ export const apiStampData = [
     stampCode: 'NZ.1855.12.17.1d.Red.Blue.NoWmk.Richardson.Imperf.A1c',
     name: '1d (2) Red (on blue)',
     description: 'Imperforate 1d red stamp printed on deep blue paper without watermark, printed by J. Richardson in 1855 (17 December). Part of the Full-Face Queens series, 1d Red variety.',
-    alternativeNames: [ '1d Bright red on blue', '1d Red on deep blue paper' ],
+    alternativeNames: ['1d Bright red on blue', '1d Red on deep blue paper'],
     country: 'NZ',
     countryName: 'New Zealand',
     countryFlag: '🇳🇿',
@@ -1454,7 +1451,7 @@ export const apiStampData = [
     rarityRating: 'rare',
     rarityScale: '1-10',
     rarityScore: 7.5,
-    recentSales: [ [Object] ],
+    recentSales: [[Object]],
     hasVarieties: true,
     varietyCount: 3,
     varietyType: 'paper and re-entry',
@@ -1487,7 +1484,7 @@ export const apiStampData = [
     ],
     researchPapers: [],
     exhibitionLiterature: [],
-    onlineResources: [ 'https://www.nzstamps.org.nz/SG4' ],
+    onlineResources: ['https://www.nzstamps.org.nz/SG4'],
     specialNotes: 'Deep blue paper chosen by Richardson for smoother printing surface; no watermark present; re-entries and papermakers watermark varieties exist',
     collectorNotes: 'Prices vary widely depending on condition and presence of varieties; covers command premium',
     conditionNotes: 'Mint and used prices reflect extremely fine examples; faults common in circulated examples',
@@ -1591,7 +1588,7 @@ export const apiStampData = [
     dieNumber: 'Unknown',
     plateNumber: 'Unknown',
     plateCharacteristics: 'Plates controlled by J. Richardson; initial prints on deep blue paper',
-    plateFlaws: [ 'Re-entries, various' ],
+    plateFlaws: ['Re-entries, various'],
     paperManufacturer: 'Unknown (Deep Blue Paper)',
     gumType: 'Original gum',
     gumCondition: 'Variable',
@@ -1611,7 +1608,7 @@ export const apiStampData = [
     rarityRating: 'rare',
     rarityScale: '1-10',
     rarityScore: 7.5,
-    recentSales: [ [Object] ],
+    recentSales: [[Object]],
     hasVarieties: true,
     varietyCount: 2,
     varietyType: 're-entries and watermark',
@@ -1638,10 +1635,10 @@ export const apiStampData = [
     exhibitionFrequency: 'Occasionally exhibited in NZ postal history displays',
     researchStatus: 'Well documented with ongoing study of varieties',
     bibliography: 'NZ Stamp Catalogue, RPSNZ publications',
-    primaryReferences: [ 'NZ Stamp Catalogue 2024', 'RPSNZ Expert Committee Reports' ],
-    researchPapers: [ 'Studies on Richardson printings on deep blue paper' ],
-    exhibitionLiterature: [ 'NZ Postal History Exhibitions 2010-2020' ],
-    onlineResources: [ 'RPSNZ website', 'NZ Philatelic Society forums' ],
+    primaryReferences: ['NZ Stamp Catalogue 2024', 'RPSNZ Expert Committee Reports'],
+    researchPapers: ['Studies on Richardson printings on deep blue paper'],
+    exhibitionLiterature: ['NZ Postal History Exhibitions 2010-2020'],
+    onlineResources: ['RPSNZ website', 'NZ Philatelic Society forums'],
     specialNotes: 'Deep blue paper chosen by Richardson for smoother surface; no watermark distinguishes this issue from others',
     collectorNotes: 'Valued for re-entry varieties and paper type; condition critical for pricing',
     conditionNotes: 'Prices reflect extremely fine condition; faults reduce value significantly',
@@ -1745,7 +1742,7 @@ export const apiStampData = [
     dieNumber: 'Unknown',
     plateNumber: 'Unknown',
     plateCharacteristics: 'Controlled by J. Richardson, plates shipped from London',
-    plateFlaws: [ 'Re-entries noted' ],
+    plateFlaws: ['Re-entries noted'],
     paperManufacturer: 'Unknown, deep blue paper chosen by Richardson',
     gumType: 'Original gum',
     gumCondition: 'Variable, generally good',
@@ -1765,7 +1762,7 @@ export const apiStampData = [
     rarityRating: 'rare',
     rarityScale: '1-10',
     rarityScore: 7,
-    recentSales: [ [Object] ],
+    recentSales: [[Object]],
     hasVarieties: true,
     varietyCount: 3,
     varietyType: 'paper and watermark',
@@ -1796,9 +1793,9 @@ export const apiStampData = [
       'New Zealand Stamp Catalogue 2007',
       'Specialist Auction Catalogues'
     ],
-    researchPapers: [ 'Study on Richardson printings' ],
-    exhibitionLiterature: [ 'Exhibition of New Zealand Classics' ],
-    onlineResources: [ 'New Zealand Philatelic Society website' ],
+    researchPapers: ['Study on Richardson printings'],
+    exhibitionLiterature: ['Exhibition of New Zealand Classics'],
+    onlineResources: ['New Zealand Philatelic Society website'],
     specialNotes: 'Papermakers watermark noted though no actual watermark present, refers to paper type',
     collectorNotes: 'Highly sought after for deep blue paper variety',
     conditionNotes: 'Prices reflect condition adjusted grading',
@@ -1817,7 +1814,7 @@ export const apiStampData = [
     stampCode: 'NZ.1855.12.17.1d.Red.DeepBlue.NoWmk.Richardson.Imperf.A1c',
     name: '1d Red on Deep Blue Paper',
     description: '1855 (17 December) imperforate 1d red stamp printed on deep blue paper with no watermark, printed by Richardson in Auckland, New Zealand.',
-    alternativeNames: [ '1d Bright Red on Blue', '1d Red on Blue Paper' ],
+    alternativeNames: ['1d Bright Red on Blue', '1d Red on Blue Paper'],
     country: 'NZ',
     countryName: 'New Zealand',
     countryFlag: '🇳🇿',
@@ -1898,7 +1895,7 @@ export const apiStampData = [
     dieNumber: 'Unknown',
     plateNumber: 'Unknown',
     plateCharacteristics: 'Controlled by J. Richardson, plates shipped from London',
-    plateFlaws: [ 'Re-entries noted' ],
+    plateFlaws: ['Re-entries noted'],
     paperManufacturer: 'Unknown, deep blue paper chosen by Richardson',
     gumType: 'Original gum',
     gumCondition: 'Variable, condition adjusted pricing noted',
@@ -1918,7 +1915,7 @@ export const apiStampData = [
     rarityRating: 'rare',
     rarityScale: '1-10',
     rarityScore: 8,
-    recentSales: [ [Object] ],
+    recentSales: [[Object]],
     hasVarieties: true,
     varietyCount: 3,
     varietyType: 'paper and plate varieties',
@@ -1945,10 +1942,10 @@ export const apiStampData = [
     exhibitionFrequency: 'Occasionally exhibited in classic NZ collections',
     researchStatus: 'Well documented with ongoing research on varieties',
     bibliography: 'New Zealand Stamp Catalogue, Permanent Pages Section',
-    primaryReferences: [ 'NZSG Permanent Pages', 'Stanley Gibbons Catalogue' ],
-    researchPapers: [ 'Studies on Richardson printings' ],
-    exhibitionLiterature: [ 'Exhibition catalogues featuring Full-Face Queens' ],
-    onlineResources: [ 'NZSG website', 'Stanley Gibbons online catalogue' ],
+    primaryReferences: ['NZSG Permanent Pages', 'Stanley Gibbons Catalogue'],
+    researchPapers: ['Studies on Richardson printings'],
+    exhibitionLiterature: ['Exhibition catalogues featuring Full-Face Queens'],
+    onlineResources: ['NZSG website', 'Stanley Gibbons online catalogue'],
     specialNotes: 'Prices adjusted for condition; deep blue paper distinct from later white papers; re-entries noted as varieties',
     collectorNotes: 'On cover examples command premium prices; condition critical',
     conditionNotes: 'Condition varies, faults common but facial appearance important',
@@ -2051,7 +2048,7 @@ export const apiStampData = [
     dieNumber: 'Unknown',
     plateNumber: 'Unknown',
     plateCharacteristics: 'Unknown',
-    plateFlaws: [ 'Re-entries noted in varieties' ],
+    plateFlaws: ['Re-entries noted in varieties'],
     paperManufacturer: 'Unknown',
     gumType: 'Original gum',
     gumCondition: 'Variable',
@@ -2071,7 +2068,7 @@ export const apiStampData = [
     rarityRating: 'rare',
     rarityScale: '1-10',
     rarityScore: 7,
-    recentSales: [ [Object] ],
+    recentSales: [[Object]],
     hasVarieties: true,
     varietyCount: 8,
     varietyType: 'perforation and printing varieties',
@@ -2123,7 +2120,7 @@ export const apiStampData = [
     stampCode: 'NZ.FFQ.1d.Red.1858-61.Imperf.White.NoWmk.Richardson.A1d',
     name: 'Re-entries, various (from)',
     description: 'Various re-entries on the 1d Red Full-Face Queens stamp printed by Richardson from 1858 to 1861 on white unwatermarked papers, imperforate.',
-    alternativeNames: [ 'Re-entries 1d Red', 'Richardson Print Re-entries' ],
+    alternativeNames: ['Re-entries 1d Red', 'Richardson Print Re-entries'],
     country: 'NZ',
     countryName: 'New Zealand',
     countryFlag: '🇳🇿',
@@ -2224,7 +2221,7 @@ export const apiStampData = [
     rarityRating: 'rare',
     rarityScale: '1-10',
     rarityScore: 7,
-    recentSales: [ [Object] ],
+    recentSales: [[Object]],
     hasVarieties: true,
     varietyCount: 10,
     varietyType: 're-entries and perforation varieties',
@@ -2255,9 +2252,9 @@ export const apiStampData = [
       'Permanent pages of Full-Face Queens section',
       'Specialized New Zealand stamp catalogs'
     ],
-    researchPapers: [ 'Studies on Richardson Print varieties' ],
-    exhibitionLiterature: [ 'Exhibits on New Zealand early issues' ],
-    onlineResources: [ 'New Zealand Philatelic Society website' ],
+    researchPapers: ['Studies on Richardson Print varieties'],
+    exhibitionLiterature: ['Exhibits on New Zealand early issues'],
+    onlineResources: ['New Zealand Philatelic Society website'],
     specialNotes: "Richardson's contract ended in 1862; John Davies took over printing thereafter.",
     collectorNotes: 'Collectors seek well-centered examples with clear re-entries.',
     conditionNotes: 'Gum and paper condition vary; imperforate edges prone to faults.',
@@ -2276,7 +2273,7 @@ export const apiStampData = [
     stampCode: 'NZ.1858-61.IMP.WP.NW.R7.A1d',
     name: 'Roulette 7',
     description: '1d Red stamp from the Full-Face Queens series, imperforate, printed 1858–1861 on white papers with no watermark by Richardson',
-    alternativeNames: [ 'Roulette Seven', 'R7' ],
+    alternativeNames: ['Roulette Seven', 'R7'],
     country: 'NZ',
     countryName: 'New Zealand',
     countryFlag: '🇳🇿',
@@ -2357,7 +2354,7 @@ export const apiStampData = [
     dieNumber: 'Unknown',
     plateNumber: 'Unknown',
     plateCharacteristics: 'Not specified',
-    plateFlaws: [ 'Re-entries noted in some varieties' ],
+    plateFlaws: ['Re-entries noted in some varieties'],
     paperManufacturer: 'Unknown',
     gumType: 'Original gum',
     gumCondition: 'Variable',
@@ -2377,7 +2374,7 @@ export const apiStampData = [
     rarityRating: 'rare',
     rarityScale: '1-10',
     rarityScore: 8,
-    recentSales: [ [Object] ],
+    recentSales: [[Object]],
     hasVarieties: true,
     varietyCount: 7,
     varietyType: 'roulette perforation',
@@ -2429,7 +2426,7 @@ export const apiStampData = [
     stampCode: 'NZ.1858-61.IMP.WP.NW.PinRoulette9or10.A1d',
     name: 'Pin roulette 9 or 10',
     description: 'Pin roulette 9 or 10 variant of the 1d Red Full-Face Queens series, imperforate, printed on white papers without watermark by Richardson between 1858 and 1861.',
-    alternativeNames: [ 'Pin Roulette 9', 'Pin Roulette 10' ],
+    alternativeNames: ['Pin Roulette 9', 'Pin Roulette 10'],
     country: 'NZ',
     countryName: 'New Zealand',
     countryFlag: '🇳🇿',
@@ -2530,7 +2527,7 @@ export const apiStampData = [
     rarityRating: 'rare',
     rarityScale: '1-10',
     rarityScore: 7,
-    recentSales: [ [Object] ],
+    recentSales: [[Object]],
     hasVarieties: true,
     varietyCount: 3,
     varietyType: 'perforation and roulette',
@@ -2557,7 +2554,7 @@ export const apiStampData = [
     exhibitionFrequency: 'Occasional',
     researchStatus: 'Moderate',
     bibliography: 'Permanent pages of Full-Face Queens section',
-    primaryReferences: [ 'Permanent pages of Full-Face Queens section' ],
+    primaryReferences: ['Permanent pages of Full-Face Queens section'],
     researchPapers: [],
     exhibitionLiterature: [],
     onlineResources: [],
@@ -2579,7 +2576,7 @@ export const apiStampData = [
     stampCode: 'NZ.1d.Red.1858-61.Imperf.White.NoWmk.Richardson.Serrate16',
     name: 'Serrate 16',
     description: 'Serrate 16 perforation variety of the 1d Red Full-Face Queen stamp printed by Richardson between 1858 and 1861 on white unwatermarked paper, imperforate.',
-    alternativeNames: [ 'Serrate 16', 'Full-Face Queens 1d Red Serrate' ],
+    alternativeNames: ['Serrate 16', 'Full-Face Queens 1d Red Serrate'],
     country: 'NZ',
     countryName: 'New Zealand',
     countryFlag: '🇳🇿',
@@ -2680,7 +2677,7 @@ export const apiStampData = [
     rarityRating: 'rare',
     rarityScale: '1-10',
     rarityScore: 7,
-    recentSales: [ [Object] ],
+    recentSales: [[Object]],
     hasVarieties: true,
     varietyCount: 1,
     varietyType: 'perforation/edge',
@@ -2711,9 +2708,9 @@ export const apiStampData = [
       'NZSG Full-Face Queens Catalogue',
       'Richardson Print Historical Records'
     ],
-    researchPapers: [ 'Studies on Richardson Print White Papers' ],
-    exhibitionLiterature: [ 'NZ Philatelic Exhibitions 2020' ],
-    onlineResources: [ 'NZSG official website' ],
+    researchPapers: ['Studies on Richardson Print White Papers'],
+    exhibitionLiterature: ['NZ Philatelic Exhibitions 2020'],
+    onlineResources: ['NZSG official website'],
     specialNotes: "Richardson's contract ended in 1862; subsequent prints by Davies differ in watermark and perforation.",
     collectorNotes: 'Collectors prize the serrate 16 variety for its distinct edge and rarity.',
     conditionNotes: 'Used copies with fine centering command premium prices.',
@@ -2732,7 +2729,7 @@ export const apiStampData = [
     stampCode: 'NZ.1d.Red.1858-61.Imperf.White.NoWmk.YRoulette18.A1d',
     name: 'Y-roulette 18',
     description: 'Y-roulette 18 variant of the Full-Face Queens 1d Red stamp, imperforate, printed on white papers without watermark by Richardson between 1858 and 1861',
-    alternativeNames: [ 'Y-roulette 18', 'Full-Face Queens 1d Red Y-roulette' ],
+    alternativeNames: ['Y-roulette 18', 'Full-Face Queens 1d Red Y-roulette'],
     country: 'NZ',
     countryName: 'New Zealand',
     countryFlag: '🇳🇿',
@@ -2833,7 +2830,7 @@ export const apiStampData = [
     rarityRating: 'rare',
     rarityScale: '1-10',
     rarityScore: 7,
-    recentSales: [ [Object] ],
+    recentSales: [[Object]],
     hasVarieties: true,
     varietyCount: 5,
     varietyType: 'perforation and paper',
@@ -2864,9 +2861,9 @@ export const apiStampData = [
       'Stanley Gibbons Catalogue 2024',
       'NZ Philatelic Society Journal Vol. 12'
     ],
-    researchPapers: [ 'Analysis of Richardson Print Papers, 2020' ],
-    exhibitionLiterature: [ 'NZ Classics Exhibition Catalogue 2019' ],
-    onlineResources: [ 'https://www.nzphilately.org/richardson_print' ],
+    researchPapers: ['Analysis of Richardson Print Papers, 2020'],
+    exhibitionLiterature: ['NZ Classics Exhibition Catalogue 2019'],
+    onlineResources: ['https://www.nzphilately.org/richardson_print'],
     specialNotes: "Richardson's contract ended in 1862, making these issues historically significant",
     collectorNotes: 'Collectors prize the Y-roulette 18 variety for its rarity and distinct separation',
     conditionNotes: 'Condition varies widely; used copies often show postal markings',
@@ -2885,7 +2882,7 @@ export const apiStampData = [
     stampCode: 'NZ.A1d.1858-61.IMP.WP.NW.ObliqueRoulette',
     name: 'Oblique roulette',
     description: 'Oblique roulette variety of the Full-Face Queens 1d Red stamp printed by Richardson from 1858 to 1861 on white unwatermarked papers, imperforate.',
-    alternativeNames: [ 'Oblique roulette variety' ],
+    alternativeNames: ['Oblique roulette variety'],
     country: 'NZ',
     countryName: 'New Zealand',
     countryFlag: '🇳🇿',
@@ -2986,7 +2983,7 @@ export const apiStampData = [
     rarityRating: 'rare',
     rarityScale: '1-10',
     rarityScore: 7,
-    recentSales: [ [Object] ],
+    recentSales: [[Object]],
     hasVarieties: true,
     varietyCount: 5,
     varietyType: 'perforation and roulette',
@@ -3017,9 +3014,9 @@ export const apiStampData = [
       'Stanley Gibbons Catalogue 2024',
       'NZ Philatelic Society Journal Vol. 12'
     ],
-    researchPapers: [ 'Analysis of Richardson Print Varieties, 2023' ],
-    exhibitionLiterature: [ 'Classic New Zealand Stamps Exhibition Catalogue 2022' ],
-    onlineResources: [ 'https://www.nzphilately.org.nz/FullFaceQueens' ],
+    researchPapers: ['Analysis of Richardson Print Varieties, 2023'],
+    exhibitionLiterature: ['Classic New Zealand Stamps Exhibition Catalogue 2022'],
+    onlineResources: ['https://www.nzphilately.org.nz/FullFaceQueens'],
     specialNotes: "Richardson's contract ended in 1862, succeeded by Davies Print",
     collectorNotes: 'Varieties such as oblique roulette command premium prices',
     conditionNotes: 'Used copies vary in condition; mint copies are rare',
@@ -3035,7 +3032,7 @@ export const apiStampData = [
 // Helper function to find first stamp with valid image URL
 export const findFirstStampWithImage = (stamps: any[]) => {
   return stamps.find((stamp: any) => stamp.stampImageUrl && stamp.stampImageUrl.trim() !== '') ||
-         stamps[0]; // fallback to first stamp if none have images
+    stamps[0]; // fallback to first stamp if none have images
 };
 
 // Helper functions for API data grouping
@@ -3043,27 +3040,29 @@ export const findFirstStampWithImage = (stamps: any[]) => {
 
 export const groupStampsByCountry = (stamps: any[]) => {
   const grouped = stamps.reduce((acc: any, stamp: any) => {
-    const key = stamp.country;
-    if (!acc[key]) {
-      // Find the first stamp with a valid image URL for this country
-      const countryStamps = stamps.filter((s: any) => s.country === key);
-      const firstStampWithImage = findFirstStampWithImage(countryStamps);
+    if (!stamp.isInstance) {
+      const key = stamp.country;
+      if (!acc[key]) {
+        // Find the first stamp with a valid image URL for this country
+        const countryStamps = stamps.filter((s: any) => s.country === key);
+        const firstStampWithImage = findFirstStampWithImage(countryStamps);
 
-      acc[key] = {
-        code: stamp.country,
-        name: stamp.countryName,
-        flag: stamp.countryFlag,
-        stamps: [],
-        totalStamps: 0,
-        description: `Explore the philatelic heritage of ${stamp.countryName}`,
-        firstIssue: Math.min(...stamps.filter((s: any) => s.country === key && s.issueYear).map((s: any) => s.issueYear)).toString(),
-        lastIssue: Math.max(...stamps.filter((s: any) => s.country === key && s.issueYear).map((s: any) => s.issueYear)).toString(),
-        historicalNote: `Rich philatelic history spanning multiple eras and postal innovations.`,
-        featuredStampUrl: firstStampWithImage.stampImageUrl || '/images/stamps/no-image-available.png'
-      };
+        acc[key] = {
+          code: stamp.country,
+          name: stamp.countryName,
+          flag: stamp.countryFlag,
+          stamps: [],
+          totalStamps: 0,
+          description: `Explore the philatelic heritage of ${stamp.countryName}`,
+          firstIssue: Math.min(...stamps.filter((s: any) => s.country === key && s.issueYear).map((s: any) => s.issueYear)).toString(),
+          lastIssue: Math.max(...stamps.filter((s: any) => s.country === key && s.issueYear).map((s: any) => s.issueYear)).toString(),
+          historicalNote: `Rich philatelic history spanning multiple eras and postal innovations.`,
+          featuredStampUrl: firstStampWithImage.stampImageUrl || '/images/stamps/no-image-available.png'
+        };
+      }
+      acc[key].stamps.push(stamp);
+      acc[key].totalStamps++;
     }
-    acc[key].stamps.push(stamp);
-    acc[key].totalStamps++;
     return acc;
   }, {});
 
@@ -3071,13 +3070,13 @@ export const groupStampsByCountry = (stamps: any[]) => {
 };
 
 export const groupStampsBySeries = (stamps: any[], countryCode: string) => {
-  const countryStamps = stamps.filter(s => s.country === countryCode);
+  const countryStamps = stamps.filter(s => s.country === countryCode && !s.isInstance);
   const grouped = countryStamps.reduce((acc, stamp) => {
     // If seriesName is null, this stamp should go directly to details
     if (!stamp.seriesName) {
       return acc;
     }
-    
+
     const key = stamp.seriesName;
 
     if (!acc[key]) {
@@ -3099,7 +3098,7 @@ export const groupStampsBySeries = (stamps: any[], countryCode: string) => {
     acc[key].totalStamps++;
     return acc;
   }, {});
-  
+
   // Calculate year ranges for each series
   Object.values(grouped).forEach((series: any) => {
     const years = series.stamps.filter((s: any) => s.issueYear).map((s: any) => s.issueYear);
@@ -3109,16 +3108,16 @@ export const groupStampsBySeries = (stamps: any[], countryCode: string) => {
       series.yearRange = minYear === maxYear ? minYear.toString() : `${minYear}-${maxYear}`;
     }
   });
-  
+
   return Object.values(grouped);
 };
 
 export const groupStampsByYear = (stamps: any[], countryCode: string, seriesName: string) => {
-  const seriesStamps = stamps.filter(s => s.country === countryCode && s.seriesName === seriesName);
+  const seriesStamps = stamps.filter(s => s.country === countryCode && s.seriesName === seriesName && !s.isInstance);
   const grouped = seriesStamps.reduce((acc, stamp) => {
     const year = stamp.issueYear;
     if (!year) return acc;
-    
+
     const key = year.toString();
     if (!acc[key]) {
       // Find the first stamp with a valid image URL for this year
@@ -3137,21 +3136,24 @@ export const groupStampsByYear = (stamps: any[], countryCode: string, seriesName
     acc[key].totalStamps++;
     return acc;
   }, {});
-  
+
   return Object.values(grouped);
 };
 
 export const groupStampsByCurrency = (stamps: any[], countryCode: string, seriesName: string, year: number) => {
-  const yearStamps = stamps.filter(s => 
-    s.country === countryCode && 
-    s.seriesName === seriesName && 
-    s.issueYear === year
+  const yearStamps = stamps.filter(s =>
+    s.country === countryCode &&
+    s.seriesName === seriesName &&
+    s.issueYear === year &&
+    !s.isInstance
   );
-  
+
   const grouped = yearStamps.reduce((acc, stamp) => {
     const key = stamp.currencyCode;
     if (!key) return acc;
-    
+    const currencyStamps = yearStamps.filter((y: any) => y.currencyCode === key);
+    const firstStampWithImage = findFirstStampWithImage(currencyStamps);
+
     if (!acc[key]) {
       acc[key] = {
         code: stamp.currencyCode,
@@ -3159,14 +3161,15 @@ export const groupStampsByCurrency = (stamps: any[], countryCode: string, series
         symbol: stamp.currencySymbol,
         description: stamp.currencyDescription || `${stamp.currencyName} denominations`,
         totalStamps: 0,
-        stamps: []
+        stamps: [],
+        featuredStampUrl: firstStampWithImage.stampImageUrl || '/images/stamps/no-image-available.png'
       };
     }
     acc[key].stamps.push(stamp);
     acc[key].totalStamps++;
     return acc;
   }, {});
-  
+
   return Object.values(grouped);
 };
 
@@ -3175,19 +3178,19 @@ export const groupStampsByDenomination = (stamps: any[], countryCode: string, se
     s.country === countryCode &&
     s.seriesName === seriesName &&
     s.issueYear === year &&
-    s.currencyCode === currencyCode
+    s.currencyCode === currencyCode &&
+    !s.isInstance
   );
 
 
-  
+
   const grouped = currencyStamps.reduce((acc: any, stamp: any) => {
     // If denominationValue is null, this stamp should go directly to details
     if (!stamp.denominationValue) {
       return acc;
     }
-    
+
     const key = stamp.denominationValue;
-    
     if (!acc[key]) {
       // Find the first stamp with a valid image URL for this denomination
       const denominationStamps = currencyStamps.filter((s: any) => s.denominationValue === key);
@@ -3200,7 +3203,7 @@ export const groupStampsByDenomination = (stamps: any[], countryCode: string, se
         description: stamp.denominationDescription || `${stamp.denominationDisplay} denomination`,
         totalStamps: 0,
         stamps: [],
-        stampImageUrl: firstStampWithImage.stampImageUrl || '/images/stamps/no-image-available.png'
+        featuredStampUrl: firstStampWithImage.stampImageUrl || '/images/stamps/no-image-available.png'
       };
 
 
@@ -3211,23 +3214,27 @@ export const groupStampsByDenomination = (stamps: any[], countryCode: string, se
     acc[key].totalStamps++;
     return acc;
   }, {});
-  
+
   return Object.values(grouped);
 };
 
 export const groupStampsByColor = (stamps: any[], countryCode: string, seriesName: string, year: number, currencyCode: string, denominationValue: string) => {
-  const denominationStamps = stamps.filter(s => 
-    s.country === countryCode && 
-    s.seriesName === seriesName && 
+  const denominationStamps = stamps.filter(s =>
+    s.country === countryCode &&
+    s.seriesName === seriesName &&
     s.issueYear === year &&
     s.currencyCode === currencyCode &&
-    s.denominationValue === denominationValue
+    s.denominationValue === denominationValue &&
+    !s.isInstance
   );
-  
+
   const grouped = denominationStamps.reduce((acc, stamp) => {
     const key = stamp.colorCode;
     if (!key) return acc;
-    
+
+    const colorStamps = denominationStamps.filter((s: any) => s.colorCode === key);
+    const firstStampWithImage = findFirstStampWithImage(colorStamps);
+
     if (!acc[key]) {
       acc[key] = {
         code: stamp.colorCode,
@@ -3235,31 +3242,33 @@ export const groupStampsByColor = (stamps: any[], countryCode: string, seriesNam
         hex: stamp.colorHex,
         description: stamp.colorDescription || `${stamp.colorName} color variant`,
         totalStamps: 0,
-        stamps: []
+        stamps: [],
+        featuredStampUrl: firstStampWithImage.stampImageUrl || '/images/stamps/no-image-available.png'
       };
     }
     acc[key].stamps.push(stamp);
     acc[key].totalStamps++;
     return acc;
   }, {});
-  
+
   return Object.values(grouped);
 };
 
 export const groupStampsByPaper = (stamps: any[], countryCode: string, seriesName: string, year: number, currencyCode: string, denominationValue: string, colorCode: string) => {
-  const colorStamps = stamps.filter(s => 
-    s.country === countryCode && 
-    s.seriesName === seriesName && 
+  const colorStamps = stamps.filter(s =>
+    s.country === countryCode &&
+    s.seriesName === seriesName &&
     s.issueYear === year &&
     s.currencyCode === currencyCode &&
     s.denominationValue === denominationValue &&
-    s.colorCode === colorCode
+    s.colorCode === colorCode &&
+    !s.isInstance
   );
-  
+
   const grouped = colorStamps.reduce((acc: any, stamp: any) => {
     const key = stamp.paperCode;
     if (!key) return acc;
-    
+
     if (!acc[key]) {
       // Find the first stamp with a valid image URL for this paper type
       const paperStamps = colorStamps.filter((s: any) => s.paperCode === key);
@@ -3272,7 +3281,7 @@ export const groupStampsByPaper = (stamps: any[], countryCode: string, seriesNam
         description: stamp.paperDescription || `${stamp.paperName} type`,
         totalStamps: 0,
         stamps: [],
-        stampImageUrl: firstStampWithImage.stampImageUrl || '/images/stamps/no-image-available.png'
+        featuredStampUrl: firstStampWithImage.stampImageUrl || '/images/stamps/no-image-available.png'
       };
 
 
@@ -3283,24 +3292,28 @@ export const groupStampsByPaper = (stamps: any[], countryCode: string, seriesNam
     acc[key].totalStamps++;
     return acc;
   }, {});
-  
+
   return Object.values(grouped);
 };
 
 export const groupStampsByWatermark = (stamps: any[], countryCode: string, seriesName: string, year: number, currencyCode: string, denominationValue: string, colorCode: string, paperCode: string) => {
-  const paperStamps = stamps.filter(s => 
-    s.country === countryCode && 
-    s.seriesName === seriesName && 
+  const paperStamps = stamps.filter(s =>
+    s.country === countryCode &&
+    s.seriesName === seriesName &&
     s.issueYear === year &&
     s.currencyCode === currencyCode &&
     s.denominationValue === denominationValue &&
     s.colorCode === colorCode &&
-    s.paperCode === paperCode
+    s.paperCode === paperCode &&
+    !s.isInstance
   );
-  
+
   const grouped = paperStamps.reduce((acc, stamp) => {
     const key = stamp.watermarkCode || 'NoWmk';
-    
+
+    const watermarkStamps = paperStamps.filter((s: any) => s.watermarkCode === key);
+    const firstStampWithImage = findFirstStampWithImage(watermarkStamps);
+
     if (!acc[key]) {
       acc[key] = {
         code: stamp.watermarkCode || 'NoWmk',
@@ -3308,33 +3321,38 @@ export const groupStampsByWatermark = (stamps: any[], countryCode: string, serie
         description: stamp.watermarkDescription || (stamp.watermarkCode ? `${stamp.watermarkName} watermark` : 'No watermark present'),
         totalStamps: 0,
         pattern: stamp.watermarkName || 'None',
-        stamps: []
+        stamps: [],
+        featuredStampUrl: firstStampWithImage.stampImageUrl || '/images/stamps/no-image-available.png'
       };
     }
     acc[key].stamps.push(stamp);
     acc[key].totalStamps++;
     return acc;
   }, {});
-  
+
   return Object.values(grouped);
 };
 
 export const groupStampsByPerforation = (stamps: any[], countryCode: string, seriesName: string, year: number, currencyCode: string, denominationValue: string, colorCode: string, paperCode: string, watermarkCodeParam: string) => {
   const watermarkCode = watermarkCodeParam === null ? 'NoWmk' : watermarkCodeParam;
-  const watermarkStamps = stamps.filter(s => 
-    s.country === countryCode && 
-    s.seriesName === seriesName && 
+  const watermarkStamps = stamps.filter(s =>
+    s.country === countryCode &&
+    s.seriesName === seriesName &&
     s.issueYear === year &&
     s.currencyCode === currencyCode &&
     s.denominationValue === denominationValue &&
     s.colorCode === colorCode &&
     s.paperCode === paperCode &&
-    (s.watermarkCode === watermarkCode || (watermarkCode === 'NoWmk' && !s.watermarkCode))
+    (s.watermarkCode === watermarkCode || (watermarkCode === 'NoWmk' && !s.watermarkCode)) &&
+    !s.isInstance
   );
-  
+
   const grouped = watermarkStamps.reduce((acc, stamp) => {
     const key = stamp.perforationCode || 'imperf';
-    
+
+    const perforationStamps = watermarkStamps.filter((s: any) => s.perforationCode === key);
+    const firstStampWithImage = findFirstStampWithImage(perforationStamps);
+
     if (!acc[key]) {
       acc[key] = {
         code: stamp.perforationCode,
@@ -3342,35 +3360,37 @@ export const groupStampsByPerforation = (stamps: any[], countryCode: string, ser
         measurement: stamp.perforationMeasurement || stamp.perforationCode,
         description: stamp.perforationCode ? `Perforation ${stamp.perforationMeasurement || stamp.perforationCode}` : 'Imperforate stamp',
         totalStamps: 0,
-        stamps: []
+        stamps: [],
+        featuredStampUrl: firstStampWithImage.stampImageUrl || '/images/stamps/no-image-available.png'
       };
     }
     acc[key].stamps.push(stamp);
     acc[key].totalStamps++;
     return acc;
   }, {});
-  
+
   return Object.values(grouped);
 };
 
 export const groupStampsByItemType = (stamps: any[], countryCode: string, seriesName: string, year: number, currencyCode: string, denominationValue: string, colorCode: string, paperCode: string, watermarkCodeParam: string, perforationCode: string) => {
   const watermarkCode = watermarkCodeParam === null ? 'NoWmk' : watermarkCodeParam;
-  const perforationStamps = stamps.filter(s => 
-    s.country === countryCode && 
-    s.seriesName === seriesName && 
+  const perforationStamps = stamps.filter(s =>
+    s.country === countryCode &&
+    s.seriesName === seriesName &&
     s.issueYear === year &&
     s.currencyCode === currencyCode &&
     s.denominationValue === denominationValue &&
     s.colorCode === colorCode &&
     s.paperCode === paperCode &&
     (s.watermarkCode === watermarkCode || (watermarkCode === 'NoWmk' && !s.watermarkCode)) &&
-    (s.perforationCode === perforationCode || (perforationCode === 'imperf' && !s.perforationCode))
+    (s.perforationCode === perforationCode || (perforationCode === 'imperf' && !s.perforationCode)) &&
+    !s.isInstance
   );
-  
+
   const grouped = perforationStamps.reduce((acc, stamp) => {
     const key = stamp.itemTypeCode;
     if (!key) return acc;
-    
+
     if (!acc[key]) {
       // Find the first stamp with a valid image URL for this item type
       const itemTypeStamps = perforationStamps.filter((s: any) => s.itemTypeCode === key);
@@ -3383,7 +3403,7 @@ export const groupStampsByItemType = (stamps: any[], countryCode: string, series
         totalStamps: 0,
         stamps: [],
         category: stamp.itemFormat || 'Unknown',
-        stampImageUrl: firstStampWithImage.stampImageUrl || '/images/stamps/no-image-available.png'
+        featuredStampUrl: firstStampWithImage.stampImageUrl || '/images/stamps/no-image-available.png'
       };
 
 
@@ -3394,47 +3414,47 @@ export const groupStampsByItemType = (stamps: any[], countryCode: string, series
     acc[key].totalStamps++;
     return acc;
   }, {});
-  
+
   return Object.values(grouped);
 };
 
 // Function to get individual stamps for stamp details
 export const getStampDetails = (stamps: any[], countryCode: string, seriesName?: string, year?: number, currencyCode?: string, denominationValue?: string, colorCode?: string, paperCode?: string, watermarkCodeParam?: string, perforationCode?: string, itemTypeCode?: string) => {
   const watermarkCode = watermarkCodeParam === null ? 'NoWmk' : watermarkCodeParam;
-  let filteredStamps = stamps.filter(s => s.country === countryCode);
-  
+  let filteredStamps = stamps.filter(s => s.country === countryCode && !s.isInstance);
+
   // Handle broken hierarchy - if seriesName is null, return stamps directly
   if (!seriesName) {
     return filteredStamps.filter(s => !s.seriesName);
   }
-  
+
   filteredStamps = filteredStamps.filter(s => s.seriesName === seriesName);
-  
+
   if (year !== undefined) {
     filteredStamps = filteredStamps.filter(s => s.issueYear === year);
   }
-  
+
   if (currencyCode) {
     filteredStamps = filteredStamps.filter(s => s.currencyCode === currencyCode);
   }
-  
+
   // Handle broken hierarchy - if denominationValue is null, return stamps directly
   if (denominationValue === undefined) {
     return filteredStamps.filter(s => !s.denominationValue);
   }
-  
+
   if (denominationValue) {
     filteredStamps = filteredStamps.filter(s => s.denominationValue === denominationValue);
   }
-  
+
   if (colorCode) {
     filteredStamps = filteredStamps.filter(s => s.colorCode === colorCode);
   }
-  
+
   if (paperCode) {
     filteredStamps = filteredStamps.filter(s => s.paperCode === paperCode);
   }
-  
+
   if (watermarkCode) {
     if (watermarkCode === 'NoWmk') {
       filteredStamps = filteredStamps.filter(s => !s.watermarkCode);
@@ -3442,7 +3462,7 @@ export const getStampDetails = (stamps: any[], countryCode: string, seriesName?:
       filteredStamps = filteredStamps.filter(s => s.watermarkCode === watermarkCode);
     }
   }
-  
+
   if (perforationCode) {
     if (perforationCode === 'imperf') {
       filteredStamps = filteredStamps.filter(s => s.perforationCode === 'imperf');
@@ -3450,11 +3470,11 @@ export const getStampDetails = (stamps: any[], countryCode: string, seriesName?:
       filteredStamps = filteredStamps.filter(s => s.perforationCode === perforationCode);
     }
   }
-  
+
   if (itemTypeCode) {
     filteredStamps = filteredStamps.filter(s => s.itemTypeCode === itemTypeCode);
   }
-  
+
   return filteredStamps;
 };
 
@@ -3465,8 +3485,8 @@ export const convertApiStampToStampData = (apiStamp: any) => {
     stampId: apiStamp.stampId,
     parentStampId: apiStamp.parentStampId,
     stampCode: apiStamp.stampCode,
+    isInstance: apiStamp.isInstance,
     status: 1,
-    userId: "user123",
     stampCatalogId: apiStamp.catalogNumber,
     name: apiStamp.name,
     description: apiStamp.description,
@@ -3497,9 +3517,11 @@ export const convertApiStampToStampData = (apiStamp: any) => {
       specialNotes: apiStamp.specialNotes,
       estimatedValue: (apiStamp.mintValue && isNaN(Number(apiStamp.mintValue))) ? `${apiStamp.currencySymbol}${apiStamp.mintValue}` : '-',
     }),
-    estimatedMarketValue: apiStamp.mintValue || 0,
-    actualPrice: apiStamp.usedValue || 0,
-    stampGroupId: apiStamp.stampGroupId || "unknown",
+    mintValue: apiStamp.mintValue || 0,
+    finestUsedValue: apiStamp.finestUsedValue || 0,
+    usedValue: apiStamp.usedValue || 0,
+    stampGroupId: apiStamp.stampGroupName || "unknown",
+    typeName: apiStamp.typeName || "unknown",
     instances: [], // ApiStampData does not contain instances, so initialize as empty
     rarity: apiStamp.rarityRating || 'Common', // Mapped directly, not in stampDetailsJson
     condition: apiStamp.conditionNotes || 'Mint', // Mapped directly, not in stampDetailsJson

@@ -103,7 +103,7 @@ export function YearModalContent({
                 <div className="grid grid-cols-5 gap-4 items-center text-sm">
                   <div className="col-span-1 text-center">
                     <Image
-                      src={year.featuredStampImageUrl || '/images/stamps/no-image-available.png'}
+                      src={year.featuredStampUrl || '/images/stamps/no-image-available.png'}
                       alt={`${year.year} stamps`}
                       width={40}
                       height={50}

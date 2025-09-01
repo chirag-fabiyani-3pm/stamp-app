@@ -61,7 +61,7 @@ export function VisualCatalogContent() {
   const totalSeriesCount = useMemo(() => {
     const seriesNames = new Set<string>();
     stamps.forEach(stamp => {
-      if (stamp.seriesName) {
+      if (stamp.seriesName && stamp.isInstance === false) {
         seriesNames.add(stamp.seriesName);
       }
     });
@@ -69,15 +69,7 @@ export function VisualCatalogContent() {
   }, []);
 
   const totalVarietiesCount = useMemo(() => {
-    let varieties = 0;
-    stamps.filter(stamp => stamp.isInstance === true).forEach(stamp => {
-      if (stamp.hasVarieties && stamp.varietyCount) {
-        varieties += stamp.varietyCount;
-      } else {
-        varieties += 1;
-      }
-    });
-    return varieties;
+    return stamps.filter(stamp => stamp.isInstance === true).length;
   }, []);
 
   useEffect(() => {
@@ -131,6 +123,8 @@ export function VisualCatalogContent() {
 
       if(years?.length === 1 && (years[0] as any)?.stamps?.length === 1) {
         const stamp = convertApiStampToStampData((years[0] as any)?.stamps[0])
+        const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+        stamp.instances = instances as never;
         const currentModal = modalStack[modalStack.length - 1]
         const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
         const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
@@ -165,6 +159,8 @@ export function VisualCatalogContent() {
       const currencies = groupStampsByCurrency(stamps, countryCode, actualSeriesName, year.year)
       if(currencies?.length === 1 && (currencies[0] as any)?.stamps?.length === 1) {
         const stamp = convertApiStampToStampData((currencies[0] as any)?.stamps[0])
+        const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+        stamp.instances = instances as never;
         const currentModal = modalStack[modalStack.length - 1]
         const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
         const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
@@ -197,6 +193,8 @@ export function VisualCatalogContent() {
       const denominations = groupStampsByDenomination(stamps, countryCode, actualSeriesName, year, currency.code)
       if(denominations?.length === 1 && (denominations[0] as any)?.stamps?.length === 1) {
         const stamp = convertApiStampToStampData((denominations[0] as any)?.stamps[0])
+        const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+        stamp.instances = instances as never;
         const currentModal = modalStack[modalStack.length - 1]
         const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
         const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
@@ -229,6 +227,8 @@ export function VisualCatalogContent() {
       const colors = groupStampsByColor(stamps, countryCode, actualSeriesName, year, currencyCode, denomination.value)
       if(colors?.length === 1 && (colors[0] as any)?.stamps?.length === 1) {
         const stamp = convertApiStampToStampData((colors[0] as any)?.stamps[0])
+        const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+        stamp.instances = instances as never;
         const currentModal = modalStack[modalStack.length - 1]
         const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
         const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
@@ -261,6 +261,8 @@ export function VisualCatalogContent() {
       const papers = groupStampsByPaper(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, color.code)
       if(papers?.length === 1 && (papers[0] as any)?.stamps?.length === 1) {
         const stamp = convertApiStampToStampData((papers[0] as any)?.stamps[0])
+        const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+        stamp.instances = instances as never;
         const currentModal = modalStack[modalStack.length - 1]
         const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
         const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
@@ -294,6 +296,8 @@ export function VisualCatalogContent() {
       const watermarks = groupStampsByWatermark(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paper.code)
       if(watermarks?.length === 1 && (watermarks[0] as any)?.stamps?.length === 1) {
         const stamp = convertApiStampToStampData((watermarks[0] as any)?.stamps[0])
+        const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+        stamp.instances = instances as never;
         const currentModal = modalStack[modalStack.length - 1]
         const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
         const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
@@ -326,6 +330,8 @@ export function VisualCatalogContent() {
       const perforations = groupStampsByPerforation(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermark.code)
       if(perforations?.length === 1 && (perforations[0] as any)?.stamps?.length === 1) {
         const stamp = convertApiStampToStampData((perforations[0] as any)?.stamps[0])
+        const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+        stamp.instances = instances as never;
         const currentModal = modalStack[modalStack.length - 1]
         const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
         const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
@@ -358,6 +364,8 @@ export function VisualCatalogContent() {
       const itemTypes = groupStampsByItemType(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforation.code)
       if(itemTypes?.length === 1 && (itemTypes[0] as any)?.stamps?.length === 1) {
         const stamp = convertApiStampToStampData((itemTypes[0] as any)?.stamps[0])
+        const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+        stamp.instances = instances as never;
         const currentModal = modalStack[modalStack.length - 1]
         const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
         const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
@@ -390,6 +398,8 @@ export function VisualCatalogContent() {
       const stampsList = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemType.code)
       if(stampsList?.length === 1) {
         const stamp = convertApiStampToStampData(stampsList[0])
+        const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+        stamp.instances = instances as never;
         const currentModal = modalStack[modalStack.length - 1]
         const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
         const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
@@ -430,6 +440,8 @@ export function VisualCatalogContent() {
       const currentModal = modalStack[modalStack.length - 1]
       const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
       const newStampCode = `${currentStampCode}|||${stamp.catalogNumber}`
+      const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+      stamp.instances = instances as never;
       setModalStack(prev => [...prev, {
         type: 'stampDetails',
         title: `${stamp.name} Details`,

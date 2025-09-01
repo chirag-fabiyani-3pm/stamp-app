@@ -106,7 +106,7 @@ export function CurrencyModalContent({
                 <div className="grid grid-cols-9 gap-4 items-center text-sm">
                   <div className="col-span-1 text-center">
                     <Image
-                      src={currency.featuredStampImageUrl || '/images/stamps/no-image-available.png'}
+                      src={currency.featuredStampUrl || '/images/stamps/no-image-available.png'}
                       alt={`${currency.name} stamps`}
                       width={40}
                       height={50}

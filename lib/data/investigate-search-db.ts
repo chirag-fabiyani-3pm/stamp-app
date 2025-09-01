@@ -406,6 +406,7 @@ export const saveRawStampsToIndexedDB = async (rawStamps: any[]): Promise<void> 
       itemTypeCode: item.itemTypeCode ?? '',
 
       // Other useful fields (optional)
+      stampId: item.stampId,
       parentStampId: item.parentStampId,
       catalogNumber: item.catalogNumber,
       stampCode: item.stampCode,
@@ -460,6 +461,9 @@ export const saveRawStampsToIndexedDB = async (rawStamps: any[]): Promise<void> 
       proofType: item.proofType,
       essayType: item.essayType,
       errorType: item.errorType,
+      mintValue: item.mintValue,
+      finestUsedValue: item.finestUsedValue,
+      usedValue: item.usedValue,
       stampDetailsJson: item.stampDetailsJson,
     })
 
@@ -508,9 +512,9 @@ export const getPaginatedStampsFromIndexedDB = async (offset: number = 0, limit:
     const store = transaction.objectStore(STORE_NAME)
     
     // First, get the total count
-    const countRequest = store.count()
+    const countRequest = store.getAll()
     const total = await new Promise<number>((resolve, reject) => {
-      countRequest.onsuccess = () => resolve(countRequest.result)
+      countRequest.onsuccess = () => resolve(countRequest.result.filter(stamp => stamp.isInstance === false).length)
       countRequest.onerror = () => reject(countRequest.error)
     })
     
@@ -526,7 +530,7 @@ export const getPaginatedStampsFromIndexedDB = async (offset: number = 0, limit:
         const cursor = (event.target as IDBRequest).result
         
         if (cursor && collected < limit) {
-          if (currentOffset >= offset) {
+          if (currentOffset >= offset && cursor.value.isInstance === false) {
             stamps.push(cursor.value)
             collected++
           }
@@ -553,8 +557,8 @@ export const getTotalStampsCountFromIndexedDB = async (): Promise<number> => {
     const store = transaction.objectStore(STORE_NAME)
     
     return new Promise((resolve, reject) => {
-      const request = store.count()
-      request.onsuccess = () => resolve(request.result)
+      const request = store.getAll()
+      request.onsuccess = () => resolve(request.result.filter(stamp => stamp.isInstance === false).length)
       request.onerror = () => reject(request.error)
     })
   } catch (error) {

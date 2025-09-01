@@ -18,6 +18,7 @@ import { TypeModalContent } from "@/components/catalog/type-modal-content"
 import { StampGroupModalContent } from "@/components/catalog/stamp-group-modal-content"
 import { Skeleton } from "@/components/ui/skeleton";
 import { ListCatalogSkeleton } from "./investigate-search/loading-skeletons"
+import { convertApiStampToStampData } from "@/lib/data/catalog-data"
 
 export function ListCatalogContent() {
   const { normalizedStamps, stamps: rawStamps, loading: providerLoading } = useCatalogData()
@@ -39,20 +40,20 @@ export function ListCatalogContent() {
 
   // Helper builders using raw and normalized stamps
   const buildTypesForSeries = (seriesName: string): TypeData[] => {
-    const items = rawStamps.filter(i => (i.seriesName || '') === seriesName)
+    const items = rawStamps.filter(i => (i.seriesName || '') === seriesName && !i.isInstance)
     const map = new Map<string, TypeData & { _groupSet?: Set<string> }>()
     for (const i of items) {
-      const typeKey = i.typeId || i.typeName || 'unknown_type'
+      const typeKey = i.typeName
       const entry = map.get(typeKey) || {
         id: typeKey,
         name: i.typeName || 'Type',
-        seriesId: i.seriesId || seriesName,
+        seriesId: i.seriesName || seriesName,
         description: i.typeDescription || '',
         totalStampGroups: 0,
         catalogPrefix: (i.catalogNumber || '').split(/\d/)[0] || (i.typeName || '')
       }
       ;(entry as any)._groupSet = (entry as any)._groupSet || new Set<string>()
-      if (i.stampGroupId) (entry as any)._groupSet.add(i.stampGroupId)
+      if (i.stampGroupName) (entry as any)._groupSet.add(i.stampGroupName)
       map.set(typeKey, entry)
     }
     return Array.from(map.values()).map(e => ({
@@ -62,10 +63,10 @@ export function ListCatalogContent() {
   }
 
   const buildStampGroupsForType = (seriesName: string, typeId: string): StampGroupData[] => {
-    const items = rawStamps.filter(i => (i.seriesName || '') === seriesName && ((i.typeId || i.typeName || 'unknown_type') === typeId))
+    const items = rawStamps.filter(i => (i.seriesName || '') === seriesName && (i.typeName === typeId) && !i.isInstance)
     const map = new Map<string, StampGroupData & { _count?: number }>()
     for (const i of items) {
-      const groupKey = i.stampGroupId || 'unknown_group'
+      const groupKey = i.stampGroupName
       const entry = map.get(groupKey) || {
         id: groupKey,
         name: i.stampGroupName || groupKey,
@@ -185,11 +186,16 @@ export function ListCatalogContent() {
     // Join normalized with raw to filter by stampGroupId reliably
     const set = new Set<string>()
     rawStamps.forEach(r => {
-      if ((r.seriesName || '') === seriesName && ((r.typeId || r.typeName || 'unknown_type') === typeId) && (r.stampGroupId || '') === stampGroupId) {
+      if ((r.seriesName || '') === seriesName && (r.typeName === typeId) && (r.stampGroupName === stampGroupId) && !r.isInstance) {
         set.add(r.id)
       }
     })
-    return normalizedStamps.filter(s => set.has(s.id))
+    const baseStamps = normalizedStamps.filter(s => set.has(s.id))
+    baseStamps.forEach((s: any) => {
+      const instances = rawStamps.filter(r => r.parentStampId === (s as any).stampId)
+      s.instances = instances.map(convertApiStampToStampData)
+    })
+    return baseStamps
   }
 
   useEffect(() => {
@@ -200,34 +206,52 @@ export function ListCatalogContent() {
 
         if (catalogLayout === 'campbell-paterson') {
           // Group by seriesName
-          const seriesMap = new Map<string, SeriesData>()
+          const series: Record<string, SeriesData & { typeNames: Record<string, boolean> }> = {}
           stamps.forEach(s => {
+            if(s.isInstance) return
             const key = s.seriesName || 'Unknown Series'
-            const entry = seriesMap.get(key) || {
-              id: s.stampGroupId || key,
-              name: key,
-              description: '',
-              country: s.country || 'Unknown',
-              periodStart: s.issueYear || 0,
-              periodEnd: s.issueYear || 0,
-              totalTypes: 0,
-            } as SeriesData
+            if (!series[key]) {
+              series[key] = {
+                id: s.stampGroupId || key,
+                name: key,
+                description: s.catalogName || s.seriesName || '',
+                country: s.country || 'Unknown',
+                periodStart: s.issueYear || 0,
+                periodEnd: s.issueYear || 0,
+                totalTypes: 0,
+                totalStampGroups: 0,
+                typeNames: {},
+                stampGroupNames: {}
+              }
+            }
 
-            entry.description = entry.description || s.catalogName || s.seriesName || ''
+            const entry = series[key]
             entry.country = entry.country || s.country || 'Unknown'
             if (s.issueYear) {
-              entry.periodStart = Math.min(entry.periodStart || s.issueYear, s.issueYear)
-              entry.periodEnd = Math.max(entry.periodEnd || s.issueYear, s.issueYear)
+              entry.periodStart = Math.min(entry.periodStart, s.issueYear)
+              entry.periodEnd = Math.max(entry.periodEnd, s.issueYear)
             }
-            // Track distinct type names per series as totalTypes
-            ;(entry as any)._typeSet = (entry as any)._typeSet || new Set<string>()
-            if (s.stampGroupId) (entry as any)._typeSet.add(s.stampGroupId)
-            seriesMap.set(key, entry)
+            // Track distinct stamp groups per series
+            if (s.typeName) entry.typeNames[s.typeName] = true
+            if (s.typeName && s.stampGroupId){
+              entry.stampGroupNames[s.typeName] = {
+                ...entry.stampGroupNames[s.typeName],
+                [s.stampGroupId]: true
+              }
+            }
           })
 
-          const builtSeries = Array.from(seriesMap.values()).map(e => ({
-            ...e,
-            totalTypes: ((e as any)._typeSet ? (e as any)._typeSet.size : e.totalTypes) || 0,
+          const builtSeries = Object.values(series).map(seriesItem => ({
+            id: seriesItem.id,
+            name: seriesItem.name,
+            description: seriesItem.description,
+            country: seriesItem.country,
+            periodStart: seriesItem.periodStart,
+            periodEnd: seriesItem.periodEnd,
+            totalTypes: Object.keys(seriesItem.typeNames).length,
+            totalStampGroups: Object.values(seriesItem.stampGroupNames).reduce((sum, group) => sum + Object.keys(group).length, 0),
+            typeNames: seriesItem.typeNames,
+            stampGroupNames: seriesItem.stampGroupNames            
           }))
           setSeriesData(builtSeries)
         } else {
@@ -436,7 +460,7 @@ export function ListCatalogContent() {
                 </div>
                 <div>
                   <div className="text-lg font-bold text-black dark:text-white">
-                    {seriesData.reduce((sum, series) => sum + (series.totalTypes * 3), 0)}
+                    {seriesData.reduce((sum, series) => sum + series.totalStampGroups, 0)}
                   </div>
                   <div className="text-xs text-gray-600 dark:text-gray-400">Stamp Groups</div>
                 </div>

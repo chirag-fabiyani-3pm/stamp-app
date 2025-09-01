@@ -54,7 +54,7 @@ export function VisualWatermarkModalContent({
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
                 <Image
-                  src={watermark.featuredStampImageUrl || '/images/stamps/no-image-available.png'}
+                  src={watermark.featuredStampUrl || '/images/stamps/no-image-available.png'}
                   alt={watermark.name}
                   width={60}
                   height={80}

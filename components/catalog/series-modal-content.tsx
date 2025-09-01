@@ -124,9 +124,6 @@ export function SeriesModalContent({
                     {typeData.name}
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                    Catalog: {typeData.catalogPrefix}
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
                     {typeData.totalStampGroups} stamp groups
                   </div>
                 </div>
@@ -136,7 +133,7 @@ export function SeriesModalContent({
               <div className="lg:col-span-6">
                 <div className="mb-4">
                   <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                    {typeData.description}
+                    {(typeData.description === 'N/A' || !typeData.description) ? 'No description available' : typeData.description}
                   </p>
                 </div>
               </div>
