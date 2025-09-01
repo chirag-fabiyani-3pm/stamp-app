@@ -2035,23 +2035,23 @@ export default function StampReviewPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="usedValue">usedValue</Label>
-                        <Input
-                          id="usedValue"
-                          type="number"
-                          value={editFormData.usedValue || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, usedValue: Number(e.target.value) }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
                         <Label htmlFor="finestUsedValue">finestUsedValue</Label>
                         <Input
                           id="finestUsedValue"
                           type="number"
                           value={editFormData.finestUsedValue || ""}
                           onChange={(e) => setEditFormData(prev => ({ ...prev, finestUsedValue: Number(e.target.value) }))}
+                          disabled={selectedStamp?.isPublished}
+                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="usedValue">usedValue</Label>
+                        <Input
+                          id="usedValue"
+                          type="number"
+                          value={editFormData.usedValue || ""}
+                          onChange={(e) => setEditFormData(prev => ({ ...prev, usedValue: Number(e.target.value) }))}
                           disabled={selectedStamp?.isPublished}
                           className={selectedStamp?.isPublished ? "bg-muted" : ""}
                         />
@@ -2299,7 +2299,6 @@ export default function StampReviewPage() {
                 placeholder="Enter notes about why this stamp is being approved for publication..."
                 rows={4}
                 className="resize-none"
-                required
               />
               <p className="text-xs text-muted-foreground">
                 These notes will be saved with the stamp approval and cannot be changed later.
