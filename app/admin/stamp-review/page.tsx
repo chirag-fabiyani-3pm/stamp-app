@@ -2972,23 +2972,23 @@ export default function StampReviewPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="instance-usedValue">usedValue</Label>
-                        <Input
-                          id="instance-usedValue"
-                          type="number"
-                          value={instanceEditFormData.usedValue || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, usedValue: Number(e.target.value) }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
                         <Label htmlFor="instance-finestUsedValue">finestUsedValue</Label>
                         <Input
                           id="instance-finestUsedValue"
                           type="number"
                           value={instanceEditFormData.finestUsedValue || ""}
                           onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, finestUsedValue: Number(e.target.value) }))}
+                          disabled={selectedInstance?.isPublished}
+                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="instance-usedValue">usedValue</Label>
+                        <Input
+                          id="instance-usedValue"
+                          type="number"
+                          value={instanceEditFormData.usedValue || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, usedValue: Number(e.target.value) }))}
                           disabled={selectedInstance?.isPublished}
                           className={selectedInstance?.isPublished ? "bg-muted" : ""}
                         />
