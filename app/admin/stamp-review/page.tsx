@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/hooks/use-toast"
@@ -588,6 +588,34 @@ const updateStampInstance = async (instanceId: string, instanceData: Partial<Sta
   return response.json()
 }
 
+const createStampInstance = async (instanceData: Partial<StampInstanceItem>): Promise<StampInstanceItem> => {
+  const jwt = getJWT()
+  if (!jwt) {
+    throw new Error("Authentication required. Please log in again.")
+  }
+
+  // Convert the instance data to FormData with PascalCase keys
+  const formData = convertToFormData(instanceData)
+
+  const response = await fetch(
+    `https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/StampMasterCatalog`,
+    {
+      method: "POST",
+      headers: {
+        'Authorization': `Bearer ${jwt}`
+        // Note: Don't set Content-Type for FormData - browser will set it with boundary
+      },
+      body: formData
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  return response.json()
+}
+
 const deleteStampInstance = async (instanceId: string): Promise<void> => {
   const jwt = getJWT()
   if (!jwt) {
@@ -644,10 +672,12 @@ export default function StampReviewPage() {
   const [selectedInstance, setSelectedInstance] = useState<StampInstanceItem | null>(null)
   const [isInstanceEditModalOpen, setIsInstanceEditModalOpen] = useState(false)
   const [instanceEditFormData, setInstanceEditFormData] = useState<Partial<StampInstanceItem>>({})
+  const [createInstanceFormData, setCreateInstanceFormData] = useState<Partial<StampInstanceItem>>({})
   const [isUpdatingInstance, setIsUpdatingInstance] = useState(false)
 
   // Instance delete states
   const [isInstanceDeleteDialogOpen, setIsInstanceDeleteDialogOpen] = useState(false)
+  const [isCreateInstanceDialogOpen, setIsCreateInstanceDialogOpen] = useState(false)
   const [isDeletingInstance, setIsDeletingInstance] = useState(false)
   const [instanceToDelete, setInstanceToDelete] = useState<StampInstanceItem | null>(null)
 
@@ -882,6 +912,66 @@ export default function StampReviewPage() {
   }
 
   // Handle deleting stamp instance
+  const handleCreateInstance = async () => {
+    if (!selectedStamp) return
+
+    try {
+      setIsUpdatingInstance(true)
+
+      // Generate UUID for StampId
+      const newStampId = crypto.randomUUID()
+
+      // Prepare the instance data with prepopulated fields
+      const instanceData = {
+        ...createInstanceFormData,
+        stampId: newStampId,
+        parentStampId: selectedStamp.stampId,
+        catalogExtractionProcessId: selectedStamp.catalogExtractionProcessId,
+        pageNumber: (selectedStamp as any).pageNumber,
+        isPublished: true,
+        isInstance: true
+      }
+
+      const newInstance = await createStampInstance(instanceData)
+
+      // Refresh the instances list
+      if (selectedStamp.stampId) {
+        const instances = await fetchStampInstances(selectedStamp.stampId)
+        setStampInstances(instances)
+      }
+
+      // Reset form and close dialog
+      setCreateInstanceFormData({})
+      setIsCreateInstanceDialogOpen(false)
+
+      toast({
+        title: "Success",
+        description: "Stamp instance created successfully.",
+      })
+    } catch (error) {
+      console.error("Error creating instance:", error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create stamp instance. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsUpdatingInstance(false)
+    }
+  }
+
+  const handleOpenCreateInstanceDialog = () => {
+    if (!selectedStamp) return
+
+    // Prepopulate form data
+    setCreateInstanceFormData({
+      name: selectedStamp.name,
+      catalogNumber: selectedStamp.catalogNumber,
+      // Other fields will be filled by user
+    })
+    setIsCreateInstanceDialogOpen(true)
+  }
+
   const handleDeleteInstance = async () => {
     if (!instanceToDelete) return
 
@@ -1021,6 +1111,7 @@ export default function StampReviewPage() {
                   <SelectItem value="25">25 per page</SelectItem>
                   <SelectItem value="50">50 per page</SelectItem>
                   <SelectItem value="100">100 per page</SelectItem>
+                  <SelectItem value="200">200 per page</SelectItem>
                 </SelectContent>
               </Select>
               <Button
@@ -1106,6 +1197,7 @@ export default function StampReviewPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[50px]">Actions</TableHead>
+                      <TableHead className="w-[60px]">Serial Number</TableHead>
                       <TableHead
                         className="w-[60px] cursor-pointer select-none hover:bg-muted/50"
                         onClick={() => handleSort('pageNumber')}
@@ -1140,7 +1232,7 @@ export default function StampReviewPage() {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      sortedStamps.map((stamp) => (
+                      sortedStamps.map((stamp, index) => (
                         <TableRow key={stamp.id}>
                               <TableCell>
                                 <div className="flex gap-1">
@@ -1173,6 +1265,11 @@ export default function StampReviewPage() {
                               </TableCell>
                               <TableCell className="w-[60px]">
                                 <Badge variant="outline" className="font-mono">
+                                  {index + 1}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="w-[60px]">
+                                <Badge variant="outline" className="font-mono">
                                   {stamp.pageNumber}
                                 </Badge>
                               </TableCell>
@@ -1183,17 +1280,17 @@ export default function StampReviewPage() {
                           </TableCell>
                           <TableCell className="w-[120px]">
                             <div className="flex items-center gap-1 overflow-hidden">
-                              <span className="overflow-hidden text-ellipsis whitespace-nowrap">{stamp.mintValue || '-'}</span>
+                              <span className="overflow-hidden text-ellipsis whitespace-nowrap">{(stamp as any).mintValue || '-'}</span>
                             </div>
                           </TableCell>
                           <TableCell className="w-[80px]">
                             <div className="flex items-center gap-1 whitespace-nowrap">
-                              <span>{stamp.usedValue || '-'}</span>
+                              <span>{(stamp as any).usedValue || '-'}</span>
                             </div>
                           </TableCell>
                           <TableCell className="w-[80px]">
                             <div className="flex items-center gap-1 whitespace-nowrap">
-                              <span>{stamp.finestUsedValue || '-'}</span>
+                              <span>{(stamp as any).finestUsedValue || '-'}</span>
                             </div>
                           </TableCell>
                           <TableCell className="w-[120px]">
@@ -2003,13 +2100,22 @@ export default function StampReviewPage() {
           {/* Stamp Instances Table */}
           {selectedStamp && (
             <div className="mt-8 bg-muted/10 rounded-xl p-6 border">
-              <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
-                <Eye className="h-6 w-6" />
-                Stamp Instances
-                {isLoadingInstances && (
-                  <RefreshCw className="h-5 w-5 animate-spin" />
-                )}
-              </h3>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold flex items-center gap-2">
+                  <Eye className="h-6 w-6" />
+                  Stamp Instances
+                  {isLoadingInstances && (
+                    <RefreshCw className="h-5 w-5 animate-spin" />
+                  )}
+                </h3>
+                <Button
+                  onClick={handleOpenCreateInstanceDialog}
+                  // className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Create Instance
+                </Button>
+              </div>
 
               {isLoadingInstances ? (
                 <div className="flex items-center justify-center py-8">
@@ -2026,6 +2132,7 @@ export default function StampReviewPage() {
                     <TableHeader>
                       <TableRow className="bg-muted/50">
                         <TableHead className="w-[100px] font-semibold">Actions</TableHead>
+                        <TableHead className="w-[60px] font-semibold">Serial No.</TableHead>
                         <TableHead className="w-[60px] font-semibold">Page</TableHead>
                         <TableHead className="min-w-[200px] max-w-[250px] font-semibold">Stamp</TableHead>
                         <TableHead className="w-[120px] font-semibold">Mint</TableHead>
@@ -2036,7 +2143,7 @@ export default function StampReviewPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {stampInstances.map((instance) => (
+                      {stampInstances.map((instance, index) => (
                         <TableRow key={instance.id}>
                           <TableCell>
                             <div className="flex gap-1">
@@ -2061,6 +2168,11 @@ export default function StampReviewPage() {
                           </TableCell>
                           <TableCell className="w-[60px]">
                             <Badge variant="outline" className="font-mono">
+                              {index + 1}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="w-[60px]">
+                            <Badge variant="outline" className="font-mono">
                               {instance.pageNumber}
                             </Badge>
                           </TableCell>
@@ -2071,17 +2183,17 @@ export default function StampReviewPage() {
                           </TableCell>
                           <TableCell className="w-[120px]">
                             <div className="flex items-center gap-1 overflow-hidden">
-                              <span className="overflow-hidden text-ellipsis whitespace-nowrap">{instance.mintValue || '-'}</span>
+                              <span className="overflow-hidden text-ellipsis whitespace-nowrap">{(instance as any).mintValue || '-'}</span>
                             </div>
                           </TableCell>
                           <TableCell className="w-[80px]">
                             <div className="flex items-center gap-1 whitespace-nowrap">
-                              <span>{instance.usedValue || '-'}</span>
+                              <span>{(instance as any).usedValue || '-'}</span>
                             </div>
                           </TableCell>
                           <TableCell className="w-[80px]">
                             <div className="flex items-center gap-1 whitespace-nowrap">
-                              <span>{instance.finestUsedValue || '-'}</span>
+                              <span>{(instance as any).finestUsedValue || '-'}</span>
                             </div>
                           </TableCell>
                           <TableCell className="w-[120px]">
@@ -2153,6 +2265,183 @@ export default function StampReviewPage() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Instance Dialog */}
+      <Dialog open={isCreateInstanceDialogOpen} onOpenChange={(open) => {
+        setIsCreateInstanceDialogOpen(open)
+        if (!open) {
+          setCreateInstanceFormData({})
+        }
+      }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5" />
+              Create Stamp Instance
+            </DialogTitle>
+            <DialogDescription>
+              Create a new instance of the selected stamp with custom values and file attachment.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-6 py-4">
+            {/* Read-only fields from base stamp */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="parentStampId" className="text-sm font-medium">
+                  Parent Stamp ID
+                </Label>
+                <Input
+                  id="parentStampId"
+                  value={selectedStamp?.stampId || ""}
+                  readOnly
+                  className="bg-muted"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="catalogExtractionProcessId" className="text-sm font-medium">
+                  Catalog Extraction Process ID
+                </Label>
+                <Input
+                  id="catalogExtractionProcessId"
+                  value={selectedStamp?.catalogExtractionProcessId || ""}
+                  readOnly
+                  className="bg-muted"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pageNumber" className="text-sm font-medium">
+                  Page Number
+                </Label>
+                <Input
+                  id="pageNumber"
+                  value={(selectedStamp as any)?.pageNumber || ""}
+                  readOnly
+                  className="bg-muted"
+                />
+              </div>
+            </div>
+
+            {/* User input fields */}
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-sm font-medium">
+                Name *
+              </Label>
+              <Input
+                id="name"
+                value={createInstanceFormData.name || ""}
+                onChange={(e) => setCreateInstanceFormData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Enter stamp name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="catalogNumber" className="text-sm font-medium">
+                Catalog Number *
+              </Label>
+              <Input
+                id="catalogNumber"
+                value={createInstanceFormData.catalogNumber || ""}
+                onChange={(e) => setCreateInstanceFormData(prev => ({ ...prev, catalogNumber: e.target.value }))}
+                placeholder="Enter catalog number"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="stampFileAttachment" className="text-sm font-medium">
+                Stamp File Attachment
+              </Label>
+              <Input
+                id="stampFileAttachment"
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    setCreateInstanceFormData(prev => ({ ...prev, stampFileAttachment: file }))
+                  }
+                }}
+                className="cursor-pointer"
+              />
+              {createInstanceFormData.stampFileAttachment && (
+                <p className="text-sm text-muted-foreground">
+                  Selected: {(createInstanceFormData.stampFileAttachment as File).name}
+                </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="mintValue" className="text-sm font-medium">
+                  Mint Value
+                </Label>
+                <Input
+                  id="mintValue"
+                  type="number"
+                  value={(createInstanceFormData as any).mintValue || ""}
+                  onChange={(e) => setCreateInstanceFormData(prev => ({ ...prev, mintValue: Number(e.target.value) } as any))}
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="finestUsedValue" className="text-sm font-medium">
+                  Finest Used Value
+                </Label>
+                <Input
+                  id="finestUsedValue"
+                  type="number"
+                  value={(createInstanceFormData as any).finestUsedValue || ""}
+                  onChange={(e) => setCreateInstanceFormData(prev => ({ ...prev, finestUsedValue: Number(e.target.value) } as any))}
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="usedValue" className="text-sm font-medium">
+                  Used Value
+                </Label>
+                <Input
+                  id="usedValue"
+                  type="number"
+                  value={(createInstanceFormData as any).usedValue || ""}
+                  onChange={(e) => setCreateInstanceFormData(prev => ({ ...prev, usedValue: Number(e.target.value) } as any))}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsCreateInstanceDialogOpen(false)}
+              disabled={isUpdatingInstance}
+            >
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateInstance}
+              disabled={isUpdatingInstance || !createInstanceFormData.name || !createInstanceFormData.catalogNumber}
+              // className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {isUpdatingInstance ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Create Instance
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -2474,8 +2763,8 @@ export default function StampReviewPage() {
                         <Input
                           id="instance-mintValue"
                           type="number"
-                          value={instanceEditFormData.mintValue || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, mintValue: Number(e.target.value) }))}
+                          value={(instanceEditFormData as any).mintValue || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, mintValue: Number(e.target.value) } as any))}
                         />
                       </div>
                       <div className="space-y-2">
@@ -2483,8 +2772,8 @@ export default function StampReviewPage() {
                         <Input
                           id="instance-finestUsedValue"
                           type="number"
-                          value={instanceEditFormData.finestUsedValue || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, finestUsedValue: Number(e.target.value) }))}
+                          value={(instanceEditFormData as any).finestUsedValue || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, finestUsedValue: Number(e.target.value) } as any))}
                         />
                       </div>
                       <div className="space-y-2">
@@ -2492,8 +2781,8 @@ export default function StampReviewPage() {
                         <Input
                           id="instance-usedValue"
                           type="number"
-                          value={instanceEditFormData.usedValue || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, usedValue: Number(e.target.value) }))}
+                          value={(instanceEditFormData as any).usedValue || ""}
+                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, usedValue: Number(e.target.value) } as any))}
                         />
                       </div>
                     </div>
