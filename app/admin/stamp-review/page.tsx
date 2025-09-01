@@ -1913,14 +1913,6 @@ export default function StampReviewPage() {
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       <div className="space-y-2">
-                        <Label htmlFor="issueDate">issueDate</Label>
-                        <Input
-                          id="issueDate"
-                          value={editFormData.issueDate || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, issueDate: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
                         <Label htmlFor="issueYear">issueYear</Label>
                         <Input
                           id="issueYear"
@@ -1931,33 +1923,11 @@ export default function StampReviewPage() {
                           className={selectedStamp?.isPublished ? "bg-muted" : ""}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="issueMonth">issueMonth</Label>
-                        <Input
-                          id="issueMonth"
-                          type="number"
-                          value={editFormData.issueMonth || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, issueMonth: Number(e.target.value) }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="issueDay">issueDay</Label>
-                        <Input
-                          id="issueDay"
-                          type="number"
-                          value={editFormData.issueDay || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, issueDay: Number(e.target.value) }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
                     </div>
                   </div>
 
                   {/* Philatelic Information */}
-                  <div className="bg-muted/20 rounded-xl p-6 border">
+                  {/* <div className="bg-muted/20 rounded-xl p-6 border">
                     <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
                       <span className="text-lg">📜</span>
                       Philatelic Information
@@ -2014,7 +1984,7 @@ export default function StampReviewPage() {
                         />
                       </div>
                     </div>
-                  </div>
+                  </div> */}
 
                   {/* Pricing & Market Information */}
                   <div className="bg-muted/20 rounded-xl p-6 border">
@@ -2849,14 +2819,6 @@ export default function StampReviewPage() {
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       <div className="space-y-2">
-                        <Label htmlFor="instance-issueDate">issueDate</Label>
-                        <Input
-                          id="instance-issueDate"
-                          value={instanceEditFormData.issueDate || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, issueDate: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
                         <Label htmlFor="instance-issueYear">issueYear</Label>
                         <Input
                           id="instance-issueYear"
@@ -2867,33 +2829,11 @@ export default function StampReviewPage() {
                           className={selectedInstance?.isPublished ? "bg-muted" : ""}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-issueMonth">issueMonth</Label>
-                        <Input
-                          id="instance-issueMonth"
-                          type="number"
-                          value={instanceEditFormData.issueMonth || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, issueMonth: Number(e.target.value) }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-issueDay">issueDay</Label>
-                        <Input
-                          id="instance-issueDay"
-                          type="number"
-                          value={instanceEditFormData.issueDay || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, issueDay: Number(e.target.value) }))}
-                          disabled={selectedInstance?.isPublished}
-                          className={selectedInstance?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
                     </div>
                   </div>
 
                   {/* Philatelic Information */}
-                  <div className="bg-muted/20 rounded-xl p-6 border">
+                  {/* <div className="bg-muted/20 rounded-xl p-6 border">
                     <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
                       <span className="text-lg">📜</span>
                       Philatelic Information
@@ -2950,7 +2890,7 @@ export default function StampReviewPage() {
                         />
                       </div>
                     </div>
-                  </div>
+                  </div> */}
 
                   {/* Pricing & Market Information */}
                   <div className="bg-muted/20 rounded-xl p-6 border">
