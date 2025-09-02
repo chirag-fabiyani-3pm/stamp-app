@@ -4,7 +4,10 @@ const DB_NAME = 'StampCatalogDB'
 const DB_VERSION = 6 // Version 5: added metadata store, Version 6: fixed date refresh logic
 const STORE_NAME = 'stamps'
 const RAW_STORE_NAME = 'rawStamps'
-const METADATA_STORE_NAME = 'metadata' // Store for last refresh date
+const METADATA_STORE_NAME = 'metadata' // Store for app version and refresh tracking
+
+// Update this version number on each deployment to trigger data refetch
+export const APP_VERSION = '1.0.0'
 
 export const openDB = (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
@@ -113,8 +116,8 @@ export const openDB = (): Promise<IDBDatabase> => {
   })
 }
 
-// Helper functions for date-based data refresh
-export const getLastRefreshDate = async (): Promise<string | null> => {
+// Helper functions for version-based data refresh
+export const getStoredAppVersion = async (): Promise<string | null> => {
   try {
     const db = await openDB()
 
@@ -128,87 +131,84 @@ export const getLastRefreshDate = async (): Promise<string | null> => {
     const store = transaction.objectStore(METADATA_STORE_NAME)
 
     return new Promise((resolve, reject) => {
-      const request = store.get('lastRefreshDate')
+      const request = store.get('appVersion')
       request.onsuccess = () => {
         const result = request.result
         const value = result?.value || null
-        console.log('Retrieved last refresh date:', { result, value })
+        console.log('Retrieved stored app version:', { result, value })
         resolve(value)
       }
       request.onerror = () => {
-        console.error('Failed to get last refresh date from store:', request.error)
+        console.error('Failed to get stored app version from store:', request.error)
         reject(request.error)
       }
     })
   } catch (error) {
-    console.error('❌ Error getting last refresh date:', error)
+    console.error('❌ Error getting stored app version:', error)
     return null
   }
 }
 
-export const setLastRefreshDate = async (date: string): Promise<void> => {
+export const setStoredAppVersion = async (version: string): Promise<void> => {
   try {
-    console.log(`Setting last refresh date to: "${date}"`)
+    console.log(`Setting stored app version to: "${version}"`)
     const db = await openDB()
     const transaction = db.transaction([METADATA_STORE_NAME], 'readwrite')
     const store = transaction.objectStore(METADATA_STORE_NAME)
 
     await new Promise<void>((resolve, reject) => {
-      const request = store.put({ key: 'lastRefreshDate', value: date })
+      const request = store.put({ key: 'appVersion', value: version })
       request.onsuccess = () => {
-        console.log(`✅ Successfully set last refresh date to: "${date}"`)
+        console.log(`✅ Successfully set stored app version to: "${version}"`)
         resolve()
       }
       request.onerror = () => {
-        console.error('❌ Failed to set last refresh date:', request.error)
+        console.error('❌ Failed to set stored app version:', request.error)
         reject(request.error)
       }
     })
   } catch (error) {
-    console.error('❌ Error setting last refresh date:', error)
+    console.error('❌ Error setting stored app version:', error)
     throw error
   }
 }
 
 export const shouldRefreshData = async (): Promise<boolean> => {
   try {
-    const today = new Date().toDateString() // Get current date as string (e.g., "Mon Jan 01 2024")
-    const lastRefreshDate = await getLastRefreshDate()
+    const currentVersion = APP_VERSION
+    const storedVersion = await getStoredAppVersion()
 
-    console.log('Date refresh check:', {
-      today,
-      lastRefreshDate,
-      lastRefreshDateType: typeof lastRefreshDate,
-      isNullOrUndefined: lastRefreshDate == null
+    console.log('Version refresh check:', {
+      currentVersion,
+      storedVersion,
+      storedVersionType: typeof storedVersion,
+      isNullOrUndefined: storedVersion == null
     })
 
-    if (!lastRefreshDate || lastRefreshDate.trim() === '') {
-      // No last refresh date stored, should refresh (first time or cleared)
-      console.log('No last refresh date found, will refresh data')
+    if (!storedVersion || storedVersion.trim() === '') {
+      // No stored version, should refresh (first time or cleared)
+      console.log('No stored app version found, will refresh data')
       return true
     }
 
-    // Check if the last refresh date is older than 7 days
-    const lastRefreshDateObj = new Date(lastRefreshDate.trim())
-    const todayObj = new Date(today)
-    const daysDifference = Math.floor((todayObj.getTime() - lastRefreshDateObj.getTime()) / (1000 * 60 * 60 * 24))
-    const shouldRefreshDueToAge = daysDifference > 7
+    // Check if versions mismatch
+    const versionsMatch = storedVersion.trim() === currentVersion
+    const shouldRefreshDueToVersion = !versionsMatch
 
-    console.log('Date comparison:', {
-      today,
-      lastRefreshDate: lastRefreshDate.trim(),
-      daysDifference,
-      shouldRefreshDueToAge,
-      comparison: `${daysDifference} days difference, refresh if > 7 days`
+    console.log('Version comparison:', {
+      currentVersion,
+      storedVersion: storedVersion.trim(),
+      versionsMatch,
+      shouldRefreshDueToVersion
     })
 
-    if (shouldRefreshDueToAge) {
-      console.log(`✅ Data is ${daysDifference} days old (older than 7 days), refreshing data...`)
+    if (shouldRefreshDueToVersion) {
+      console.log(`✅ App version changed (${storedVersion} → ${currentVersion}), refreshing data...`)
     } else {
-      console.log(`⏸️ Data is ${daysDifference} days old (within 7 days), using cached data`)
+      console.log(`⏸️ App version matches (${currentVersion}), using cached data`)
     }
 
-    return shouldRefreshDueToAge
+    return shouldRefreshDueToVersion
   } catch (error) {
     console.error('❌ Error checking if data should be refreshed:', error)
     // On error, don't refresh to avoid breaking the app
@@ -217,10 +217,10 @@ export const shouldRefreshData = async (): Promise<boolean> => {
 }
 
 export const markDataRefreshed = async (): Promise<void> => {
-  const today = new Date().toDateString()
-  console.log(`🎯 Marking data as refreshed for date: ${today}`)
-  await setLastRefreshDate(today)
-  console.log(`✅ Data refresh marked for date: ${today}`)
+  const currentVersion = APP_VERSION
+  console.log(`🎯 Marking data as refreshed for app version: ${currentVersion}`)
+  await setStoredAppVersion(currentVersion)
+  console.log(`✅ Data refresh marked for app version: ${currentVersion}`)
 }
 
 export const clearAllData = async (): Promise<void> => {
@@ -245,7 +245,7 @@ export const clearAllData = async (): Promise<void> => {
       })
     ])
 
-    console.log('All data cleared for daily refresh')
+    console.log('All data cleared for version refresh')
   } catch (error) {
     console.error('Error clearing all data:', error)
     throw error

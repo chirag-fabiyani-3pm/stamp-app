@@ -394,14 +394,14 @@ export function ListCatalogContent() {
               >
                 Campbell Paterson
               </Button>
-              <Button
+              {/* <Button
                 variant={catalogLayout === 'stanley-gibbons' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setCatalogLayout('stanley-gibbons')}
                 className={catalogLayout === 'stanley-gibbons' ? 'bg-black text-white dark:bg-amber-600 dark:text-white' : 'bg-white border-gray-300 text-black hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600'}
               >
                 Stanley Gibbons
-              </Button>
+              </Button> */}
             </div>
           </div>
 

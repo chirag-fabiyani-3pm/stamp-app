@@ -10,7 +10,8 @@ import {
   shouldRefreshData,
   clearAllData,
   markDataRefreshed,
-  forceCleanupUnusedIndexes
+  forceCleanupUnusedIndexes,
+  APP_VERSION
 } from "@/lib/data/investigate-search-db"
 import { StampData } from "@/types/catalog"
 import { fetchStampMasterCatalogWithProgress } from "@/lib/api/stamp-master-catalog"
@@ -84,10 +85,10 @@ export function CatalogDataProvider({ children }: { children: React.ReactNode })
           console.warn('Index cleanup failed, continuing anyway:', error)
         }
 
-        // Check if we need to refresh data based on date change
+        // Check if we need to refresh data based on version change
         const needsRefresh = await shouldRefreshData()
         if (needsRefresh) {
-          console.log('Date changed, clearing old data for fresh start...')
+          console.log(`App version changed to ${APP_VERSION}, clearing old data for fresh start...`)
           await clearAllData()
         }
 
