@@ -73,6 +73,7 @@ interface StampReviewResponse {
 }
 
 interface StampInstanceItem extends StampReviewItem {
+  isInstance?: boolean
   // Instances have the same structure but may have additional instance-specific fields
   parentStampId?: string
   instanceCatalogCode?: string
@@ -1997,65 +1998,6 @@ export default function StampReviewPage() {
                     </div>
                   </div>
 
-                  {/* Philatelic Information */}
-                  {/* <div className="bg-muted/20 rounded-xl p-6 border">
-                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                      <span className="text-lg">📜</span>
-                      Philatelic Information
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="postalHistoryType">postalHistoryType</Label>
-                        <Input
-                          id="postalHistoryType"
-                          value={editFormData.postalHistoryType || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, postalHistoryType: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="postmarkType">postmarkType</Label>
-                        <Input
-                          id="postmarkType"
-                          value={editFormData.postmarkType || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, postmarkType: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="proofType">proofType</Label>
-                        <Input
-                          id="proofType"
-                          value={editFormData.proofType || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, proofType: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="essayType">essayType</Label>
-                        <Input
-                          id="essayType"
-                          value={editFormData.essayType || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, essayType: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="errorType">errorType</Label>
-                        <Input
-                          id="errorType"
-                          value={editFormData.errorType || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, errorType: e.target.value }))}
-                          disabled={selectedStamp?.isPublished}
-                          className={selectedStamp?.isPublished ? "bg-muted" : ""}
-                        />
-                      </div>
-                    </div>
-                  </div> */}
 
                   {/* Pricing & Market Information */}
                   <div className="bg-muted/20 rounded-xl p-6 border">
@@ -2089,6 +2031,37 @@ export default function StampReviewPage() {
                           type="number"
                           value={editFormData.usedValue || ""}
                           onChange={(e) => setEditFormData(prev => ({ ...prev, usedValue: Number(e.target.value) }))}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status & Publish Notes */}
+                  <div className="bg-muted/20 rounded-xl p-6 border">
+                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                      <CheckCircle2 className="h-5 w-5" />
+                      Status & Publish Notes
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="isPublished">Published Status</Label>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="isPublished"
+                            checked={editFormData.isPublished || false}
+                            onCheckedChange={(checked) => setEditFormData(prev => ({ ...prev, isPublished: checked as boolean }))}
+                          />
+                          <span className="text-sm">Published</span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="publishNotes">Publish Notes</Label>
+                        <Textarea
+                          id="publishNotes"
+                          value={editFormData.publishNotes || ""}
+                          onChange={(e) => setEditFormData(prev => ({ ...prev, publishNotes: e.target.value }))}
+                          rows={2}
+                          placeholder="Notes about publishing this stamp..."
                         />
                       </div>
                     </div>
@@ -2698,6 +2671,24 @@ export default function StampReviewPage() {
                       id="instance-catalogNumber"
                       value={instanceEditFormData.catalogNumber || ""}
                       onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, catalogNumber: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="instance-isInstance">isInstance</Label>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="instance-isInstance"
+                        checked={instanceEditFormData.isInstance || false}
+                        onCheckedChange={(checked) => setInstanceEditFormData(prev => ({ ...prev, isInstance: checked as boolean }))}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="instance-parentStampId">parentStampId</Label>
+                    <Input
+                      id="instance-parentStampId"
+                      value={instanceEditFormData.parentStampId || ""}
+                      onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, parentStampId: e.target.value }))}
                     />
                   </div>
                 </div>
