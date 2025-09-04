@@ -379,17 +379,6 @@ function StampDetailContent() {
                 )}
               </div>
               <div className="absolute top-3 right-3 flex items-center gap-2">
-                <Badge
-                  className={cn(
-                    "text-xs px-2 py-0.5 bg-black/70 text-white backdrop-blur-sm border border-white/30 shadow-sm",
-                    (stamp.rarityRating || '').toLowerCase().includes('collector approved') && "border-primary/60",
-                    (stamp.rarityRating || '').toLowerCase().includes('rare') && "border-orange-400",
-                    (stamp.rarityRating || '').toLowerCase().includes('uncommon') && "border-yellow-400",
-                    (stamp.rarityRating || '').toLowerCase().includes('common') && "border-green-500"
-                  )}
-                >
-                  {stamp.rarityRating || '—'}
-                </Badge>
                 <Button size="icon" variant="secondary" className="h-8 w-8 bg-background/80 backdrop-blur border border-white/20"
                   onClick={() => setIsLightboxOpen(true)} aria-label="Open large view">
                   <Maximize2 className="h-4 w-4" />
@@ -431,7 +420,7 @@ function StampDetailContent() {
               </div>
               <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 text-center">
                 <div className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Catalog</div>
-                <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{stamp.catalogNumber || '—'}</div>
+                <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{(stamp as any).categoryCode || '—'}</div>
               </div>
             </div>
 
@@ -497,8 +486,8 @@ function StampDetailContent() {
                     <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">{stamp.description}</p>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-4">
                       <div className="rounded-lg bg-gray-50 dark:bg-gray-800 px-3 py-2">
-                        <div className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Catalog Number</div>
-                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{stamp.catalogNumber || '—'}</div>
+                        <div className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Type</div>
+                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{stamp.typeName || '—'}</div>
                       </div>
                       {stamp.releaseName && (
                         <div className="rounded-lg bg-gray-50 dark:bg-gray-800 px-3 py-2">
@@ -569,11 +558,11 @@ function StampDetailContent() {
                   <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Market Insights</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
                     <div>
-                      <div className="text-xl md:text-3xl font-bold text-green-700 dark:text-green-300">{stamp.mintValue && typeof stamp.mintValue === 'number' ? `$${stamp.mintValue}` : '—'}</div>
+                      <div className="text-xl md:text-3xl font-bold text-green-700 dark:text-green-300">{stamp.mintValue && typeof stamp.mintValue === 'number' ? `${new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(stamp.mintValue)}` : '—'}</div>
                       <div className="text-xs text-green-700/80 dark:text-green-300/80">Mint Value</div>
                     </div>
                     <div>
-                      <div className="text-xl md:text-3xl font-bold text-blue-700 dark:text-blue-300">{stamp.usedValue && typeof stamp.usedValue === 'number' ? `$${stamp.usedValue}` : '—'}</div>
+                      <div className="text-xl md:text-3xl font-bold text-blue-700 dark:text-blue-300">{stamp.usedValue && typeof stamp.usedValue === 'number' ? `${new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(stamp.usedValue)}` : '—'}</div>
                       <div className="text-xs text-blue-700/80 dark:text-blue-300/80">Used Value</div>
                     </div>
                     <div>
