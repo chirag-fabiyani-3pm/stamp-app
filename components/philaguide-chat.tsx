@@ -139,6 +139,8 @@ function parseStructuredStampData(content: string): StampCard[] {
     // Split content by stamp sections - look for ## Stamp Information and ## Stamp Varieties as separators
     const sections = content.split(/## (?:Stamp Information|Stamp Varieties)/)
     console.log('🔍 Found stamp sections:', sections.length)
+    console.log('🔍 Raw content preview:', content.substring(0, 300) + '...')
+    console.log('🔍 Sections split result:', sections.map((s, i) => `Section ${i}: ${s.substring(0, 100)}...`))
 
     // Process each section (skip the first empty section)
     sections.slice(1).forEach((section, index) => {
@@ -150,7 +152,20 @@ function parseStructuredStampData(content: string): StampCard[] {
         const stampNameMatch = section.match(/\*\*Stamp Name\*\*:\s*([^\n]+)/)
         const countryMatch = section.match(/\*\*Country\*\*:\s*([^\n]+)/)
         const idMatch = section.match(/\*\*ID\*\*:\s*([^\n]+)/)
-        const imageUrlMatch = section.match(/\*\*Image URL\*\*:\s*\[([^\]]+)\]\(([^)]+)\)/)
+
+        // Fix: Handle both markdown link format [text](url) and direct text format
+        let imageUrl = null
+        const imageUrlMarkdownMatch = section.match(/\*\*Image URL\*\*:\s*\[([^\]]+)\]\(([^)]+)\)/)
+        const imageUrlDirectMatch = section.match(/\*\*Image URL\*\*:\s*([^\n]+)/)
+
+        if (imageUrlMarkdownMatch) {
+            // Markdown format: [text](url)
+            imageUrl = imageUrlMarkdownMatch[2].trim()
+        } else if (imageUrlDirectMatch) {
+            // Direct format: **Image URL**: text
+            imageUrl = imageUrlDirectMatch[1].trim()
+        }
+
         const descriptionMatch = section.match(/\*\*Description\*\*:\s*([^\n]+)/)
         const seriesMatch = section.match(/\*\*Series\*\*:\s*([^\n]+)/)
         const yearMatch = section.match(/\*\*Year\*\*:\s*([^\n]+)/)
@@ -170,7 +185,7 @@ function parseStructuredStampData(content: string): StampCard[] {
             name: stampNameMatch?.[1],
             country: countryMatch?.[1],
             id: idMatch?.[1],
-            imageUrl: imageUrlMatch?.[2],
+            imageUrl: imageUrl,
             description: descriptionMatch?.[1],
             catalogNumber: catalogNumberMatch?.[1],
             theme: themeMatch?.[1],
@@ -182,6 +197,12 @@ function parseStructuredStampData(content: string): StampCard[] {
             parentStampId: parentStampIdMatch?.[1],
             relationshipType: relationshipTypeMatch?.[1]
         })
+
+        // DEBUG: Log image URL extraction details
+        console.log('🔍 Image URL Extraction Debug:')
+        console.log('  - imageUrlMarkdownMatch:', imageUrlMarkdownMatch)
+        console.log('  - imageUrlDirectMatch:', imageUrlDirectMatch)
+        console.log('  - Final imageUrl:', imageUrl)
 
         // Check if this is a variety response or regular stamp
         if (mainStampMatch && varietiesFoundMatch) {
@@ -216,10 +237,16 @@ function parseStructuredStampData(content: string): StampCard[] {
         } else if (stampNameMatch && countryMatch) {
             // This is a regular stamp response
             // Handle missing image URL - try to find any Azure blob storage URL in the section
-            let imageUrl = imageUrlMatch?.[2]?.trim()
             if (!imageUrl || imageUrl === 'Not provided' || imageUrl === '(image not available)' || imageUrl === 'View Image') {
-                const azureUrlMatch = section.match(/https:\/\/3pmplatformstorage\.blob\.core\.windows\.net\/[^\s)]+/)
-                imageUrl = azureUrlMatch?.[0] || '/images/stamps/no-image-available.png'
+                // Look for Azure blob storage URLs with the correct domain
+                const azureUrlMatch = section.match(/https:\/\/decodedstampstorage01\.blob\.core\.windows\.net[^\s\n\r]+/g)
+                if (azureUrlMatch && azureUrlMatch.length > 0) {
+                    imageUrl = azureUrlMatch[0]
+                    console.log('🔍 Found Azure blob URL in section:', imageUrl)
+                } else {
+                    imageUrl = '/images/stamps/no-image-available.png'
+                    console.log('🔍 No Azure blob URL found, using placeholder')
+                }
             }
 
             const stamp: StampCard = {
@@ -250,6 +277,9 @@ function parseStructuredStampData(content: string): StampCard[] {
             }
 
             console.log('🎴 Created stamp card:', stamp)
+            console.log('🎴 Stamp card image URL:', stamp.image)
+            console.log('🎴 Stamp card ID:', stamp.id)
+            console.log('🎴 Stamp card title:', stamp.title)
             stamps.push(stamp)
         }
     })
@@ -328,7 +358,7 @@ function StampCardDisplay({ data }: StampCardDisplayProps) {
     console.log('🎴 StampCardDisplay - data keys:', Object.keys(data))
 
     return (
-        <Card className="w-full max-w-full border-input bg-card/70 backdrop-blur-sm overflow-hidden shadow-md">
+        <Card className="w-full max-w-sm border-input bg-card/70 backdrop-blur-sm overflow-hidden shadow-md">
             <CardHeader className="pb-3">
                 <div className="flex items-start gap-3">
                     <div className="relative w-16 h-20 flex-shrink-0 rounded-md overflow-hidden border border-input bg-muted">
@@ -398,7 +428,7 @@ function StampCarouselDisplay({ data }: StampCarouselDisplayProps) {
     }
 
     return (
-        <Card className="w-full max-w-full border-input bg-card/70 backdrop-blur-sm overflow-hidden shadow-md">
+        <Card className="w-full max-w-sm border-input bg-card/70 backdrop-blur-sm overflow-hidden shadow-md">
             <CardHeader className="pb-3">
                 <div className="flex items-start gap-3">
                     <div className="relative w-16 h-20 flex-shrink-0 rounded-md overflow-hidden border border-input bg-muted">
@@ -987,7 +1017,29 @@ export function PhilaGuideChat() {
                 body: JSON.stringify({
                     clientSecret: 'chat-secret',
                     voice: selectedVoiceFromPanel,
-                    instructions: 'You are a knowledgeable stamp collecting expert. Answer questions about stamps, their history, and collecting. Keep responses concise and helpful.'
+                    instructions: `You are PhilaGuide AI, a specialized stamp collecting expert. You ONLY respond to philatelic (stamp collecting) related queries.
+
+CRITICAL RESTRICTION - PHILATELIC QUERIES ONLY:
+- ONLY respond to questions about stamps, stamp collecting, philately, postal history, or related topics
+- For ANY non-philatelic queries, politely redirect users back to stamp-related topics
+- Do NOT answer questions about general topics, current events, weather, sports, etc.
+
+RESPONSE GUIDELINES:
+- For philatelic queries: Provide natural, conversational responses suitable for speech
+- For non-philatelic queries: Politely redirect with a message like: "I'm PhilaGuide AI, specialized in stamp collecting. I'd be happy to help you with any questions about stamps, postal history, or philately. What would you like to know about stamps?"
+
+PHILATELIC TOPICS INCLUDE:
+- Stamps and stamp collecting
+- Postal history and postal services
+- Philatelic terminology and techniques
+- Stamp identification and valuation
+- Postal markings and cancellations
+- Stamp production and printing
+- Postal rates and postal systems
+- Stamp exhibitions and shows
+- Philatelic literature and resources
+
+REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics only.`
                 }),
             })
 
