@@ -160,7 +160,7 @@ const transformApiStampToInternal = (apiStamp: ApiStampResponse, capturedImageUr
 
   const yearString = typeof apiStamp.issueYear === 'number' ? String(apiStamp.issueYear) : ""
 
-  console.log("gumQuality", apiStamp.gumCondition , apiStamp.gumQuality);
+  console.log("Printing", apiStamp.printingQuantity, apiStamp.printRun);
 
   return {
     id: apiStamp.id || apiStamp.stampId || apiStamp.stampCode || "",
@@ -207,9 +207,9 @@ const transformApiStampToInternal = (apiStamp: ApiStampResponse, capturedImageUr
     denominationSymbol: apiStamp.denominationSymbol,
     design: apiStamp.design,
     theme: apiStamp.theme,
-    artist: apiStamp.artist && apiStamp.artist.toLowerCase() !== "unknown" && apiStamp.artist !== "n/a" ? apiStamp.artist : undefined,
-    engraver: apiStamp.engraver && apiStamp.engraver.toLowerCase() !== "unknown" && apiStamp.engraver !== "n/a" ? apiStamp.engraver : undefined,
-    printingQuantity: apiStamp.printingQuantity || ((apiStamp.printRun && apiStamp.printRun.toLowerCase() !== "unknown" && apiStamp.printRun !== "n/a") ? Number.parseInt(String(apiStamp.printRun).replace(/[^0-9]/g, '')) : undefined),
+    artist: apiStamp.artist && apiStamp.artist.toLowerCase() !== "unknown" && apiStamp.artist.toLowerCase() !== "n/a" ? apiStamp.artist : undefined,
+    engraver: apiStamp.engraver && apiStamp.engraver.toLowerCase() !== "unknown" && apiStamp.engraver.toLowerCase() !== "n/a" ? apiStamp.engraver : undefined,
+    printingQuantity: apiStamp.printingQuantity || ((apiStamp.printRun && apiStamp.printRun.toLowerCase() !== "unknown" && apiStamp.printRun.toLowerCase() !== "n/a") ? Number.parseInt(String(apiStamp.printRun).replace(/[^0-9]/g, '')) : undefined),
     usagePeriod: apiStamp.usagePeriod || ((apiStamp.periodStart || apiStamp.periodEnd) ? `${apiStamp.periodStart || ''}${(apiStamp.periodStart || apiStamp.periodEnd) ? '–' : ''}${apiStamp.periodEnd || ''}` : undefined),
     hasGum: apiStamp.hasGum,
     gumCondition: apiStamp.gumCondition && apiStamp.gumCondition.toLowerCase() !== "unknown" && apiStamp.gumCondition.toLowerCase() !== "n/a" && apiStamp.gumCondition.toLowerCase() !== "not applicable" ? apiStamp.gumCondition : undefined,
