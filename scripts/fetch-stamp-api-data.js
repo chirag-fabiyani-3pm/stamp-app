@@ -7,14 +7,14 @@ const path = require('path');
 const API_BASE_URL = 'https://decoded-app-stamp-api-prod-01.azurewebsites.net';
 const OUTPUT_FILE = 'stamp_master_catalog.ndjson';
 const CREDENTIALS = {
-    username: "harshit@decoded.digital",
+    username: "harshit.joshi@decoded.digital",
     password: "harshit",
     deviceId: "stamp-fetcher-script",
     isAppleDevice: true
 };
-const CATALOG_EXTRACTION_PROCESS_ID = "c1a24978-9c0a-4f2b-8478-1a18fc20560f";
+const CATALOG_EXTRACTION_PROCESS_ID = "254c793b-16d0-40a3-8b10-66d987b54474";
 const PAGE_SIZE = 200;
-const EXPECTED_TOTAL_STAMPS = 20339;
+const EXPECTED_TOTAL_STAMPS = 1915;
 
 // Global variables
 let authToken = null;
@@ -87,7 +87,7 @@ async function authenticate() {
 
 // Step 2: Fetch stamp data with pagination
 async function fetchStampPage(pageNumber) {
-    const url = `${API_BASE_URL}/api/v1/StampMasterCatalog?pageNumber=${pageNumber}&pageSize=${PAGE_SIZE}&catalogExtractionProcessId=${CATALOG_EXTRACTION_PROCESS_ID}`;
+    const url = `${API_BASE_URL}/api/v1/StampMasterCatalog/Published?pageNumber=${pageNumber}&pageSize=${PAGE_SIZE}&catalogExtractionProcessId=${CATALOG_EXTRACTION_PROCESS_ID}`;
 
     console.log(`📄 Fetching page ${pageNumber} (${PAGE_SIZE} stamps per page)...`);
 

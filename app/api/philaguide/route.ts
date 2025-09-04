@@ -1153,13 +1153,13 @@ function generateStampCard(stamp: any) {
     return {
         type: 'card',
         id: stamp.id || stamp.Id, // Use lowercase 'id' first, then fallback to 'Id'
-        title: stamp.name || stamp.Name || stamp.catalogNumber || stamp.StampCatalogCode || 'Stamp',
+        title: stamp.stamp_core?.name || stamp.name || stamp.Name || stamp.catalogNumber || stamp.StampCatalogCode || 'Stamp',
         subtitle: subtitle,
         image: imageUrl,
         content: [
             {
                 section: 'Overview',
-                text: `${stamp.name || stamp.Name} from ${stamp.country || stamp.Country}, issued in ${year}. Denomination: ${denomination}. Color: ${stamp.color || stamp.Color || 'Unknown'}.`
+                text: `${stamp.stamp_core?.name || stamp.name || stamp.Name} from ${stamp.country || stamp.Country}, issued in ${year}. Denomination: ${denomination}. Color: ${stamp.color || stamp.Color || 'Unknown'}.`
             },
             {
                 section: 'Details',
@@ -1192,14 +1192,14 @@ function generateStampCarousel(stamps: any[]) {
 
             return {
                 id: stamp.id || stamp.Id, // Use lowercase 'id' first, then fallback to 'Id'
-                title: stamp.name || stamp.Name || stamp.catalogNumber || stamp.StampCatalogCode || 'Stamp',
+                title: stamp.stamp_core?.name || stamp.name || stamp.Name || stamp.catalogNumber || stamp.StampCatalogCode || 'Stamp',
                 subtitle: subtitle,
                 image: imageUrl,
                 // Include the same detailed content as single cards
                 content: [
                     {
                         section: 'Overview',
-                        text: `${stamp.name || stamp.Name} from ${stamp.country || stamp.Country}, issued in ${year}. Denomination: ${denomination}. Color: ${stamp.color || stamp.Color || 'Unknown'}.`
+                        text: `${stamp.stamp_core?.name || stamp.name || stamp.Name} from ${stamp.country || stamp.Country}, issued in ${year}. Denomination: ${denomination}. Color: ${stamp.color || stamp.Color || 'Unknown'}.`
                     },
                     {
                         section: 'Details',
