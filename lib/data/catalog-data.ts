@@ -3030,8 +3030,8 @@ export const apiStampData = [
 ]
 
 // Helper function to find first stamp with valid image URL
-export const findFirstStampWithImage = (stamps: any[]) => {
-  return stamps.find((stamp: any) => stamp.stampImageUrl && stamp.stampImageUrl.trim() !== '') ||
+export const findFirstStampWithImage = (stamps: any[], fieldKey?: string) => {
+  return stamps.find((stamp: any) => stamp.stampImageUrl && stamp.stampImageUrl.trim() !== '' && (fieldKey ? (stamp[fieldKey] && stamp[fieldKey].trim() !== 'N/A') : true)) ||
     stamps[0]; // fallback to first stamp if none have images
 };
 
@@ -3082,7 +3082,7 @@ export const groupStampsBySeries = (stamps: any[], countryCode: string) => {
     if (!acc[key]) {
       // Find the first stamp with a valid image URL for this series
       const seriesStamps = countryStamps.filter((s: any) => s.seriesName === key);
-      const firstStampWithImage = findFirstStampWithImage(seriesStamps);
+      const firstStampWithImage = findFirstStampWithImage(seriesStamps, 'seriesDescription');
 
       acc[key] = {
         catalogNumber: stamp.seriesId || key.replace(/\s+/g, '_').toLowerCase(),
@@ -3526,5 +3526,7 @@ export const convertApiStampToStampData = (apiStamp: any) => {
     rarity: apiStamp.rarityRating || 'Common', // Mapped directly, not in stampDetailsJson
     condition: apiStamp.conditionNotes || 'Mint', // Mapped directly, not in stampDetailsJson
     story: apiStamp.story || '',
+    categoryCode: apiStamp.categoryCode || '',
+    categoryName: apiStamp.categoryName || ''
   };
 }; 

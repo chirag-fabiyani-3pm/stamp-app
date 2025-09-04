@@ -140,7 +140,9 @@ export function SeriesModalContent({
                 />
                 <div className="flex-1 text-center sm:text-left w-full">
                   <h3 className="font-semibold text-sm break-words">{series.name}</h3>
-                  <p className="text-xs text-muted-foreground break-words">{series.description}</p>
+                  <p className="text-xs text-muted-foreground break-words">{(series?.description as any)?.length > 75
+                    ? `${(series?.description as any)?.substring(0, 75)}...`
+                    : series?.description}</p>
                   <p className="text-xs text-primary font-medium break-words">{series.totalStamps} stamps</p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0 hidden sm:block" />

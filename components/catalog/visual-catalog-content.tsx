@@ -133,7 +133,7 @@ export function VisualCatalogContent() {
             type: 'stampDetails',
             title: `${stamp.name}`,
             data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.catalogNumber}` : (stamp.stampCode || ''),
+            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.stampCode || ''),
             selectedAdditionalCategories: currentSelectedCategories
         }])
         return
@@ -169,7 +169,7 @@ export function VisualCatalogContent() {
             type: 'stampDetails',
             title: `${stamp.name}`,
             data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.catalogNumber}` : (stamp.stampCode || ''),
+            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.stampCode || ''),
             selectedAdditionalCategories: currentSelectedCategories
         }])
         return
@@ -203,7 +203,7 @@ export function VisualCatalogContent() {
             type: 'stampDetails',
             title: `${stamp.name}`,
             data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.catalogNumber}` : (stamp.stampCode || ''),
+            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.stampCode || ''),
             selectedAdditionalCategories: currentSelectedCategories
         }])
         return
@@ -237,12 +237,12 @@ export function VisualCatalogContent() {
             type: 'stampDetails',
             title: `${stamp.name}`,
             data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.catalogNumber}` : (stamp.stampCode || ''),
+            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.stampCode || ''),
             selectedAdditionalCategories: currentSelectedCategories
         }])
         return
       }
-      const newStampCode = `${currentStampCode}|||${denomination.value}`
+      const newStampCode = `${currentStampCode}|||${denomination.value}${denomination.symbol}`
       setModalStack(prev => [...prev, {
         type: 'color',
         title: `${denomination.displayName} Colors`,
@@ -271,7 +271,7 @@ export function VisualCatalogContent() {
             type: 'stampDetails',
             title: `${stamp.name}`,
             data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.catalogNumber}` : (stamp.stampCode || ''),
+            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.stampCode || ''),
             selectedAdditionalCategories: currentSelectedCategories
         }])
         return
@@ -306,7 +306,7 @@ export function VisualCatalogContent() {
             type: 'stampDetails',
             title: `${stamp.name}`,
             data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.catalogNumber}` : (stamp.stampCode || ''),
+            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.stampCode || ''),
             selectedAdditionalCategories: currentSelectedCategories
         }])
         return
@@ -340,7 +340,7 @@ export function VisualCatalogContent() {
             type: 'stampDetails',
             title: `${stamp.name}`,
             data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.catalogNumber}` : (stamp.stampCode || ''),
+            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.stampCode || ''),
             selectedAdditionalCategories: currentSelectedCategories
         }])
         return
@@ -374,7 +374,7 @@ export function VisualCatalogContent() {
             type: 'stampDetails',
             title: `${stamp.name}`,
             data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.catalogNumber}` : (stamp.stampCode || ''),
+            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.stampCode || ''),
             selectedAdditionalCategories: currentSelectedCategories
         }])
         return
@@ -408,7 +408,7 @@ export function VisualCatalogContent() {
             type: 'stampDetails',
             title: `${stamp.name}`,
             data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.catalogNumber}` : (stamp.stampCode || ''),
+            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.stampCode || ''),
             selectedAdditionalCategories: currentSelectedCategories
         }])
         return
@@ -439,7 +439,7 @@ export function VisualCatalogContent() {
     try {
       const currentModal = modalStack[modalStack.length - 1]
       const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
-      const newStampCode = `${currentStampCode}|||${stamp.catalogNumber}`
+      const newStampCode = `${currentStampCode}|||${stamp.categoryCode}`
       const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
       stamp.instances = instances as never;
       setModalStack(prev => [...prev, {
@@ -639,7 +639,7 @@ export function VisualCatalogContent() {
           </div>
 
           {/* Statistics */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-sm border-y border-border py-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-center text-sm border-y border-border py-2">
             <div>
               <div className="text-base font-bold text-foreground">
                 {countries.length}
@@ -648,15 +648,9 @@ export function VisualCatalogContent() {
             </div>
             <div>
               <div className="text-base font-bold text-foreground">
-                {totalStampsCount.toLocaleString()}
+                {totalStampsCount + totalVarietiesCount}
               </div>
-              <div className="text-xs text-muted-foreground">Total Stamps</div>
-            </div>
-            <div>
-              <div className="text-base font-bold text-foreground">
-                {totalVarietiesCount.toLocaleString()}
-              </div>
-              <div className="text-xs text-muted-foreground">Varieties</div>
+              <div className="text-xs text-muted-foreground">Stamps</div>
             </div>
             <div>
               <div className="text-base font-bold text-foreground">

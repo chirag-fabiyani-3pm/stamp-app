@@ -129,7 +129,7 @@ export function StampDetailsModalContent({
                     </div>
                     <div className="text-center space-y-2 min-w-0">
                       <h3 className="font-semibold text-sm break-words">{stampItem.name}</h3>
-                      <p className="text-xs text-muted-foreground break-words">{stampItem.catalogNumber}</p>
+                      <p className="text-xs text-muted-foreground break-words">{stampItem.categoryCode}</p>
                       <p className="text-xs text-muted-foreground break-words">
                         {stampItem.denominationValue}{stampItem.denominationSymbol} - {stampItem.color}
                       </p>
@@ -184,7 +184,7 @@ export function StampDetailsModalContent({
                     />
                     <div className="flex-1">
                       <h3 className="font-bold text-lg text-foreground">{stampItem.name}</h3>
-                      <p className="text-sm text-muted-foreground mb-2">{stampItem.catalogNumber}</p>
+                      <p className="text-sm text-muted-foreground mb-2">{stampItem.categoryCode}</p>
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">
                           {stampItem.denominationValue}{stampItem.denominationSymbol} - {stampItem.color}
@@ -242,7 +242,7 @@ export function StampDetailsModalContent({
             />
             <div className="absolute top-2 right-2">
               <Badge variant="secondary" className="text-xs">
-                {stamp.catalogNumber}
+                {stamp.categoryCode}
               </Badge>
             </div>
           </div>
@@ -274,7 +274,7 @@ export function StampDetailsModalContent({
                   COLOR
                 </label>
                 <p className="text-sm font-semibold text-foreground">
-                  {stamp.color}
+                  {stamp.color || "Color Info Not Available"}
                 </p>
               </div>
               <div>
@@ -282,7 +282,7 @@ export function StampDetailsModalContent({
                   PERFORATION
                 </label>
                 <p className="text-sm font-semibold text-foreground">
-                  {parsedDetails.perforation || "12.0"}
+                  {parsedDetails.perforation || "Perforation Info Not Available"}
                 </p>
               </div>
             </div>
@@ -301,7 +301,7 @@ export function StampDetailsModalContent({
                   PAPER TYPE
                 </label>
                 <p className="text-sm font-semibold text-foreground">
-                  {stamp.paperType}
+                  {stamp.paperType || "Paper Type Info Not Available"}
                 </p>
               </div>
               <div>
@@ -309,7 +309,7 @@ export function StampDetailsModalContent({
                   WATERMARK
                 </label>
                 <p className="text-sm font-semibold text-foreground">
-                  {parsedDetails.watermark || "Star"}
+                  {parsedDetails.watermark || "Watermark Info Not Available"}
                 </p>
               </div>
             </div>
@@ -320,7 +320,7 @@ export function StampDetailsModalContent({
                   MINT VALUE
                 </label>
                 <p className="text-sm font-semibold text-foreground">
-                  {stamp.mintValue ? `$${stamp.mintValue}` : "-"}
+                  {stamp.mintValue ? `${new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(stamp.mintValue)}` : "-"}
                 </p>
               </div>
               <div>
@@ -328,7 +328,7 @@ export function StampDetailsModalContent({
                   FINEST USED PRICE
                 </label>
                 <p className="text-sm font-semibold text-foreground">
-                  {stamp.finestUsedValue ? `$${stamp.finestUsedValue}` : "-"}
+                  {stamp.finestUsedValue ? `${new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(stamp.finestUsedValue)}` : "-"}
                 </p>
               </div>
               <div>
@@ -336,7 +336,7 @@ export function StampDetailsModalContent({
                   USED PRICE
                 </label>
                 <p className="text-sm font-semibold text-foreground">
-                  {stamp.usedValue ? `$${stamp.usedValue}` : "-"}
+                  {stamp.usedValue ? `${new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(stamp.usedValue)}` : "-"}
                 </p>
               </div>
             </div>
@@ -361,7 +361,7 @@ export function StampDetailsModalContent({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {stamp.instances.map((instance) => (
+                      {stamp.instances.map((instance: any) => (
                         <TableRow 
                           key={instance.id}
                           className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors bg-gray-50 dark:bg-gray-800"
@@ -374,7 +374,7 @@ export function StampDetailsModalContent({
                           <TableCell className="py-3 px-4 text-center">
                             {instance.mintValue ? (
                               <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
-                                ${instance.mintValue}
+                                {new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(instance.mintValue)}
                               </span>
                             ) : (
                               <span className="text-gray-400 dark:text-gray-500 text-xs">-</span>
@@ -383,7 +383,7 @@ export function StampDetailsModalContent({
                           <TableCell className="py-3 px-4 text-center">
                             {instance.finestUsedValue ? (
                               <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
-                                ${instance.finestUsedValue}
+                                {new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(instance.finestUsedValue)}
                               </span>
                             ) : (
                               <span className="text-gray-400 dark:text-gray-500 text-xs">-</span>
@@ -392,7 +392,7 @@ export function StampDetailsModalContent({
                           <TableCell className="py-3 px-4 text-center">
                             {instance.usedValue ? (
                               <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
-                                ${instance.usedValue}
+                                {new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(instance.usedValue)}
                               </span>
                             ) : (
                               <span className="text-gray-400 dark:text-gray-500 text-xs">-</span>

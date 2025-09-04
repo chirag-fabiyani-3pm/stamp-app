@@ -208,7 +208,7 @@ export function StampDetailsModal({ selectedStamp, isModalOpen, setIsModalOpen }
                       <div className="flex justify-between items-start gap-3">
                         <span className="text-xs text-muted-foreground">Mint Value:</span>
                         <span className="text-xs font-semibold text-green-600">
-                          ${selectedStamp.mintValue.toFixed(2)}
+                          {new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(selectedStamp.mintValue)}
                         </span>
                       </div>
                     )}
@@ -217,7 +217,7 @@ export function StampDetailsModal({ selectedStamp, isModalOpen, setIsModalOpen }
                       <div className="flex justify-between items-start gap-3">
                         <span className="text-xs text-muted-foreground">Finest Used Value:</span>
                         <span className="text-xs font-semibold text-blue-600">
-                          ${selectedStamp.finestUsedValue.toFixed(2)}
+                          {new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(selectedStamp.finestUsedValue)}
                         </span>
                       </div>
                     )}
@@ -226,7 +226,7 @@ export function StampDetailsModal({ selectedStamp, isModalOpen, setIsModalOpen }
                       <div className="flex justify-between items-start gap-3">
                         <span className="text-xs text-muted-foreground">Used Value:</span>
                         <span className="text-xs font-semibold text-orange-600">
-                          ${selectedStamp.usedValue.toFixed(2)}
+                          {new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(selectedStamp.usedValue)}
                         </span>
                       </div>
                     )}

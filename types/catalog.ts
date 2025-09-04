@@ -140,6 +140,7 @@ export interface StampData {
   stampGroupId: string;
   instances: StampInstance[];
   typeName: string;
+  categoryCode: string;
 }
 
 export interface ApiStampData {

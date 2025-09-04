@@ -12,6 +12,7 @@ interface StampModalContentProps {
 
 export function StampModalContent({ stampData, isLoading }: StampModalContentProps) {
   const stampDetailData = createStampDetailData(stampData)
+  console.log(stampData)
   const selectedImage = stampData.stampImageUrl
   const details = stampData.stampDetailsJson ? JSON.parse(stampData.stampDetailsJson) : {}
 
@@ -196,19 +197,19 @@ export function StampModalContent({ stampData, isLoading }: StampModalContentPro
               <div className="grid md:grid-cols-3 gap-4 text-center">
                 <div>
                   <div className="text-lg font-bold text-black dark:text-white">
-                    {stampDetailData.marketInfo.mintValue || '-'}
+                    {stampDetailData.mintValue ? new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(stampDetailData.mintValue) : '-'}
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">Mint Value</div>
                 </div>
                 <div>
                   <div className="text-lg font-bold text-black dark:text-white">
-                    {stampDetailData.marketInfo.usedValue || '-'}
+                    {stampDetailData.usedValue ? new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(stampDetailData.usedValue) : '-'}
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">Used Value</div>
                 </div>
                 <div>
                   <div className="text-lg font-bold text-black dark:text-white">
-                    {stampDetailData.marketInfo.rarity || '-'}
+                    {stampDetailData.rarity ? stampDetailData.rarity : '-'}
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">Rarity</div>
                 </div>
@@ -223,7 +224,7 @@ export function StampModalContent({ stampData, isLoading }: StampModalContentPro
             </h3>
             
             <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed font-sans">
-              {stampDetailData.bibliography}
+              {stampDetailData.bibliography ? stampDetailData.bibliography : 'Bibliography Not Available'}
             </pre>
           </div>
         </div>

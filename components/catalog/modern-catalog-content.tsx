@@ -138,7 +138,7 @@ function ModernCatalogContentInner() {
                     type: 'stampDetails',
                     title: `${stamp.name}`,
                     data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-                    stampCode: baseStampCode ? `${baseStampCode}|||${stamp.catalogNumber}` : (stamp.stampCode || ''),
+                    stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
                     selectedAdditionalCategories: currentSelectedCategories
                 }])
                 return
@@ -183,7 +183,7 @@ function ModernCatalogContentInner() {
                     type: 'stampDetails',
                     title: `${stamp.name}`,
                     data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-                    stampCode: baseStampCode ? `${baseStampCode}|||${stamp.catalogNumber}` : (stamp.stampCode || ''),
+                    stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
                     selectedAdditionalCategories: currentSelectedCategories
                 }])
                 return
@@ -229,7 +229,7 @@ function ModernCatalogContentInner() {
                     type: 'stampDetails',
                     title: `${stamp.name}`,
                     data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-                    stampCode: baseStampCode ? `${baseStampCode}|||${stamp.catalogNumber}` : (stamp.stampCode || ''),
+                    stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
                     selectedAdditionalCategories: currentSelectedCategories
                 }])
                 return
@@ -275,13 +275,13 @@ function ModernCatalogContentInner() {
                     type: 'stampDetails',
                     title: `${stamp.name}`,
                     data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-                    stampCode: baseStampCode ? `${baseStampCode}|||${stamp.catalogNumber}` : (stamp.stampCode || ''),
+                    stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
                     selectedAdditionalCategories: currentSelectedCategories
                 }])
                 return
             }
             
-            const newStampCode = `${currentStampCode}|||${denomination.value}`
+            const newStampCode = `${currentStampCode}|||${denomination.value}${denomination.symbol}`
             setModalStack(prev => [...prev, {
                 type: 'denomination',
                 title: `${denomination.displayName} Color Variations`,
@@ -313,7 +313,7 @@ function ModernCatalogContentInner() {
                     type: 'stampDetails',
                     title: `${stamp.name}`,
                     data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-                    stampCode: baseStampCode ? `${baseStampCode}|||${stamp.catalogNumber}` : (stamp.stampCode || ''),
+                    stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
                     selectedAdditionalCategories: currentSelectedCategories
                 }])
                 return
@@ -351,7 +351,7 @@ function ModernCatalogContentInner() {
                     type: 'stampDetails',
                     title: `${stamp.name}`,
                     data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-                    stampCode: baseStampCode ? `${baseStampCode}|||${stamp.catalogNumber}` : (stamp.stampCode || ''),
+                    stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
                     selectedAdditionalCategories: currentSelectedCategories
                 }])
                 return
@@ -389,7 +389,7 @@ function ModernCatalogContentInner() {
                     type: 'stampDetails',
                     title: `${stamp.name}`,
                     data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-                    stampCode: baseStampCode ? `${baseStampCode}|||${stamp.catalogNumber}` : (stamp.stampCode || ''),
+                    stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
                     selectedAdditionalCategories: currentSelectedCategories
                 }])
                 return
@@ -427,7 +427,7 @@ function ModernCatalogContentInner() {
                     type: 'stampDetails',
                     title: `${stamp.name}`,
                     data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-                    stampCode: baseStampCode ? `${baseStampCode}|||${stamp.catalogNumber}` : (stamp.stampCode || ''),
+                    stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
                     selectedAdditionalCategories: currentSelectedCategories
                 }])
                 return
@@ -464,7 +464,7 @@ function ModernCatalogContentInner() {
                     type: 'stampDetails',
                     title: `${stamp.name}`,
                     data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-                    stampCode: baseStampCode ? `${baseStampCode}|||${stamp.catalogNumber}` : (stamp.stampCode || ''),
+                    stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
                     selectedAdditionalCategories: currentSelectedCategories
                 }])
                 return
@@ -515,7 +515,7 @@ function ModernCatalogContentInner() {
             type: 'stampDetails',
             title: `${stamp.name}`,
             data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.catalogNumber}` : (stamp.stampCode || ''),
+            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
             selectedAdditionalCategories: currentSelectedCategories
         }])
     }

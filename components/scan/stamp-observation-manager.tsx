@@ -3921,7 +3921,7 @@ export default function StampObservationManager({
             apiFormData.append('IssueYear', issueYear);
 
             apiFormData.append('DenominationValue', (mergedData.denominationValue || 0).toString());
-            apiFormData.append('DenominationCurrency', mergedData.denominationCurrency || selectedStamp?.apiData?.denominationCurrency || '');
+            apiFormData.append('DenominationCurrency', 'd');
             apiFormData.append('DenominationSymbol', mergedData.denominationSymbol || selectedStamp?.apiData?.denominationSymbol || '');
             apiFormData.append('Color', mergedData.color || '');
 

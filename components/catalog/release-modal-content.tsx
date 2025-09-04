@@ -135,9 +135,6 @@ export function ReleaseModalContent({
               <div className="lg:col-span-8">
                 <div className="mb-4">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{item.name}</h3>
-                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                    {item.description}
-                  </p>
                   <div className="mt-2 text-sm text-gray-600">
                     {releaseData.hasCategories ? 
                       `${(item as CategoryData).totalPaperTypes} paper types` : 

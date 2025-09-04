@@ -18,7 +18,7 @@ export function parseStampCode(stampCode: string): ParsedStampCode {
   const encodedSeriesName = decodeURIComponent(parts[1] || '')
   const year = parseInt(parts[2] || '0')
   const currencyCode = parts[3] || ''
-  const denominationPart = parts[4] || ''
+  const denominationPart = parseFloat(parts[4]).toString() || ''
   const colorCode = parts[5] || ''
   const paperCode = parts[6] || ''
   const watermarkCode = parts[7] || ''

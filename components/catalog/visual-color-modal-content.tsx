@@ -81,10 +81,12 @@ export function ColorModalContent({
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
                 <div className="flex items-center space-x-2 flex-shrink-0">
-                  <div
+                  {color.hex === '#XXXXXX' ? (
+                    <div className="w-6 h-6 rounded border border-border bg-gradient-to-br from-red-400 via-orange-400 to-purple-400"></div>
+                  ) : <div
                     className="w-6 h-6 rounded border border-border"
                     style={{ backgroundColor: color.hex }}
-                  />
+                  />}
                   <Image
                     src={color.featuredStampUrl || '/images/stamps/no-image-available.png'}
                     alt={color.name}

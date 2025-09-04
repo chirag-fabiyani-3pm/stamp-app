@@ -353,7 +353,13 @@ export default function ModalContent({
                                 className="group cursor-pointer bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden"
                                 onClick={() => onColorClick(color, stampCode)}
                             >
-                                <div className="relative h-28 md:h-32 flex items-center justify-center" style={{ backgroundColor: color.hex }}>
+                                <div 
+                                    className="relative h-28 md:h-32 flex items-center justify-center" 
+                                    style={color.hex === '#XXXXXX' ? {} : { backgroundColor: color.hex }}
+                                >
+                                    {color.hex === '#XXXXXX' && (
+                                        <div className="absolute inset-0 bg-gradient-to-br from-red-400 via-orange-400 to-purple-400"></div>
+                                    )}
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
                                     <h3 className="relative text-xl md:text-2xl font-bold text-white drop-shadow-lg">{color.name}</h3>
                                 </div>
@@ -398,7 +404,7 @@ export default function ModalContent({
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
                         {colorData.papers.map((paper: PaperOption) => (
                             <div
                                 key={paper.code}
@@ -429,13 +435,13 @@ export default function ModalContent({
                                             <p className="text-gray-600 dark:text-gray-300 text-sm mb-3 leading-relaxed">{paper.description}</p>
 
                                             <div className="space-y-2">
-                                                <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-4">
                                                     <span className="text-sm text-gray-500 dark:text-gray-400">Texture:</span>
                                                     <Badge variant="outline" className="text-orange-600 border-orange-300 dark:text-orange-400 dark:border-orange-600">
-                                                        {paper.texture}
+                                                        {paper.texture !== 'N/A' ? paper.texture : 'Color texture not specified'}
                                                     </Badge>
                                                 </div>
-                                                <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-4">
                                                     <span className="text-sm text-gray-500 dark:text-gray-400">Count:</span>
                                                     <span className="text-sm font-medium">{paper.totalStamps} approved</span>
                                                 </div>
@@ -448,11 +454,6 @@ export default function ModalContent({
                                             <p className="text-orange-800 dark:text-orange-300 text-sm">{paper.technicalNote}</p>
                                         </div>
                                     )}
-
-                                    <div className="flex items-center justify-between">
-                                        <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">Premium Quality</Badge>
-                                        <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-gray-400 group-hover:text-orange-500 transition-colors" />
-                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -864,7 +865,7 @@ export default function ModalContent({
                                                 <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 group-hover:text-primary transition-colors">
                                                     {stampItem.name}
                                                 </h3>
-                                                <p className="text-sm text-gray-500 dark:text-gray-300 mb-2">{stampItem.catalogNumber}</p>
+                                                <p className="text-sm text-gray-500 dark:text-gray-300 mb-2">{stampItem.categoryCode}</p>
                                                 <div className="flex items-center justify-between">
                                                     <span className="text-sm text-gray-600 dark:text-gray-300">
                                                         {stampItem.denominationValue}{stampItem.denominationSymbol} - {stampItem.color}
@@ -920,7 +921,7 @@ export default function ModalContent({
 
                             <div className="text-center space-y-2">
                                 <Badge className="bg-primary/10 text-primary text-sm px-2 py-0.5 dark:bg-primary/20 dark:text-amber-300">
-                                    {stamp.catalogNumber}
+                                    {stamp.categoryCode}
                                 </Badge>
                             </div>
 
@@ -950,29 +951,29 @@ export default function ModalContent({
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
-                                                {stamp.instances.map((instance) => (
+                                                {stamp.instances.map((instance: any) => (
                                                     <TableRow 
                                                         key={instance.id}
                                                         className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                                                     >
                                                         <TableCell className="py-3 px-4 font-medium text-black dark:text-gray-100 hidden sm:table-cell">
                                                             <div className="flex flex-col gap-1">
-                                                                <span className="font-medium">{(instance as any).name}{(instance as any).catalogNumber ? ` (${(instance as any).catalogNumber})` : ''}</span>
+                                                                <span className="font-medium">{(instance as any).name}{(instance as any).catalogNumber && (instance as any).catalogNumber !== '-' ? ` (${(instance as any).catalogNumber})` : ''}</span>
                                                             </div>
                                                         </TableCell>
                                                         <TableCell className="py-3 px-4 text-center hidden sm:table-cell">
                                                             <span className="bg-green-100 text-green-800 px-2 py-1 text-xs font-medium rounded dark:bg-green-700 dark:text-green-200">
-                                                                {instance.mintValue ? `$${instance.mintValue}` : '-'}
+                                                                {instance.mintValue ? new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(instance.mintValue) : '-'}
                                                             </span>
                                                         </TableCell>
                                                         <TableCell className="py-3 px-4 text-center hidden sm:table-cell">
                                                             <span className="bg-blue-100 text-blue-800 px-2 py-1 text-xs font-medium rounded dark:bg-blue-700 dark:text-blue-200">
-                                                                {instance.finestUsedValue ? `$${instance.finestUsedValue}` : '-'}
+                                                                {instance.finestUsedValue ? new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(instance.finestUsedValue) : '-'}
                                                             </span>
                                                         </TableCell>
                                                         <TableCell className="py-3 px-4 text-center hidden sm:table-cell">
                                                             <span className="bg-orange-100 text-orange-800 px-2 py-1 text-xs font-medium rounded dark:bg-orange-700 dark:text-orange-200">
-                                                                {instance.usedValue ? `$${instance.usedValue}` : '-'}
+                                                                {instance.usedValue ? new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(instance.usedValue) : '-'}
                                                             </span>
                                                         </TableCell>
                                                         <TableCell className="py-3 px-4 sm:hidden w-1/2">
@@ -985,17 +986,17 @@ export default function ModalContent({
                                                             <div className="space-y-1">
                                                                 <div className="text-xs">
                                                                     <span className="bg-green-100 text-green-800 px-2 py-1 text-xs font-medium rounded dark:bg-green-700 dark:text-green-200 block mb-1">
-                                                                        Mint: {instance.mintValue ? `$${instance.mintValue}` : '-'}
+                                                                        Mint: {instance.mintValue ? new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(instance.mintValue) : '-'}
                                                                     </span>
                                                                 </div>
                                                                 <div className="text-xs">
                                                                     <span className="bg-blue-100 text-blue-800 px-2 py-1 text-xs font-medium rounded dark:bg-blue-700 dark:text-blue-200 block mb-1">
-                                                                        Finest Used: {instance.finestUsedValue ? `$${instance.finestUsedValue}` : '-'}
+                                                                        Finest Used: {instance.finestUsedValue ? new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(instance.finestUsedValue) : '-'}
                                                                     </span>
                                                                 </div>
                                                                 <div className="text-xs">
                                                                     <span className="bg-orange-100 text-orange-800 px-2 py-1 text-xs font-medium rounded dark:bg-orange-700 dark:text-orange-200 block">
-                                                                        Used: {instance.usedValue ? `$${instance.usedValue}` : '-'}
+                                                                        Used: {instance.usedValue ? new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(instance.usedValue) : '-'}
                                                                     </span>
                                                                 </div>
                                                             </div>
@@ -1074,18 +1075,18 @@ export default function ModalContent({
                                         </div>
                                         <div>
                                             <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">Color</dt>
-                                            <dd className="text-base font-semibold text-gray-900 dark:text-gray-100">{stamp.color}</dd>
+                                            <dd className="text-base font-semibold text-gray-900 dark:text-gray-100">{stamp.color || 'Color Info Not Available'}</dd>
                                         </div>
                                         <div>
                                             <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">Paper Type</dt>
-                                            <dd className="text-base font-semibold text-gray-900 dark:text-gray-100">{stamp.paperType}</dd>
+                                            <dd className="text-base font-semibold text-gray-900 dark:text-gray-100">{stamp.paperType || 'Paper Type Info Not Available'}</dd>
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
                                         <div>
                                             <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">Perforation</dt>
-                                            <dd className="text-base font-semibold text-gray-900 dark:text-gray-100">{(JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).perforation}</dd>
+                                            <dd className="text-base font-semibold text-gray-900 dark:text-gray-100">{(JSON.parse(stamp.stampDetailsJson) as ParsedStampDetails).perforation || 'Perforation Info Not Available'}</dd>
                                         </div>
                                         <div>
                                             <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">Watermark</dt>
@@ -1107,15 +1108,15 @@ export default function ModalContent({
 
                                 <div className="grid grid-cols-3 gap-2 text-center">
                                     <div>
-                                        <div className="text-xl md:text-3xl font-bold text-green-600 dark:text-green-400 mb-0.5">{stamp.mintValue ? `$${stamp.mintValue.toFixed(2)}` : '-'}</div>
+                                        <div className="text-xl md:text-3xl font-bold text-green-600 dark:text-green-400 mb-0.5">{stamp.mintValue ? new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(stamp.mintValue) : '-'}</div>
                                         <div className="text-xs text-green-700 dark:text-green-300">Mint Value</div>
                                     </div>
                                     <div>
-                                        <div className="text-xl md:text-3xl font-bold text-blue-600 dark:text-blue-400 mb-0.5">{stamp.finestUsedValue ? `$${stamp.finestUsedValue.toFixed(2)}` : '-'}</div>
+                                        <div className="text-xl md:text-3xl font-bold text-blue-600 dark:text-blue-400 mb-0.5">{stamp.finestUsedValue ? new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(stamp.finestUsedValue) : '-'}</div>
                                         <div className="text-xs text-blue-700 dark:text-blue-300">Finest Used Value</div>
                                     </div>
                                     <div>
-                                        <div className="text-xl md:text-3xl font-bold text-orange-600 dark:text-orange-400 mb-0.5">{stamp.usedValue ? `$${stamp.usedValue.toFixed(2)}` : '-'}</div>
+                                        <div className="text-xl md:text-3xl font-bold text-orange-600 dark:text-orange-400 mb-0.5">{stamp.usedValue ? new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(stamp.usedValue) : '-'}</div>
                                         <div className="text-xs text-orange-800 dark:text-orang-300">Used Value</div>
                                     </div>
                                 </div>

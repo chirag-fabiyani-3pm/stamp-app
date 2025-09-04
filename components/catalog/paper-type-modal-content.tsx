@@ -66,12 +66,6 @@ export function PaperTypeModalContent({
     <div className="mt-4">
       {/* Header */}
       <div className="mb-6">
-        <p className="text-gray-600 dark:text-gray-400 max-w-2xl">
-          {paperTypeData.description}
-        </p>
-        
-        <hr className="border-gray-300 dark:border-gray-700 my-6" />
-
         {/* Search Controls */}
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="flex-1">
@@ -95,7 +89,7 @@ export function PaperTypeModalContent({
             {/* Table Header */}
             <thead>
               <tr className="border-b-2 border-gray-400 dark:border-gray-600">
-                <th className="text-left py-3 px-4 font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">SG No.</th>
+                <th className="text-left py-3 px-4 font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">SR No.</th>
                 <th className="text-left py-3 px-4 font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Description</th>
                 <th className="text-center py-3 px-4 font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Mint</th>
                 <th className="text-center py-3 px-4 font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Used</th>
@@ -116,17 +110,17 @@ export function PaperTypeModalContent({
                       <td className="py-3 px-4 text-black dark:text-gray-100 flex flex-col gap-2">
                         <span className="font-medium">{stamp.name}</span>
                         <span className="text-gray-600 dark:text-gray-400 block">
-                          {(stamp as any).description}
+                          {(stamp as any).description && (stamp as any).description !== 'N/A' ? (stamp as any).description : 'Stamps with Unknown Description'}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-center">
                         <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
-                          {stamp.estimatedMarketValue ? `$${stamp.estimatedMarketValue.toFixed(2)}` : '-'}
+                          {stamp.mintValue ? new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(stamp.mintValue) : '-'}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-center">
                         <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
-                          {stamp.actualPrice ? `$${stamp.actualPrice.toFixed(2)}` : '-'}
+                          {stamp.usedValue ? new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(stamp.usedValue) : '-'}
                         </span>
                       </td>
                     </tr>
@@ -135,8 +129,7 @@ export function PaperTypeModalContent({
                     {stamp.instances && stamp.instances.map((instance) => (
                       <tr 
                         key={instance.id}
-                        className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
-                        onClick={() => onStampClick(instance as unknown as StampData)}
+                        className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                       >
                         <td className="py-2 px-4 text-xs text-gray-600 dark:text-gray-400"></td>
                         <td className="py-2 px-4 text-xs text-gray-700 dark:text-gray-300 pl-8 flex flex-col gap-2">
@@ -144,20 +137,20 @@ export function PaperTypeModalContent({
                             {(instance as any).name}
                           </span>
                           <span>
-                            {instance.description}
+                            {instance.description && instance.description !== 'N/A' ? instance.description : 'Stamps with Unknown Description'}
                           </span>
                         </td>
                         <td className="py-2 px-4 text-center text-xs">
                           {instance.mintValue ? (
                             <span className={`px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200`}>
-                              {instance.mintValue}
+                              {instance.mintValue ? new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format((instance as any).mintValue) : '-'}
                             </span>
                           ) : <span className="px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200">-</span>}
                         </td>
                         <td className="py-2 px-4 text-center text-xs">
                           {instance.usedValue ? (
                             <span className={`px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200`}>
-                              {instance.usedValue}
+                              {instance.usedValue ? new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format((instance as any).usedValue) : '-'}
                             </span>
                           ) : <span className="px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200">-</span>}
                         </td>

@@ -88,7 +88,7 @@ export function ListCatalogContent() {
   }
 
   const buildYearsForCountry = (countryCode: string): YearData[] => {
-    const items = rawStamps.filter(i => (i.country || '').toLowerCase() === countryCode.toLowerCase() || (i.countryName || '') === countryCode)
+    const items = rawStamps.filter(i => ((i.country || '').toLowerCase() === countryCode.toLowerCase() || (i.countryName || '') === countryCode) && !i.isInstance)
     const set = new Map<number, YearData & { _releaseSet?: Set<string> }>()
     for (const i of items) {
       if (i.issueYear == null) continue
@@ -107,10 +107,10 @@ export function ListCatalogContent() {
   }
 
   const buildReleasesForYear = (countryCode: string, year: number): ReleaseData[] => {
-    const items = rawStamps.filter(i => ((i.country || '').toLowerCase() === countryCode.toLowerCase() || (i.countryName || '') === countryCode) && i.issueYear === year)
+    const items = rawStamps.filter(i => ((i.country || '').toLowerCase() === countryCode.toLowerCase() || (i.countryName || '') === countryCode) && i.issueYear === year && !i.isInstance)
     const map = new Map<string, ReleaseData & { _categorySet?: Set<string> }>()
     for (const i of items) {
-      const key = i.releaseId || `${i.releaseName || 'Release'}-${year}`
+      const key = i.releaseName
       const entry = map.get(key) || {
         id: key,
         name: i.releaseName || 'Release',
@@ -122,17 +122,17 @@ export function ListCatalogContent() {
         hasCategories: false,
       }
       ;(entry as any)._categorySet = (entry as any)._categorySet || new Set<string>()
-      if (i.categoryId) (entry as any)._categorySet.add(i.categoryId)
+      if (i.categoryName) (entry as any)._categorySet.add(i.categoryName)
       map.set(key, entry)
     }
     return Array.from(map.values()).map(e => ({ ...e, totalCategories: ((e as any)._categorySet ? (e as any)._categorySet.size : e.totalCategories) || 0, hasCategories: (((e as any)._categorySet)?.size || 0) > 0 }))
   }
 
   const buildCategoriesForRelease = (countryCode: string, year: number, releaseId: string): CategoryData[] => {
-    const items = rawStamps.filter(i => ((i.country || '').toLowerCase() === countryCode.toLowerCase() || (i.countryName || '') === countryCode) && i.issueYear === year && (i.releaseId || '') === releaseId)
+    const items = rawStamps.filter(i => ((i.country || '').toLowerCase() === countryCode.toLowerCase() || (i.countryName || '') === countryCode) && i.issueYear === year && (i.releaseName || '') === releaseId && !i.isInstance)
     const map = new Map<string, CategoryData & { _paperSet?: Set<string> }>()
     for (const i of items) {
-      const key = i.categoryId || i.categoryCode || 'unknown_category'
+      const key = i.categoryCode
       const entry = map.get(key) || {
         id: key,
         name: i.categoryName || key,
@@ -143,17 +143,17 @@ export function ListCatalogContent() {
         hasPaperTypes: false,
       }
       ;(entry as any)._paperSet = (entry as any)._paperSet || new Set<string>()
-      if (i.paperTypeCode) (entry as any)._paperSet.add(i.paperTypeCode)
+      if (i.paperTypeName) (entry as any)._paperSet.add(i.paperTypeName)
       map.set(key, entry)
     }
     return Array.from(map.values()).map(e => ({ ...e, totalPaperTypes: ((e as any)._paperSet ? (e as any)._paperSet.size : e.totalPaperTypes) || 0, hasPaperTypes: (((e as any)._paperSet)?.size || 0) > 0 }))
   }
 
   const buildPaperTypesForCategory = (countryCode: string, year: number, releaseId: string, categoryId: string): PaperTypeData[] => {
-    const items = rawStamps.filter(i => ((i.country || '').toLowerCase() === countryCode.toLowerCase() || (i.countryName || '') === countryCode) && i.issueYear === year && (i.releaseId || '') === releaseId && ((i.categoryId || i.categoryCode) === categoryId))
+    const items = rawStamps.filter(i => ((i.country || '').toLowerCase() === countryCode.toLowerCase() || (i.countryName || '') === countryCode) && i.issueYear === year && (i.releaseName || '') === releaseId && ((i.categoryCode) === categoryId) && !i.isInstance)
     const map = new Map<string, PaperTypeData & { _count?: number }>()
     for (const i of items) {
-      const key = i.paperTypeCode || i.paperCode || 'unknown_paper'
+      const key = i.paperTypeName
       const entry = map.get(key) || {
         id: i.paperTypeId || key,
         name: i.paperTypeName || i.paperName || key,
@@ -169,17 +169,18 @@ export function ListCatalogContent() {
   }
 
   const buildStampsForPaperType = (countryCode: string, year: number, releaseId: string, categoryId: string, paperTypeCode: string): StampData[] => {
-    const candidates = normalizedStamps.filter(s => (s.countryCode || '').toLowerCase() === countryCode.toLowerCase() && (s.issueYear || 0) === year)
-    // We don't carry release/category/paper codes in normalizedStamps explicitly; match by names via rawStamps join
-    const rawKeyed = new Map<string, any>()
-    for (const r of rawStamps) {
-      rawKeyed.set(r.id, r)
-    }
-    return candidates.filter(s => {
-      const r = rawKeyed.get(s.id)
-      if (!r) return false
-      return (r.releaseId || '') === releaseId && ((r.categoryId || r.categoryCode) === categoryId) && ((r.paperTypeCode || r.paperCode) === paperTypeCode)
+    const set = new Set<string>()
+    rawStamps.forEach(r => {
+      if (((r.country || '').toLowerCase() === countryCode.toLowerCase() || (r.countryName || '') === countryCode) && r.issueYear === year && (r.releaseName || '') === releaseId && ((r.categoryCode) === categoryId)  && ((r.paperTypeName) === paperTypeCode) && !r.isInstance) {
+        set.add(r.id)
+      }
     })
+    const baseStamps = normalizedStamps.filter(s => set.has(s.id))
+    baseStamps.forEach((s: any) => {
+      const instances = rawStamps.filter(r => r.parentStampId === (s as any).stampId)
+      s.instances = instances.map(convertApiStampToStampData)
+    })
+    return baseStamps
   }
 
   const buildStampsForStampGroup = (seriesName: string, typeId: string, stampGroupId: string): StampData[] => {
@@ -258,6 +259,7 @@ export function ListCatalogContent() {
           // Group by country
           const countryMap = new Map<string, CountryData>()
           stamps.forEach(s => {
+            if(s.isInstance) return
             const code = s.countryCode || 'XX'
             const entry = countryMap.get(code) || {
               id: code,
@@ -394,14 +396,14 @@ export function ListCatalogContent() {
               >
                 Campbell Paterson
               </Button>
-              {/* <Button
+              <Button
                 variant={catalogLayout === 'stanley-gibbons' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setCatalogLayout('stanley-gibbons')}
                 className={catalogLayout === 'stanley-gibbons' ? 'bg-black text-white dark:bg-amber-600 dark:text-white' : 'bg-white border-gray-300 text-black hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600'}
               >
                 Stanley Gibbons
-              </Button> */}
+              </Button>
             </div>
           </div>
 
@@ -530,7 +532,7 @@ export function ListCatalogContent() {
                 <div className="divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredSeries.map((series) => (
                     <div 
-                      key={series.id}
+                      key={series.name}
                       className="cursor-pointer px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                       onClick={() => handleSeriesClick(series)}
                     >
@@ -776,7 +778,7 @@ export function ListCatalogContent() {
                         setModalStack(prev => [...prev, {
                           type: 'release',
                           data: { countryId: modal.data.countryId, year: modal.data.yearData.year, releaseData, categories: categoryData },
-                          title: releaseData.name
+                          title: releaseData.name && releaseData.name !== 'N/A' ? releaseData.name : 'Stamps with Unknown Release'
                         }])
                       } finally {
                         setLoadingModalContent(false);
@@ -797,7 +799,7 @@ export function ListCatalogContent() {
                         setModalStack(prev => [...prev, {
                           type: 'category',
                           data: { countryId: modal.data.countryId, year: modal.data.year, releaseId: modal.data.releaseData.id, categoryData, paperTypes: paperTypeData },
-                          title: categoryData.name
+                          title: categoryData.name && categoryData.name !== 'N/A' ? categoryData.name : 'Stamps with Unknown Category'
                         }])
                       } finally {
                         setLoadingModalContent(false);
@@ -810,7 +812,7 @@ export function ListCatalogContent() {
                         setModalStack(prev => [...prev, {
                           type: 'paperType',
                           data: { countryId: modal.data.countryId, year: modal.data.year, releaseId: modal.data.releaseId, categoryId: modal.data.categoryData.id, paperTypeData, stamps: stampsData },
-                          title: paperTypeData.name
+                          title: paperTypeData.name && paperTypeData.name !== 'N/A' ? paperTypeData.name : 'Stamps with Unknown Paper Type'
                         }])
                       } finally {
                         setLoadingModalContent(false);
@@ -831,7 +833,7 @@ export function ListCatalogContent() {
                         setModalStack(prev => [...prev, {
                           type: 'paperType',
                           data: { countryId: modal.data.countryId, year: modal.data.year, releaseId: modal.data.releaseId, categoryId: modal.data.categoryData.id, paperTypeData, stamps: stampsData },
-                          title: paperTypeData.name
+                          title: paperTypeData.name && paperTypeData.name !== 'N/A' ? paperTypeData.name : 'Stamps with Unknown Paper Type'
                         }])
                       } finally {
                         setLoadingModalContent(false);
