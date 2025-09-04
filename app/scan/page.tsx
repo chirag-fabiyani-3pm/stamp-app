@@ -158,9 +158,9 @@ const transformApiStampToInternal = (apiStamp: ApiStampResponse, capturedImageUr
     ? apiStamp.watermark
     : (apiStamp.watermarkName || undefined)
 
-  const yearString = (apiStamp.issueDate
-    ? new Date(apiStamp.issueDate).getFullYear().toString()
-    : (typeof apiStamp.issueYear === 'number' ? String(apiStamp.issueYear) : ""))
+  const yearString = typeof apiStamp.issueYear === 'number' ? String(apiStamp.issueYear) : ""
+
+  console.log("gumQuality", apiStamp.gumCondition , apiStamp.gumQuality);
 
   return {
     id: apiStamp.id || apiStamp.stampId || apiStamp.stampCode || "",
@@ -207,12 +207,12 @@ const transformApiStampToInternal = (apiStamp: ApiStampResponse, capturedImageUr
     denominationSymbol: apiStamp.denominationSymbol,
     design: apiStamp.design,
     theme: apiStamp.theme,
-    artist: apiStamp.artist,
-    engraver: apiStamp.engraver,
-    printingQuantity: apiStamp.printingQuantity || (apiStamp.printRun ? Number.parseInt(String(apiStamp.printRun).replace(/[^0-9]/g, '')) : undefined),
+    artist: apiStamp.artist && apiStamp.artist.toLowerCase() !== "unknown" && apiStamp.artist !== "n/a" ? apiStamp.artist : undefined,
+    engraver: apiStamp.engraver && apiStamp.engraver.toLowerCase() !== "unknown" && apiStamp.engraver !== "n/a" ? apiStamp.engraver : undefined,
+    printingQuantity: apiStamp.printingQuantity || ((apiStamp.printRun && apiStamp.printRun.toLowerCase() !== "unknown" && apiStamp.printRun !== "n/a") ? Number.parseInt(String(apiStamp.printRun).replace(/[^0-9]/g, '')) : undefined),
     usagePeriod: apiStamp.usagePeriod || ((apiStamp.periodStart || apiStamp.periodEnd) ? `${apiStamp.periodStart || ''}${(apiStamp.periodStart || apiStamp.periodEnd) ? '–' : ''}${apiStamp.periodEnd || ''}` : undefined),
     hasGum: apiStamp.hasGum,
-    gumCondition: apiStamp.gumCondition || apiStamp.gumQuality,
+    gumCondition: apiStamp.gumCondition && apiStamp.gumCondition.toLowerCase() !== "unknown" && apiStamp.gumCondition.toLowerCase() !== "n/a" && apiStamp.gumCondition.toLowerCase() !== "not applicable" ? apiStamp.gumCondition : undefined,
     specialNotes: apiStamp.specialNotes,
     historicalContext: apiStamp.historicalContext || apiStamp.historicalSignificance
   };
@@ -1642,7 +1642,7 @@ function ScanPage() {
                 </div>
 
                 {/* Catalog Information */}
-                {(detailModalStamp.catalogName || detailModalStamp.catalogNumber || detailModalStamp.catalogId) && (
+                {/* {(detailModalStamp.catalogName || detailModalStamp.catalogNumber || detailModalStamp.catalogId) && (
                   <div className="space-y-2">
                     <h3 className="text-sm font-semibold text-foreground border-b pb-1">Catalog Information</h3>
                     <div className="space-y-1.5 text-sm">
@@ -1654,15 +1654,9 @@ function ScanPage() {
                           </Badge>
                         </div>
                       )}
-                      {detailModalStamp.catalogId && (
-                        <div className="flex justify-between items-start">
-                          <span className="text-muted-foreground">Catalog ID</span>
-                          <span className="font-medium text-right max-w-[200px] text-xs leading-tight break-all">{detailModalStamp.catalogId}</span>
-                        </div>
-                      )}
                     </div>
                   </div>
-                )}
+                )} */}
 
                 {/* Technical Specifications */}
                 <div className="space-y-2">
