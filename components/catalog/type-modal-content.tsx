@@ -115,22 +115,22 @@ export function TypeModalContent({
                   
                   {/* Technical Details */}
                   <div className="grid md:grid-cols-2 gap-4 text-sm">
-                    <div>
+                    {stampGroup.watermark && <div>
                       <span className="font-semibold text-gray-800 dark:text-gray-200">Watermark:</span>
                       <span className="ml-2 text-gray-700 dark:text-gray-300">{stampGroup.watermark}</span>
-                    </div>
-                    <div>
+                    </div>}
+                    {stampGroup.perforation && <div>
                       <span className="font-semibold text-gray-800 dark:text-gray-200">Perforation:</span>
                       <span className="ml-2 text-gray-700 dark:text-gray-300">{stampGroup.perforation}</span>
-                    </div>
-                    <div>
+                    </div>}
+                    {stampGroup.printingMethod && <div>
                       <span className="font-semibold text-gray-800 dark:text-gray-200">Printing:</span>
                       <span className="ml-2 text-gray-700 dark:text-gray-300">{stampGroup.printingMethod}</span>
-                    </div>
-                    <div>
+                    </div>}
+                    {stampGroup.printer && <div>
                       <span className="font-semibold text-gray-800 dark:text-gray-200">Printer:</span>
                       <span className="ml-2 text-gray-700 dark:text-gray-300">{stampGroup.printer}</span>
-                    </div>
+                    </div>}
                   </div>
                 </div>
               </div>

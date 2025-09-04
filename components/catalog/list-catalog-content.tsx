@@ -368,7 +368,7 @@ export function ListCatalogContent() {
   }, [])
 
   if (loading) {
-    return <ListCatalogSkeleton />
+    return <ListCatalogSkeleton layout={catalogLayout} />
   }
 
   return (
@@ -536,7 +536,7 @@ export function ListCatalogContent() {
                       className="cursor-pointer px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                       onClick={() => handleSeriesClick(series)}
                     >
-                      <div className="grid grid-cols-12 gap-4 items-center text-sm">
+                      <div className="hidden sm:grid grid-cols-12 gap-4 items-center text-sm">
                         <div className="col-span-4 font-bold text-gray-900 dark:text-gray-100">
                           {series.name}
                         </div>

@@ -233,7 +233,7 @@ export const VisualCatalogSkeleton = () => (
 )
 
 // List Catalog Skeleton
-export const ListCatalogSkeleton = () => (
+export const ListCatalogSkeleton = ({ layout = 'campbell-paterson' as 'campbell-paterson' | 'stanley-gibbons' }) => (
   <div className="min-h-screen text-gray-900 dark:text-gray-100">
     {/* Header */}
     <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 shadow-sm mx-4 mt-4 mb-6 rounded-lg">
@@ -281,11 +281,24 @@ export const ListCatalogSkeleton = () => (
         <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden">
           {/* Table Header */}
           <div className="border-b border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2 hidden sm:block">
-            <div className="grid grid-cols-12 gap-4 text-xs font-semibold text-gray-700 uppercase tracking-wide">
-              {Array.from({ length: 5 }, (_, i) => (
-                <Skeleton key={i} className="h-4 w-full col-span-2" />
-              ))}
-            </div>
+            {layout === 'campbell-paterson' ? (
+              <div className="grid grid-cols-12 gap-4 text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                <Skeleton className="h-4 w-full col-span-4" />
+                <Skeleton className="h-4 w-full col-span-2" />
+                <Skeleton className="h-4 w-full col-span-2" />
+                <Skeleton className="h-4 w-full col-span-3" />
+                <Skeleton className="h-4 w-full col-span-1" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-12 gap-4 text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                <Skeleton className="h-4 w-full col-span-3" />
+                <Skeleton className="h-4 w-full col-span-2" />
+                <Skeleton className="h-4 w-full col-span-2" />
+                <Skeleton className="h-4 w-full col-span-2" />
+                <Skeleton className="h-4 w-full col-span-2" />
+                <Skeleton className="h-4 w-full col-span-1" />
+              </div>
+            )}
           </div>
           <div className="block sm:hidden border-b border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2">
             <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-gray-700 uppercase tracking-wide">
@@ -298,13 +311,24 @@ export const ListCatalogSkeleton = () => (
           <div className="divide-y divide-gray-200 dark:divide-gray-700">
             {Array.from({ length: 10 }, (_, i) => (
               <div key={i} className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                <div className="grid grid-cols-12 gap-4 items-center text-sm">
-                  <Skeleton className="h-4 w-3/4 col-span-1 sm:col-span-4" />
-                  <Skeleton className="h-4 w-1/2 col-span-1 sm:col-span-2 text-center" />
-                  <Skeleton className="h-4 w-1/2 hidden sm:block col-span-2 text-center" />
-                  <Skeleton className="h-4 w-3/4 hidden sm:block col-span-3" />
-                  <Skeleton className="h-4 w-4 hidden sm:block col-span-1" />
-                </div>
+                {layout === 'campbell-paterson' ? (
+                  <div className="grid grid-cols-12 gap-4 items-center text-sm">
+                    <Skeleton className="h-4 w-3/4 col-span-4" />
+                    <Skeleton className="h-4 w-1/2 col-span-2" />
+                    <Skeleton className="h-4 w-1/2 col-span-2" />
+                    <Skeleton className="h-4 w-3/4 col-span-3" />
+                    <Skeleton className="h-4 w-4 col-span-1" />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-12 gap-4 items-center text-sm">
+                    <Skeleton className="h-4 w-3/4 col-span-3" />
+                    <Skeleton className="h-4 w-1/2 col-span-2" />
+                    <Skeleton className="h-4 w-1/2 col-span-2" />
+                    <Skeleton className="h-4 w-1/2 col-span-2" />
+                    <Skeleton className="h-4 w-3/4 col-span-2" />
+                    <Skeleton className="h-4 w-4 col-span-1" />
+                  </div>
+                )}
                 <div className="grid sm:hidden grid-cols-2 gap-4 items-center text-sm">
                   <div>
                     <Skeleton className="h-4 w-full font-bold" />

@@ -929,7 +929,7 @@ export default function StampObservationManager({
 
             // If detailed form JSON exists, parse and apply values dynamically
             const detailsJson = (selectedStamp.apiData as any).stampDetailsJson as string | undefined;
-            console.log(detailsJson)
+
             if (detailsJson) {
                 try {
                     const parsed = JSON.parse(detailsJson);
@@ -3923,8 +3923,7 @@ export default function StampObservationManager({
             apiFormData.append('IssueYear', issueYear);
 
             apiFormData.append('DenominationValue', (mergedData.denominationValue || 0).toString());
-            console.log(mergedData)
-            // apiFormData.append('DenominationCurrency', );
+            apiFormData.append('DenominationCurrency', mergedData.denominationCurrency || selectedStamp?.apiData?.denominationCurrency || '');
             apiFormData.append('DenominationSymbol', mergedData.denominationSymbol || selectedStamp?.apiData?.denominationSymbol || '');
             apiFormData.append('Color', mergedData.color || '');
 

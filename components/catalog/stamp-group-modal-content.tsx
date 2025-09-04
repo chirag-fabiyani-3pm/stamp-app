@@ -24,7 +24,7 @@ export function StampGroupModalContent({
         <Skeleton className="h-8 w-1/2 mb-4" />
         <Skeleton className="h-4 w-3/4 mb-6" />
 
-        <div className="border rounded-lg overflow-hidden dark:border-gray-700 w-full sm:w-auto">
+        <div className="border rounded-lg dark:border-gray-700 -mx-4 sm:mx-0 overflow-x-auto w-full">
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-50 dark:bg-gray-800 hidden sm:table-row">
@@ -70,7 +70,7 @@ export function StampGroupModalContent({
     <div className="p-4">
       <p className="text-gray-700 dark:text-gray-300 mb-4">{stampGroupData.description}</p>
 
-      <div className="border rounded-lg overflow-hidden dark:border-gray-700">
+      <div className="border rounded-lg dark:border-gray-700 -mx-4 sm:mx-0 overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="bg-gray-50 dark:bg-gray-800 hidden sm:table-row">
@@ -106,9 +106,11 @@ export function StampGroupModalContent({
                       }}
                     />
                   </TableCell>
-                  <TableCell className="py-3 px-4 font-medium text-black dark:text-gray-100 flex flex-col gap-2">
-                    <span className="font-medium">{stamp.name}{stamp.catalogNumber ? ` (${stamp.catalogNumber})` : ''}</span>
-                    <span className="text-gray-500 dark:text-gray-400"> {(stamp as any).description}</span>
+                  <TableCell className="py-3 px-4 font-medium text-black dark:text-gray-100 hidden sm:table-cell">
+                    <div className="flex flex-col gap-2">
+                      <span className="font-medium">{stamp.name}{stamp.catalogNumber ? ` (${stamp.catalogNumber})` : ''}</span>
+                      <span className="text-gray-500 dark:text-gray-400"> {(stamp as any).description}</span>
+                    </div>
                   </TableCell>
                   <TableCell className="py-3 px-4 text-center hidden sm:table-cell">
                     <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
@@ -138,7 +140,7 @@ export function StampGroupModalContent({
                           e.currentTarget.src = "/images/stamps/no-image-available.png";
                         }}
                       />
-                      <span className="font-medium text-black dark:text-gray-100 text-sm">
+                      <span className="font-medium text-black dark:text-gray-100 text-sm truncate">
                         {stamp.denominationValue}{stamp.denominationSymbol} {stamp.color}
                       </span>
                     </div>
@@ -169,8 +171,10 @@ export function StampGroupModalContent({
                     className="border-b border-gray-100 dark:border-gray-800 transition-colors"
                   >
                     <TableCell className="py-2 px-4 text-xs text-gray-600 dark:text-gray-400 hidden sm:table-cell"></TableCell>
-                    <TableCell className="py-2 px-4 text-xs text-gray-700 dark:text-gray-300 pl-8 flex flex-col gap-2">
-                      <span>{(instance as any).name && `${(instance as any).name} ${(instance as any).catalogNumber ? ` (${(instance as any).catalogNumber})` : ''}`}</span>
+                    <TableCell className="py-2 px-4 text-xs text-gray-700 dark:text-gray-300 pl-8 hidden sm:table-cell">
+                      <div className="flex flex-col gap-2">
+                        <span>{(instance as any).name && `${(instance as any).name} ${(instance as any).catalogNumber && (instance as any).catalogNumber !== '-' ? ` (${(instance as any).catalogNumber})` : ''}`}</span>
+                      </div>
                     </TableCell>
                     <TableCell className="py-2 px-4 text-center text-xs hidden sm:table-cell">
                       {instance.mintValue ? (
@@ -195,7 +199,7 @@ export function StampGroupModalContent({
                     </TableCell>
                     <TableCell className="py-2 px-4 sm:hidden w-1/2">
                       <span className="text-xs text-gray-700 dark:text-gray-300">
-                        {instance.code && `${instance.code}. `}{instance.description}
+                      <span>{(instance as any).name && `${(instance as any).name} ${(instance as any).catalogNumber && (instance as any).catalogNumber !== '-' ? ` (${(instance as any).catalogNumber})` : ''}`}</span>
                       </span>
                     </TableCell>
                     <TableCell className="py-2 px-4 sm:hidden w-1/2 text-right">
