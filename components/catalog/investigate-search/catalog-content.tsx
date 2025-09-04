@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -23,7 +23,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { ChevronRight, Search, Filter, Grid, List, ArrowLeft, Home } from "lucide-react"
+import { ChevronRight, Search, Filter, Grid, List, ArrowLeft, Home, Maximize, Minimize } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
 import {
@@ -226,6 +226,23 @@ const reactFlowStyles = `
     border-radius: var(--radius) !important;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
+  
+  /* Fullscreen mode styling */
+  .react-flow-fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9999 !important;
+    background: hsl(var(--background)) !important;
+  }
+  
+  .react-flow-fullscreen .react-flow__controls {
+    position: absolute !important;
+    bottom: 20px !important;
+    left: 20px !important;
+  }
 `
 
 // Central registry of grouping options with display labels and accessors.
@@ -320,6 +337,10 @@ export function CatalogContent() {
   // Modal state for stamp details
   const [selectedStamp, setSelectedStamp] = useState<StampData | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+
+  // Fullscreen state for tree view
+  const [isTreeFullscreen, setIsTreeFullscreen] = useState(false)
+  const treeContainerRef = useRef<HTMLDivElement>(null)
 
   // Infinite scrolling state
   const [displayedItemsCount, setDisplayedItemsCount] = useState(6)
@@ -869,6 +890,77 @@ export function CatalogContent() {
     setIsModalOpen(true)
   }
 
+  // Fullscreen functionality for tree view
+  const enterTreeFullscreen = async () => {
+    if (treeContainerRef.current) {
+      try {
+        if (treeContainerRef.current.requestFullscreen) {
+          await treeContainerRef.current.requestFullscreen()
+        } else if ((treeContainerRef.current as any).webkitRequestFullscreen) {
+          await (treeContainerRef.current as any).webkitRequestFullscreen()
+        } else if ((treeContainerRef.current as any).msRequestFullscreen) {
+          await (treeContainerRef.current as any).msRequestFullscreen()
+        }
+        setIsTreeFullscreen(true)
+      } catch (error) {
+        console.error('Error entering fullscreen:', error)
+      }
+    }
+  }
+
+  const exitTreeFullscreen = async () => {
+    try {
+      if (document.exitFullscreen) {
+        await document.exitFullscreen()
+      } else if ((document as any).webkitExitFullscreen) {
+        await (document as any).webkitExitFullscreen()
+      } else if ((document as any).msExitFullscreen) {
+        await (document as any).msExitFullscreen()
+      }
+      setIsTreeFullscreen(false)
+    } catch (error) {
+      console.error('Error exiting fullscreen:', error)
+    }
+  }
+
+  const toggleTreeFullscreen = () => {
+    if (isTreeFullscreen) {
+      exitTreeFullscreen()
+    } else {
+      enterTreeFullscreen()
+    }
+  }
+
+  // Listen for fullscreen changes and ESC key
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isCurrentlyFullscreen = !!(
+        document.fullscreenElement ||
+        (document as any).webkitFullscreenElement ||
+        (document as any).msFullscreenElement
+      )
+      setIsTreeFullscreen(isCurrentlyFullscreen)
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isTreeFullscreen) {
+        exitTreeFullscreen()
+      }
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange)
+    document.addEventListener('msfullscreenchange', handleFullscreenChange)
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange)
+      document.removeEventListener('msfullscreenchange', handleFullscreenChange)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isTreeFullscreen])
+
   const renderStampCard = (stamp: StampData) => (
     <Card
       key={stamp.id}
@@ -1306,7 +1398,49 @@ export function CatalogContent() {
     const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(allNodes, allEdges)
 
     return (
-      <div className="h-[400px] w-full">
+      <div 
+        ref={treeContainerRef}
+        className={cn(
+          "w-full relative",
+          isTreeFullscreen ? "react-flow-fullscreen" : "h-[400px]"
+        )}
+      >
+        {/* Fullscreen Toggle Button */}
+        <div className={cn(
+          "absolute z-50",
+          isTreeFullscreen ? "top-8 right-8" : "top-4 right-4"
+        )}>
+          <Button
+            variant="outline"
+            size={isTreeFullscreen ? "default" : "sm"}
+            onClick={toggleTreeFullscreen}
+            className={cn(
+              "bg-background/90 backdrop-blur-sm shadow-lg hover:bg-background transition-all duration-200",
+              isTreeFullscreen && "hover:scale-105"
+            )}
+            title={isTreeFullscreen ? "Exit Fullscreen (ESC)" : "Enter Fullscreen"}
+          >
+            {isTreeFullscreen ? (
+              <>
+                <Minimize className="h-4 w-4 mr-2" />
+                Exit Fullscreen
+              </>
+            ) : (
+              <Maximize className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+
+        {/* Fullscreen Info Banner */}
+        {isTreeFullscreen && (
+          <div className="absolute top-8 left-8 z-40 bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg shadow-lg backdrop-blur-sm">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <div className="w-2 h-2 bg-primary-foreground rounded-full animate-pulse"></div>
+              Fullscreen Mode - Press ESC to exit
+            </div>
+          </div>
+        )}
+        
         <ReactFlow
           nodes={layoutedNodes}
           edges={layoutedEdges}
@@ -1314,11 +1448,14 @@ export function CatalogContent() {
           connectionMode={ConnectionMode.Strict}
           fitView
           attributionPosition="bottom-left"
-          className="bg-background"
+          className={cn(
+            "bg-background",
+            isTreeFullscreen && "h-full"
+          )}
           panOnDrag={true}
           zoomOnScroll={true}
-          minZoom={0.5}
-          maxZoom={2}
+          minZoom={isTreeFullscreen ? 0.1 : 0.5}
+          maxZoom={isTreeFullscreen ? 5 : 2}
           defaultEdgeOptions={{
             style: {
               strokeWidth: 2,
@@ -1387,15 +1524,18 @@ export function CatalogContent() {
           <Controls
             className="bg-background border border-muted rounded-lg shadow-sm"
             showInteractive={false}
+            showFitView={false}
           />
         </ReactFlow>
 
-        {/* Debug info */}
-        <div className="mt-2 p-2 bg-gray-100 text-xs">
-          <div>Nodes: {layoutedNodes.length}</div>
-          <div>Edges: {layoutedEdges.length}</div>
-          <div>Sample edge: {layoutedEdges[0] ? `${layoutedEdges[0].source} → ${layoutedEdges[0].target}` : 'None'}</div>
-        </div>
+        {/* Debug info - hidden in fullscreen mode */}
+        {!isTreeFullscreen && (
+          <div className="mt-2 p-2 bg-gray-100 text-xs">
+            <div>Nodes: {layoutedNodes.length}</div>
+            <div>Edges: {layoutedEdges.length}</div>
+            <div>Sample edge: {layoutedEdges[0] ? `${layoutedEdges[0].source} → ${layoutedEdges[0].target}` : 'None'}</div>
+          </div>
+        )}
       </div>
     )
   }
