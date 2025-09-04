@@ -157,7 +157,7 @@ export const VisualCatalogSkeleton = () => (
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-sm border-y border-border py-2">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-center text-sm border-y border-border py-2">
           <div>
             <Skeleton className="h-4 w-8 mx-auto mb-1" />
             <Skeleton className="h-3 w-12 mx-auto" />
@@ -169,10 +169,6 @@ export const VisualCatalogSkeleton = () => (
           <div>
             <Skeleton className="h-4 w-10 mx-auto mb-1" />
             <Skeleton className="h-3 w-14 mx-auto" />
-          </div>
-          <div>
-            <Skeleton className="h-4 w-16 mx-auto mb-1" />
-            <Skeleton className="h-3 w-18 mx-auto" />
           </div>
         </div>
       </div>

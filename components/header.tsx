@@ -13,7 +13,7 @@ interface HeaderProps {
 
 export default function Header({ setIsOpen }: HeaderProps) {
   const pathname = usePathname()
-  const isAdminRoute = true || pathname.startsWith('/admin')
+  const isAdminRoute = pathname.startsWith('/admin')
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
@@ -31,7 +31,7 @@ export default function Header({ setIsOpen }: HeaderProps) {
         <Link href={isAdminRoute ? "/admin" : "/"} className="flex items-center gap-2 font-semibold">
           <Image src={logoSrc} alt="Stamps of Approval" width={220} height={220} />
           <span className="hidden font-bold sm:inline-block text-primary">
-            {/* {isAdminRoute ? "SOA Admin" : ""} */}
+            {isAdminRoute ? "SOA Admin" : ""}
           </span>
         </Link>
         <HeaderActions setIsOpen={setIsOpen} />

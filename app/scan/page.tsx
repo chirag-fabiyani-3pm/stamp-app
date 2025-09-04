@@ -160,7 +160,7 @@ const transformApiStampToInternal = (apiStamp: ApiStampResponse, capturedImageUr
 
   const yearString = typeof apiStamp.issueYear === 'number' ? String(apiStamp.issueYear) : ""
 
-  console.log("Printing", apiStamp.printingQuantity, apiStamp.printRun);
+  console.log("Printing", apiStamp);
 
   return {
     id: apiStamp.id || apiStamp.stampId || apiStamp.stampCode || "",
@@ -1277,10 +1277,7 @@ function ScanPage() {
                       <Badge variant="default" className="text-xs">Primary Match</Badge>
                     </div>
                     
-                    <Card className={`border-2 max-w-sm mx-auto ${selectedStamp.selectedType === 'primary' && selectedStamp.selectedIndex === 0
-                      ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
-                      : 'border-border'
-                    }`}>
+                    <Card className={"border-2 max-w-sm mx-auto border-border"}>
                       <CardContent className="space-y-4 flex-1 flex flex-col px-4 py-4">
                         <div className="aspect-square relative bg-card rounded border overflow-hidden">
                           <Image
@@ -1348,11 +1345,11 @@ function ScanPage() {
                           </div>
 
                           {/* Action buttons */}
-                          <div className="flex flex-col sm:flex-row gap-2 pt-3 mt-auto">
+                          <div className="flex flex-col gap-2 pt-3 mt-auto">
                             <Button
                               variant="outline"
                               size="sm"
-                              className="flex-1 text-xs h-8 min-w-0"
+                              className="flex-1 text-xs min-w-0 py-2"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 openStampDetail(selectedStamp.primaryMatch);
@@ -1362,14 +1359,15 @@ function ScanPage() {
                             </Button>
                             <Button
                               size="sm"
-                              className="flex-1 text-xs h-8 min-w-0"
+                              className="flex-1 text-xs min-w-0 py-2"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setSelectedStamp((prev: any) => ({ ...prev, selectedIndex: 0, selectedType: 'primary' }));
+                                selectFinalStamp(selectedStamp.primaryMatch, 0);
+                                goToObservation();
                               }}
-                              variant={selectedStamp.selectedType === 'primary' && selectedStamp.selectedIndex === 0 ? "default" : "outline"}
                             >
-                              {selectedStamp.selectedType === 'primary' && selectedStamp.selectedIndex === 0 ? "Selected" : "Select"}
+                              <Check className="size-3 mr-1" />
+                              Select & Start Observation
                             </Button>
                           </div>
                         </div>
@@ -1394,10 +1392,7 @@ function ScanPage() {
                         {selectedStamp.similarMatches.map((match: any, index: number) => (
                           <Card
                             key={match.id}
-                            className={`cursor-pointer transition-all duration-200 hover:shadow-lg border-2 min-h-[450px] w-full ${selectedStamp.selectedType === 'similar' && selectedStamp.selectedIndex === index
-                              ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
-                              : 'border-border hover:border-primary/50'
-                              }`}
+                            className={"cursor-pointer transition-all duration-200 hover:shadow-lg border-2 min-h-[450px] w-full border-border hover:border-primary/50"}
                             onClick={(e) => {
                               e.stopPropagation();
                               openStampDetail(match);
@@ -1470,11 +1465,11 @@ function ScanPage() {
                                 </div>
 
                                 {/* Action buttons - pushed to bottom */}
-                                <div className="flex flex-col sm:flex-row gap-2 pt-3 mt-auto">
+                                <div className="flex flex-col gap-2 pt-3 mt-auto">
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className="flex-1 text-xs h-8 min-w-0"
+                                    className="flex-1 text-xs min-w-0 py-2"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       openStampDetail(match);
@@ -1484,14 +1479,15 @@ function ScanPage() {
                                   </Button>
                                   <Button
                                     size="sm"
-                                    className="flex-1 text-xs h-8 min-w-0"
+                                    className="flex-1 text-xs min-w-0 py-2"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      setSelectedStamp((prev: any) => ({ ...prev, selectedIndex: index, selectedType: 'similar' }));
+                                      selectFinalStamp(match, index);
+                                      goToObservation();
                                     }}
-                                    variant={selectedStamp.selectedType === 'similar' && selectedStamp.selectedIndex === index ? "default" : "outline"}
                                   >
-                                    {selectedStamp.selectedType === 'similar' && selectedStamp.selectedIndex === index ? "Selected" : "Select"}
+                                    <Check className="size-3 mr-1" />
+                                    Select & Start Observation
                                   </Button>
                                 </div>
                               </div>
@@ -1517,23 +1513,6 @@ function ScanPage() {
                     >
                       <RotateCcw className="size-4" />
                       Start Over
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        let selectedMatch;
-                        if (selectedStamp.selectedType === 'primary') {
-                          selectedMatch = selectedStamp.primaryMatch;
-                        } else {
-                          selectedMatch = selectedStamp.similarMatches[selectedStamp.selectedIndex];
-                        }
-                        selectFinalStamp(selectedMatch, selectedStamp.selectedIndex);
-                        goToObservation();
-                      }}
-                      className="gap-2"
-                      disabled={!selectedStamp.selectedType || (selectedStamp.selectedType === 'similar' && selectedStamp.selectedIndex === undefined)}
-                    >
-                      <Check className="size-4" />
-                      Confirm Selection
                     </Button>
                   </div>
                 </div>
@@ -1827,22 +1806,22 @@ function ScanPage() {
             <Button
               onClick={() => {
                 if (detailModalStamp) {
-                  // Check if it's the primary match
+                  // Determine if modal stamp is primary or from similar list
                   if (selectedStamp.primaryMatch && selectedStamp.primaryMatch.id === detailModalStamp.id) {
-                    setSelectedStamp((prev: any) => ({ ...prev, selectedIndex: 0, selectedType: 'primary' }));
+                    selectFinalStamp(selectedStamp.primaryMatch, 0);
                   } else {
-                    // Check if it's in similar matches
                     const matchIndex = selectedStamp.similarMatches?.findIndex((m: any) => m.id === detailModalStamp.id);
                     if (matchIndex !== -1) {
-                      setSelectedStamp((prev: any) => ({ ...prev, selectedIndex: matchIndex, selectedType: 'similar' }));
+                      selectFinalStamp(selectedStamp.similarMatches[matchIndex], matchIndex);
                     }
                   }
+                  setDetailModalOpen(false);
+                  goToObservation();
                 }
-                setDetailModalOpen(false);
               }}
               className="flex-1"
             >
-              Select This Stamp
+              Select & Start Observation
             </Button>
           </div>
         </DialogContent>

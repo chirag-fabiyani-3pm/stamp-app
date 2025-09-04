@@ -35,7 +35,7 @@ import { CountryCatalogContent } from "@/components/catalog/country-catalog-cont
 import { CatalogDataProvider, useCatalogData } from "@/lib/context/catalog-data-context"
 import { parseStampCode } from "@/lib/utils/parse-stamp-code"
 import { useChatContext } from "@/components/chat-provider"
-import { DataFetchingProgress, LoadingStamps } from "./investigate-search/loading-skeletons"
+import { DataFetchingProgress, LoadingStamps, VisualCatalogSkeleton, ListCatalogSkeleton } from "./investigate-search/loading-skeletons"
 
 function ModernCatalogContentInner() {
     const router = useRouter()
@@ -700,44 +700,9 @@ function ModernCatalogContentInner() {
                     </div>
                 </header>
 
-                {/* Main Content Skeleton */}
+                {/* Main Content Skeleton - match Country Catalog UI */}
                 <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-                    <div className="text-center mb-8 md:mb-12">
-                        <Skeleton className="h-10 w-1/2 mx-auto mb-4" />
-                        <Skeleton className="h-6 w-3/4 mx-auto" />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-                        {Array.from({ length: 4 }).map((_, i) => (
-                            <Card key={i} className="w-full rounded-2xl overflow-hidden shadow-lg">
-                                <div className="relative h-64 overflow-hidden rounded-t-2xl bg-gray-200 dark:bg-gray-700">
-                                    <Skeleton className="h-full w-full" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
-                                    <div className="absolute top-4 left-4 flex items-center space-x-2">
-                                        <Skeleton className="h-8 w-12 rounded-full" /> {/* Flag placeholder */}
-                                        <Skeleton className="h-6 w-24 rounded-full" /> {/* Stamp count badge */}
-                                    </div>
-                                    <div className="absolute bottom-4 left-4 right-4 space-y-2">
-                                        <Skeleton className="h-8 w-3/4 mb-2" /> {/* Country name */}
-                                        <Skeleton className="h-5 w-full" /> {/* Description */}
-                                        <div className="flex justify-between items-center">
-                                            <Skeleton className="h-4 w-24" /> {/* Dates */}
-                                            <Skeleton className="h-4 w-32" /> {/* Approved Collection badge */}
-                                        </div>
-                                    </div>
-                                </div>
-                                <CardContent className="p-6 space-y-4">
-                                    <Skeleton className="h-16 w-full mb-4" /> {/* Historical note */}
-                                    <div className="flex justify-between items-center">
-                                        <Skeleton className="h-10 w-32 rounded-full" /> {/* Browse Catalog button */}
-                                        <div className="flex space-x-2">
-                                            <Skeleton className="h-6 w-6 rounded-full" /> {/* Bookmark icon */}
-                                            <Skeleton className="h-6 w-6 rounded-full" /> {/* Telescope icon */}
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
+                    <CountryCatalogContent countries={[]} onCountryClick={handleCountryClick} loading />
                 </main>
             </div>
         );
@@ -1018,10 +983,18 @@ function ModernCatalogContentInner() {
                                     <h2 className="text-2xl font-bold mb-4">Loading Stamp Catalog</h2>
                                     <p className="text-muted-foreground mb-6">Retrieving data from local storage...</p>
                                 </div>
-                                <LoadingStamps
-                                    count={12}
-                                    type={activeSection === 'list' ? 'list' : activeSection === 'investigate' ? 'grid' : 'groups'}
-                                />
+                                {activeSection === 'countries' ? (
+                                    <CountryCatalogContent countries={[]} onCountryClick={handleCountryClick} loading />
+                                ) : activeSection === 'visual' ? (
+                                    <VisualCatalogSkeleton />
+                                ) : activeSection === 'list' ? (
+                                    <ListCatalogSkeleton />
+                                ) : (
+                                    <LoadingStamps
+                                        count={12}
+                                        type="grid"
+                                    />
+                                )}
                             </div>
                         )}
 
@@ -1057,10 +1030,18 @@ function ModernCatalogContentInner() {
                                     <h2 className="text-2xl font-bold mb-4">Loading Stamp Catalog</h2>
                                     <p className="text-muted-foreground mb-6">Preparing your catalog...</p>
                                 </div>
-                                <LoadingStamps
-                                    count={8}
-                                    type={activeSection === 'list' ? 'list' : activeSection === 'investigate' ? 'grid' : 'groups'}
-                                />
+                                {activeSection === 'countries' ? (
+                                    <CountryCatalogContent countries={[]} onCountryClick={handleCountryClick} loading />
+                                ) : activeSection === 'visual' ? (
+                                    <VisualCatalogSkeleton />
+                                ) : activeSection === 'list' ? (
+                                    <ListCatalogSkeleton />
+                                ) : (
+                                    <LoadingStamps
+                                        count={8}
+                                        type="grid"
+                                    />
+                                )}
                             </div>
                         )}
 
