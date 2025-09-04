@@ -402,8 +402,14 @@ function mapApiDataToFormStructure(apiData: Record<string, unknown>): Record<str
     }
 
     // Add issue date if available
-    if (apiData.issueDate) {
-        primaryDetails.issuedate = new Date(apiData.issueDate).toISOString().split('T')[0];
+    if (apiData.issueDate && typeof apiData.issueDate === 'string') {
+        const parsedDate = new Date(apiData.issueDate);
+        // Check if the date is valid before converting to ISO string
+        if (!isNaN(parsedDate.getTime())) {
+            primaryDetails.issuedate = parsedDate.toISOString().split('T')[0];
+        } else {
+            console.warn('Invalid date format received:', apiData.issueDate);
+        }
     }
 
     // Add denomination information
