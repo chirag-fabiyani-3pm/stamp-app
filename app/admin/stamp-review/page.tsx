@@ -60,6 +60,7 @@ interface StampReviewItem {
   publishNotes?: string
   pageNumber?: number
   stampId?: string
+  publishedBy?: string
 }
 
 interface StampReviewResponse {
@@ -413,6 +414,427 @@ const keyMapping: Record<string, string> = {
   'pageNumber': 'PageNumber',
   'stampFileAttachment': 'StampFileAttachment'
 }
+
+const userData = [
+  {
+    "id": "04675eed-f1dc-4ffb-bd2f-295b1d42df80",
+    "roleId": null,
+    "roleName": "",
+    "membershipCode": "",
+    "userName": "harshit.joshi@3pm.nz",
+    "firstName": "Sunny",
+    "lastName": "Satmp",
+    "dateOfBirth": null,
+    "email": "harshit.joshi@3pm.nz",
+    "mobileNumber": "",
+    "isDisabled": false,
+    "isDeleted": false,
+    "forcePasswordChange": false,
+    "avatarUrl": "",
+    "isEmailVerified": false,
+    "isPhoneVerified": false,
+    "usernameType": 0
+  },
+  {
+    "id": "ba57f0b0-5382-4abc-a11b-8ddef7c39f65",
+    "roleId": null,
+    "roleName": "",
+    "membershipCode": "",
+    "userName": "snehdecoded@gmail.com",
+    "firstName": "Sneh",
+    "lastName": "Decoded",
+    "dateOfBirth": null,
+    "email": "snehdecoded@gmail.com",
+    "mobileNumber": "",
+    "isDisabled": false,
+    "isDeleted": false,
+    "forcePasswordChange": false,
+    "avatarUrl": "",
+    "isEmailVerified": false,
+    "isPhoneVerified": false,
+    "usernameType": 0
+  },
+  {
+    "id": "0ce0e911-3458-4161-aa74-8f1a01c792c5",
+    "roleId": null,
+    "roleName": "",
+    "membershipCode": "",
+    "userName": "hjoshi85@gmail.com",
+    "firstName": "harshit",
+    "lastName": "BackendTesting",
+    "dateOfBirth": null,
+    "email": "hjoshi85@gmail.com",
+    "mobileNumber": "",
+    "isDisabled": false,
+    "isDeleted": false,
+    "forcePasswordChange": false,
+    "avatarUrl": "",
+    "isEmailVerified": false,
+    "isPhoneVerified": false,
+    "usernameType": 0
+  },
+  {
+    "id": "d171d254-3842-43ce-a195-0cdd3995b80b",
+    "roleId": null,
+    "roleName": "",
+    "membershipCode": "",
+    "userName": "jaimin.galiya@decoded.digital",
+    "firstName": "Collector",
+    "lastName": "",
+    "dateOfBirth": null,
+    "email": "jaimin.galiya@decoded.digital",
+    "mobileNumber": "",
+    "isDisabled": false,
+    "isDeleted": false,
+    "forcePasswordChange": false,
+    "avatarUrl": "",
+    "isEmailVerified": false,
+    "isPhoneVerified": false,
+    "usernameType": 0
+  },
+  {
+    "id": "fa27cc01-46a9-49fb-9643-2bdea0348f03",
+    "roleId": null,
+    "roleName": "",
+    "membershipCode": "",
+    "userName": "hcjoshi56@gmail.com",
+    "firstName": "Sunny",
+    "lastName": "Jo",
+    "dateOfBirth": null,
+    "email": "hcjoshi56@gmail.com",
+    "mobileNumber": "",
+    "isDisabled": false,
+    "isDeleted": false,
+    "forcePasswordChange": false,
+    "avatarUrl": "",
+    "isEmailVerified": false,
+    "isPhoneVerified": false,
+    "usernameType": 0
+  },
+  {
+    "id": "e2da1c39-4937-42cc-a5fb-4ae3418a5506",
+    "roleId": null,
+    "roleName": "",
+    "membershipCode": "",
+    "userName": "test3pmauk@gmail.com",
+    "firstName": "Test 11",
+    "lastName": "3pm",
+    "dateOfBirth": "2025-08-07T00:00:00Z",
+    "email": "test3pmauk@gmail.com",
+    "mobileNumber": "",
+    "isDisabled": false,
+    "isDeleted": false,
+    "forcePasswordChange": false,
+    "avatarUrl": "",
+    "isEmailVerified": false,
+    "isPhoneVerified": false,
+    "usernameType": 0
+  },
+  {
+    "id": "23678f06-02ed-48f1-8590-1a5e4b83fa0c",
+    "roleId": null,
+    "roleName": "",
+    "membershipCode": "",
+    "userName": "phil@wasabi.ws",
+    "firstName": "Phillip",
+    "lastName": "Wesley-Brown",
+    "dateOfBirth": null,
+    "email": "phil@wasabi.ws",
+    "mobileNumber": "",
+    "isDisabled": false,
+    "isDeleted": false,
+    "forcePasswordChange": false,
+    "avatarUrl": "",
+    "isEmailVerified": false,
+    "isPhoneVerified": false,
+    "usernameType": 0
+  },
+  {
+    "id": "03e03a9b-cb22-4a44-95c2-e71040265f2e",
+    "roleId": null,
+    "roleName": "",
+    "membershipCode": "",
+    "userName": "harshit.upgrade@gmail.com",
+    "firstName": "Harshit",
+    "lastName": "Joshi",
+    "dateOfBirth": null,
+    "email": "harshit.upgrade@gmail.com",
+    "mobileNumber": "",
+    "isDisabled": false,
+    "isDeleted": false,
+    "forcePasswordChange": false,
+    "avatarUrl": "",
+    "isEmailVerified": false,
+    "isPhoneVerified": false,
+    "usernameType": 0
+  },
+  {
+    "id": "bb64cce1-7f24-48be-ac57-12670b6f358c",
+    "roleId": null,
+    "roleName": "",
+    "membershipCode": "",
+    "userName": "hetal.pabari@decoded.digital",
+    "firstName": "Collector",
+    "lastName": "",
+    "dateOfBirth": null,
+    "email": "hetal.pabari@decoded.digital",
+    "mobileNumber": "",
+    "isDisabled": false,
+    "isDeleted": false,
+    "forcePasswordChange": false,
+    "avatarUrl": "",
+    "isEmailVerified": false,
+    "isPhoneVerified": false,
+    "usernameType": 0
+  },
+  {
+    "id": "b4bd29f3-a58d-4d9c-8015-34af3aabad43",
+    "roleId": null,
+    "roleName": "",
+    "membershipCode": "",
+    "userName": "shahn346@gmail.com",
+    "firstName": "Shah",
+    "lastName": "Tariq",
+    "dateOfBirth": null,
+    "email": "shahn346@gmail.com",
+    "mobileNumber": "",
+    "isDisabled": false,
+    "isDeleted": false,
+    "forcePasswordChange": false,
+    "avatarUrl": "",
+    "isEmailVerified": false,
+    "isPhoneVerified": false,
+    "usernameType": 0
+  },
+  {
+    "id": "d67236d8-bc48-4f48-a855-71727d6e5549",
+    "roleId": null,
+    "roleName": "",
+    "membershipCode": "",
+    "userName": "shivneel.rattan@decoded.digital",
+    "firstName": "Collector",
+    "lastName": "",
+    "dateOfBirth": null,
+    "email": "shivneel.rattan@decoded.digital",
+    "mobileNumber": "",
+    "isDisabled": false,
+    "isDeleted": false,
+    "forcePasswordChange": false,
+    "avatarUrl": "",
+    "isEmailVerified": false,
+    "isPhoneVerified": false,
+    "usernameType": 0
+  },
+  {
+    "id": "8f6ec513-2bea-473f-92ea-ba9e2bfbbb50",
+    "roleId": null,
+    "roleName": "",
+    "membershipCode": "",
+    "userName": "harshit.upgrade@gmnail.com",
+    "firstName": "Harshit",
+    "lastName": "Admin",
+    "dateOfBirth": null,
+    "email": "harshit.upgrade@gmnail.com",
+    "mobileNumber": "",
+    "isDisabled": false,
+    "isDeleted": false,
+    "forcePasswordChange": false,
+    "avatarUrl": "",
+    "isEmailVerified": false,
+    "isPhoneVerified": false,
+    "usernameType": 0
+  },
+  {
+    "id": "82b1da69-ef47-45b9-9180-67b9917b37ef",
+    "roleId": null,
+    "roleName": "",
+    "membershipCode": "",
+    "userName": "bjburgs@gmail.com",
+    "firstName": "Collector",
+    "lastName": "",
+    "dateOfBirth": null,
+    "email": "bjburgs@gmail.com",
+    "mobileNumber": "",
+    "isDisabled": false,
+    "isDeleted": false,
+    "forcePasswordChange": false,
+    "avatarUrl": "",
+    "isEmailVerified": false,
+    "isPhoneVerified": false,
+    "usernameType": 0
+  },
+  {
+    "id": "ebab7cd4-1a46-4aa3-8c2f-1fcd09116b99",
+    "roleId": null,
+    "roleName": "",
+    "membershipCode": "",
+    "userName": "qatenant3pm@gmail.com",
+    "firstName": "QA",
+    "lastName": "Tenant",
+    "dateOfBirth": null,
+    "email": "qatenant3pm@gmail.com",
+    "mobileNumber": "",
+    "isDisabled": false,
+    "isDeleted": false,
+    "forcePasswordChange": false,
+    "avatarUrl": "",
+    "isEmailVerified": false,
+    "isPhoneVerified": false,
+    "usernameType": 0
+  },
+  {
+    "id": "f6a0fea8-d74d-43ea-b2cc-fa30aabe9188",
+    "roleId": null,
+    "roleName": "",
+    "membershipCode": "",
+    "userName": "andrew@3pm.nz",
+    "firstName": "Andrew",
+    "lastName": "Radcliffe",
+    "dateOfBirth": "1979-08-15T00:00:00Z",
+    "email": "andrew@3pm.nz",
+    "mobileNumber": "",
+    "isDisabled": false,
+    "isDeleted": false,
+    "forcePasswordChange": false,
+    "avatarUrl": "https://decodedstampstorage01.blob.core.windows.net/decoded-stamp/prod/userprofile/7f06ad67-6b2b-4afb-8647-5614f04ce242_Andrew%20Profile.jpg",
+    "isEmailVerified": false,
+    "isPhoneVerified": false,
+    "usernameType": 0
+  },
+  {
+    "id": "957e01a5-6146-4806-8569-693c9419ba1b",
+    "roleId": null,
+    "roleName": "",
+    "membershipCode": "",
+    "userName": "naxdsolutions@gmail.com",
+    "firstName": "Harshit",
+    "lastName": "Decoded",
+    "dateOfBirth": null,
+    "email": "naxdsolutions@gmail.com",
+    "mobileNumber": "",
+    "isDisabled": false,
+    "isDeleted": false,
+    "forcePasswordChange": false,
+    "avatarUrl": "",
+    "isEmailVerified": false,
+    "isPhoneVerified": false,
+    "usernameType": 0
+  },
+  {
+    "id": "bac8d587-555f-43d5-8d0d-669273333168",
+    "roleId": null,
+    "roleName": "",
+    "membershipCode": "",
+    "userName": "admin@3pm.nz",
+    "firstName": "Super",
+    "lastName": "Admin",
+    "dateOfBirth": null,
+    "email": "admin@3pm.nz",
+    "mobileNumber": "",
+    "isDisabled": false,
+    "isDeleted": false,
+    "forcePasswordChange": false,
+    "avatarUrl": "",
+    "isEmailVerified": false,
+    "isPhoneVerified": false,
+    "usernameType": 0
+  },
+  {
+    "id": "6d41e553-fb55-476a-b8a7-8585714785ab",
+    "roleId": null,
+    "roleName": "",
+    "membershipCode": "",
+    "userName": "chirag.fabiyani@decoded.digital",
+    "firstName": "Chirag",
+    "lastName": "Fabiyani",
+    "dateOfBirth": null,
+    "email": "chirag.fabiyani@decoded.digital",
+    "mobileNumber": "",
+    "isDisabled": false,
+    "isDeleted": false,
+    "forcePasswordChange": false,
+    "avatarUrl": "",
+    "isEmailVerified": false,
+    "isPhoneVerified": false,
+    "usernameType": 0
+  },
+  {
+    "id": "2f709507-a9ee-42ad-92c1-7b0839e43a0b",
+    "roleId": null,
+    "roleName": "",
+    "membershipCode": "",
+    "userName": "chiragfabiyani.cf@gmail.com",
+    "firstName": "Collector",
+    "lastName": "",
+    "dateOfBirth": null,
+    "email": "chiragfabiyani.cf@gmail.com",
+    "mobileNumber": "",
+    "isDisabled": false,
+    "isDeleted": false,
+    "forcePasswordChange": false,
+    "avatarUrl": "",
+    "isEmailVerified": false,
+    "isPhoneVerified": false,
+    "usernameType": 0
+  },
+  {
+    "id": "0ca8df81-0acc-43d1-a8ff-5fb971bc46ad",
+    "roleId": null,
+    "roleName": "",
+    "membershipCode": "",
+    "userName": "berri@berrischroder.nz",
+    "firstName": "Collector",
+    "lastName": "",
+    "dateOfBirth": null,
+    "email": "berri@berrischroder.nz",
+    "mobileNumber": "",
+    "isDisabled": false,
+    "isDeleted": false,
+    "forcePasswordChange": false,
+    "avatarUrl": "",
+    "isEmailVerified": false,
+    "isPhoneVerified": false,
+    "usernameType": 0
+  },
+  {
+    "id": "bba14a9c-e7c1-4715-aedc-6cb3bbe18e9f",
+    "roleId": null,
+    "roleName": "",
+    "membershipCode": "",
+    "userName": "jaimin8460@gmail.com",
+    "firstName": "Jaimin",
+    "lastName": "Galiya",
+    "dateOfBirth": null,
+    "email": "jaimin8460@gmail.com",
+    "mobileNumber": "",
+    "isDisabled": false,
+    "isDeleted": false,
+    "forcePasswordChange": false,
+    "avatarUrl": "",
+    "isEmailVerified": false,
+    "isPhoneVerified": false,
+    "usernameType": 0
+  },
+  {
+    "id": "933db401-0f7f-445a-810b-56d1b14386d9",
+    "roleId": null,
+    "roleName": "",
+    "membershipCode": "",
+    "userName": "harshit.joshi@decoded.digital",
+    "firstName": "Harshit",
+    "lastName": "Admin",
+    "dateOfBirth": null,
+    "email": "harshit.joshi@decoded.digital",
+    "mobileNumber": "",
+    "isDisabled": false,
+    "isDeleted": false,
+    "forcePasswordChange": false,
+    "avatarUrl": "",
+    "isEmailVerified": false,
+    "isPhoneVerified": false,
+    "usernameType": 0
+  }
+].reduce((acc, cur) => ({ ...acc, [cur.id]: cur }), {})
 
 // Function to convert camelCase data to PascalCase FormData
 const convertToFormData = (data: Record<string, any>): FormData => {
@@ -1216,11 +1638,9 @@ export default function StampReviewPage() {
                       <TableHead className="w-[120px]">Mint</TableHead>
                       <TableHead className="w-[80px]">Used</TableHead>
                       <TableHead className="w-[80px]">Finest Used</TableHead>
-                      <TableHead className="w-[120px]">Country</TableHead>
-                      <TableHead className="w-[80px]">Year</TableHead>
+                      <TableHead className="w-[120px]">Issue Year</TableHead>
                       <TableHead className="w-[120px]">Catalog Number</TableHead>
-                      <TableHead className="w-[140px]">Stamp Code</TableHead>
-                      <TableHead className="w-[100px]">Denomination</TableHead>
+                      <TableHead className="w-[120px]">Published By</TableHead>
                       <TableHead className="w-[120px]">Status</TableHead>
                       <TableHead className="w-[100px]">Actions</TableHead>
                     </TableRow>
@@ -1235,45 +1655,45 @@ export default function StampReviewPage() {
                     ) : (
                       sortedStamps.map((stamp, index) => (
                         <TableRow key={stamp.id}>
-                              <TableCell>
-                                <div className="flex gap-1">
-                                  <Dialog>
-                                    <DialogTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => handleEditStamp(stamp)}
-                                        title="View/Edit Stamp"
-                                      >
-                                        <Eye className="h-4 w-4" />
-                                      </Button>
-                                    </DialogTrigger>
-                                  </Dialog>
-
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Dialog>
+                                <DialogTrigger asChild>
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => {
-                                      setSelectedStamp(stamp as unknown as EditableStampData)
-                                      setIsDeleteDialogOpen(true)
-                                    }}
-                                    title="Delete Stamp"
-                                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    onClick={() => handleEditStamp(stamp)}
+                                    title="View/Edit Stamp"
                                   >
-                                    <Trash2 className="h-4 w-4" />
+                                    <Eye className="h-4 w-4" />
                                   </Button>
-                                </div>
-                              </TableCell>
-                              <TableCell className="w-[60px]">
-                                <Badge variant="outline" className="font-mono">
-                                  {index + 1}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="w-[60px]">
-                                <Badge variant="outline" className="font-mono">
-                                  {stamp.pageNumber}
-                                </Badge>
-                              </TableCell>
+                                </DialogTrigger>
+                              </Dialog>
+
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedStamp(stamp as unknown as EditableStampData)
+                                  setIsDeleteDialogOpen(true)
+                                }}
+                                title="Delete Stamp"
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                          <TableCell className="w-[60px]">
+                            <Badge variant="outline" className="font-mono">
+                              {index + 1}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="w-[60px]">
+                            <Badge variant="outline" className="font-mono">
+                              {stamp.pageNumber}
+                            </Badge>
+                          </TableCell>
                           <TableCell className="min-w-[200px] max-w-[250px]">
                             <div className="font-medium text-sm overflow-hidden text-ellipsis whitespace-nowrap pr-2" title={stamp.name}>
                               {stamp.name}
@@ -1294,12 +1714,6 @@ export default function StampReviewPage() {
                               <span>{(stamp as any).finestUsedValue || '-'}</span>
                             </div>
                           </TableCell>
-                          <TableCell className="w-[120px]">
-                            <div className="flex items-center gap-1 overflow-hidden">
-                              <MapPin className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                              <span className="overflow-hidden text-ellipsis whitespace-nowrap">{stamp.country}</span>
-                            </div>
-                          </TableCell>
                           <TableCell className="w-[80px]">
                             <div className="flex items-center gap-1 whitespace-nowrap">
                               <Calendar className="h-3 w-3 text-muted-foreground flex-shrink-0" />
@@ -1313,15 +1727,11 @@ export default function StampReviewPage() {
                               </Badge>
                             </div>
                           </TableCell>
-                          <TableCell className="w-[140px]">
-                            <div className="overflow-hidden text-ellipsis whitespace-nowrap" title={stamp.stampCatalogCode}>
-                              <Badge className="font-mono text-xs max-w-full">
-                                <span className="overflow-hidden text-ellipsis whitespace-nowrap">{stamp.stampCatalogCode}</span>
-                              </Badge>
+                          <TableCell className="w-[120px]">
+                            <div className="flex flex-col gap-1">
+                              <span>{userData?.[stamp.publishedBy]?.firstName} {userData?.[stamp.publishedBy]?.lastName}</span>
+                              <span>{userData?.[stamp.publishedBy]?.email}</span>
                             </div>
-                          </TableCell>
-                          <TableCell className="font-medium w-[100px] whitespace-nowrap">
-                            {formatDenomination(stamp.denominationValue, stamp.denominationSymbol)}
                           </TableCell>
                           <TableCell className="w-[120px]">
                             {stamp.isPublished ? (
@@ -1551,522 +1961,522 @@ export default function StampReviewPage() {
 
               {/* Detailed Form Sections */}
               <div className="space-y-8">
-                  {/* Basic Information */}
-                  <div className="bg-muted/20 rounded-xl p-6 border">
-                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                      <Edit className="h-5 w-5" />
-                      Basic Information
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="id">id</Label>
-                        <Input
-                          id="id"
-                          value={editFormData.id || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, id: e.target.value }))}
-                          disabled
-                          className="bg-muted"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="catalogExtractionProcessId">catalogExtractionProcessId</Label>
-                        <Input
-                          id="catalogExtractionProcessId"
-                          value={editFormData.catalogExtractionProcessId || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, catalogExtractionProcessId: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="similarityScore">similarityScore</Label>
-                        <Input
-                          id="similarityScore"
-                          type="number"
-                          step="0.01"
-                          value={editFormData.similarityScore || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, similarityScore: Number(e.target.value) }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="stampId">stampId</Label>
-                        <Input
-                          id="stampId"
-                          value={editFormData.stampId || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, stampId: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="isInstance">isInstance</Label>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="isInstance"
-                            checked={editFormData.isInstance || false}
-                            onCheckedChange={(checked) => setEditFormData(prev => ({ ...prev, isInstance: checked as boolean }))}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="parentStampId">parentStampId</Label>
-                        <Input
-                          id="parentStampId"
-                          value={editFormData.parentStampId || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, parentStampId: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="catalogNumber">catalogNumber</Label>
-                        <Input
-                          id="catalogNumber"
-                          value={editFormData.catalogNumber || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, catalogNumber: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="stampCode">stampCode</Label>
-                        <Input
-                          id="stampCode"
-                          value={editFormData.stampCode || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, stampCode: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="name">name</Label>
-                        <Input
-                          id="name"
-                          value={editFormData.name || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="description">description</Label>
-                        <Textarea
-                          id="description"
-                          value={editFormData.description || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, description: e.target.value }))}
-                          rows={3}
+                {/* Basic Information */}
+                <div className="bg-muted/20 rounded-xl p-6 border">
+                  <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                    <Edit className="h-5 w-5" />
+                    Basic Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="id">id</Label>
+                      <Input
+                        id="id"
+                        value={editFormData.id || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, id: e.target.value }))}
+                        disabled
+                        className="bg-muted"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="catalogExtractionProcessId">catalogExtractionProcessId</Label>
+                      <Input
+                        id="catalogExtractionProcessId"
+                        value={editFormData.catalogExtractionProcessId || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, catalogExtractionProcessId: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="similarityScore">similarityScore</Label>
+                      <Input
+                        id="similarityScore"
+                        type="number"
+                        step="0.01"
+                        value={editFormData.similarityScore || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, similarityScore: Number(e.target.value) }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="stampId">stampId</Label>
+                      <Input
+                        id="stampId"
+                        value={editFormData.stampId || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, stampId: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="isInstance">isInstance</Label>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="isInstance"
+                          checked={editFormData.isInstance || false}
+                          onCheckedChange={(checked) => setEditFormData(prev => ({ ...prev, isInstance: checked as boolean }))}
                         />
                       </div>
                     </div>
-                  </div>
-
-                  {/* Stamp Image Upload */}
-                  <div className="bg-muted/20 rounded-xl p-6 border">
-                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                      <Upload className="h-5 w-5" />
-                      Stamp Image Upload
-                    </h3>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="stampFileAttachment">Upload New Stamp Image</Label>
-                        <Input
-                          id="stampFileAttachment"
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0]
-                            if (file) {
-                              setEditFormData(prev => ({
-                                ...prev,
-                                stampFileAttachment: file
-                              }))
-                            }
-                          }}
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Upload a new image to replace the current stamp image. Supported formats: JPG, PNG, GIF, WebP
-                        </p>
-                        {editFormData.stampFileAttachment && (
-                          <div className="flex items-center gap-2 p-2 bg-muted rounded-md">
-                            <ImageIcon className="h-4 w-4" />
-                            <span className="text-sm">
-                              Selected: {(editFormData.stampFileAttachment as File).name}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setEditFormData(prev => ({
-                                ...prev,
-                                stampFileAttachment: undefined
-                              }))}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="parentStampId">parentStampId</Label>
+                      <Input
+                        id="parentStampId"
+                        value={editFormData.parentStampId || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, parentStampId: e.target.value }))}
+                      />
                     </div>
-                  </div>
-
-                  {/* Country & Geographic Information */}
-                  <div className="bg-muted/20 rounded-xl p-6 border">
-                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                      <MapPin className="h-5 w-5" />
-                      Country & Geographic Information
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="country">country</Label>
-                        <Input
-                          id="country"
-                          value={editFormData.country || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, country: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="countryName">countryName</Label>
-                        <Input
-                          id="countryName"
-                          value={editFormData.countryName || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, countryName: e.target.value }))}
-                        />
-                      </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="catalogNumber">catalogNumber</Label>
+                      <Input
+                        id="catalogNumber"
+                        value={editFormData.catalogNumber || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, catalogNumber: e.target.value }))}
+                      />
                     </div>
-                  </div>
-
-                  {/* Series & Classification */}
-                  <div className="bg-muted/20 rounded-xl p-6 border">
-                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                      <Calendar className="h-5 w-5" />
-                      Series & Classification
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="seriesName">seriesName</Label>
-                        <Input
-                          id="seriesName"
-                          value={editFormData.seriesName || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, seriesName: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="seriesDescription">seriesDescription</Label>
-                        <Textarea
-                          id="seriesDescription"
-                          value={editFormData.seriesDescription || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, seriesDescription: e.target.value }))}
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="typeName">typeName</Label>
-                        <Input
-                          id="typeName"
-                          value={editFormData.typeName || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, typeName: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="stampGroupName">stampGroupName</Label>
-                        <Input
-                          id="stampGroupName"
-                          value={editFormData.stampGroupName || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, stampGroupName: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="stampGroupDescription">stampGroupDescription</Label>
-                        <Textarea
-                          id="stampGroupDescription"
-                          value={editFormData.stampGroupDescription || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, stampGroupDescription: e.target.value }))}
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="releaseName">releaseName</Label>
-                        <Input
-                          id="releaseName"
-                          value={editFormData.releaseName || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, releaseName: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="releaseDescription">releaseDescription</Label>
-                        <Textarea
-                          id="releaseDescription"
-                          value={editFormData.releaseDescription || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, releaseDescription: e.target.value }))}
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="categoryName">categoryName</Label>
-                        <Input
-                          id="categoryName"
-                          value={editFormData.categoryName || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, categoryName: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="categoryCode">categoryCode</Label>
-                        <Input
-                          id="categoryCode"
-                          value={editFormData.categoryCode || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, categoryCode: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="paperTypeName">paperTypeName</Label>
-                        <Input
-                          id="paperTypeName"
-                          value={editFormData.paperTypeName || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, paperTypeName: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="paperTypeCode">paperTypeCode</Label>
-                        <Input
-                          id="paperTypeCode"
-                          value={editFormData.paperTypeCode || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, paperTypeCode: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="itemTypeCode">itemTypeCode</Label>
-                        <Input
-                          id="itemTypeCode"
-                          value={editFormData.itemTypeCode || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, itemTypeCode: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="itemTypeName">itemTypeName</Label>
-                        <Input
-                          id="itemTypeName"
-                          value={editFormData.itemTypeName || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, itemTypeName: e.target.value }))}
-                        />
-                      </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="stampCode">stampCode</Label>
+                      <Input
+                        id="stampCode"
+                        value={editFormData.stampCode || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, stampCode: e.target.value }))}
+                      />
                     </div>
-                  </div>
-
-                  {/* Currency & Denomination */}
-                  <div className="bg-muted/20 rounded-xl p-6 border">
-                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                      <span className="text-lg">💰</span>
-                      Currency & Denomination
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="currencyCode">currencyCode</Label>
-                        <Input
-                          id="currencyCode"
-                          value={editFormData.currencyCode || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, currencyCode: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="currencyName">currencyName</Label>
-                        <Input
-                          id="currencyName"
-                          value={editFormData.currencyName || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, currencyName: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="currencySymbol">currencySymbol</Label>
-                        <Input
-                          id="currencySymbol"
-                          value={editFormData.currencySymbol || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, currencySymbol: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="denominationValue">denominationValue</Label>
-                        <Input
-                          id="denominationValue"
-                          value={editFormData.denominationValue || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, denominationValue: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="denominationSymbol">denominationSymbol</Label>
-                        <Input
-                          id="denominationSymbol"
-                          value={editFormData.denominationSymbol || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, denominationSymbol: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="denominationDisplay">denominationDisplay</Label>
-                        <Input
-                          id="denominationDisplay"
-                          value={editFormData.denominationDisplay || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, denominationDisplay: e.target.value }))}
-                        />
-                      </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="name">name</Label>
+                      <Input
+                        id="name"
+                        value={editFormData.name || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
+                      />
                     </div>
-                  </div>
-
-                  {/* Physical Characteristics */}
-                  <div className="bg-muted/20 rounded-xl p-6 border">
-                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                      <span className="text-lg">🎨</span>
-                      Physical Characteristics
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="colorCode">colorCode</Label>
-                        <Input
-                          id="colorCode"
-                          value={editFormData.colorCode || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, colorCode: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="colorName">colorName</Label>
-                        <Input
-                          id="colorName"
-                          value={editFormData.colorName || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, colorName: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="colorHex">colorHex</Label>
-                        <Input
-                          id="colorHex"
-                          value={editFormData.colorHex || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, colorHex: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="paperCode">paperCode</Label>
-                        <Input
-                          id="paperCode"
-                          value={editFormData.paperCode || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, paperCode: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="paperName">paperName</Label>
-                        <Input
-                          id="paperName"
-                          value={editFormData.paperName || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, paperName: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="watermarkCode">watermarkCode</Label>
-                        <Input
-                          id="watermarkCode"
-                          value={editFormData.watermarkCode || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, watermarkCode: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="watermarkName">watermarkName</Label>
-                        <Input
-                          id="watermarkName"
-                          value={editFormData.watermarkName || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, watermarkName: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="perforationCode">perforationCode</Label>
-                        <Input
-                          id="perforationCode"
-                          value={editFormData.perforationCode || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, perforationCode: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="perforationName">perforationName</Label>
-                        <Input
-                          id="perforationName"
-                          value={editFormData.perforationName || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, perforationName: e.target.value }))}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Issue & Date Information */}
-                  <div className="bg-muted/20 rounded-xl p-6 border">
-                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                      <Calendar className="h-5 w-5" />
-                      Issue & Date Information
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="issueYear">issueYear</Label>
-                        <Input
-                          id="issueYear"
-                          type="number"
-                          value={editFormData.issueYear || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, issueYear: Number(e.target.value) }))}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-
-                  {/* Pricing & Market Information */}
-                  <div className="bg-muted/20 rounded-xl p-6 border">
-                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                      <span className="text-lg">💰</span>
-                      Pricing & Market Information
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="mintValue">mintValue</Label>
-                        <Input
-                          id="mintValue"
-                          type="number"
-                          value={editFormData.mintValue || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, mintValue: Number(e.target.value) }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="finestUsedValue">finestUsedValue</Label>
-                        <Input
-                          id="finestUsedValue"
-                          type="number"
-                          value={editFormData.finestUsedValue || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, finestUsedValue: Number(e.target.value) }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="usedValue">usedValue</Label>
-                        <Input
-                          id="usedValue"
-                          type="number"
-                          value={editFormData.usedValue || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, usedValue: Number(e.target.value) }))}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Status & Publish Notes */}
-                  <div className="bg-muted/20 rounded-xl p-6 border">
-                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                      <CheckCircle2 className="h-5 w-5" />
-                      Status & Publish Notes
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="isPublished">Published Status</Label>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="isPublished"
-                            checked={editFormData.isPublished || false}
-                            onCheckedChange={(checked) => setEditFormData(prev => ({ ...prev, isPublished: checked as boolean }))}
-                          />
-                          <span className="text-sm">Published</span>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="publishNotes">Publish Notes</Label>
-                        <Textarea
-                          id="publishNotes"
-                          value={editFormData.publishNotes || ""}
-                          onChange={(e) => setEditFormData(prev => ({ ...prev, publishNotes: e.target.value }))}
-                          rows={2}
-                          placeholder="Notes about publishing this stamp..."
-                        />
-                      </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="description">description</Label>
+                      <Textarea
+                        id="description"
+                        value={editFormData.description || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, description: e.target.value }))}
+                        rows={3}
+                      />
                     </div>
                   </div>
                 </div>
+
+                {/* Stamp Image Upload */}
+                <div className="bg-muted/20 rounded-xl p-6 border">
+                  <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                    <Upload className="h-5 w-5" />
+                    Stamp Image Upload
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="stampFileAttachment">Upload New Stamp Image</Label>
+                      <Input
+                        id="stampFileAttachment"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            setEditFormData(prev => ({
+                              ...prev,
+                              stampFileAttachment: file
+                            }))
+                          }
+                        }}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Upload a new image to replace the current stamp image. Supported formats: JPG, PNG, GIF, WebP
+                      </p>
+                      {editFormData.stampFileAttachment && (
+                        <div className="flex items-center gap-2 p-2 bg-muted rounded-md">
+                          <ImageIcon className="h-4 w-4" />
+                          <span className="text-sm">
+                            Selected: {(editFormData.stampFileAttachment as File).name}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditFormData(prev => ({
+                              ...prev,
+                              stampFileAttachment: undefined
+                            }))}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Country & Geographic Information */}
+                <div className="bg-muted/20 rounded-xl p-6 border">
+                  <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                    <MapPin className="h-5 w-5" />
+                    Country & Geographic Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="country">country</Label>
+                      <Input
+                        id="country"
+                        value={editFormData.country || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, country: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="countryName">countryName</Label>
+                      <Input
+                        id="countryName"
+                        value={editFormData.countryName || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, countryName: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Series & Classification */}
+                <div className="bg-muted/20 rounded-xl p-6 border">
+                  <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    Series & Classification
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="seriesName">seriesName</Label>
+                      <Input
+                        id="seriesName"
+                        value={editFormData.seriesName || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, seriesName: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="seriesDescription">seriesDescription</Label>
+                      <Textarea
+                        id="seriesDescription"
+                        value={editFormData.seriesDescription || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, seriesDescription: e.target.value }))}
+                        rows={2}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="typeName">typeName</Label>
+                      <Input
+                        id="typeName"
+                        value={editFormData.typeName || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, typeName: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="stampGroupName">stampGroupName</Label>
+                      <Input
+                        id="stampGroupName"
+                        value={editFormData.stampGroupName || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, stampGroupName: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="stampGroupDescription">stampGroupDescription</Label>
+                      <Textarea
+                        id="stampGroupDescription"
+                        value={editFormData.stampGroupDescription || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, stampGroupDescription: e.target.value }))}
+                        rows={2}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="releaseName">releaseName</Label>
+                      <Input
+                        id="releaseName"
+                        value={editFormData.releaseName || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, releaseName: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="releaseDescription">releaseDescription</Label>
+                      <Textarea
+                        id="releaseDescription"
+                        value={editFormData.releaseDescription || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, releaseDescription: e.target.value }))}
+                        rows={2}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="categoryName">categoryName</Label>
+                      <Input
+                        id="categoryName"
+                        value={editFormData.categoryName || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, categoryName: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="categoryCode">categoryCode</Label>
+                      <Input
+                        id="categoryCode"
+                        value={editFormData.categoryCode || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, categoryCode: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="paperTypeName">paperTypeName</Label>
+                      <Input
+                        id="paperTypeName"
+                        value={editFormData.paperTypeName || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, paperTypeName: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="paperTypeCode">paperTypeCode</Label>
+                      <Input
+                        id="paperTypeCode"
+                        value={editFormData.paperTypeCode || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, paperTypeCode: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="itemTypeCode">itemTypeCode</Label>
+                      <Input
+                        id="itemTypeCode"
+                        value={editFormData.itemTypeCode || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, itemTypeCode: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="itemTypeName">itemTypeName</Label>
+                      <Input
+                        id="itemTypeName"
+                        value={editFormData.itemTypeName || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, itemTypeName: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Currency & Denomination */}
+                <div className="bg-muted/20 rounded-xl p-6 border">
+                  <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                    <span className="text-lg">💰</span>
+                    Currency & Denomination
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="currencyCode">currencyCode</Label>
+                      <Input
+                        id="currencyCode"
+                        value={editFormData.currencyCode || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, currencyCode: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="currencyName">currencyName</Label>
+                      <Input
+                        id="currencyName"
+                        value={editFormData.currencyName || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, currencyName: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="currencySymbol">currencySymbol</Label>
+                      <Input
+                        id="currencySymbol"
+                        value={editFormData.currencySymbol || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, currencySymbol: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="denominationValue">denominationValue</Label>
+                      <Input
+                        id="denominationValue"
+                        value={editFormData.denominationValue || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, denominationValue: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="denominationSymbol">denominationSymbol</Label>
+                      <Input
+                        id="denominationSymbol"
+                        value={editFormData.denominationSymbol || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, denominationSymbol: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="denominationDisplay">denominationDisplay</Label>
+                      <Input
+                        id="denominationDisplay"
+                        value={editFormData.denominationDisplay || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, denominationDisplay: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Physical Characteristics */}
+                <div className="bg-muted/20 rounded-xl p-6 border">
+                  <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                    <span className="text-lg">🎨</span>
+                    Physical Characteristics
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="colorCode">colorCode</Label>
+                      <Input
+                        id="colorCode"
+                        value={editFormData.colorCode || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, colorCode: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="colorName">colorName</Label>
+                      <Input
+                        id="colorName"
+                        value={editFormData.colorName || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, colorName: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="colorHex">colorHex</Label>
+                      <Input
+                        id="colorHex"
+                        value={editFormData.colorHex || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, colorHex: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="paperCode">paperCode</Label>
+                      <Input
+                        id="paperCode"
+                        value={editFormData.paperCode || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, paperCode: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="paperName">paperName</Label>
+                      <Input
+                        id="paperName"
+                        value={editFormData.paperName || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, paperName: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="watermarkCode">watermarkCode</Label>
+                      <Input
+                        id="watermarkCode"
+                        value={editFormData.watermarkCode || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, watermarkCode: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="watermarkName">watermarkName</Label>
+                      <Input
+                        id="watermarkName"
+                        value={editFormData.watermarkName || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, watermarkName: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="perforationCode">perforationCode</Label>
+                      <Input
+                        id="perforationCode"
+                        value={editFormData.perforationCode || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, perforationCode: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="perforationName">perforationName</Label>
+                      <Input
+                        id="perforationName"
+                        value={editFormData.perforationName || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, perforationName: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Issue & Date Information */}
+                <div className="bg-muted/20 rounded-xl p-6 border">
+                  <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    Issue & Date Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="issueYear">issueYear</Label>
+                      <Input
+                        id="issueYear"
+                        type="number"
+                        value={editFormData.issueYear || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, issueYear: Number(e.target.value) }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+
+                {/* Pricing & Market Information */}
+                <div className="bg-muted/20 rounded-xl p-6 border">
+                  <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                    <span className="text-lg">💰</span>
+                    Pricing & Market Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="mintValue">mintValue</Label>
+                      <Input
+                        id="mintValue"
+                        type="number"
+                        value={editFormData.mintValue || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, mintValue: Number(e.target.value) }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="finestUsedValue">finestUsedValue</Label>
+                      <Input
+                        id="finestUsedValue"
+                        type="number"
+                        value={editFormData.finestUsedValue || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, finestUsedValue: Number(e.target.value) }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="usedValue">usedValue</Label>
+                      <Input
+                        id="usedValue"
+                        type="number"
+                        value={editFormData.usedValue || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, usedValue: Number(e.target.value) }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status & Publish Notes */}
+                <div className="bg-muted/20 rounded-xl p-6 border">
+                  <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5" />
+                    Status & Publish Notes
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="isPublished">Published Status</Label>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="isPublished"
+                          checked={editFormData.isPublished || false}
+                          onCheckedChange={(checked) => setEditFormData(prev => ({ ...prev, isPublished: checked as boolean }))}
+                        />
+                        <span className="text-sm">Published</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="publishNotes">Publish Notes</Label>
+                      <Textarea
+                        id="publishNotes"
+                        value={editFormData.publishNotes || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, publishNotes: e.target.value }))}
+                        rows={2}
+                        placeholder="Notes about publishing this stamp..."
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -2083,7 +2493,7 @@ export default function StampReviewPage() {
                 </h3>
                 <Button
                   onClick={handleOpenCreateInstanceDialog}
-                  // className="bg-blue-600 hover:bg-blue-700 text-white"
+                // className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   <Upload className="h-4 w-4 mr-2" />
                   Create Instance
@@ -2112,6 +2522,7 @@ export default function StampReviewPage() {
                         <TableHead className="w-[80px] font-semibold">Used</TableHead>
                         <TableHead className="w-[140px] font-semibold">Finest Used</TableHead>
                         <TableHead className="w-[120px] font-semibold">Catalog Number</TableHead>
+                        <TableHead className="w-[120px] font-semibold">Published By</TableHead>
                         <TableHead className="w-[120px] font-semibold">Status</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -2174,6 +2585,12 @@ export default function StampReviewPage() {
                               <Badge variant="outline" className="font-mono text-xs max-w-full">
                                 <span className="overflow-hidden text-ellipsis whitespace-nowrap">{instance.catalogNumber}</span>
                               </Badge>
+                            </div>
+                          </TableCell>
+                          <TableCell className="w-[120px]">
+                            <div className="flex flex-col gap-1">
+                              <span>{userData?.[instance.publishedBy]?.firstName} {userData?.[instance.publishedBy]?.lastName}</span>
+                              <span>{userData?.[instance.publishedBy]?.email}</span>
                             </div>
                           </TableCell>
                           <TableCell className="w-[120px]">
@@ -2400,7 +2817,7 @@ export default function StampReviewPage() {
             <Button
               onClick={handleCreateInstance}
               disabled={isUpdatingInstance || !createInstanceFormData.name || !createInstanceFormData.catalogNumber}
-              // className="bg-blue-600 hover:bg-blue-700 text-white"
+            // className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               {isUpdatingInstance ? (
                 <>
@@ -2641,174 +3058,174 @@ export default function StampReviewPage() {
 
               {/* Detailed Form Sections - Same as Base Stamp */}
               <div className="space-y-8">
-                  {/* Basic Information */}
-                  <div className="bg-muted/20 rounded-xl p-6 border">
-                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                      <Edit className="h-5 w-5" />
-                      Basic Information
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="instance-id">ID</Label>
-                    <Input
-                      id="instance-id"
-                      value={instanceEditFormData.id || ""}
-                      disabled
-                      className="bg-muted"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="instance-name">name</Label>
-                    <Input
-                      id="instance-name"
-                      value={instanceEditFormData.name || ""}
-                      onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, name: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="instance-catalogNumber">catalogNumber</Label>
-                    <Input
-                      id="instance-catalogNumber"
-                      value={instanceEditFormData.catalogNumber || ""}
-                      onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, catalogNumber: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="instance-isInstance">isInstance</Label>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="instance-isInstance"
-                        checked={instanceEditFormData.isInstance || false}
-                        onCheckedChange={(checked) => setInstanceEditFormData(prev => ({ ...prev, isInstance: checked as boolean }))}
+                {/* Basic Information */}
+                <div className="bg-muted/20 rounded-xl p-6 border">
+                  <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                    <Edit className="h-5 w-5" />
+                    Basic Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="instance-id">ID</Label>
+                      <Input
+                        id="instance-id"
+                        value={instanceEditFormData.id || ""}
+                        disabled
+                        className="bg-muted"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="instance-name">name</Label>
+                      <Input
+                        id="instance-name"
+                        value={instanceEditFormData.name || ""}
+                        onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, name: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="instance-catalogNumber">catalogNumber</Label>
+                      <Input
+                        id="instance-catalogNumber"
+                        value={instanceEditFormData.catalogNumber || ""}
+                        onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, catalogNumber: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="instance-isInstance">isInstance</Label>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="instance-isInstance"
+                          checked={instanceEditFormData.isInstance || false}
+                          onCheckedChange={(checked) => setInstanceEditFormData(prev => ({ ...prev, isInstance: checked as boolean }))}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="instance-parentStampId">parentStampId</Label>
+                      <Input
+                        id="instance-parentStampId"
+                        value={instanceEditFormData.parentStampId || ""}
+                        onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, parentStampId: e.target.value }))}
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="instance-parentStampId">parentStampId</Label>
-                    <Input
-                      id="instance-parentStampId"
-                      value={instanceEditFormData.parentStampId || ""}
-                      onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, parentStampId: e.target.value }))}
-                    />
-                  </div>
                 </div>
-              </div>
 
-                  {/* Stamp Image Upload */}
-                  <div className="bg-muted/20 rounded-xl p-6 border">
-                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                      <Upload className="h-5 w-5" />
-                      Stamp Image Upload
-                    </h3>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-stampFileAttachment">Upload New Stamp Image</Label>
-                        <Input
-                          id="instance-stampFileAttachment"
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0]
-                            if (file) {
-                              setInstanceEditFormData(prev => ({
-                                ...prev,
-                                stampFileAttachment: file
-                              }))
-                            }
-                          }}
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Upload a new image to replace the current stamp image. Supported formats: JPG, PNG, GIF, WebP
-                        </p>
-                        {instanceEditFormData.stampFileAttachment && (
-                          <div className="flex items-center gap-2 p-2 bg-muted rounded-md">
-                            <ImageIcon className="h-4 w-4" />
-                            <span className="text-sm">
-                              Selected: {(instanceEditFormData.stampFileAttachment as File).name}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setInstanceEditFormData(prev => ({
-                                ...prev,
-                                stampFileAttachment: undefined
-                              }))}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Pricing & Market Information */}
-                  <div className="bg-muted/20 rounded-xl p-6 border">
-                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                      <span className="text-lg">💰</span>
-                      Pricing & Market Information
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-mintValue">mintValue</Label>
-                        <Input
-                          id="instance-mintValue"
-                          type="number"
-                          value={(instanceEditFormData as any).mintValue || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, mintValue: Number(e.target.value) } as any))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-finestUsedValue">finestUsedValue</Label>
-                        <Input
-                          id="instance-finestUsedValue"
-                          type="number"
-                          value={(instanceEditFormData as any).finestUsedValue || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, finestUsedValue: Number(e.target.value) } as any))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="instance-usedValue">usedValue</Label>
-                        <Input
-                          id="instance-usedValue"
-                          type="number"
-                          value={(instanceEditFormData as any).usedValue || ""}
-                          onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, usedValue: Number(e.target.value) } as any))}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-              {/* Instance Status */}
-              <div className="bg-muted/20 rounded-xl p-6 border">
-                <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                  <CheckCircle2 className="h-5 w-5" />
-                  Status & Publishing
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="instance-isPublished">Published Status</Label>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="instance-isPublished"
-                        checked={instanceEditFormData.isPublished || false}
-                        onCheckedChange={(checked) => setInstanceEditFormData(prev => ({ ...prev, isPublished: checked as boolean }))}
+                {/* Stamp Image Upload */}
+                <div className="bg-muted/20 rounded-xl p-6 border">
+                  <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                    <Upload className="h-5 w-5" />
+                    Stamp Image Upload
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="instance-stampFileAttachment">Upload New Stamp Image</Label>
+                      <Input
+                        id="instance-stampFileAttachment"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            setInstanceEditFormData(prev => ({
+                              ...prev,
+                              stampFileAttachment: file
+                            }))
+                          }
+                        }}
                       />
-                      <span className="text-sm">Published</span>
+                      <p className="text-xs text-muted-foreground">
+                        Upload a new image to replace the current stamp image. Supported formats: JPG, PNG, GIF, WebP
+                      </p>
+                      {instanceEditFormData.stampFileAttachment && (
+                        <div className="flex items-center gap-2 p-2 bg-muted rounded-md">
+                          <ImageIcon className="h-4 w-4" />
+                          <span className="text-sm">
+                            Selected: {(instanceEditFormData.stampFileAttachment as File).name}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setInstanceEditFormData(prev => ({
+                              ...prev,
+                              stampFileAttachment: undefined
+                            }))}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="instance-publishNotes">Publish Notes</Label>
-                    <Textarea
-                      id="instance-publishNotes"
-                      value={instanceEditFormData.publishNotes || ""}
-                      onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, publishNotes: e.target.value }))}
-                      rows={2}
-                      placeholder="Notes about publishing this instance..."
-                    />
+                </div>
+
+                {/* Pricing & Market Information */}
+                <div className="bg-muted/20 rounded-xl p-6 border">
+                  <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                    <span className="text-lg">💰</span>
+                    Pricing & Market Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="instance-mintValue">mintValue</Label>
+                      <Input
+                        id="instance-mintValue"
+                        type="number"
+                        value={(instanceEditFormData as any).mintValue || ""}
+                        onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, mintValue: Number(e.target.value) } as any))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="instance-finestUsedValue">finestUsedValue</Label>
+                      <Input
+                        id="instance-finestUsedValue"
+                        type="number"
+                        value={(instanceEditFormData as any).finestUsedValue || ""}
+                        onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, finestUsedValue: Number(e.target.value) } as any))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="instance-usedValue">usedValue</Label>
+                      <Input
+                        id="instance-usedValue"
+                        type="number"
+                        value={(instanceEditFormData as any).usedValue || ""}
+                        onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, usedValue: Number(e.target.value) } as any))}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+
+                {/* Instance Status */}
+                <div className="bg-muted/20 rounded-xl p-6 border">
+                  <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5" />
+                    Status & Publishing
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="instance-isPublished">Published Status</Label>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="instance-isPublished"
+                          checked={instanceEditFormData.isPublished || false}
+                          onCheckedChange={(checked) => setInstanceEditFormData(prev => ({ ...prev, isPublished: checked as boolean }))}
+                        />
+                        <span className="text-sm">Published</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="instance-publishNotes">Publish Notes</Label>
+                      <Textarea
+                        id="instance-publishNotes"
+                        value={instanceEditFormData.publishNotes || ""}
+                        onChange={(e) => setInstanceEditFormData(prev => ({ ...prev, publishNotes: e.target.value }))}
+                        rows={2}
+                        placeholder="Notes about publishing this instance..."
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
