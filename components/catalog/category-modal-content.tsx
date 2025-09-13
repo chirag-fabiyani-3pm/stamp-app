@@ -24,8 +24,7 @@ export function CategoryModalContent({
     if (!searchTerm) return paperTypes
     
     return paperTypes.filter(paperType => 
-      paperType.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      paperType.description.toLowerCase().includes(searchTerm.toLowerCase())
+      paperType.name.toLowerCase().includes(searchTerm.toLowerCase())
     )
   }, [paperTypes, searchTerm])
 

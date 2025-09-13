@@ -25,7 +25,6 @@ export function TypeModalContent({
     
     return stampGroups.filter(group => 
       group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      group.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       group.watermark.toLowerCase().includes(searchTerm.toLowerCase()) ||
       group.printer.toLowerCase().includes(searchTerm.toLowerCase())
     )
@@ -60,15 +59,8 @@ export function TypeModalContent({
   }
 
   return (
-    <div className="mt-4">
-            {/* Header */}
-      <div className="mb-6">
-        <p className="text-gray-600 dark:text-gray-400 max-w-2xl">
-          {typeData.description}
-        </p>
-        
-        <hr className="border-gray-300 dark:border-gray-700 my-6" />
-
+    <div>
+      <div>
         {/* Search Controls */}
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="flex-1">
@@ -109,10 +101,6 @@ export function TypeModalContent({
                   <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
                     {stampGroup.name}
                   </h3>
-                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-3">
-                    {stampGroup.description}
-                  </p>
-                  
                   {/* Technical Details */}
                   <div className="grid md:grid-cols-2 gap-4 text-sm">
                     {stampGroup.watermark && <div>

@@ -6,95 +6,46 @@ export type StampMasterCatalogItem = {
   isInstance: boolean
   parentStampId: string
   catalogNumber: string
-  stampCode: string
   name: string
   description: string
   country: string
   countryName: string
-  countryFlag: string
-  seriesId: string
   seriesName: string
-  seriesDescription: string
-  typeId: string
   typeName: string
-  typeDescription: string
-  stampGroupId: string
   stampGroupName: string
-  stampGroupDescription: string
-  releaseId: string
-  releaseName: string
-  releaseDateRange: string
-  releaseDescription: string
-  categoryId: string
-  categoryName: string
+  subCategoryCode: string
   categoryCode: string
-  categoryDescription: string
-  paperTypeId: string
-  paperTypeName: string
-  paperTypeCode: string
-  paperTypeDescription: string
   currencyCode: string
   currencyName: string
   currencySymbol: string
-  currencyDescription: string
   denominationValue: string
   denominationSymbol: string
   denominationDisplay: string
-  denominationDescription: string
   colorCode: string
   colorName: string
   colorHex: string
-  colorDescription: string
-  colorVariant: string
+  colorGroup: string
   paperCode: string
   paperName: string
-  paperDescription: string
-  paperFiber: string
-  paperThickness: string
-  paperOpacity: string
+  paperOrientation: string
   watermarkCode: string
   watermarkName: string
-  watermarkDescription: string
   watermarkPosition: string
-  watermarkClarity: string
   perforationCode: string
   perforationName: string
   perforationMeasurement: string
-  perforationGauge: string
-  perforationCleanCut: boolean
-  perforationComb: boolean
   itemTypeCode: string
   itemTypeName: string
-  itemTypeDescription: string
-  itemFormat: string
   issueDate: string
   issueYear: number
-  issueMonth: number
-  issueDay: number
-  firstDayIssue: boolean
   periodStart: number
   periodEnd: number
-  issueLocation: string
-  issuePurpose: string
-  issueContext: string
   printingMethod: string
-  printingProcess: string
-  printingQuality: string
-  designer: string
-  designerNotes: string
   printer: string
-  printerLocation: string
-  printerReputation: string
   engraver: string
-  dieNumber: string
-  plateNumber: string
-  plateCharacteristics: string
-  paperManufacturer: string
-  gumType: string
   gumCondition: string
   sizeWidth: string
   sizeHeight: string
-  sizeFormat: string
   theme: string
   themeCategory: string
   subject: string
@@ -164,7 +115,6 @@ export type StampMasterCatalogItem = {
   marginMeasurements: string
   colorFreshness: string
   colorIntensity: string
-  colorDescriptionSpecific: string
   paperCondition: string
   paperFreshness: string
   surfaceCondition: string
@@ -208,10 +158,7 @@ export type StampMasterCatalogItem = {
   varietyVisibility: string
   varietyRarity: string
   varietyNotes: string
-  stampVectorJson: string
   stampDetailsJson: string
-  alternativeNames: string
-  plateFlaws: string
   stampImageVariants: string[]
   recentSales: string
   primaryReferences: string

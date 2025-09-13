@@ -34,6 +34,7 @@ import {
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb"
 import { toast } from "@/components/ui/use-toast"
+import { generateStampCodeFromCatalogData } from "@/lib/utils/parse-stamp-code"
 
 interface StampDetailData {
   id: string
@@ -43,20 +44,13 @@ interface StampDetailData {
   isInstance?: boolean
   parentStampId?: string
   catalogNumber: string
-  stampCode: string
   name: string
   description?: string
   country?: string
   countryName?: string
-  countryFlag?: string
-  seriesId?: string
   seriesName?: string
   typeName?: string
   stampGroupName?: string
-  releaseName?: string
-  releaseDateRange?: string
-  categoryName?: string
-  paperTypeName?: string
   currencySymbol?: string
   denominationValue?: string
   denominationSymbol?: string
@@ -68,6 +62,7 @@ interface StampDetailData {
   perforationName?: string
   perforationMeasurement?: string
   itemTypeName?: string
+  paperName?: string
   issueDate?: string
   issueYear?: number
   printingMethod?: string
@@ -412,9 +407,7 @@ function StampDetailContent() {
               <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 text-center">
                 <div className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Country</div>
                 <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center justify-center gap-1">
-                  {(stamp.countryFlag && stamp.countryFlag.length === 2) ? (
-                    <ReactCountryFlag countryCode={stamp.countryFlag} svg className="" />
-                  ) : null}
+                  <ReactCountryFlag countryCode={stamp.country || ''} svg className="" />
                   <span className="truncate max-w-[8rem]">{stamp.country || stamp.countryName || '—'}</span>
                 </div>
               </div>
@@ -489,10 +482,10 @@ function StampDetailContent() {
                         <div className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Type</div>
                         <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{stamp.typeName || '—'}</div>
                       </div>
-                      {stamp.releaseName && (
+                      {stamp.stampGroupName && (
                         <div className="rounded-lg bg-gray-50 dark:bg-gray-800 px-3 py-2">
                           <div className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Release</div>
-                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{stamp.releaseName}</div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{stamp.stampGroupName}</div>
                         </div>
                       )}
                       {stamp.itemTypeName && (
@@ -523,7 +516,7 @@ function StampDetailContent() {
                       </div>
                       <div>
                         <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">Paper Type</dt>
-                        <dd className="text-base font-semibold text-gray-900 dark:text-gray-100">{stamp.paperTypeName || '—'}</dd>
+                        <dd className="text-base font-semibold text-gray-900 dark:text-gray-100">{stamp.paperName || '—'}</dd>
                       </div>
                     </div>
                     <div className="space-y-3">
@@ -597,7 +590,7 @@ function StampDetailContent() {
                 <section className="bg-primary/5 dark:bg-primary/10 rounded-2xl p-5">
                   <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Stamps of Approval ID</h2>
                   <code className="bg-white dark:bg-gray-800 border border-primary/20 dark:border-primary/30 rounded-lg p-3 text-xs font-mono block break-all text-primary dark:text-amber-300">
-                    {`SOA-${formatStampCode(decodeURIComponent(stamp.stampCode || ''))}`}
+                    {`SOA-${generateStampCodeFromCatalogData(stamp)}`}
                   </code>
                   <p className="text-primary/70 dark:text-amber-400 text-xs mt-2">This unique identifier confirms authentication and approval in our premium catalog system.</p>
                 </section>

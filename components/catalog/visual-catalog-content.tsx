@@ -133,7 +133,7 @@ export function VisualCatalogContent() {
             type: 'stampDetails',
             title: `${stamp.name}`,
             data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.stampCode || ''),
+            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : '',
             selectedAdditionalCategories: currentSelectedCategories
         }])
         return
@@ -169,7 +169,7 @@ export function VisualCatalogContent() {
             type: 'stampDetails',
             title: `${stamp.name}`,
             data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.stampCode || ''),
+            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : '',
             selectedAdditionalCategories: currentSelectedCategories
         }])
         return
@@ -203,7 +203,7 @@ export function VisualCatalogContent() {
             type: 'stampDetails',
             title: `${stamp.name}`,
             data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.stampCode || ''),
+            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : '',
             selectedAdditionalCategories: currentSelectedCategories
         }])
         return
@@ -237,7 +237,7 @@ export function VisualCatalogContent() {
             type: 'stampDetails',
             title: `${stamp.name}`,
             data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.stampCode || ''),
+            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : '',
             selectedAdditionalCategories: currentSelectedCategories
         }])
         return
@@ -271,7 +271,7 @@ export function VisualCatalogContent() {
             type: 'stampDetails',
             title: `${stamp.name}`,
             data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.stampCode || ''),
+            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : '',
             selectedAdditionalCategories: currentSelectedCategories
         }])
         return
@@ -306,7 +306,7 @@ export function VisualCatalogContent() {
             type: 'stampDetails',
             title: `${stamp.name}`,
             data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.stampCode || ''),
+            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : '',
             selectedAdditionalCategories: currentSelectedCategories
         }])
         return
@@ -340,7 +340,7 @@ export function VisualCatalogContent() {
             type: 'stampDetails',
             title: `${stamp.name}`,
             data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.stampCode || ''),
+            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : '',
             selectedAdditionalCategories: currentSelectedCategories
         }])
         return
@@ -374,7 +374,7 @@ export function VisualCatalogContent() {
             type: 'stampDetails',
             title: `${stamp.name}`,
             data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.stampCode || ''),
+            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : '',
             selectedAdditionalCategories: currentSelectedCategories
         }])
         return
@@ -408,7 +408,7 @@ export function VisualCatalogContent() {
             type: 'stampDetails',
             title: `${stamp.name}`,
             data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.stampCode || ''),
+            stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : '',
             selectedAdditionalCategories: currentSelectedCategories
         }])
         return

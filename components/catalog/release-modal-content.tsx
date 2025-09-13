@@ -47,8 +47,7 @@ export function ReleaseModalContent({
 
     return categories.filter(
       (category) =>
-        category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        category.description.toLowerCase().includes(searchTerm.toLowerCase())
+        category.name.toLowerCase().includes(searchTerm.toLowerCase())
     )
   }, [categories, searchTerm])
 
@@ -57,8 +56,7 @@ export function ReleaseModalContent({
 
     return paperTypes.filter(
       (paperType) =>
-        paperType.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        paperType.description.toLowerCase().includes(searchTerm.toLowerCase())
+        paperType.name.toLowerCase().includes(searchTerm.toLowerCase())
     )
   }, [paperTypes, searchTerm])
 
@@ -90,9 +88,6 @@ export function ReleaseModalContent({
     <div className="mt-4">
       {/* Header */}
       <div className="mb-6">
-        <p className="text-gray-600 dark:text-gray-400 max-w-2xl">
-          {releaseData.description}
-        </p>
         <div className="mt-2 text-sm text-gray-600">
           <span className="font-medium">Date Range:</span> {releaseData.dateRange} | 
           <span className="font-medium ml-2">Perforation:</span> {releaseData.perforation}

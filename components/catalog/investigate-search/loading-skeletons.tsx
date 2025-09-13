@@ -277,16 +277,15 @@ export const ListCatalogSkeleton = ({ layout = 'campbell-paterson' as 'campbell-
 
     {/* Main Content */}
     <div className="container mx-auto px-4 pb-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-3xl mx-auto">
         <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden">
           {/* Table Header */}
           <div className="border-b border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2 hidden sm:block">
             {layout === 'campbell-paterson' ? (
-              <div className="grid grid-cols-12 gap-4 text-xs font-semibold text-gray-700 uppercase tracking-wide">
+              <div className="grid grid-cols-9 gap-4 text-xs font-semibold text-gray-700 uppercase tracking-wide">
                 <Skeleton className="h-4 w-full col-span-4" />
                 <Skeleton className="h-4 w-full col-span-2" />
                 <Skeleton className="h-4 w-full col-span-2" />
-                <Skeleton className="h-4 w-full col-span-3" />
                 <Skeleton className="h-4 w-full col-span-1" />
               </div>
             ) : (
@@ -312,11 +311,10 @@ export const ListCatalogSkeleton = ({ layout = 'campbell-paterson' as 'campbell-
             {Array.from({ length: 10 }, (_, i) => (
               <div key={i} className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                 {layout === 'campbell-paterson' ? (
-                  <div className="grid grid-cols-12 gap-4 items-center text-sm">
+                  <div className="grid grid-cols-9 gap-4 items-center text-sm">
                     <Skeleton className="h-4 w-3/4 col-span-4" />
                     <Skeleton className="h-4 w-1/2 col-span-2" />
                     <Skeleton className="h-4 w-1/2 col-span-2" />
-                    <Skeleton className="h-4 w-3/4 col-span-3" />
                     <Skeleton className="h-4 w-4 col-span-1" />
                   </div>
                 ) : (

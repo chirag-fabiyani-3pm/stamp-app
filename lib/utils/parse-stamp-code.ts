@@ -39,4 +39,28 @@ export function parseStampCode(stampCode: string): ParsedStampCode {
   }
 }
 
+/**
+ * Generates a stamp code from StampData or ApiStampData objects
+ * This is a convenience function that converts the catalog types to StampObject format
+ */
+export function generateStampCodeFromCatalogData(stamp: any): string {
+  // Convert to StampObject format
+  const stampObject = {
+    countryCode: stamp.countryCode || stamp.country || '',
+    seriesName: stamp.seriesName || '',
+    issueYear: stamp.issueYear || '',
+    currencyCode: stamp.currencyCode || '',
+    denominationSymbol: stamp.denominationSymbol || '',
+    denominationValue: stamp.denominationValue || 0,
+    color: stamp.colorCode || '',
+    paper: stamp.paperCode || '',
+    watermark: stamp.watermarkCode || '',
+    perforation: stamp.perforationCode || '',
+    itemType: stamp.itemTypeCode || '',
+    categoryCode: stamp.categoryCode || ''
+  }
+
+  return `${stampObject.countryCode}${stampObject.seriesName ? `.${stampObject.seriesName}` : ''}${stampObject.issueYear ? `.${stampObject.issueYear}` : ''}${stampObject.currencyCode ? `.${stampObject.currencyCode}` : ''}${stampObject.denominationSymbol && stampObject.denominationValue ? `.${stampObject.denominationValue}${stampObject.denominationSymbol}` : ''}${stampObject.color ? `.${stampObject.color}` : ''}${stampObject.paper ? `.${stampObject.paper}` : ''}${stampObject.watermark ? `.${stampObject.watermark}` : ''}${stampObject.perforation ? `.${stampObject.perforation}` : ''}${stampObject.itemType ? `.${stampObject.itemType}` : ''}${stampObject.categoryCode ? `.${stampObject.categoryCode}` : ''}`
+}
+
 

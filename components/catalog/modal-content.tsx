@@ -144,10 +144,10 @@ export default function ModalContent({
                             {displayedSeries.map((series: SeriesOption) => (
                                 <div
                                     key={series.id}
-                                    className="group cursor-pointer bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-all duration-200 p-3 md:p-4 border border-gray-100 dark:border-gray-700 hover:border-primary/30 dark:hover:border-amber-600"
+                                    className="group cursor-pointer bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-all duration-200 p-3 md:p-4 border border-gray-100 dark:border-gray-700 hover:border-primary/30 dark:hover:border-amber-600 flex flex-col justify-center"
                                     onClick={() => onSeriesClick(series, stampCode)}
                                 >
-                                    <div className="flex items-start space-x-3">
+                                    <div className="flex items-center space-x-3">
                                         <Image
                                             src={series.featuredStampUrl || '/images/stamps/no-image-available.png'}
                                             alt={series.name}
@@ -170,11 +170,6 @@ export default function ModalContent({
                                                     {series.totalStamps}
                                                 </Badge>
                                             </span>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                                {(series?.description as any)?.length > 75 
-                                                    ? `${(series?.description as any)?.substring(0, 75)}...` 
-                                                    : series?.description}
-                                            </p>
                                         </div>
                                     </div>
                                 </div>

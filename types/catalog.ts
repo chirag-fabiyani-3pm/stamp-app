@@ -1,7 +1,6 @@
 export interface CountryOption {
   code: string
   name: string
-  flag: string
   totalStamps: number
   firstIssue?: string
   lastIssue?: string
@@ -109,7 +108,6 @@ export interface ItemTypeOption {
 
 export interface StampData {
   id: string
-  stampCode: string
   stampId: string
   parentStampId: string
   isInstance: boolean
@@ -137,7 +135,7 @@ export interface StampData {
   rarity?: string
   condition?: string
   story: string
-  stampGroupId: string;
+  stampGroupName: string;
   instances: StampInstance[];
   typeName: string;
   categoryCode: string;
@@ -152,7 +150,7 @@ export interface ApiStampData {
   country: string
   countryCode: string
   story: string
-  stampGroupId: string
+  stampGroupName: string
   instances: StampInstance[]
   stampImageUrl: string
   catalogName: string
@@ -166,6 +164,8 @@ export interface ApiStampData {
   color: string
   paperType: string
   stampDetailsJson: string
+  stampId: string
+  parentStampId: string
 }
 
 export interface ApiResponse {
@@ -294,7 +294,6 @@ export interface FeaturedStory {
 export interface SeriesData {
   id: string
   name: string
-  description: string
   totalTypes: number
   country: string
   periodStart: number
@@ -308,7 +307,6 @@ export interface TypeData {
   id: string
   name: string
   seriesId: string
-  description: string
   totalStampGroups: number
   catalogPrefix: string
 }
@@ -319,7 +317,6 @@ export interface StampGroupData {
   typeId: string
   year: number
   issueDate: string
-  description: string
   watermark: string
   perforation: string
   printingMethod: string
@@ -350,7 +347,6 @@ export interface ReleaseData {
   name: string
   yearId: string
   dateRange: string
-  description: string
   perforation: string
   totalCategories: number
   hasCategories: boolean
@@ -360,8 +356,7 @@ export interface CategoryData {
   id: string
   name: string
   code: string
-  releaseId: string
-  description: string
+  stampGroupId: string
   totalPaperTypes: number
   hasPaperTypes: boolean
 }
@@ -371,7 +366,6 @@ export interface PaperTypeData {
   name: string
   code: string
   categoryId: string
-  description: string
   totalStamps: number
 }
 

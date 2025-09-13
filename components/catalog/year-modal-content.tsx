@@ -26,7 +26,6 @@ export function YearModalContent({
     return releases.filter(
       (release) =>
         release.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        release.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         release.perforation.toLowerCase().includes(searchTerm.toLowerCase())
     )
   }, [releases, searchTerm])
@@ -108,9 +107,6 @@ export function YearModalContent({
                   <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
                     {release.name}
                   </h3>
-                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                    {release.description}
-                  </p>
                 </div>
               </div>
 

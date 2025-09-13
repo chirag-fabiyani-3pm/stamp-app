@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import { StampData } from "@/types/catalog"
 import { createStampDetailData } from "@/lib/data/list-catalog-data"
 import { Skeleton } from "@/components/ui/skeleton";
+import { generateStampCodeFromCatalogData } from "@/lib/utils/parse-stamp-code"
 
 interface StampModalContentProps {
   stampData: StampData
@@ -75,7 +76,7 @@ export function StampModalContent({ stampData, isLoading }: StampModalContentPro
         </h2>
         <div className="flex items-center gap-4 mt-1 text-sm text-gray-600 dark:text-gray-400">
           <span>{stampDetailData.country}</span>
-          <span>{stampDetailData.stampCode}</span>
+          <span>{generateStampCodeFromCatalogData(stampDetailData)}</span>
         </div>
       </div>
 
@@ -159,12 +160,6 @@ export function StampModalContent({ stampData, isLoading }: StampModalContentPro
               </div>
               
               <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Designer</label>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {stampDetailData.parsedDetails.designer}
-                  </div>
-                </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Print Run</label>
                   <div className="text-sm text-gray-600 dark:text-gray-400">

@@ -28,7 +28,10 @@ export const getCampbellPatersonSeries = async (): Promise<SeriesData[]> => {
       totalTypes: series.stamps.length, // Placeholder: count of stamps in series as types
       country: series.stamps[0]?.countryName || 'Unknown',
       periodStart: periodStart,
-      periodEnd: periodEnd
+      periodEnd: periodEnd,
+      totalStampGroups: 0,
+      typeNames: {},
+      stampGroupNames: {}
     };
   });
   return seriesData;
@@ -69,7 +72,6 @@ export const getTypesForSeries = async (seriesName: string): Promise<TypeData[]>
         id: key,
         name: stamp.itemTypeName || 'Unknown Type',
         seriesId: seriesName,
-        description: stamp.itemTypeDescription || `${stamp.itemTypeName} category`,
         totalStampGroups: 0,
         catalogPrefix: key
       };
@@ -95,7 +97,6 @@ export const getStampGroupsForType = async (seriesName: string, itemTypeCode: st
         typeId: itemTypeCode,
         year: stamp.issueYear,
         issueDate: stamp.issueDate,
-        description: stamp.stampGroupDescription || stamp.description,
         watermark: stamp.watermarkName || 'None',
         perforation: stamp.perforationName || 'Imperforate',
         printingMethod: stamp.printingMethod || 'Unknown',
@@ -139,14 +140,13 @@ export const getReleasesForYear = async (countryCode: string, year: number): Pro
 
   const yearStamps = apiStampData.filter(s => s.country === countryCode && s.issueYear === year);
   const groupedByRelease = yearStamps.reduce((acc: any, stamp: any) => {
-    const key = stamp.releaseName || 'unknown_release';
+    const key = stamp.stampGroupName || 'unknown_release';
     if (!acc[key]) {
       acc[key] = {
         id: key,
-        name: stamp.releaseName || `Release ${year}`,
+        name: stamp.stampGroupName || `Group ${year}`,
         yearId: `${countryCode}-${year}`,
-        dateRange: stamp.releaseDateRange || `${year}`,
-        description: stamp.releaseDescription || `Stamp releases for ${year}`,
+        dateRange: `${stamp.periodStart}-${stamp.periodEnd}`,
         perforation: stamp.perforationName || 'Unknown',
       totalCategories: 0,
       hasCategories: false,
@@ -160,19 +160,18 @@ export const getReleasesForYear = async (countryCode: string, year: number): Pro
   return Object.values(groupedByRelease);
 }
 
-export const getCategoriesForRelease = async (countryCode: string, year: number, releaseId: string): Promise<CategoryData[]> => {
+export const getCategoriesForRelease = async (countryCode: string, year: number, stampGroupId: string): Promise<CategoryData[]> => {
   await new Promise(resolve => setTimeout(resolve, 300)) // Simulate API delay
 
-  const releaseStamps = apiStampData.filter(s => s.country === countryCode && s.issueYear === year && (s.releaseName === releaseId || (!s.releaseName && releaseId === 'unknown_release')));
+  const releaseStamps = apiStampData.filter(s => s.country === countryCode && s.issueYear === year && (s.stampGroupName === stampGroupId || (!s.stampGroupName && stampGroupId === 'unknown_release')));
   const groupedByCategory = releaseStamps.reduce((acc: any, stamp: any) => {
-    const key = stamp.categoryName || 'unknown_category';
+    const key = stamp.categoryCode || 'unknown_category';
     if (!acc[key]) {
       acc[key] = {
         id: key,
-        name: stamp.categoryName || 'Unknown Category',
+        name: stamp.categoryCode || 'Unknown Category',
         code: stamp.categoryCode || 'Unknown',
-        releaseId: releaseId,
-        description: stamp.categoryDescription || `${stamp.categoryName} category`,
+        stampGroupId,
         totalPaperTypes: 0,
         hasPaperTypes: false,
       };
@@ -185,27 +184,26 @@ export const getCategoriesForRelease = async (countryCode: string, year: number,
   return Object.values(groupedByCategory);
 }
 
-export const getPaperTypesForCategory = async (countryCode: string, year: number, releaseId: string, categoryId: string): Promise<PaperTypeData[]> => {
+export const getPaperTypesForCategory = async (countryCode: string, year: number, stampGroupId: string, categoryId: string): Promise<PaperTypeData[]> => {
   await new Promise(resolve => setTimeout(resolve, 300)) // Simulate API delay
 
   const categoryStamps = apiStampData.filter(s => 
     s.country === countryCode && 
     s.issueYear === year && 
-    (s.releaseName === releaseId || (!s.releaseName && releaseId === 'unknown_release')) && 
-    (s.categoryName === categoryId || (!s.categoryName && categoryId === 'unknown_category'))
+    (s.stampGroupName === stampGroupId || (!s.stampGroupName && stampGroupId === 'unknown_release')) && 
+    (s.categoryCode === categoryId || (!s.categoryCode && categoryId === 'unknown_category'))
   );
 
   console.log(`Found ${categoryStamps.length} stamps for category ${categoryStamps}`)
   
   const groupedByPaperType = categoryStamps.reduce((acc: any, stamp: any) => {
-    const key = stamp.paperTypeName || 'unknown_paper_type';
+    const key = stamp.paperName || 'unknown_paper_type';
     if (!acc[key]) {
       acc[key] = {
         id: key,
-        name: stamp.paperTypeName || 'Unknown Paper Type',
+        name: stamp.paperName || 'Unknown Paper Type',
         code: key,
-        categoryId: categoryId,
-        description: stamp.paperTypeDescription || `${stamp.paperTypeName} paper type`,
+        categoryId,
         totalStamps: 0,
       };
     }
@@ -216,15 +214,15 @@ export const getPaperTypesForCategory = async (countryCode: string, year: number
   return Object.values(groupedByPaperType);
 }
 
-export const getStampsForPaperType = async (countryCode: string, year: number, releaseId: string, categoryId: string, paperTypeCode: string): Promise<StampData[]> => {
+export const getStampsForPaperType = async (countryCode: string, year: number, stampGroupId: string, categoryId: string, paperCode: string): Promise<StampData[]> => {
   await new Promise(resolve => setTimeout(resolve, 300)) // Simulate API delay
 
   const stamps = apiStampData.filter(s =>
     s.country === countryCode &&
     s.issueYear === year &&
-    (s.releaseName === releaseId || (!s.releaseName && releaseId === 'unknown_release')) &&
-    (s.categoryName === categoryId || (!s.categoryName && categoryId === 'unknown_category')) &&
-    (s.paperTypeName === paperTypeCode || (!s.paperTypeName && paperTypeCode === 'unknown_paper_type'))
+    (s.stampGroupName === stampGroupId || (!s.stampGroupName && stampGroupId === 'unknown_release')) &&
+    (s.categoryCode === categoryId || (!s.categoryCode && categoryId === 'unknown_category')) &&
+    (s.paperName === paperCode || (!s.paperName && paperCode === 'unknown_paper_type'))
   ).map(convertApiStampToStampData);
 
   const stampIds = stamps.map(s => s.stampId);
@@ -269,12 +267,9 @@ export const parseStampDetails = (stampDetailsJson: string): ParsedStampDetails 
       perforation: details.perforation || details.perforationName || 'Unknown',
       watermark: details.watermark || details.watermarkName || 'None',
       printingMethod: details.printingMethod || 'Unknown',
-      designer: details.designer || 'Unknown',
       printRun: details.printRun || 'Unknown',
       paperType: details.paperType || details.paperName || 'Standard',
-      gum: details.gumType || 'Original gum',
       theme: details.theme || 'General',
-      size: details.sizeFormat || 'Standard',
       rarityRating: details.rarityRating || 'Common',
       catalogPrice: details.catalogPrice,
       estimatedValue: details.estimatedMarketValue,
@@ -294,7 +289,6 @@ export const parseStampDetails = (stampDetailsJson: string): ParsedStampDetails 
       perforation: 'Unknown',
       watermark: 'None',
       printingMethod: 'Unknown',
-      designer: 'Unknown',
       printRun: 'Unknown',
       paperType: 'Standard',
       gum: 'Original gum',
@@ -321,6 +315,6 @@ export const createStampDetailData = (stamp: StampData): StampDetailData => {
     marketInfo: {
       rarity: parsedDetails.rarityRating || 'Common'
     },
-    bibliography: parsedDetails.bibliography || `Catalog Entry: ${stamp.catalogNumber}\n\nIssue Details:\nThe ${stamp.denominationValue}${stamp.denominationSymbol} ${stamp.color} stamp from the ${stamp.catalogNumber.startsWith('CP') ? 'Campbell Paterson' : 'Stanley Gibbons'} catalog. This stamp represents part of a comprehensive stamp group showcasing ${parsedDetails.theme || 'various themes'}.\n\nTechnical Specifications:\n• Perforation: ${parsedDetails.perforation || 'Unknown'}\n• Printing Method: ${parsedDetails.printingMethod || 'Unknown'}\n• Paper Type: ${parsedDetails.paperType || 'Unknown'}\n• Watermark: ${parsedDetails.watermark || 'Unknown'}\n• Gum Type: ${parsedDetails.gum || 'Unknown'}\n• Designer: ${parsedDetails.designer || 'Unknown'}\n• Print Run: ${parsedDetails.printRun || 'Unknown'}\n\nCollector Notes:\nThis stamp has a rarity rating of "${parsedDetails.rarityRating || 'Common'}" among collectors. The ${stamp.color || 'Unknown'} color variant is particularly sought after for its vibrant hues and precise registration.\n\nVarieties and Errors:\n${parsedDetails.varieties && parsedDetails.varieties.length > 0 ? `Known varieties include: ${parsedDetails.varieties.join(', ')}.` : 'No major varieties are currently documented.'} ${parsedDetails.errors && parsedDetails.errors.length > 0 ? `Known errors include: ${parsedDetails.errors.join(', ')}.` : ''} While no major varieties are currently documented, collectors should examine copies for minor plate flaws or color variations that may increase collectible value.\n\nReferences:\n• Official Postal Service Records\n• Specialized Philatelic Catalogues\n• Contemporary Collector Surveys`
+    bibliography: parsedDetails.bibliography || `Catalog Entry: ${stamp.catalogNumber}\n\nIssue Details:\nThe ${stamp.denominationValue}${stamp.denominationSymbol} ${stamp.color} stamp from the ${stamp.catalogNumber.startsWith('CP') ? 'Campbell Paterson' : 'Stanley Gibbons'} catalog. This stamp represents part of a comprehensive stamp group showcasing ${parsedDetails.theme || 'various themes'}.\n\nTechnical Specifications:\n• Perforation: ${parsedDetails.perforation || 'Unknown'}\n• Printing Method: ${parsedDetails.printingMethod || 'Unknown'}\n• Paper Type: ${parsedDetails.paperType || 'Unknown'}\n• Watermark: ${parsedDetails.watermark || 'Unknown'}\n• Gum Type: ${parsedDetails.gum || 'Unknown'}\n• Print Run: ${parsedDetails.printRun || 'Unknown'}\n\nCollector Notes:\nThis stamp has a rarity rating of "${parsedDetails.rarityRating || 'Common'}" among collectors. The ${stamp.color || 'Unknown'} color variant is particularly sought after for its vibrant hues and precise registration.\n\nVarieties and Errors:\n${parsedDetails.varieties && parsedDetails.varieties.length > 0 ? `Known varieties include: ${parsedDetails.varieties.join(', ')}.` : 'No major varieties are currently documented.'} ${parsedDetails.errors && parsedDetails.errors.length > 0 ? `Known errors include: ${parsedDetails.errors.join(', ')}.` : ''} While no major varieties are currently documented, collectors should examine copies for minor plate flaws or color variations that may increase collectible value.\n\nReferences:\n• Official Postal Service Records\n• Specialized Philatelic Catalogues\n• Contemporary Collector Surveys`
   }
 } 

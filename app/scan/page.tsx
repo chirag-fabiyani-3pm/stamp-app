@@ -41,7 +41,6 @@ interface ApiStampResponse {
   publisher?: string
   country?: string
   countryName?: string
-  countryFlag?: string
 
   // Imagery
   stampImageUrl?: string
@@ -75,9 +74,7 @@ interface ApiStampResponse {
   // Printing / paper / perforation / watermark
   printing?: string
   printingMethod?: string
-  printingProcess?: string
-  paperType?: string
-  paperTypeName?: string
+  paperName?: string
   perforation?: string
   perforationName?: string
   perforationMeasurement?: string
@@ -102,7 +99,6 @@ interface ApiStampResponse {
   // Gum / condition
   hasGum?: boolean
   gumCondition?: string
-  gumType?: string
   gumQuality?: string
 
   // Rarity
@@ -191,8 +187,8 @@ const transformApiStampToInternal = (apiStamp: ApiStampResponse, capturedImageUr
       "Print Process Error"
     ],
     certifiers: ["Expert Committee", "RPSNZ", "BPA", "APS"],
-    paperTypes: [apiStamp.paperType || apiStamp.paperTypeName || "", "Thick", "Thin", "Wove", "Laid"],
-    printTypes: [apiStamp.printing || apiStamp.printingMethod || apiStamp.printingProcess || "", "Typography", "Lithography", "Intaglio"],
+    paperTypes: [apiStamp.paperName || "", "Thick", "Thin", "Wove", "Laid"],
+    printTypes: [apiStamp.printing || apiStamp.printingMethod || "", "Typography", "Lithography", "Intaglio"],
     millimeterMeasurements: [derivedSize || "", "20 x 24", "21 x 25", "19 x 23", "Other"],
     colors: [apiStamp.color || apiStamp.colorName || "", "Red", "Blue", "Green", "Brown"],
     grades: ["Fine", "Very Fine", "Good", "Poor", "Superb"],
@@ -224,8 +220,8 @@ const mapApiStampToFormData = (apiStamp: ApiStampResponse) => {
     // Basic identification
     watermark: (apiStamp.watermark ?? apiStamp.watermarkName) || "unknown-watermark",
     perforation: (apiStamp.perforation || apiStamp.perforationName || apiStamp.perforationMeasurement) || "unknown-perforation", 
-    paper: (apiStamp.paperType || apiStamp.paperTypeName) || "unknown-paper",
-    printType: (apiStamp.printing || apiStamp.printingMethod || apiStamp.printingProcess) || "unknown-print",
+    paper: (apiStamp.paperName) || "unknown-paper",
+    printType: (apiStamp.printing || apiStamp.printingMethod) || "unknown-print",
     certifier: "none-certifier", // Not provided by API
     itemType: "Stamp", // Default from API context
     color: (apiStamp.color || apiStamp.colorName) || "unknown-color",

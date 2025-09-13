@@ -5,6 +5,7 @@ import Image from "next/image"
 import { X, Tag, Calendar, MapPin, Palette, FileText, DollarSign } from "lucide-react"
 import { StampData } from "@/types/catalog"
 import { Card } from "@/components/ui/card"
+import { generateStampCodeFromCatalogData } from "@/lib/utils/parse-stamp-code"
 
 const formatStampCode = (stampCode: string | null | undefined): string => {
   if (!stampCode || typeof stampCode !== 'string') return ''
@@ -233,6 +234,19 @@ export function StampDetailsModal({ selectedStamp, isModalOpen, setIsModalOpen }
                   </div>
                 </div>
               )}
+
+              {/* Stamp Catalog Code */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-foreground border-b pb-1.5 flex items-center gap-1.5">
+                  <FileText className="h-3.5 w-3.5" />
+                  Stamp Catalog Code
+                </h3>
+                <div>
+                  <span className="text-xs font-medium text-right font-mono">
+                    {generateStampCodeFromCatalogData(selectedStamp)}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

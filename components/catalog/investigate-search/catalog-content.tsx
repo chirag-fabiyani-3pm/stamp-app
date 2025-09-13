@@ -258,7 +258,7 @@ const GROUPING_FIELDS: { value: GroupingField; label: string; accessor: (s: Stam
   { value: 'publisher', label: 'Publisher', accessor: (s) => s.publisher || 'Unknown Publisher' },
   // Additional groupings leveraging richer apiStampData → StampData mapping
   { value: 'catalogName', label: 'Catalog Name', accessor: (s) => s.catalogName || 'Unknown Catalog' },
-  { value: 'stampGroupId', label: 'Stamp Group', accessor: (s) => s.stampGroupId || 'Unknown Group' },
+  { value: 'stampGroupName', label: 'Stamp Group', accessor: (s) => s.stampGroupName || 'Unknown Group' },
   { value: 'countryCode', label: 'Country Code', accessor: (s) => s.countryCode || 'Unknown Country' },
   { value: 'denominationCurrency', label: 'Currency Code', accessor: (s) => s.denominationCurrency || 'Unknown Currency' },
   { value: 'denominationSymbol', label: 'Currency Symbol', accessor: (s) => s.denominationSymbol || 'Unknown Symbol' },
@@ -278,11 +278,6 @@ const GROUPING_FIELDS: { value: GroupingField; label: string; accessor: (s: Stam
   {
     value: 'printingMethod', label: 'Printing Method', accessor: (s) => {
       try { const d = JSON.parse(s.stampDetailsJson); return d.printingMethod || 'Unknown'; } catch { return 'Unknown'; }
-    }
-  },
-  {
-    value: 'designer', label: 'Designer', accessor: (s) => {
-      try { const d = JSON.parse(s.stampDetailsJson); return d.designer || 'Unknown'; } catch { return 'Unknown'; }
     }
   },
   {

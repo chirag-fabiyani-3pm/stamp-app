@@ -32,6 +32,10 @@ import {
   Trash2,
   AlertTriangle,
   Upload,
+  Copy,
+  FileText,
+  DollarSign,
+  Download,
 } from "lucide-react"
 
 // API Response Types
@@ -39,6 +43,8 @@ interface StampReviewItem {
   id: string
   catalogExtractionProcessId: string
   stampCatalogCode: string
+  categoryCode?: string
+  subCategoryCode?: string
   name: string
   publisher: string
   country: string
@@ -86,77 +92,40 @@ interface StampInstanceItem extends StampReviewItem {
   // Additional properties used in the form
   stampFileAttachment?: File
   countryName?: string
-  countryFlag?: string
-  issueLocation?: string
-  seriesId?: string
-  seriesDescription?: string
-  typeId?: string
   typeName?: string
-  typeDescription?: string
-  stampGroupId?: string
   stampGroupName?: string
-  stampGroupDescription?: string
-  releaseId?: string
-  releaseName?: string
-  releaseDateRange?: string
-  releaseDescription?: string
-  categoryId?: string
-  categoryName?: string
   categoryCode?: string
-  categoryDescription?: string
-  paperTypeId?: string
-  paperTypeName?: string
-  paperTypeCode?: string
-  paperTypeDescription?: string
+  subCategoryCode?: string
   itemTypeCode?: string
   itemTypeName?: string
-  itemTypeDescription?: string
-  itemFormat?: string
   currencyCode?: string
   currencyName?: string
   currencySymbol?: string
-  currencyDescription?: string
   denominationDisplay?: string
-  denominationDescription?: string
   colorCode?: string
   colorName?: string
   colorHex?: string
-  colorDescription?: string
-  colorVariant?: string
+  colorGroup?: string
   paperCode?: string
   paperName?: string
-  paperDescription?: string
-  paperFiber?: string
-  paperThickness?: string
-  paperOpacity?: string
+  paperOrientation?: string
   watermarkCode?: string
   watermarkName?: string
-  watermarkDescription?: string
   watermarkPosition?: string
-  watermarkClarity?: string
   perforationCode?: string
   perforationName?: string
   perforationMeasurement?: string
-  perforationGauge?: string
-  perforationCleanCut?: boolean
-  perforationComb?: boolean
-  issueMonth?: number
-  issueDay?: number
-  firstDayIssue?: boolean
   periodStart?: number
   periodEnd?: number
-  issuePurpose?: string
-  issueContext?: string
   stampVectorJson?: string
   stampDetailsJson?: string
-  alternativeNames?: string
-  plateFlaws?: string
   recentSales?: string
   stampImageVariants?: any[]
 }
 
 // Import the actual StampMasterCatalogItem type
 import type { StampMasterCatalogItem } from "@/lib/api/stamp-master-catalog"
+import { strict } from "assert"
 
 // Editable stamp data for the popup - uses actual API type
 type EditableStampData = StampMasterCatalogItem & { publish: boolean; isPublished: boolean; publishNotes?: string; stampFileAttachment?: File }
@@ -191,100 +160,49 @@ const getJWT = (): string | null => {
 const keyMapping: Record<string, string> = {
   'id': 'Id',
   'catalogExtractionProcessId': 'CatalogExtractionProcessId',
-  'similarityScore': 'SimilarityScore',
   'stampId': 'StampId',
   'isInstance': 'IsInstance',
   'parentStampId': 'ParentStampId',
   'catalogNumber': 'CatalogNumber',
-  'stampCode': 'StampCode',
   'name': 'Name',
   'description': 'Description',
   'country': 'Country',
   'countryName': 'CountryName',
-  'countryFlag': 'CountryFlag',
-  'seriesId': 'SeriesId',
   'seriesName': 'SeriesName',
-  'seriesDescription': 'SeriesDescription',
-  'typeId': 'TypeId',
   'typeName': 'TypeName',
-  'typeDescription': 'TypeDescription',
-  'stampGroupId': 'StampGroupId',
   'stampGroupName': 'StampGroupName',
-  'stampGroupDescription': 'StampGroupDescription',
-  'releaseId': 'ReleaseId',
-  'releaseName': 'ReleaseName',
-  'releaseDateRange': 'ReleaseDateRange',
-  'releaseDescription': 'ReleaseDescription',
-  'categoryId': 'CategoryId',
-  'categoryName': 'CategoryName',
   'categoryCode': 'CategoryCode',
-  'categoryDescription': 'CategoryDescription',
-  'paperTypeId': 'PaperTypeId',
-  'paperTypeName': 'PaperTypeName',
-  'paperTypeCode': 'PaperTypeCode',
-  'paperTypeDescription': 'PaperTypeDescription',
   'currencyCode': 'CurrencyCode',
   'currencyName': 'CurrencyName',
   'currencySymbol': 'CurrencySymbol',
-  'currencyDescription': 'CurrencyDescription',
   'denominationValue': 'DenominationValue',
   'denominationSymbol': 'DenominationSymbol',
   'denominationDisplay': 'DenominationDisplay',
-  'denominationDescription': 'DenominationDescription',
   'colorCode': 'ColorCode',
   'colorName': 'ColorName',
   'colorHex': 'ColorHex',
-  'colorDescription': 'ColorDescription',
-  'colorVariant': 'ColorVariant',
+  'colorGroup': 'ColorGroup',
   'paperCode': 'PaperCode',
   'paperName': 'PaperName',
-  'paperDescription': 'PaperDescription',
-  'paperFiber': 'PaperFiber',
-  'paperThickness': 'PaperThickness',
-  'paperOpacity': 'PaperOpacity',
+  'paperOrientation': 'PaperOrientation',
   'watermarkCode': 'WatermarkCode',
   'watermarkName': 'WatermarkName',
-  'watermarkDescription': 'WatermarkDescription',
   'watermarkPosition': 'WatermarkPosition',
-  'watermarkClarity': 'WatermarkClarity',
   'perforationCode': 'PerforationCode',
   'perforationName': 'PerforationName',
   'perforationMeasurement': 'PerforationMeasurement',
-  'perforationGauge': 'PerforationGauge',
-  'perforationCleanCut': 'PerforationCleanCut',
-  'perforationComb': 'PerforationComb',
   'itemTypeCode': 'ItemTypeCode',
   'itemTypeName': 'ItemTypeName',
-  'itemTypeDescription': 'ItemTypeDescription',
-  'itemFormat': 'ItemFormat',
   'issueDate': 'IssueDate',
   'issueYear': 'IssueYear',
-  'issueMonth': 'IssueMonth',
-  'issueDay': 'IssueDay',
-  'firstDayIssue': 'FirstDayIssue',
   'periodStart': 'PeriodStart',
   'periodEnd': 'PeriodEnd',
-  'issueLocation': 'IssueLocation',
-  'issuePurpose': 'IssuePurpose',
-  'issueContext': 'IssueContext',
   'printingMethod': 'PrintingMethod',
-  'printingProcess': 'PrintingProcess',
-  'printingQuality': 'PrintingQuality',
-  'designer': 'Designer',
-  'designerNotes': 'DesignerNotes',
   'printer': 'Printer',
-  'printerLocation': 'PrinterLocation',
-  'printerReputation': 'PrinterReputation',
   'engraver': 'Engraver',
-  'dieNumber': 'DieNumber',
-  'plateNumber': 'PlateNumber',
-  'plateCharacteristics': 'PlateCharacteristics',
-  'paperManufacturer': 'PaperManufacturer',
-  'gumType': 'GumType',
   'gumCondition': 'GumCondition',
   'sizeWidth': 'SizeWidth',
   'sizeHeight': 'SizeHeight',
-  'sizeFormat': 'SizeFormat',
   'theme': 'Theme',
   'themeCategory': 'ThemeCategory',
   'subject': 'Subject',
@@ -354,7 +272,6 @@ const keyMapping: Record<string, string> = {
   'marginMeasurements': 'MarginMeasurements',
   'colorFreshness': 'ColorFreshness',
   'colorIntensity': 'ColorIntensity',
-  'colorDescriptionSpecific': 'ColorDescriptionSpecific',
   'paperCondition': 'PaperCondition',
   'paperFreshness': 'PaperFreshness',
   'surfaceCondition': 'SurfaceCondition',
@@ -401,8 +318,6 @@ const keyMapping: Record<string, string> = {
   'stampVectorJson': 'StampVectorJson',
   'stampVector': 'StampVector',
   'stampDetailsJson': 'StampDetailsJson',
-  'alternativeNames': 'AlternativeNames',
-  'plateFlaws': 'PlateFlaws',
   'stampImageVariants': 'StampImageVariants',
   'recentSales': 'RecentSales',
   'primaryReferences': 'PrimaryReferences',
@@ -415,7 +330,28 @@ const keyMapping: Record<string, string> = {
   'stampFileAttachment': 'StampFileAttachment'
 }
 
-const userData = [
+// Define user data type
+interface UserData {
+  id: string;
+  roleId: string | null;
+  roleName: string;
+  membershipCode: string;
+  userName: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string | null;
+  email: string;
+  mobileNumber: string;
+  isDisabled: boolean;
+  isDeleted: boolean;
+  forcePasswordChange: boolean;
+  avatarUrl: string;
+  isEmailVerified: boolean;
+  isPhoneVerified: boolean;
+  usernameType: number;
+}
+
+const userData: Record<string, UserData> = [
   {
     "id": "04675eed-f1dc-4ffb-bd2f-295b1d42df80",
     "roleId": null,
@@ -834,7 +770,7 @@ const userData = [
     "isPhoneVerified": false,
     "usernameType": 0
   }
-].reduce((acc, cur) => ({ ...acc, [cur.id]: cur }), {})
+].reduce((acc, cur) => ({ ...acc, [cur.id]: cur }), {} as Record<string, UserData>)
 
 // Function to convert camelCase data to PascalCase FormData
 const convertToFormData = (data: Record<string, any>): FormData => {
@@ -1061,6 +997,58 @@ const deleteStampInstance = async (instanceId: string): Promise<void> => {
   }
 }
 
+// Generate UUID function
+const generateUUID = (): string => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+const createStamp = async (stampData: Partial<EditableStampData>): Promise<StampReviewItem> => {
+  const jwt = getJWT()
+  if (!jwt) {
+    throw new Error("Authentication required. Please log in again.")
+  }
+
+  // Generate new UUIDs for stampId and parentStampId
+  const newStampId = generateUUID()
+  const newParentStampId = generateUUID()
+
+  // Prepare the stamp data with generated IDs and required fields
+  const stampToCreate = {
+    ...stampData,
+    stampId: newStampId,
+    parentStampId: newParentStampId,
+    // Ensure required fields have default values
+    catalogExtractionProcessId: stampData.catalogExtractionProcessId || "254c793b-16d0-40a3-8b10-66d987b54474",
+    isInstance: false, // New stamps are not instances
+    isPublished: false, // New stamps start unpublished
+  }
+
+  // Convert the stamp data to FormData with PascalCase keys
+  const formData = convertToFormData(stampToCreate)
+
+  const response = await fetch(
+    `https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/StampMasterCatalog`,
+    {
+      method: "POST",
+      headers: {
+        'Authorization': `Bearer ${jwt}`
+        // Note: Don't set Content-Type for FormData - browser will set it with boundary
+      },
+      body: formData
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  return response.json()
+}
+
 export default function StampReviewPage() {
   const [stamps, setStamps] = useState<StampReviewItem[]>([])
   const [pageNumber, setPageNumber] = useState(1)
@@ -1087,9 +1075,24 @@ export default function StampReviewPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
+  // Duplicate modal states
+  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false)
+  const [duplicateFormData, setDuplicateFormData] = useState<Partial<EditableStampData>>({})
+  const [isDuplicating, setIsDuplicating] = useState(false)
+
   // Stamp instances states
   const [stampInstances, setStampInstances] = useState<StampInstanceItem[]>([])
   const [isLoadingInstances, setIsLoadingInstances] = useState(false)
+
+  // Import instances states
+  const [isImportingInstances, setIsImportingInstances] = useState(false)
+  const [importStampId, setImportStampId] = useState("")
+  const [showImportForm, setShowImportForm] = useState(false)
+
+  // Inline editing states for instances
+  const [editingInstanceId, setEditingInstanceId] = useState<string | null>(null)
+  const [editingInstanceData, setEditingInstanceData] = useState<Partial<StampInstanceItem>>({})
+  const [isUpdatingInstanceInline, setIsUpdatingInstanceInline] = useState(false)
 
   // Instance edit states
   const [selectedInstance, setSelectedInstance] = useState<StampInstanceItem | null>(null)
@@ -1286,6 +1289,22 @@ export default function StampReviewPage() {
     }
   }
 
+  // Handle opening duplicate modal
+  const handleDuplicateStamp = (stamp: StampReviewItem) => {
+    // Create a copy of the stamp data, excluding id and stampId
+    const { id, stampId, ...stampDataToCopy } = stamp
+
+    setSelectedStamp(stamp as unknown as EditableStampData)
+    setDuplicateFormData({
+      ...stampDataToCopy,
+      // Set default values for the excluded fields
+      isInstance: false, // New stamps are not instances by default
+      isPublished: false, // New stamps start as unpublished
+      publishNotes: "" // Clear publish notes
+    } as unknown as Partial<EditableStampData>)
+    setIsDuplicateModalOpen(true)
+  }
+
   // Handle editing stamp instance
   const handleEditInstance = (instance: StampInstanceItem) => {
     setSelectedInstance(instance)
@@ -1395,6 +1414,71 @@ export default function StampReviewPage() {
     setIsCreateInstanceDialogOpen(true)
   }
 
+  const handleImportInstances = async () => {
+    if (!selectedStamp || !importStampId.trim()) return
+
+    try {
+      setIsImportingInstances(true)
+
+      // Fetch instances from the provided stampId
+      const importedInstances = await fetchStampInstances(importStampId.trim())
+
+      if (importedInstances.length === 0) {
+        toast({
+          title: "No Instances Found",
+          description: `No instances found for stampId: ${importStampId}`,
+          variant: "default",
+        })
+        return
+      }
+
+      // Create new stampId using UUID and update parentStampId to current stamp's stampId
+      const currentStampId = selectedStamp.stampId || selectedStamp.id
+      const updatedInstances = importedInstances.map(instance => ({
+        ...instance,
+        stampId: generateUUID(), // Generate new unique stampId for each instance
+        parentStampId: currentStampId, // Set parentStampId to current stamp's stampId
+        // Remove the id so it gets treated as a new instance
+        id: undefined
+      }))
+
+      // Create each instance
+      const createdInstances: StampInstanceItem[] = []
+      for (const instance of updatedInstances) {
+        try {
+          const newInstance = await createStampInstance(instance)
+          createdInstances.push(newInstance)
+        } catch (error) {
+          console.error(`Failed to create instance:`, error)
+          // Continue with other instances even if one fails
+        }
+      }
+
+      // Update local state with the newly created instances
+      setStampInstances(prev => [...prev, ...createdInstances])
+
+      toast({
+        title: "Instances Imported Successfully",
+        description: `Imported ${createdInstances.length} out of ${updatedInstances.length} instances.`,
+        variant: "default",
+      })
+
+      // Reset the import form
+      setImportStampId("")
+      setShowImportForm(false)
+
+    } catch (error) {
+      console.error("Error importing instances:", error)
+      toast({
+        title: "Import Failed",
+        description: error instanceof Error ? error.message : "Failed to import instances. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsImportingInstances(false)
+    }
+  }
+
   const handleDeleteInstance = async () => {
     if (!instanceToDelete) return
 
@@ -1424,6 +1508,70 @@ export default function StampReviewPage() {
     } finally {
       setIsDeletingInstance(false)
     }
+  }
+
+  // Inline editing functions for instances
+  const handleStartInlineEdit = (instance: StampInstanceItem) => {
+    setEditingInstanceId(instance.id)
+    setEditingInstanceData({
+      name: instance.name,
+      categoryCode: instance.categoryCode,
+      subCategoryCode: instance.subCategoryCode,
+      ...(instance as any).mintValue !== undefined && { mintValue: (instance as any).mintValue },
+      ...(instance as any).usedValue !== undefined && { usedValue: (instance as any).usedValue },
+      ...(instance as any).finestUsedValue !== undefined && { finestUsedValue: (instance as any).finestUsedValue },
+      catalogNumber: instance.catalogNumber,
+      isPublished: instance.isPublished
+    } as any)
+  }
+
+  const handleSaveInlineEdit = async () => {
+    if (!editingInstanceId) return
+
+    try {
+      setIsUpdatingInstanceInline(true)
+
+      // Find the original instance to merge with edited data
+      const originalInstance = stampInstances.find(inst => inst.id === editingInstanceId)
+      if (!originalInstance) return
+
+      const updatedInstance = { ...originalInstance, ...editingInstanceData }
+
+      // Make PUT API call to update the instance
+      await updateStampInstance(editingInstanceId, updatedInstance)
+
+      // Update local state
+      setStampInstances(prev =>
+        prev.map(inst =>
+          inst.id === editingInstanceId ? updatedInstance : inst
+        )
+      )
+
+      toast({
+        title: "Instance Updated",
+        description: "Instance details have been updated successfully.",
+        variant: "default",
+      })
+
+      // Reset editing state
+      setEditingInstanceId(null)
+      setEditingInstanceData({})
+
+    } catch (error) {
+      console.error("Error updating instance:", error)
+      toast({
+        title: "Update Failed",
+        description: error instanceof Error ? error.message : "Failed to update instance. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsUpdatingInstanceInline(false)
+    }
+  }
+
+  const handleCancelInlineEdit = () => {
+    setEditingInstanceId(null)
+    setEditingInstanceData({})
   }
 
   // Filter stamps based on search and filters
@@ -1620,7 +1768,6 @@ export default function StampReviewPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[50px]">Actions</TableHead>
-                      <TableHead className="w-[60px]">Serial Number</TableHead>
                       <TableHead
                         className="w-[60px] cursor-pointer select-none hover:bg-muted/50"
                         onClick={() => handleSort('pageNumber')}
@@ -1634,15 +1781,15 @@ export default function StampReviewPage() {
                           )}
                         </div>
                       </TableHead>
+                      <TableHead className="w-[60px]">Category Code</TableHead>
+                      <TableHead className="w-[60px]">Sub Category Code</TableHead>
                       <TableHead className="min-w-[200px] max-w-[250px]">Stamp</TableHead>
                       <TableHead className="w-[120px]">Mint</TableHead>
                       <TableHead className="w-[80px]">Used</TableHead>
                       <TableHead className="w-[80px]">Finest Used</TableHead>
-                      <TableHead className="w-[120px]">Issue Year</TableHead>
                       <TableHead className="w-[120px]">Catalog Number</TableHead>
                       <TableHead className="w-[120px]">Published By</TableHead>
                       <TableHead className="w-[120px]">Status</TableHead>
-                      <TableHead className="w-[100px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1673,6 +1820,16 @@ export default function StampReviewPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                onClick={() => handleDuplicateStamp(stamp)}
+                                title="Duplicate Stamp"
+                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+
+                              <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => {
                                   setSelectedStamp(stamp as unknown as EditableStampData)
                                   setIsDeleteDialogOpen(true)
@@ -1686,12 +1843,17 @@ export default function StampReviewPage() {
                           </TableCell>
                           <TableCell className="w-[60px]">
                             <Badge variant="outline" className="font-mono">
-                              {index + 1}
+                              {stamp.pageNumber}
                             </Badge>
                           </TableCell>
                           <TableCell className="w-[60px]">
                             <Badge variant="outline" className="font-mono">
-                              {stamp.pageNumber}
+                              {stamp.categoryCode}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="w-[60px]">
+                            <Badge variant="outline" className="font-mono">
+                              {stamp.subCategoryCode}
                             </Badge>
                           </TableCell>
                           <TableCell className="min-w-[200px] max-w-[250px]">
@@ -1714,12 +1876,6 @@ export default function StampReviewPage() {
                               <span>{(stamp as any).finestUsedValue || '-'}</span>
                             </div>
                           </TableCell>
-                          <TableCell className="w-[80px]">
-                            <div className="flex items-center gap-1 whitespace-nowrap">
-                              <Calendar className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                              <span>{stamp.issueYear}</span>
-                            </div>
-                          </TableCell>
                           <TableCell className="w-[120px]">
                             <div className="overflow-hidden text-ellipsis whitespace-nowrap" title={stamp.catalogNumber}>
                               <Badge variant="outline" className="font-mono text-xs max-w-full">
@@ -1729,8 +1885,8 @@ export default function StampReviewPage() {
                           </TableCell>
                           <TableCell className="w-[120px]">
                             <div className="flex flex-col gap-1">
-                              <span>{userData?.[stamp.publishedBy]?.firstName} {userData?.[stamp.publishedBy]?.lastName}</span>
-                              <span>{userData?.[stamp.publishedBy]?.email}</span>
+                              <span>{stamp.publishedBy && userData?.[stamp.publishedBy]?.firstName} {stamp.publishedBy && userData?.[stamp.publishedBy]?.lastName}</span>
+                              <span>{stamp.publishedBy && userData?.[stamp.publishedBy]?.email}</span>
                             </div>
                           </TableCell>
                           <TableCell className="w-[120px]">
@@ -1741,19 +1897,6 @@ export default function StampReviewPage() {
                               </Badge>
                             ) : (
                               <Badge variant="outline">Draft</Badge>
-                            )}
-                          </TableCell>
-                          <TableCell className="w-[100px]">
-                            {!stamp.isPublished && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleOpenPublishModal(stamp)}
-                                disabled={isUpdating}
-                              >
-                                <CheckCircle2 className="h-4 w-4 mr-1" />
-                                Approve
-                              </Button>
                             )}
                           </TableCell>
                         </TableRow>
@@ -1858,10 +2001,26 @@ export default function StampReviewPage() {
           // Clear instances data when modal closes
           setStampInstances([])
           setIsLoadingInstances(false)
+          // Reset import form states
+          setShowImportForm(false)
+          setImportStampId("")
+          setIsImportingInstances(false)
+          // Reset inline editing states
+          setEditingInstanceId(null)
+          setEditingInstanceData({})
+          setIsUpdatingInstanceInline(false)
         }
       }}>
         <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
-          <DialogHeader>
+          <DialogHeader className="relative">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-0 top-0 h-6 w-6 rounded-full"
+              onClick={() => setIsEditModalOpen(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
             <DialogTitle className="flex items-center gap-2">
               <Edit className="h-5 w-5" />
               Edit Stamp Details
@@ -1987,16 +2146,6 @@ export default function StampReviewPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="similarityScore">similarityScore</Label>
-                      <Input
-                        id="similarityScore"
-                        type="number"
-                        step="0.01"
-                        value={editFormData.similarityScore || ""}
-                        onChange={(e) => setEditFormData(prev => ({ ...prev, similarityScore: Number(e.target.value) }))}
-                      />
-                    </div>
-                    <div className="space-y-2">
                       <Label htmlFor="stampId">stampId</Label>
                       <Input
                         id="stampId"
@@ -2028,14 +2177,6 @@ export default function StampReviewPage() {
                         id="catalogNumber"
                         value={editFormData.catalogNumber || ""}
                         onChange={(e) => setEditFormData(prev => ({ ...prev, catalogNumber: e.target.value }))}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="stampCode">stampCode</Label>
-                      <Input
-                        id="stampCode"
-                        value={editFormData.stampCode || ""}
-                        onChange={(e) => setEditFormData(prev => ({ ...prev, stampCode: e.target.value }))}
                       />
                     </div>
                     <div className="space-y-2">
@@ -2148,15 +2289,6 @@ export default function StampReviewPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="seriesDescription">seriesDescription</Label>
-                      <Textarea
-                        id="seriesDescription"
-                        value={editFormData.seriesDescription || ""}
-                        onChange={(e) => setEditFormData(prev => ({ ...prev, seriesDescription: e.target.value }))}
-                        rows={2}
-                      />
-                    </div>
-                    <div className="space-y-2">
                       <Label htmlFor="typeName">typeName</Label>
                       <Input
                         id="typeName"
@@ -2173,37 +2305,11 @@ export default function StampReviewPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="stampGroupDescription">stampGroupDescription</Label>
-                      <Textarea
-                        id="stampGroupDescription"
-                        value={editFormData.stampGroupDescription || ""}
-                        onChange={(e) => setEditFormData(prev => ({ ...prev, stampGroupDescription: e.target.value }))}
-                        rows={2}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="releaseName">releaseName</Label>
+                      <Label htmlFor="subCategoryCode">subCategoryCode</Label>
                       <Input
-                        id="releaseName"
-                        value={editFormData.releaseName || ""}
-                        onChange={(e) => setEditFormData(prev => ({ ...prev, releaseName: e.target.value }))}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="releaseDescription">releaseDescription</Label>
-                      <Textarea
-                        id="releaseDescription"
-                        value={editFormData.releaseDescription || ""}
-                        onChange={(e) => setEditFormData(prev => ({ ...prev, releaseDescription: e.target.value }))}
-                        rows={2}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="categoryName">categoryName</Label>
-                      <Input
-                        id="categoryName"
-                        value={editFormData.categoryName || ""}
-                        onChange={(e) => setEditFormData(prev => ({ ...prev, categoryName: e.target.value }))}
+                        id="subCategoryCode"
+                        value={editFormData.subCategoryCode || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, subCategoryCode: e.target.value }))}
                       />
                     </div>
                     <div className="space-y-2">
@@ -2212,22 +2318,6 @@ export default function StampReviewPage() {
                         id="categoryCode"
                         value={editFormData.categoryCode || ""}
                         onChange={(e) => setEditFormData(prev => ({ ...prev, categoryCode: e.target.value }))}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="paperTypeName">paperTypeName</Label>
-                      <Input
-                        id="paperTypeName"
-                        value={editFormData.paperTypeName || ""}
-                        onChange={(e) => setEditFormData(prev => ({ ...prev, paperTypeName: e.target.value }))}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="paperTypeCode">paperTypeCode</Label>
-                      <Input
-                        id="paperTypeCode"
-                        value={editFormData.paperTypeCode || ""}
-                        onChange={(e) => setEditFormData(prev => ({ ...prev, paperTypeCode: e.target.value }))}
                       />
                     </div>
                     <div className="space-y-2">
@@ -2323,6 +2413,14 @@ export default function StampReviewPage() {
                       />
                     </div>
                     <div className="space-y-2">
+                      <Label htmlFor="colorGroup">colorGroup</Label>
+                      <Input
+                        id="colorGroup"
+                        value={editFormData.colorGroup || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, colorGroup: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
                       <Label htmlFor="colorName">colorName</Label>
                       <Input
                         id="colorName"
@@ -2355,6 +2453,14 @@ export default function StampReviewPage() {
                       />
                     </div>
                     <div className="space-y-2">
+                      <Label htmlFor="paperOrientation">paperOrientation</Label>
+                      <Input
+                        id="paperOrientation"
+                        value={editFormData.paperOrientation || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, paperOrientation: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
                       <Label htmlFor="watermarkCode">watermarkCode</Label>
                       <Input
                         id="watermarkCode"
@@ -2371,6 +2477,14 @@ export default function StampReviewPage() {
                       />
                     </div>
                     <div className="space-y-2">
+                      <Label htmlFor="watermarkPosition">watermarkPosition</Label>
+                      <Input
+                        id="watermarkPosition"
+                        value={editFormData.watermarkPosition || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, watermarkPosition: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
                       <Label htmlFor="perforationCode">perforationCode</Label>
                       <Input
                         id="perforationCode"
@@ -2384,6 +2498,14 @@ export default function StampReviewPage() {
                         id="perforationName"
                         value={editFormData.perforationName || ""}
                         onChange={(e) => setEditFormData(prev => ({ ...prev, perforationName: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="perforationMeasurement">perforationMeasurement</Label>
+                      <Input
+                        id="perforationMeasurement"
+                        value={editFormData.perforationMeasurement || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, perforationMeasurement: e.target.value }))}
                       />
                     </div>
                   </div>
@@ -2403,6 +2525,114 @@ export default function StampReviewPage() {
                         type="number"
                         value={editFormData.issueYear || ""}
                         onChange={(e) => setEditFormData(prev => ({ ...prev, issueYear: Number(e.target.value) }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="issueDate">issueDate</Label>
+                      <Input
+                        id="issueDate"
+                        value={editFormData.issueDate || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, issueDate: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="periodStart">periodStart</Label>
+                      <Input
+                        id="periodStart"
+                        type="number"
+                        value={editFormData.periodStart || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, periodStart: Number(e.target.value) }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="periodEnd">periodEnd</Label>
+                      <Input
+                        id="periodEnd"
+                        type="number"
+                        value={editFormData.periodEnd || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, periodEnd: Number(e.target.value) }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Printing & Rarity Information */}
+                <div className="bg-muted/20 rounded-xl p-6 border">
+                  <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    Printing & Rarity Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="printingMethod">printingMethod</Label>
+                      <Input
+                        id="printingMethod"
+                        value={editFormData.printingMethod || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, printingMethod: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="printer">printer</Label>
+                      <Input
+                        id="printer"
+                        value={editFormData.printer || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, printer: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="engraver">engraver</Label>
+                      <Input
+                        id="engraver"
+                        value={editFormData.engraver || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, engraver: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="gumCondition">gumCondition</Label>
+                      <Input
+                        id="gumCondition"
+                        value={editFormData.gumCondition || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, gumCondition: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="sizeWidth">sizeWidth</Label>
+                      <Input
+                        id="sizeWidth"
+                        value={editFormData.sizeWidth || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, sizeWidth: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="sizeHeight">sizeHeight</Label>
+                      <Input
+                        id="sizeHeight"
+                        value={editFormData.sizeHeight || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, sizeHeight: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="rarityRating">rarityRating</Label>
+                      <Input
+                        id="rarityRating"
+                        value={editFormData.rarityRating || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, rarityRating: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="rarityScale">rarityScale</Label>
+                      <Input
+                        id="rarityScale"
+                        value={editFormData.rarityScale || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, rarityScale: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="rarityScore">rarityScore</Label>
+                      <Input
+                        id="rarityScore"
+                        value={editFormData.rarityScore || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, rarityScore: Number(e.target.value) }))}
                       />
                     </div>
                   </div>
@@ -2441,6 +2671,30 @@ export default function StampReviewPage() {
                         type="number"
                         value={editFormData.usedValue || ""}
                         onChange={(e) => setEditFormData(prev => ({ ...prev, usedValue: Number(e.target.value) }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="historicalSignificance">historicalSignificance</Label>
+                      <Input
+                        id="historicalSignificance"
+                        value={editFormData.historicalSignificance || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, historicalSignificance: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="bibliography">bibliography</Label>
+                      <Input
+                        id="bibliography"
+                        value={editFormData.bibliography || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, bibliography: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="specialNotes">specialNotes</Label>
+                      <Input
+                        id="specialNotes"
+                        value={editFormData.specialNotes || ""}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, specialNotes: e.target.value }))}
                       />
                     </div>
                   </div>
@@ -2506,8 +2760,78 @@ export default function StampReviewPage() {
                   <span>Loading instances...</span>
                 </div>
               ) : stampInstances.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>No instances found for this stamp.</p>
+                <div className="text-center py-8 space-y-4">
+                  <div className="text-muted-foreground">
+                    <p className="mb-4">No instances found for this stamp.</p>
+                  </div>
+
+                  {!showImportForm ? (
+                    <div className="space-y-3">
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowImportForm(true)}
+                        className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Import Instances from Another Stamp
+                      </Button>
+                      <p className="text-xs text-muted-foreground">
+                        Import existing instances from another stamp by providing its stampId
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="bg-muted/20 rounded-xl p-6 border max-w-md mx-auto">
+                      <h4 className="text-sm font-medium mb-4 flex items-center gap-2">
+                        <Download className="h-4 w-4" />
+                        Import Instances
+                      </h4>
+
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="import-stamp-id" className="text-sm">Source Stamp ID</Label>
+                          <Input
+                            id="import-stamp-id"
+                            value={importStampId}
+                            onChange={(e) => setImportStampId(e.target.value)}
+                            placeholder="Enter stampId to import instances from"
+                            className="text-sm"
+                          />
+                        </div>
+
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={handleImportInstances}
+                            disabled={!importStampId.trim() || isImportingInstances}
+                            size="sm"
+                            className="flex-1"
+                          >
+                            {isImportingInstances ? (
+                              <>
+                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                Importing...
+                              </>
+                            ) : (
+                              <>
+                                <Download className="h-4 w-4 mr-2" />
+                                Import
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setShowImportForm(false)
+                              setImportStampId("")
+                            }}
+                            disabled={isImportingInstances}
+                            size="sm"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="border rounded-lg overflow-hidden shadow-sm">
@@ -2515,8 +2839,9 @@ export default function StampReviewPage() {
                     <TableHeader>
                       <TableRow className="bg-muted/50">
                         <TableHead className="w-[100px] font-semibold">Actions</TableHead>
-                        <TableHead className="w-[60px] font-semibold">Serial No.</TableHead>
                         <TableHead className="w-[60px] font-semibold">Page</TableHead>
+                        <TableHead className="w-[60px] font-semibold">Category Code</TableHead>
+                        <TableHead className="w-[60px] font-semibold">Sub Category Code</TableHead>
                         <TableHead className="min-w-[200px] max-w-[250px] font-semibold">Stamp</TableHead>
                         <TableHead className="w-[120px] font-semibold">Mint</TableHead>
                         <TableHead className="w-[80px] font-semibold">Used</TableHead>
@@ -2531,76 +2856,203 @@ export default function StampReviewPage() {
                         <TableRow key={instance.id}>
                           <TableCell>
                             <div className="flex gap-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEditInstance(instance)}
-                                title="Edit Instance"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleOpenInstanceDeleteDialog(instance)}
-                                title="Delete Instance"
-                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              {editingInstanceId === instance.id ? (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleSaveInlineEdit}
+                                    disabled={isUpdatingInstanceInline}
+                                    title="Save Changes"
+                                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                  >
+                                    {isUpdatingInstanceInline ? (
+                                      <RefreshCw className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <Save className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleCancelInlineEdit}
+                                    disabled={isUpdatingInstanceInline}
+                                    title="Cancel Edit"
+                                    className="text-gray-600 hover:text-gray-700 hover:bg-gray-50"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              ) : (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleStartInlineEdit(instance)}
+                                    title="Edit Instance Inline"
+                                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleEditInstance(instance)}
+                                    title="Edit Instance (Modal)"
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleOpenInstanceDeleteDialog(instance)}
+                                    title="Delete Instance"
+                                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              )}
                             </div>
-                          </TableCell>
-                          <TableCell className="w-[60px]">
-                            <Badge variant="outline" className="font-mono">
-                              {index + 1}
-                            </Badge>
                           </TableCell>
                           <TableCell className="w-[60px]">
                             <Badge variant="outline" className="font-mono">
                               {instance.pageNumber}
                             </Badge>
                           </TableCell>
-                          <TableCell className="min-w-[200px] max-w-[250px]">
-                            <div className="font-medium text-sm overflow-hidden text-ellipsis whitespace-nowrap pr-2" title={instance.name}>
-                              {instance.name}
-                            </div>
-                          </TableCell>
-                          <TableCell className="w-[120px]">
-                            <div className="flex items-center gap-1 overflow-hidden">
-                              <span className="overflow-hidden text-ellipsis whitespace-nowrap">{(instance as any).mintValue || '-'}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="w-[80px]">
-                            <div className="flex items-center gap-1 whitespace-nowrap">
-                              <span>{(instance as any).usedValue || '-'}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="w-[80px]">
-                            <div className="flex items-center gap-1 whitespace-nowrap">
-                              <span>{(instance as any).finestUsedValue || '-'}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="w-[120px]">
-                            <div className="overflow-hidden text-ellipsis whitespace-nowrap" title={instance.catalogNumber}>
-                              <Badge variant="outline" className="font-mono text-xs max-w-full">
-                                <span className="overflow-hidden text-ellipsis whitespace-nowrap">{instance.catalogNumber}</span>
+                          <TableCell className="w-[60px]">
+                            {editingInstanceId === instance.id ? (
+                              <Input
+                                value={editingInstanceData.categoryCode || ""}
+                                onChange={(e) => setEditingInstanceData(prev => ({ ...prev, categoryCode: e.target.value }))}
+                                className="h-8 text-xs"
+                                placeholder="Code"
+                              />
+                            ) : (
+                              <Badge variant="outline" className="font-mono">
+                                {instance.categoryCode}
                               </Badge>
-                            </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="w-[60px]">
+                            {editingInstanceId === instance.id ? (
+                              <Input
+                                value={editingInstanceData.subCategoryCode || ""}
+                                onChange={(e) => setEditingInstanceData(prev => ({ ...prev, subCategoryCode: e.target.value }))}
+                                className="h-8 text-xs"
+                                placeholder="Code"
+                              />
+                            ) : (
+                              <Badge variant="outline" className="font-mono">
+                                {instance.subCategoryCode}
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="min-w-[200px] max-w-[250px]">
+                            {editingInstanceId === instance.id ? (
+                              <Input
+                                value={editingInstanceData.name || ""}
+                                onChange={(e) => setEditingInstanceData(prev => ({ ...prev, name: e.target.value }))}
+                                className="h-8 text-sm"
+                                placeholder="Stamp name"
+                              />
+                            ) : (
+                              <div className="font-medium text-sm overflow-hidden text-ellipsis whitespace-nowrap pr-2" title={instance.name}>
+                                {instance.name}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="w-[120px]">
+                            {editingInstanceId === instance.id ? (
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={(editingInstanceData as any).mintValue || ""}
+                                onChange={(e) => setEditingInstanceData(prev => ({ ...prev, mintValue: parseFloat(e.target.value) || 0 } as any))}
+                                className="h-8 text-xs"
+                                placeholder="0.00"
+                              />
+                            ) : (
+                              <div className="flex items-center gap-1 overflow-hidden">
+                                <span className="overflow-hidden text-ellipsis whitespace-nowrap">{(instance as any).mintValue || '-'}</span>
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="w-[80px]">
+                            {editingInstanceId === instance.id ? (
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={(editingInstanceData as any).usedValue || ""}
+                                onChange={(e) => setEditingInstanceData(prev => ({ ...prev, usedValue: parseFloat(e.target.value) || 0 } as any))}
+                                className="h-8 text-xs"
+                                placeholder="0.00"
+                              />
+                            ) : (
+                              <div className="flex items-center gap-1 whitespace-nowrap">
+                                <span>{(instance as any).usedValue || '-'}</span>
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="w-[80px]">
+                            {editingInstanceId === instance.id ? (
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={(editingInstanceData as any).finestUsedValue || ""}
+                                onChange={(e) => setEditingInstanceData(prev => ({ ...prev, finestUsedValue: parseFloat(e.target.value) || 0 } as any))}
+                                className="h-8 text-xs"
+                                placeholder="0.00"
+                              />
+                            ) : (
+                              <div className="flex items-center gap-1 whitespace-nowrap">
+                                <span>{(instance as any).finestUsedValue || '-'}</span>
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="w-[120px]">
+                            {editingInstanceId === instance.id ? (
+                              <Input
+                                value={editingInstanceData.catalogNumber || ""}
+                                onChange={(e) => setEditingInstanceData(prev => ({ ...prev, catalogNumber: e.target.value }))}
+                                className="h-8 text-xs"
+                                placeholder="Catalog #"
+                              />
+                            ) : (
+                              <div className="overflow-hidden text-ellipsis whitespace-nowrap" title={instance.catalogNumber}>
+                                <Badge variant="outline" className="font-mono text-xs max-w-full">
+                                  <span className="overflow-hidden text-ellipsis whitespace-nowrap">{instance.catalogNumber}</span>
+                                </Badge>
+                              </div>
+                            )}
                           </TableCell>
                           <TableCell className="w-[120px]">
                             <div className="flex flex-col gap-1">
-                              <span>{userData?.[instance.publishedBy]?.firstName} {userData?.[instance.publishedBy]?.lastName}</span>
-                              <span>{userData?.[instance.publishedBy]?.email}</span>
+                              <span>{instance.publishedBy && userData?.[instance.publishedBy]?.firstName} {instance.publishedBy && userData?.[instance.publishedBy]?.lastName}</span>
+                              <span>{instance.publishedBy && userData?.[instance.publishedBy]?.email}</span>
                             </div>
                           </TableCell>
                           <TableCell className="w-[120px]">
-                            {instance.isPublished ? (
-                              <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
-                                <CheckCircle2 className="h-3 w-3 mr-1" />
-                                Published
-                              </Badge>
+                            {editingInstanceId === instance.id ? (
+                              <div className="flex items-center gap-2">
+                                <Checkbox
+                                  id={`isPublished-${instance.id}`}
+                                  checked={editingInstanceData.isPublished || false}
+                                  onCheckedChange={(checked) => setEditingInstanceData(prev => ({ ...prev, isPublished: checked as boolean }))}
+                                />
+                                <label htmlFor={`isPublished-${instance.id}`} className="text-xs">
+                                  Published
+                                </label>
+                              </div>
                             ) : (
-                              <Badge variant="outline">Draft</Badge>
+                              instance.isPublished ? (
+                                <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
+                                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                                  Published
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline">Draft</Badge>
+                              )
                             )}
                           </TableCell>
                         </TableRow>
@@ -2954,7 +3406,15 @@ export default function StampReviewPage() {
       {/* Instance Edit Modal */}
       <Dialog open={isInstanceEditModalOpen} onOpenChange={setIsInstanceEditModalOpen}>
         <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
-          <DialogHeader>
+          <DialogHeader className="relative">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-0 top-0 h-6 w-6 rounded-full"
+              onClick={() => setIsInstanceEditModalOpen(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
             <DialogTitle className="flex items-center gap-2">
               <Edit className="h-5 w-5" />
               Edit Stamp Instance
@@ -3322,6 +3782,691 @@ export default function StampReviewPage() {
               )}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Duplicate Stamp Modal */}
+      <Dialog open={isDuplicateModalOpen} onOpenChange={(open) => {
+        setIsDuplicateModalOpen(open)
+        if (!open) {
+          // Clear form data when modal closes
+          setDuplicateFormData({})
+          setIsDuplicating(false)
+        }
+      }}>
+        <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
+          <DialogHeader className="relative">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-0 top-0 h-6 w-6 rounded-full"
+              onClick={() => setIsDuplicateModalOpen(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            <DialogTitle className="flex items-center gap-2">
+              <Copy className="h-5 w-5" />
+              Duplicate Stamp
+            </DialogTitle>
+            <DialogDescription>
+              Create a new stamp based on the selected stamp's data. Review and modify the information as needed.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-8">
+            {/* Basic Information */}
+            <div className="bg-muted/20 rounded-xl p-6 border">
+              <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                <Edit className="h-5 w-5" />
+                Basic Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-catalogExtractionProcessId">catalogExtractionProcessId</Label>
+                  <Input
+                    id="duplicate-catalogExtractionProcessId"
+                    value={duplicateFormData.catalogExtractionProcessId || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, catalogExtractionProcessId: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-isInstance">isInstance</Label>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="duplicate-isInstance"
+                      checked={duplicateFormData.isInstance || false}
+                      onCheckedChange={(checked) => setDuplicateFormData(prev => ({ ...prev, isInstance: checked as boolean }))}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-catalogNumber">catalogNumber</Label>
+                  <Input
+                    id="duplicate-catalogNumber"
+                    value={duplicateFormData.catalogNumber || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, catalogNumber: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-name">name *</Label>
+                  <Input
+                    id="duplicate-name"
+                    value={duplicateFormData.name || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, name: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-description">description</Label>
+                  <Textarea
+                    id="duplicate-description"
+                    value={duplicateFormData.description || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, description: e.target.value }))}
+                    rows={3}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Stamp Image Upload */}
+            <div className="bg-muted/20 rounded-xl p-6 border">
+              <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                <Upload className="h-5 w-5" />
+                Stamp Image Upload
+              </h3>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-stampFileAttachment">Upload New Stamp Image</Label>
+                  <Input
+                    id="duplicate-stampFileAttachment"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        setDuplicateFormData(prev => ({
+                          ...prev,
+                          stampFileAttachment: file
+                        }))
+                      }
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Upload a new image to replace the current stamp image. Supported formats: JPG, PNG, GIF, WebP
+                  </p>
+                  {duplicateFormData.stampFileAttachment && (
+                    <div className="flex items-center gap-2 p-2 bg-muted rounded-md">
+                      <ImageIcon className="h-4 w-4" />
+                      <span className="text-sm">
+                        Selected: {(duplicateFormData.stampFileAttachment as File).name}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDuplicateFormData(prev => ({
+                          ...prev,
+                          stampFileAttachment: undefined
+                        }))}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Country & Geographic Information */}
+            <div className="bg-muted/20 rounded-xl p-6 border">
+              <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                Country & Geographic Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-country">country</Label>
+                  <Input
+                    id="duplicate-country"
+                    value={duplicateFormData.country || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, country: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-countryName">countryName</Label>
+                  <Input
+                    id="duplicate-countryName"
+                    value={duplicateFormData.countryName || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, countryName: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Series & Classification */}
+            <div className="bg-muted/20 rounded-xl p-6 border">
+              <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Series & Classification
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-seriesName">seriesName</Label>
+                  <Input
+                    id="duplicate-seriesName"
+                    value={duplicateFormData.seriesName || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, seriesName: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-typeName">typeName</Label>
+                  <Input
+                    id="duplicate-typeName"
+                    value={duplicateFormData.typeName || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, typeName: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-stampGroupName">stampGroupName</Label>
+                  <Input
+                    id="duplicate-stampGroupName"
+                    value={duplicateFormData.stampGroupName || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, stampGroupName: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-subCategoryCode">subCategoryCode</Label>
+                  <Input
+                    id="duplicate-subCategoryCode"
+                    value={duplicateFormData.subCategoryCode || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, subCategoryCode: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-categoryCode">categoryCode</Label>
+                  <Input
+                    id="duplicate-categoryCode"
+                    value={duplicateFormData.categoryCode || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, categoryCode: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-itemTypeCode">itemTypeCode</Label>
+                  <Input
+                    id="duplicate-itemTypeCode"
+                    value={duplicateFormData.itemTypeCode || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, itemTypeCode: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-itemTypeName">itemTypeName</Label>
+                  <Input
+                    id="duplicate-itemTypeName"
+                    value={duplicateFormData.itemTypeName || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, itemTypeName: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Currency & Denomination */}
+            <div className="bg-muted/20 rounded-xl p-6 border">
+              <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                <span className="text-lg">💰</span>
+                Currency & Denomination
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-currencyCode">currencyCode</Label>
+                  <Input
+                    id="duplicate-currencyCode"
+                    value={duplicateFormData.currencyCode || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, currencyCode: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-currencyName">currencyName</Label>
+                  <Input
+                    id="duplicate-currencyName"
+                    value={duplicateFormData.currencyName || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, currencyName: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-currencySymbol">currencySymbol</Label>
+                  <Input
+                    id="duplicate-currencySymbol"
+                    value={duplicateFormData.currencySymbol || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, currencySymbol: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-denominationValue">denominationValue</Label>
+                  <Input
+                    id="duplicate-denominationValue"
+                    value={duplicateFormData.denominationValue || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, denominationValue: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-denominationSymbol">denominationSymbol</Label>
+                  <Input
+                    id="duplicate-denominationSymbol"
+                    value={duplicateFormData.denominationSymbol || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, denominationSymbol: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-denominationDisplay">denominationDisplay</Label>
+                  <Input
+                    id="duplicate-denominationDisplay"
+                    value={duplicateFormData.denominationDisplay || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, denominationDisplay: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Physical Characteristics */}
+            <div className="bg-muted/20 rounded-xl p-6 border">
+              <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                <span className="text-lg">🎨</span>
+                Physical Characteristics
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-colorCode">colorCode</Label>
+                  <Input
+                    id="duplicate-colorCode"
+                    value={duplicateFormData.colorCode || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, colorCode: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-colorGroup">colorGroup</Label>
+                  <Input
+                    id="duplicate-colorGroup"
+                    value={duplicateFormData.colorGroup || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, colorGroup: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-colorName">colorName</Label>
+                  <Input
+                    id="duplicate-colorName"
+                    value={duplicateFormData.colorName || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, colorName: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-colorHex">colorHex</Label>
+                  <Input
+                    id="duplicate-colorHex"
+                    value={duplicateFormData.colorHex || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, colorHex: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-paperCode">paperCode</Label>
+                  <Input
+                    id="duplicate-paperCode"
+                    value={duplicateFormData.paperCode || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, paperCode: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-paperName">paperName</Label>
+                  <Input
+                    id="duplicate-paperName"
+                    value={duplicateFormData.paperName || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, paperName: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-paperOrientation">paperOrientation</Label>
+                  <Input
+                    id="duplicate-paperOrientation"
+                    value={duplicateFormData.paperOrientation || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, paperOrientation: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-watermarkCode">watermarkCode</Label>
+                  <Input
+                    id="duplicate-watermarkCode"
+                    value={duplicateFormData.watermarkCode || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, watermarkCode: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-watermarkName">watermarkName</Label>
+                  <Input
+                    id="duplicate-watermarkName"
+                    value={duplicateFormData.watermarkName || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, watermarkName: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-watermarkPosition">watermarkPosition</Label>
+                  <Input
+                    id="duplicate-watermarkPosition"
+                    value={duplicateFormData.watermarkPosition || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, watermarkPosition: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-perforationCode">perforationCode</Label>
+                  <Input
+                    id="duplicate-perforationCode"
+                    value={duplicateFormData.perforationCode || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, perforationCode: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-perforationName">perforationName</Label>
+                  <Input
+                    id="duplicate-perforationName"
+                    value={duplicateFormData.perforationName || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, perforationName: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-perforationMeasurement">perforationMeasurement</Label>
+                  <Input
+                    id="duplicate-perforationMeasurement"
+                    value={duplicateFormData.perforationMeasurement || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, perforationMeasurement: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Issue & Date Information */}
+            <div className="bg-muted/20 rounded-xl p-6 border">
+              <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Issue & Date Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-issueYear">issueYear</Label>
+                  <Input
+                    id="duplicate-issueYear"
+                    type="number"
+                    value={duplicateFormData.issueYear || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, issueYear: Number(e.target.value) }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-issueDate">issueDate</Label>
+                  <Input
+                    id="duplicate-issueDate"
+                    value={duplicateFormData.issueDate || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, issueDate: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-periodStart">periodStart</Label>
+                  <Input
+                    id="duplicate-periodStart"
+                    type="number"
+                    value={duplicateFormData.periodStart || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, periodStart: Number(e.target.value) }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-periodEnd">periodEnd</Label>
+                  <Input
+                    id="duplicate-periodEnd"
+                    type="number"
+                    value={duplicateFormData.periodEnd || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, periodEnd: Number(e.target.value) }))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Printing & Rarity Information */}
+            <div className="bg-muted/20 rounded-xl p-6 border">
+              <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Printing & Rarity Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-printingMethod">printingMethod</Label>
+                  <Input
+                    id="duplicate-printingMethod"
+                    value={duplicateFormData.printingMethod || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, printingMethod: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-printer">printer</Label>
+                  <Input
+                    id="duplicate-printer"
+                    value={duplicateFormData.printer || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, printer: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-engraver">engraver</Label>
+                  <Input
+                    id="duplicate-engraver"
+                    value={duplicateFormData.engraver || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, engraver: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-gumCondition">gumCondition</Label>
+                  <Input
+                    id="duplicate-gumCondition"
+                    value={duplicateFormData.gumCondition || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, gumCondition: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-sizeWidth">sizeWidth</Label>
+                  <Input
+                    id="duplicate-sizeWidth"
+                    value={duplicateFormData.sizeWidth || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, sizeWidth: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-sizeHeight">sizeHeight</Label>
+                  <Input
+                    id="duplicate-sizeHeight"
+                    value={duplicateFormData.sizeHeight || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, sizeHeight: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-rarityRating">rarityRating</Label>
+                  <Input
+                    id="duplicate-rarityRating"
+                    value={duplicateFormData.rarityRating || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, rarityRating: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-rarityScale">rarityScale</Label>
+                  <Input
+                    id="duplicate-rarityScale"
+                    value={duplicateFormData.rarityScale || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, rarityScale: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-rarityScore">rarityScore</Label>
+                  <Input
+                    id="duplicate-rarityScore"
+                    value={duplicateFormData.rarityScore || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, rarityScore: Number(e.target.value) }))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Pricing & Market Information */}
+            <div className="bg-muted/20 rounded-xl p-6 border">
+              <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                <span className="text-lg">💰</span>
+                Pricing & Market Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-mintValue">mintValue</Label>
+                  <Input
+                    id="duplicate-mintValue"
+                    type="number"
+                    value={duplicateFormData.mintValue || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, mintValue: Number(e.target.value) }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-finestUsedValue">finestUsedValue</Label>
+                  <Input
+                    id="duplicate-finestUsedValue"
+                    type="number"
+                    value={duplicateFormData.finestUsedValue || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, finestUsedValue: Number(e.target.value) }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-usedValue">usedValue</Label>
+                  <Input
+                    id="duplicate-usedValue"
+                    type="number"
+                    value={duplicateFormData.usedValue || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, usedValue: Number(e.target.value) }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-historicalSignificance">historicalSignificance</Label>
+                  <Input
+                    id="duplicate-historicalSignificance"
+                    value={duplicateFormData.historicalSignificance || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, historicalSignificance: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-bibliography">bibliography</Label>
+                  <Input
+                    id="duplicate-bibliography"
+                    value={duplicateFormData.bibliography || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, bibliography: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-specialNotes">specialNotes</Label>
+                  <Input
+                    id="duplicate-specialNotes"
+                    value={duplicateFormData.specialNotes || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, specialNotes: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Status & Publish Notes */}
+            <div className="bg-muted/20 rounded-xl p-6 border">
+              <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5" />
+                Status & Publish Notes
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-isPublished">Published Status</Label>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="duplicate-isPublished"
+                      checked={duplicateFormData.isPublished || false}
+                      onCheckedChange={(checked) => setDuplicateFormData(prev => ({ ...prev, isPublished: checked as boolean }))}
+                    />
+                    <span className="text-sm">Published</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duplicate-publishNotes">Publish Notes</Label>
+                  <Textarea
+                    id="duplicate-publishNotes"
+                    value={duplicateFormData.publishNotes || ""}
+                    onChange={(e) => setDuplicateFormData(prev => ({ ...prev, publishNotes: e.target.value }))}
+                    rows={2}
+                    placeholder="Notes about publishing this stamp..."
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsDuplicateModalOpen(false)}
+              disabled={isDuplicating}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                try {
+                  setIsDuplicating(true)
+
+                  // Validate required fields
+                  if (!duplicateFormData.name?.trim()) {
+                    toast({
+                      title: "Validation Error",
+                      description: "Stamp name is required.",
+                      variant: "destructive",
+                      duration: 5000,
+                    })
+                    return
+                  }
+
+                  // Create the new stamp
+                  const newStamp = await createStamp(duplicateFormData)
+
+                  toast({
+                    title: "Stamp Created Successfully",
+                    description: `New stamp "${newStamp.name}" has been created.`,
+                    variant: "default",
+                    duration: 5000,
+                  })
+
+                  // Close modal and refresh data
+                  setIsDuplicateModalOpen(false)
+                  setDuplicateFormData({})
+
+                  // Refresh the stamps list
+                  await loadStamps()
+
+                } catch (error) {
+                  console.error("Error creating stamp:", error)
+                  toast({
+                    title: "Failed to Create Stamp",
+                    description: error instanceof Error ? error.message : "Unable to create stamp. Please try again.",
+                    variant: "destructive",
+                    duration: 5000,
+                  })
+                } finally {
+                  setIsDuplicating(false)
+                }
+              }}
+              disabled={isDuplicating}
+            >
+              {isDuplicating ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Create Stamp
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
