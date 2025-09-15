@@ -46,125 +46,19 @@ export type StampMasterCatalogItem = {
   gumCondition: string
   sizeWidth: string
   sizeHeight: string
-  theme: string
-  themeCategory: string
-  subject: string
-  artisticStyle: string
-  printRun: string
-  estimatedPrintRun: number
-  sheetsPrinted: string
-  stampsPerSheet: number
-  positionVarieties: boolean
-  plateVariety: string
   stampImageUrl: string
-  stampImageAlt: string
   stampImageHighRes: string
   watermarkImageUrl: string
   perforationImageUrl: string
   rarityRating: string
   rarityScale: string
   rarityScore: number
-  hasVarieties: boolean
-  varietyCount: number
-  varietyType: string
-  perforationVariety: string
-  colorVariety: string
-  paperVariety: string
-  watermarkVariety: string
-  knownError: string
-  majorVariety: string
-  postalHistoryType: string
-  postmarkType: string
-  proofType: string
-  essayType: string
-  errorType: string
-  authenticationRequired: boolean
-  expertCommittee: string
-  authenticationPoint: string
-  certificateAvailable: boolean
-  commonForgery: string
   historicalSignificance: string
-  culturalImportance: string
-  philatelicImportance: string
-  collectingPopularity: string
-  exhibitionFrequency: string
-  researchStatus: string
   bibliography: string
   specialNotes: string
-  collectorNotes: string
-  conditionNotes: string
-  rarityNotes: string
-  marketNotes: string
-  researchNotes: string
-  instanceCatalogCode: string
-  instanceDescription: string
-  condition: string
-  conditionGrade: string
-  conditionDescription: string
-  conditionDetails: string
-  usageState: string
-  usageDescription: string
-  usageCode: string
-  gumConditionSpecific: string
-  gumDescription: string
-  gumQuality: string
-  centering: string
-  centeringScore: string
-  centeringDescription: string
-  margins: string
-  marginMeasurements: string
-  colorFreshness: string
-  colorIntensity: string
-  paperCondition: string
-  paperFreshness: string
-  surfaceCondition: string
-  perforationsCondition: string
-  perforationTips: string
-  faults: string
-  repairs: string
-  alterations: string
-  grade: string
-  gradingService: string
-  certification: string
-  certificateNumber: string
-  expertOpinion: string
-  postmarkTypeInInstance: string
-  postmarkLocation: string
-  postmarkDate: string
-  postmarkClarity: string
-  postmarkPosition: string
-  postmarkDescription: string
   mintValue: number
   usedValue: number
   finestUsedValue: number
-  priceMultiplier: number
-  priceFactors: string
-  instanceRarity: string
-  conditionRarity: string
-  availability: string
-  marketFrequency: string
-  auctionFrequency: string
-  lastAuctionDate: string
-  lastAuctionPrice: number
-  priceTrend: string
-  instanceNotes: string
-  investmentNotes: string
-  exhibitionSuitability: string
-  photographicQuality: string
-  varietyTypeInInstance: string
-  varietyDescription: string
-  varietyPosition: string
-  varietySeverity: string
-  varietyVisibility: string
-  varietyRarity: string
-  varietyNotes: string
-  stampDetailsJson: string
-  stampImageVariants: string[]
-  recentSales: string
-  primaryReferences: string
-  researchPapers: string
-  exhibitionLiterature: string
-  onlineResources: string
 }
 
 type StampMasterCatalogResponse = {

@@ -32,8 +32,6 @@ interface ModalContentProps {
     onPerforationClick: (perforation: PerforationOption, stampCode: string) => void
     onItemTypeClick: (itemType: ItemTypeOption, stampCode: string) => void
     onStampDetailClick: (stamp: StampData) => void
-    onAdditionalCategoryClick: (categoryType: string, currentStampCode: string) => void
-    onAdditionalCategoryOptionClick: (category: AdditionalCategoryOption, categoryType: string, currentStampCode: string) => void
     isLoading: boolean;
 }
 
@@ -49,8 +47,6 @@ export default function ModalContent({
     onPerforationClick,
     onItemTypeClick,
     onStampDetailClick,
-    onAdditionalCategoryClick,
-    onAdditionalCategoryOptionClick,
     isLoading
 }: ModalContentProps) {
     const { type, data, stampCode } = modalItem
@@ -890,8 +886,6 @@ export default function ModalContent({
                 )
             }
 
-            const details = stamp.stampDetailsJson ? JSON.parse(stamp.stampDetailsJson) : {}
-
             return (
                 <article className="max-w-6xl mx-auto px-2 pb-12">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-12">
@@ -1130,97 +1124,6 @@ export default function ModalContent({
                         </div>
                     </div>
                 </article>
-            )
-
-        case 'postalHistory':
-        case 'postmarks':
-        case 'proofs':
-        case 'essays':
-        case 'onPiece':
-        case 'errors':
-        case 'other':
-            const categoryData = data as { categoryType: string, categories: AdditionalCategoryOption[], stampCode: string };
-            return (
-                <div className="space-y-6 md:space-y-8">
-                    <div className="text-center mb-6 md:mb-8">
-                        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-                            {categoryData.categoryType.charAt(0).toUpperCase() + categoryData.categoryType.slice(1)} Collection
-                        </h2>
-                        <p className="text-base md:text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-                            Specialized {categoryData.categoryType} varieties that have earned collector approval through expert authentication and grading.
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                        {categoryData.categories?.map((category: AdditionalCategoryOption) => (
-                            <div
-                                key={category.code}
-                                className="group cursor-pointer bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 dark:border-gray-700 hover:border-primary/30 dark:hover:border-amber-600"
-                                onClick={() => onAdditionalCategoryOptionClick(category, type, stampCode ?? '')}
-                            >
-                                <div className="p-4 md:p-6">
-                                    <div className="flex items-start space-x-4 mb-4">
-                                        <div className="relative w-16 h-20 md:w-20 md:h-24 flex-shrink-0">
-                                            <Image
-                                                src={category.stampImageUrl || '/images/stamps/no-image-available.png'}
-                                                alt={category.name}
-                                                fill
-                                                className="object-cover rounded border shadow-sm"
-                                                sizes="80px"
-                                                onError={(e) => {
-                                                    const target = e.currentTarget;
-                                                    if (target.src !== '/images/stamps/no-image-available.png') {
-                                                        target.src = '/images/stamps/no-image-available.png';
-                                                    }
-                                                }}
-                                            />
-                                        </div>
-                                        <div className="flex-1">
-                                            <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100 mb-2 group-hover:text-primary transition-colors">
-                                                {category.name}
-                                            </h3>
-                                            <p className="text-gray-600 dark:text-gray-300 text-sm mb-3 leading-relaxed">{category.description}</p>
-
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-sm text-gray-500 dark:text-gray-400">{category.totalStamps} approved specimens</span>
-                                                <div className="flex items-center space-x-2">
-                                                    {category.priceMultiplier && (
-                                                        <Badge variant="outline" className="text-primary border-primary/30 dark:text-amber-300 dark:border-amber-600">
-                                                            {category.priceMultiplier}x value
-                                                        </Badge>
-                                                    )}
-                                                    {category.rarity && (
-                                                        <Badge
-                                                            className={cn(
-                                                                "text-xs",
-                                                                category.rarity === 'unique' && "bg-purple-100 text-purple-800",
-                                                                category.rarity === 'extremely rare' && "bg-red-100 text-red-800",
-                                                                category.rarity === 'very rare' && "bg-orange-100 text-orange-800",
-                                                                category.rarity === 'rare' && "bg-yellow-100 text-yellow-800",
-                                                                category.rarity === 'uncommon' && "bg-blue-100 text-blue-800",
-                                                                category.rarity === 'common' && "bg-green-100 text-green-800"
-                                                            )}
-                                                        >
-                                                            {category.rarity}
-                                                        </Badge>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center justify-between">
-                                        <Button variant="outline" className="border-primary/30 text-primary hover:bg-primary/10">
-                                            View Collection
-                                            <ChevronRight className="w-4 h-4 ml-2" />
-                                        </Button>
-                                        <Star className="w-4 h-4 md:w-5 md:h-5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
             )
 
         default:

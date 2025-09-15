@@ -454,138 +454,6 @@ export function VisualCatalogContent() {
     }
   }
 
-  const handleAdditionalCategoryClick = async (categoryType: string, currentStampCode: string) => {
-    setLoadingModalContent(true);
-    try {
-      const { countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemTypeCode } = parseStampCode(currentStampCode)
-      const allStamps = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemTypeCode)
-      
-      let filteredStamps = []
-      switch (categoryType) {
-        case 'postalHistory':
-          filteredStamps = allStamps.filter(s => s.postalHistoryType)
-          break
-        case 'errors':
-          filteredStamps = allStamps.filter(s => s.errorType)
-          break
-        case 'proofs':
-          filteredStamps = allStamps.filter(s => s.proofType)
-          break
-        case 'essays':
-          filteredStamps = allStamps.filter(s => s.essayType)
-          break
-        default:
-          filteredStamps = allStamps
-      }
-
-      const categories: AdditionalCategoryOption[] = []
-      const seenTypes = new Set()
-      
-      filteredStamps.forEach(stamp => {
-        let categoryValue = null
-        let categoryName = null
-        
-        switch (categoryType) {
-            case 'postalHistory':
-                categoryValue = stamp.postalHistoryType
-                categoryName = stamp.postalHistoryType
-                break
-            case 'errors':
-                categoryValue = stamp.errorType
-                categoryName = stamp.errorType
-                break
-            case 'proofs':
-                categoryValue = stamp.proofType
-                categoryName = stamp.proofType
-                break
-            case 'essays':
-                categoryValue = stamp.essayType
-                categoryName = stamp.essayType
-                break
-        }
-        
-        if (categoryValue && !seenTypes.has(categoryValue)) {
-            seenTypes.add(categoryValue)
-            categories.push({
-                code: categoryValue.replace(/\s+/g, '_').toLowerCase(),
-                name: categoryName,
-                description: `${categoryName} category stamps`,
-                totalStamps: filteredStamps.filter(s => {
-                    switch (categoryType) {
-                        case 'postalHistory': return s.postalHistoryType === categoryValue
-                        case 'errors': return s.errorType === categoryValue
-                        case 'proofs': return s.proofType === categoryValue
-                        case 'essays': return s.essayType === categoryValue
-                        default: return false
-                    }
-                }).length,
-                stampImageUrl: stamp.stampImageUrl || '/images/stamps/no-image-available.png'
-            })
-        }
-      })
-      
-      const currentModal = modalStack[modalStack.length - 1]
-      const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
-      
-      if (!pinnedStamp && currentModal?.data?.stamp) {
-        setPinnedStamp(currentModal.data.stamp)
-        setIsPinnedMinimized(false)
-      }
-      setModalStack(prev => [...prev, {
-        type: categoryType as ModalType,
-        title: `${categoryType.charAt(0).toUpperCase() + categoryType.slice(1)} Categories`,
-        data: { categoryType, categories, stampCode: currentStampCode },
-        stampCode: currentStampCode,
-        selectedAdditionalCategories: [...currentSelectedCategories, categoryType]
-      }])
-    } finally {
-      setLoadingModalContent(false);
-    }
-  }
-
-  const handleAdditionalCategoryOptionClick = async (category: AdditionalCategoryOption, categoryType: string, currentStampCode: string) => {
-    setLoadingModalContent(true);
-    try {
-      const { countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemTypeCode } = parseStampCode(currentStampCode)
-      const allStamps = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemTypeCode)
-      
-      const filteredStamps = allStamps.filter(stamp => {
-          switch (categoryType) {
-              case 'postalHistory':
-                  return stamp.postalHistoryType === category.name
-              case 'errors':
-                  return stamp.errorType === category.name
-              case 'proofs':
-                  return stamp.proofType === category.name
-              case 'essays':
-                  return stamp.essayType === category.name
-              default:
-                  return false
-          }
-      }).map(convertApiStampToStampData)
-
-      const currentModal = modalStack[modalStack.length - 1]
-      const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
-      
-      setModalStack(prev => [...prev, {
-        type: 'stampDetails',
-        title: `${category.name} - Stamp Details`,
-        data: {
-          stamps: filteredStamps,
-          categoryFilter: category,
-          baseStampCode: currentStampCode,
-          showAsIndividualCards: true,
-          selectedAdditionalCategories: currentSelectedCategories,
-          stampCode: `${currentStampCode}|||${category.code}`
-        },
-        stampCode: `${currentStampCode}|||${category.code}`,
-        selectedAdditionalCategories: currentSelectedCategories
-      }])
-    } finally {
-      setLoadingModalContent(false);
-    }
-  }
-
   const unpinStamp = () => {
     setPinnedStamp(null)
     setIsPinnedMinimized(false)
@@ -836,18 +704,10 @@ export function VisualCatalogContent() {
                 {modal.type === 'stampDetails' && (
                   <VisualStampDetailsModalContent
                     data={modal.data}
-                    onAdditionalCategoryClick={handleAdditionalCategoryClick}
                     onStampClick={(stamp, currentStampCode) => handleStampDetailClick(stamp, currentStampCode)}
                     isLoading={loadingModalContent}
                   />
                 )}
-                {(modal.type === 'postalHistory' || modal.type === 'postmarks' || modal.type === 'proofs' ||
-                  modal.type === 'essays' || modal.type === 'onPiece' || modal.type === 'errors' || modal.type === 'other') && (
-                    <AdditionalCategoryModalContent
-                      data={modal.data}
-                      onCategoryOptionClick={handleAdditionalCategoryOptionClick}
-                    />
-                  )}
               </div>
             )}
           </DialogContent>

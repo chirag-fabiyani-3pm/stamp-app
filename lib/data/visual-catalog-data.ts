@@ -198,7 +198,6 @@ export const generateStampDetails = async (stampCode: string, itemTypeCode: stri
         printingMethod: 'Engraved',
         printer: 'Unknown',
         itemType: getItemTypeName(itemTypeCode),
-        postalHistoryType: postalHistory.type,
         postalHistoryDescription: postalHistory.description,
         condition: condition.grade,
         conditionDescription: condition.description,
@@ -212,10 +211,6 @@ export const generateStampDetails = async (stampCode: string, itemTypeCode: stri
           usage: `${usage.priceMultiplier}x`,
           postalHistory: `${postalHistory.priceMultiplier}x`
         },
-        recentSales: baseData.additionalCategories.marketFactors.actualSales.map(sale => ({
-          ...sale,
-          adjustedPrice: (sale.price * condition.priceMultiplier * usage.priceMultiplier * postalHistory.priceMultiplier).toFixed(2)
-        })),
         marketTrend: baseData.additionalCategories.marketFactors.marketTrend,
         rarity: baseData.additionalCategories.marketFactors.rarity,
         demandLevel: baseData.additionalCategories.marketFactors.demandLevel,

@@ -204,11 +204,9 @@ export interface ParsedStampDetails {
   watermark?: string
   printingMethod?: string
   designer?: string
-  printRun?: string
   paperType?: string
   gum?: string
   varieties?: string[]
-  theme?: string
   size?: string
   errors?: string[]
   rarityRating?: string
@@ -220,7 +218,6 @@ export interface ParsedStampDetails {
   conditionDescription?: string
   usage?: string
   usageDescription?: string
-  postalHistoryType?: string
   postalHistoryDescription?: string
   priceFactors?: {
     condition?: string
@@ -228,12 +225,6 @@ export interface ParsedStampDetails {
     postalHistory?: string
     category?: string
   }
-  recentSales?: Array<{
-    date: string
-    price: number
-    venue: string
-    adjustedPrice: string
-  }>
   marketTrend?: string
   demandLevel?: string
   specialNotes?: string

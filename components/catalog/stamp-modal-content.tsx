@@ -161,12 +161,6 @@ export function StampModalContent({ stampData, isLoading }: StampModalContentPro
               
               <div className="space-y-3">
                 <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Print Run</label>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {stampDetailData.parsedDetails.printRun}
-                  </div>
-                </div>
-                <div>
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Gum Type</label>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
                     {stampDetailData.parsedDetails.gum}

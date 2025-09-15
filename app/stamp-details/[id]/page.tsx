@@ -67,7 +67,6 @@ interface StampDetailData {
   issueYear?: number
   printingMethod?: string
   stampImageUrl?: string
-  stampImageAlt?: string
   stampImageHighRes?: string
   stampImageVariants?: string[]
   rarityRating?: string
@@ -349,7 +348,7 @@ function StampDetailContent() {
               )}
               <Image
                 src={activeImageUrl || stamp.stampImageUrl || '/images/stamps/no-image-available.png'}
-                alt={stamp.stampImageAlt || stamp.name}
+                alt={stamp.name}
                 fill
                 className="object-contain"
                 sizes="(max-width: 768px) 100vw, 380px"
@@ -631,7 +630,7 @@ function StampDetailContent() {
             <div className="relative w-full aspect-[3/2] rounded-xl overflow-hidden bg-muted">
               <Image
                 src={activeImageUrl || stamp.stampImageUrl || '/images/stamps/no-image-available.png'}
-                alt={stamp.stampImageAlt || stamp.name}
+                alt={stamp.name}
                 fill
                 className="object-contain"
                 sizes="(max-width: 1024px) 100vw, 960px"

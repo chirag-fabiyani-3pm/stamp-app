@@ -281,11 +281,6 @@ const GROUPING_FIELDS: { value: GroupingField; label: string; accessor: (s: Stam
     }
   },
   {
-    value: 'postalHistoryType', label: 'Postal History Type', accessor: (s) => {
-      try { const d = JSON.parse(s.stampDetailsJson); return d.postalHistoryType || 'Unknown'; } catch { return 'Unknown'; }
-    }
-  },
-  {
     value: 'errorType', label: 'Error Type', accessor: (s) => {
       try { const d = JSON.parse(s.stampDetailsJson); return d.errorType || 'None'; } catch { return 'Unknown'; }
     }
