@@ -7,7 +7,7 @@ const RAW_STORE_NAME = 'rawStamps'
 const METADATA_STORE_NAME = 'metadata' // Store for app version and refresh tracking
 
 // Update this version number on each deployment to trigger data refetch
-export const APP_VERSION = '1.0.0'
+export const APP_VERSION = '1.0.1'
 
 export const openDB = (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {

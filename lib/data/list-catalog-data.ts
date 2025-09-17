@@ -1,34 +1,40 @@
-import { PaperTypeData, StampData, StampDetailData } from "@/types/catalog"
+import { ParsedStampDetails, StampData, StampDetailData } from "@/types/catalog"
 
-export const getPaperTypesForCategory = async (countryCode: string, year: number, stampGroupId: string, categoryId: string): Promise<PaperTypeData[]> => {
-  await new Promise(resolve => setTimeout(resolve, 300)) // Simulate API delay
-
-  const categoryStamps = apiStampData.filter(s => 
-    s.country === countryCode && 
-    s.issueYear === year && 
-    (s.stampGroupName === stampGroupId || (!s.stampGroupName && stampGroupId === 'unknown_release')) && 
-    (s.categoryCode === categoryId || (!s.categoryCode && categoryId === 'unknown_category'))
-  );
-
-  console.log(`Found ${categoryStamps.length} stamps for category ${categoryStamps}`)
-  
-  const groupedByPaperType = categoryStamps.reduce((acc: any, stamp: any) => {
-    const key = stamp.paperName || 'unknown_paper_type';
-    if (!acc[key]) {
-      acc[key] = {
-        id: key,
-        name: stamp.paperName || 'Unknown Paper Type',
-        code: key,
-        categoryId,
-        totalStamps: 0,
-      };
-    }
-    acc[key].totalStamps++;
-    return acc;
-  }, {});
-
-  return Object.values(groupedByPaperType);
-}
+export const parseStampDetails = (stampDetailsJson: string): ParsedStampDetails => {
+  try {
+    const details = JSON.parse(stampDetailsJson);
+    
+    // Direct mapping from apiStampData fields to ParsedStampDetails
+    return {
+      perforation: details.perforation || details.perforationName || 'Unknown',
+      watermark: details.watermark || details.watermarkName || 'None',
+      printingMethod: details.printingMethod || 'Unknown',
+      paperType: details.paperType || details.paperName || 'Standard',
+      rarityRating: details.rarityRating || 'Common',
+      catalogPrice: details.catalogPrice,
+      estimatedValue: details.estimatedMarketValue,
+      currentMarketValue: details.currentMarketValue,
+      condition: details.conditionNotes || 'Unknown',
+      usage: 'Unknown', // No direct mapping in apiStampData
+      errorType: details.errorType as string || 'None',
+      specialNotes: details.specialNotes,
+      rarity: details.rarityRating,
+      varieties: details.varietyType ? details.varietyType.split(',').map((v: string) => v.trim()) : [],
+      errors: details.knownError ? [details.knownError] : [],
+    };
+  } catch (error) {
+    console.error('Error parsing stamp details:', error);
+    return {
+      perforation: 'Unknown',
+      watermark: 'None',
+      printingMethod: 'Unknown',
+      paperType: 'Standard',
+      gum: 'Original gum',
+      size: 'Standard',
+      rarityRating: 'Common'
+    };
+  }
+};
 
 export const createStampDetailData = (stamp: StampData): StampDetailData => {
   const parsedDetails = parseStampDetails(stamp.stampDetailsJson)

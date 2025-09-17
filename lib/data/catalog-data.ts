@@ -691,8 +691,9 @@ export const groupStampsByWatermark = (stamps: any[], countryCode: string, serie
         code: stamp.watermarkCode || 'NoWmk',
         name: stamp.watermarkName || 'No Watermark',
         totalStamps: 0,
-        pattern: stamp.watermarkName || 'None',
+        position: stamp.watermarkPosition || 'Unknown',
         stamps: [],
+        historicalInfo: stamp.historicalSignificance,
         featuredStampUrl: firstStampWithImage.stampImageUrl || '/images/stamps/no-image-available.png'
       };
     }

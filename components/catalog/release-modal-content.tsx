@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { BookOpen, ChevronRight, Search } from "lucide-react"
 import { CategoryData, PaperTypeData, ReleaseData } from "@/types/catalog"
-import { getPaperTypesForCategory } from "@/lib/data/list-catalog-data"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface ReleaseModalContentProps {
@@ -21,26 +20,7 @@ export function ReleaseModalContent({
   onPaperTypeClick,
   isLoading
 }: ReleaseModalContentProps) {
-  const [paperTypes, setPaperTypes] = useState<PaperTypeData[]>([]) // Keep paperTypes local if fetched when hasCategories is false
   const [searchTerm, setSearchTerm] = useState("")
-
-  useEffect(() => {
-    const loadPaperTypes = async () => {
-        if (!releaseData.hasCategories) {
-            // Only load paper types if there are no categories
-            const data = await getPaperTypesForCategory(
-                releaseData.yearId.split('-')[0], 
-                parseInt(releaseData.yearId.split('-')[1]), 
-                releaseData.id, 
-                'unknown_category'
-            );
-            setPaperTypes(data);
-        }
-    };
-    if (!isLoading) {
-        loadPaperTypes();
-    }
-}, [releaseData, isLoading]);
 
   const filteredCategories = useMemo(() => {
     if (!searchTerm) return categories
@@ -50,15 +30,6 @@ export function ReleaseModalContent({
         category.name.toLowerCase().includes(searchTerm.toLowerCase())
     )
   }, [categories, searchTerm])
-
-  const filteredPaperTypes = useMemo(() => {
-    if (!searchTerm) return paperTypes
-
-    return paperTypes.filter(
-      (paperType) =>
-        paperType.name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  }, [paperTypes, searchTerm])
 
   if (isLoading) {
     return (
@@ -113,7 +84,7 @@ export function ReleaseModalContent({
 
       {/* Categories or Paper Types Listing */}
       <div className="space-y-4">
-        {(releaseData.hasCategories ? filteredCategories : filteredPaperTypes).map((item) => (
+        {filteredCategories.map((item) => (
           <div key={item.id} className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg p-6">
             <div className="grid lg:grid-cols-12 gap-6">
               
@@ -131,10 +102,7 @@ export function ReleaseModalContent({
                 <div className="mb-4">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{item.name}</h3>
                   <div className="mt-2 text-sm text-gray-600">
-                    {releaseData.hasCategories ? 
-                      `${(item as CategoryData).totalPaperTypes} paper types` : 
-                      `${(item as PaperTypeData).totalStamps} stamps`
-                    }
+                    {(item as CategoryData).totalPaperTypes} paper types
                   </div>
                 </div>
               </div>
@@ -145,10 +113,7 @@ export function ReleaseModalContent({
                   <Button 
                     variant="outline" 
                     className="bg-white border-gray-300 text-black hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600 w-full lg:w-auto"
-                    onClick={() => releaseData.hasCategories ? 
-                      onCategoryClick(item as CategoryData) : 
-                      onPaperTypeClick(item as PaperTypeData)
-                    }
+                    onClick={() => onCategoryClick(item as CategoryData)}
                   >
                     {releaseData.hasCategories ? 'View Categories' : 'View Stamps'}
                     <ChevronRight className="h-4 w-4 ml-1" />
@@ -161,7 +126,7 @@ export function ReleaseModalContent({
         ))}
       </div>
 
-      {(releaseData.hasCategories ? filteredCategories : filteredPaperTypes).length === 0 && (
+      {filteredCategories.length === 0 && (
         <div className="text-center py-12">
           <BookOpen className="h-12 w-12 text-gray-600 dark:text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">

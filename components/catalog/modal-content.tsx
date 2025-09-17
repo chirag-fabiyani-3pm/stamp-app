@@ -344,8 +344,8 @@ export default function ModalContent({
                                 className="group cursor-pointer bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden"
                                 onClick={() => onColorClick(color, stampCode)}
                             >
-                                <div 
-                                    className="relative h-28 md:h-32 flex items-center justify-center" 
+                                <div
+                                    className="relative h-28 md:h-32 flex items-center justify-center"
                                     style={color.hex === '#XXXXXX' ? {} : { backgroundColor: color.hex }}
                                 >
                                     {color.hex === '#XXXXXX' && (
@@ -356,27 +356,13 @@ export default function ModalContent({
                                 </div>
 
                                 <div className="p-4 md:p-6">
-                                    <p className="text-gray-600 dark:text-gray-300 text-sm mb-3 leading-relaxed">{color.description}</p>
-
                                     <div className="flex items-center justify-between mb-3">
                                         <Badge variant="outline" style={{ borderColor: color.hex, color: color.hex }}>
-                                            {color.totalStamps} approved
+                                            {color.totalStamps} stamps
                                         </Badge>
-
-                                        {color.popularity && (
-                                            <div className="flex items-center space-x-1">
-                                                {Array.from({ length: 5 }, (_, i) => (
-                                                    <Star
-                                                        key={i}
-                                                        className={`w-3 h-3 ${i < Math.floor((color.popularity || 0) / 2) ? 'text-primary fill-current' : 'text-gray-300'}`}
-                                                    />
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="text-right">
-                                        <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-primary transition-colors inline" />
+                                        <div className="text-right">
+                                            <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-primary transition-colors inline" />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -426,15 +412,15 @@ export default function ModalContent({
                                             <p className="text-gray-600 dark:text-gray-300 text-sm mb-3 leading-relaxed">{paper.description}</p>
 
                                             <div className="space-y-2">
-                                                <div className="flex items-center gap-4">
+                                                <div className="flex items-center gap-4 justify-between">
                                                     <span className="text-sm text-gray-500 dark:text-gray-400">Texture:</span>
-                                                    <Badge variant="outline" className="text-orange-600 border-orange-300 dark:text-orange-400 dark:border-orange-600">
+                                                    <Badge variant="outline" className="text-orange-600 border-orange-300 dark:text-orange-400 dark:border-orange-600 flex-shrink-0">
                                                         {paper.texture !== 'N/A' ? paper.texture : 'Color texture not specified'}
                                                     </Badge>
                                                 </div>
-                                                <div className="flex items-center gap-4">
+                                                <div className="flex items-center gap-4 justify-between">
                                                     <span className="text-sm text-gray-500 dark:text-gray-400">Count:</span>
-                                                    <span className="text-sm font-medium">{paper.totalStamps} approved</span>
+                                                    <span className="text-sm font-medium">{paper.totalStamps} stamps</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -478,11 +464,9 @@ export default function ModalContent({
                                             <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
                                                 {watermark.name}
                                             </h3>
-                                            <p className="text-sm text-gray-500 dark:text-gray-400">Pattern: {watermark.pattern}</p>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400">Position: {(watermark as any).position}</p>
                                         </div>
                                     </div>
-
-                                    <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 leading-relaxed">{watermark.description}</p>
 
                                     {watermark.historicalInfo && (
                                         <div className="bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-700 rounded-lg p-4 mb-4">
@@ -493,7 +477,7 @@ export default function ModalContent({
 
                                     <div className="flex items-center justify-between">
                                         <Badge variant="outline" className="text-purple-600 border-purple-300 dark:text-purple-400 dark:border-purple-600">
-                                            {watermark.totalStamps} authenticated
+                                            {watermark.totalStamps} stamps
                                         </Badge>
                                         <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-gray-400 group-hover:text-purple-500 transition-colors" />
                                     </div>
@@ -529,23 +513,12 @@ export default function ModalContent({
                                     <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2 group-hover:text-yellow-600 dark:group-hover:text-yellow-400 transition-colors">
                                         {perforation.name}
                                     </h3>
-                                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 font-mono">{perforation.measurement}</p>
-
-                                    {perforation.technicalDetail && (
-                                        <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-700 rounded-lg p-3 mb-4">
-                                            <p className="text-yellow-800 dark:text-yellow-300 text-xs">{perforation.technicalDetail}</p>
-                                        </div>
-                                    )}
+                                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 font-mono">{perforation.measurement === '0' ? 'No perforation' : perforation.measurement}</p>
 
                                     <div className="space-y-2">
                                         <Badge variant="outline" className="text-yellow-600 border-yellow-300 dark:text-yellow-400 dark:border-yellow-600">
-                                            {perforation.totalStamps} approved
+                                            {perforation.totalStamps} stamps
                                         </Badge>
-                                        {perforation.style && (
-                                            <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 text-xs block">
-                                                {perforation.style}
-                                            </Badge>
-                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -564,15 +537,15 @@ export default function ModalContent({
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
                         {perforationData.itemTypes.map((itemType: ItemTypeOption) => (
                             <div
                                 key={itemType.code}
                                 className="group cursor-pointer bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 dark:border-gray-700 hover:border-teal-200 dark:hover:border-teal-600"
                                 onClick={() => onItemTypeClick(itemType, stampCode)}
                             >
-                                <div className="p-4 md:p-6">
-                                    <div className="flex items-start space-x-4 mb-4">
+                                <div className="p-4 md:p-6 flex justify-between">
+                                    <div className="flex items-start space-x-4">
                                         <div className="relative w-16 h-20 md:w-20 md:h-24 flex-shrink-0">
                                             <Image
                                                 src={itemType.featuredStampUrl || '/images/stamps/no-image-available.png'}
@@ -588,34 +561,20 @@ export default function ModalContent({
                                                 }}
                                             />
                                         </div>
-                                        <div className="flex-1">
+                                        <div className="flex flex-col justify-between">
                                             <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100 mb-2 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
                                                 {itemType.name}
                                             </h3>
-                                            <p className="text-gray-600 dark:text-gray-300 text-sm mb-3 leading-relaxed">{itemType.description}</p>
 
                                             <div className="flex items-center space-x-3">
-                                                <Badge variant="outline" className="text-teal-600 border-teal-300 dark:text-teal-400 dark:border-teal-600">
-                                                    {itemType.category}
-                                                </Badge>
-                                                <span className="text-sm text-gray-500 dark:text-gray-400">{itemType.totalStamps} approved</span>
+                                                <span className="text-sm text-gray-500 dark:text-gray-400">{itemType.totalStamps} stamps</span>
                                             </div>
                                         </div>
                                     </div>
-
-                                    {itemType.collectorsNote && (
-                                        <div className="bg-teal-50 dark:bg-teal-950 border border-teal-200 dark:border-teal-700 rounded-lg p-4 mb-4">
-                                            <h4 className="font-medium text-teal-900 dark:text-teal-200 mb-2">Collector Approval</h4>
-                                            <p className="text-teal-800 dark:text-teal-300 text-sm">{itemType.collectorsNote}</p>
-                                        </div>
-                                    )}
-
-                                    <div className="flex items-center justify-between">
+                                    <div className="flex items-end">
                                         <Button variant="outline" className="border-primary/30 text-primary hover:bg-primary/10">
                                             View Collection
-                                            <ChevronRight className="w-4 h-4 ml-2" />
                                         </Button>
-                                        <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-gray-400 group-hover:text-teal-500 transition-colors" />
                                     </div>
                                 </div>
                             </div>
@@ -941,7 +900,7 @@ export default function ModalContent({
                                             </TableHeader>
                                             <TableBody>
                                                 {stamp.instances.map((instance: any) => (
-                                                    <TableRow 
+                                                    <TableRow
                                                         key={instance.id}
                                                         className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                                                     >
@@ -1002,7 +961,7 @@ export default function ModalContent({
                                         <Layers className="w-4 h-4 mr-2 text-primary" />
                                         Stamp Instances
                                     </h3>
-                                    
+
                                     {/* Empty State */}
                                     <div className="flex flex-col items-center justify-center py-8 px-4">
                                         <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">

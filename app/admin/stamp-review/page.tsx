@@ -1676,8 +1676,8 @@ export default function StampReviewPage() {
                       <TableHead className="w-[60px]">Sub Category Code</TableHead>
                       <TableHead className="min-w-[200px] max-w-[250px]">Stamp</TableHead>
                       <TableHead className="w-[120px]">Mint</TableHead>
-                      <TableHead className="w-[80px]">Used</TableHead>
                       <TableHead className="w-[80px]">Finest Used</TableHead>
+                      <TableHead className="w-[80px]">Used</TableHead>
                       <TableHead className="w-[120px]">Catalog Number</TableHead>
                       <TableHead className="w-[120px]">Published By</TableHead>
                       <TableHead className="w-[120px]">Status</TableHead>
@@ -1759,12 +1759,12 @@ export default function StampReviewPage() {
                           </TableCell>
                           <TableCell className="w-[80px]">
                             <div className="flex items-center gap-1 whitespace-nowrap">
-                              <span>{(stamp as any).usedValue || '-'}</span>
+                              <span>{(stamp as any).finestUsedValue || '-'}</span>
                             </div>
                           </TableCell>
                           <TableCell className="w-[80px]">
                             <div className="flex items-center gap-1 whitespace-nowrap">
-                              <span>{(stamp as any).finestUsedValue || '-'}</span>
+                              <span>{(stamp as any).usedValue || '-'}</span>
                             </div>
                           </TableCell>
                           <TableCell className="w-[120px]">
@@ -2735,8 +2735,8 @@ export default function StampReviewPage() {
                         <TableHead className="w-[60px] font-semibold">Sub Category Code</TableHead>
                         <TableHead className="min-w-[200px] max-w-[250px] font-semibold">Stamp</TableHead>
                         <TableHead className="w-[120px] font-semibold">Mint</TableHead>
-                        <TableHead className="w-[80px] font-semibold">Used</TableHead>
                         <TableHead className="w-[140px] font-semibold">Finest Used</TableHead>
+                        <TableHead className="w-[80px] font-semibold">Used</TableHead>
                         <TableHead className="w-[120px] font-semibold">Catalog Number</TableHead>
                         <TableHead className="w-[120px] font-semibold">Published By</TableHead>
                         <TableHead className="w-[120px] font-semibold">Status</TableHead>
@@ -2874,22 +2874,6 @@ export default function StampReviewPage() {
                               <Input
                                 type="number"
                                 step="0.01"
-                                value={(editingInstanceData as any).usedValue || ""}
-                                onChange={(e) => setEditingInstanceData(prev => ({ ...prev, usedValue: parseFloat(e.target.value) || 0 } as any))}
-                                className="h-8 text-xs"
-                                placeholder="0.00"
-                              />
-                            ) : (
-                              <div className="flex items-center gap-1 whitespace-nowrap">
-                                <span>{(instance as any).usedValue || '-'}</span>
-                              </div>
-                            )}
-                          </TableCell>
-                          <TableCell className="w-[80px]">
-                            {editingInstanceId === instance.id ? (
-                              <Input
-                                type="number"
-                                step="0.01"
                                 value={(editingInstanceData as any).finestUsedValue || ""}
                                 onChange={(e) => setEditingInstanceData(prev => ({ ...prev, finestUsedValue: parseFloat(e.target.value) || 0 } as any))}
                                 className="h-8 text-xs"
@@ -2898,6 +2882,22 @@ export default function StampReviewPage() {
                             ) : (
                               <div className="flex items-center gap-1 whitespace-nowrap">
                                 <span>{(instance as any).finestUsedValue || '-'}</span>
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="w-[80px]">
+                            {editingInstanceId === instance.id ? (
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={(editingInstanceData as any).usedValue || ""}
+                                onChange={(e) => setEditingInstanceData(prev => ({ ...prev, usedValue: parseFloat(e.target.value) || 0 } as any))}
+                                className="h-8 text-xs"
+                                placeholder="0.00"
+                              />
+                            ) : (
+                              <div className="flex items-center gap-1 whitespace-nowrap">
+                                <span>{(instance as any).usedValue || '-'}</span>
                               </div>
                             )}
                           </TableCell>

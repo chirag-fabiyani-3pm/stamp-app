@@ -36,6 +36,7 @@ import { CatalogDataProvider, useCatalogData } from "@/lib/context/catalog-data-
 import { parseStampCode } from "@/lib/utils/parse-stamp-code"
 import { useChatContext } from "@/components/chat-provider"
 import { DataFetchingProgress, LoadingStamps, VisualCatalogSkeleton, ListCatalogSkeleton } from "./investigate-search/loading-skeletons"
+import StampCollection from './stamp-collection'
 
 function ModernCatalogContentInner() {
     const router = useRouter()
@@ -48,7 +49,7 @@ function ModernCatalogContentInner() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const initialActiveSection = (searchParams.get('tab') as 'countries' | 'visual' | 'list' | 'investigate') || 'countries'
-    const [activeSection, setActiveSection] = useState<'countries' | 'visual' | 'list' | 'investigate'>(initialActiveSection)
+    const [activeSection, setActiveSection] = useState<'countries' | 'visual' | 'list' | 'investigate' | 'stamp-collection'>(initialActiveSection)
     const [loadingModalContent, setLoadingModalContent] = useState(false)
     const [isDropdownOpen, setIsDropdownOpen] = useState(false) // State for mobile menu
 
@@ -735,6 +736,25 @@ function ModernCatalogContentInner() {
                                                 <Eye className="h-6 w-6 mb-2" />
                                                 Investigate Search
                                             </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                onClick={(e) => {
+                                                    setActiveSection('stamp-collection');
+                                                    router.push(`?tab=stamp-collection`, { scroll: false });
+                                                    const yOffset = -64;
+                                                    const y = (e.target as HTMLElement).getBoundingClientRect().top + window.scrollY + yOffset;
+                                                    window.scrollTo({ top: y, behavior: 'smooth' });
+                                                    setIsDropdownOpen(false);
+                                                }}
+                                                className={cn(
+                                                    "flex flex-col items-center justify-center h-24 text-center cursor-pointer",
+                                                    activeSection === 'stamp-collection'
+                                                        ? "bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-amber-400 dark:text-gray-900 dark:hover:bg-amber-500"
+                                                        : "bg-secondary text-secondary-foreground hover:bg-secondary/90 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+                                                )}
+                                            >
+                                                <Eye className="h-6 w-6 mb-2" />
+                                                Stamp Collection
+                                            </DropdownMenuItem>
                                         </div>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
@@ -808,6 +828,23 @@ function ModernCatalogContentInner() {
                                 >
                                     Investigate Search
                                 </button>
+                                <button
+                                    onClick={(ele) => {
+                                        setActiveSection('stamp-collection');
+                                        router.push(`?tab=stamp-collection`, { scroll: false });
+                                        const yOffset = -64;
+                                        const y = (ele?.target as HTMLElement)?.getBoundingClientRect().top + window.scrollY + yOffset;
+                                        window.scrollTo({ top: y, behavior: 'smooth' });
+                                    }}
+                                    className={cn(
+                                        "py-2 px-1 border-b-2 font-medium text-sm transition-colors",
+                                        activeSection === 'stamp-collection'
+                                            ? "border-primary text-primary dark:border-amber-400 dark:text-amber-400"
+                                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-500"
+                                    )}
+                                >
+                                    Stamp Collection
+                                </button>
                             </nav>
                         </div>
                     </div>
@@ -868,6 +905,10 @@ function ModernCatalogContentInner() {
                                 {/* Investigate Search Section */}
                                 {activeSection === 'investigate' && (
                                     <CatalogContent />
+                                )}
+
+                                {activeSection === 'stamp-collection' && (
+                                    <StampCollection />
                                 )}
 
                                 {/* Country Catalogs Section */}

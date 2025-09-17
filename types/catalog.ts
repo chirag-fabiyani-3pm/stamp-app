@@ -114,6 +114,7 @@ export interface StampData {
   status: number
   stampCatalogId: string | null
   name: string
+  description: string
   publisher: string
   country: string
   countryCode: string

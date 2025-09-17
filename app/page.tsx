@@ -7,6 +7,7 @@ import HeroSection from "@/components/hero-section"
 import FeatureCard from "@/components/feature-card"
 import { isUserLoggedIn } from "@/lib/client/auth-utils"
 import { ModernCatalogContent } from "@/components/catalog/modern-catalog-content"
+import TestUI from "@/components/catalog/stamp-collection"
 import { Suspense, useState, useEffect } from "react"
 import { Spinner } from "@/components/ui/spinner"
 
