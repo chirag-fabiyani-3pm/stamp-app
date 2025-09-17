@@ -197,7 +197,7 @@ const StampTable = ({ stamps }: any) => {
                       alt={stamp.denomination}
                       className="w-full h-full object-cover"
                       onError={(e: any) => {
-                        e.target.src = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=60&h=80&fit=crop&crop=center';
+                        e.target.src = '/images/stamps/no-image-available.png';
                       }}
                     />
                   </div>
@@ -287,7 +287,7 @@ const StampTable = ({ stamps }: any) => {
                     alt={selectedStamp.denomination}
                     className="w-32 h-40 mx-auto rounded-lg shadow-md border-2 border-stamp-royal-300"
                     onError={(e: any) => {
-                      e.target.src = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=150&h=200&fit=crop&crop=center';
+                      e.target.src = '/images/stamps/no-image-available.png';
                     }}
                   />
                 </div>

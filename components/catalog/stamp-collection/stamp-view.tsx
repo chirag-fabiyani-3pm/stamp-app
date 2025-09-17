@@ -174,7 +174,7 @@ const StampView = ({ series, types, onBack, onBackHome }: any) => {
                       alt={`${selectedStamp.denomination} stamp`}
                       className="w-full max-w-xs mx-auto rounded-lg shadow-md"
                       onError={(e: any) => {
-                        e.target.src = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=200&h=260&fit=crop&crop=center';
+                        e.target.src = '/images/stamps/no-image-available.png';
                       }}
                     />
                   </div>
