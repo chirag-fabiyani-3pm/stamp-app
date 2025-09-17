@@ -40,6 +40,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useChatContext } from './chat-provider'
 import { ImageSearch } from './image-search'
+import PreciseVoicePanel from './precise-voice-panel'
 import VoiceChatPanel from './voice-chat-panel'
 
 // Configuration flag for API version
@@ -289,7 +290,15 @@ function parseStructuredStampData(content: string): StampCard[] {
 }
 
 // Markdown message component for clean, organized formatting
-function MarkdownMessage({ content }: { content: string }) {
+function MarkdownMessage({ content, messageId, isStreaming, streamingText }: {
+    content: string
+    messageId?: string
+    isStreaming?: boolean
+    streamingText?: string
+}) {
+    // Use streaming text if available and this message is currently streaming
+    const displayContent = isStreaming && streamingText ? streamingText : content
+
     return (
         <div className="max-w-none">
             <ReactMarkdown
@@ -315,8 +324,17 @@ function MarkdownMessage({ content }: { content: string }) {
                     td: ({ children }) => <td className="border border-border px-3 py-2 text-sm">{children}</td>,
                 }}
             >
-                {content}
+                {displayContent}
             </ReactMarkdown>
+            {isStreaming && (
+                <div className="inline-flex items-center mt-2">
+                    <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
@@ -607,9 +625,42 @@ export function PhilaGuideChat() {
     const isStreamingAIRef = useRef(false) // Immediate access to streaming state
     const currentStreamingIdRef = useRef<string | null>(null) // Immediate access to streaming ID
     const pendingAIMessage = useRef<{ id: string, deltas: string[] } | null>(null) // Queue AI message until user message is complete
+    const justAddedUserMessageRef = useRef(false) // Track if we just added a user message
+
+    // Streaming text effect
+    const [streamingText, setStreamingText] = useState<string>('')
+    const [isStreamingText, setIsStreamingText] = useState(false)
+
+    // Function to create streaming text effect
+    const streamText = (text: string, messageId: string) => {
+        setIsStreamingText(true)
+        setStreamingText('')
+        setCurrentStreamingId(messageId)
+
+        let currentIndex = 0
+        const words = text.split(' ')
+
+        const streamInterval = setInterval(() => {
+            if (currentIndex < words.length) {
+                setStreamingText(prev => prev + (prev ? ' ' : '') + words[currentIndex])
+                currentIndex++
+            } else {
+                clearInterval(streamInterval)
+                setIsStreamingText(false)
+                setCurrentStreamingId(null)
+            }
+        }, 50) // Adjust speed as needed
+    }
 
     const handleTranscript = (text: string) => {
         setTranscript(text)
+
+        // In precise mode, allow AI responses from the new RealtimePrecisePanelV2
+        // Only ignore AI responses from the old webkitSpeechRecognition implementation
+        if (voiceMode === 'precise' && (text.includes('AI (General):'))) {
+            console.log('🎤 Ignoring old AI response in precise mode:', text)
+            return
+        }
 
         // Handle voice transcripts and add them to appropriate messages array
         if (text.trim()) {
@@ -660,6 +711,9 @@ export function PhilaGuideChat() {
                         return [...prev, newMessage]
                     })
                     console.log('🎤 ✅ Successfully added user voice message:', userMessage)
+
+                    // Set flag that we just added a user message
+                    justAddedUserMessageRef.current = true
 
                     // If there was a pending AI message, create it now after user message
                     if (pendingAI) {
@@ -716,10 +770,16 @@ export function PhilaGuideChat() {
                     setIsStreamingAI(true)
                     setCurrentStreamingId(messageId)
 
-                    // Check if we have any user messages already
+                    // Check if we have any user messages already - use refs for immediate check
                     const hasUserMessages = messages.length > 0 && messages[messages.length - 1].role === 'user'
+                    const hasVoiceUserMessages = voiceMessages.length > 0 && voiceMessages[voiceMessages.length - 1].role === 'user'
+                    const justAddedUser = justAddedUserMessageRef.current
 
-                    if (hasUserMessages) {
+                    console.log('🎤 Checking for user messages - messages:', messages.length, 'voiceMessages:', voiceMessages.length, 'justAddedUser:', justAddedUser)
+                    console.log('🎤 Last message role (messages):', messages.length > 0 ? messages[messages.length - 1].role : 'none')
+                    console.log('🎤 Last message role (voiceMessages):', voiceMessages.length > 0 ? voiceMessages[voiceMessages.length - 1].role : 'none')
+
+                    if (hasUserMessages || hasVoiceUserMessages || justAddedUser) {
                         // Create AI message immediately since user message exists
                         const aiMessage: Message = {
                             id: messageId,
@@ -739,6 +799,9 @@ export function PhilaGuideChat() {
                             return [...prev, aiMessage]
                         })
                         console.log('🎤 ✅ Created AI message immediately - user message exists')
+
+                        // Reset the flag since we've handled the AI message
+                        justAddedUserMessageRef.current = false
                     } else {
                         // Queue the AI message until user message completes
                         pendingAIMessage.current = {
@@ -755,6 +818,7 @@ export function PhilaGuideChat() {
                 isStreamingAIRef.current = false
                 currentStreamingIdRef.current = null
                 pendingAIMessage.current = null // Clear any pending message
+                justAddedUserMessageRef.current = false // Reset user message flag
                 setIsStreamingAI(false)
                 setCurrentStreamingId(null)
                 console.log('🎤 AI response streaming complete')
@@ -878,17 +942,26 @@ export function PhilaGuideChat() {
         setTranscript('')
     }
 
+    // Handle function call progress from precise voice panel
+    const handleFunctionCallProgress = (isInProgress: boolean, message?: string) => {
+        setFunctionCallProgress({ isInProgress, message })
+    }
+
     // NEW: Voice chat mode state
     const [isVoiceMode, setIsVoiceMode] = useState(false)
     const [voiceMessages, setVoiceMessages] = useState<Message[]>([])
     const [isVoiceProcessing, setIsVoiceProcessing] = useState(false)
     const [voiceSessionId] = useState(() => `voice_session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`)
     const [selectedVoiceFromPanel, setSelectedVoiceFromPanel] = useState('alloy')
+    const [voiceMode, setVoiceMode] = useState<'conversation' | 'precise'>('conversation')
 
     // NEW: Voice selection state (from original voice chat popup)
     const [selectedVoice, setSelectedVoice] = useState<VoiceOption | null>(null)
     const [availableVoices, setAvailableVoices] = useState<VoiceOption[]>([])
     const selectedVoiceRef = useRef<VoiceOption | null>(null)
+
+    // Function call progress state
+    const [functionCallProgress, setFunctionCallProgress] = useState<{ isInProgress: boolean, message?: string }>({ isInProgress: false })
 
     // Initialize with default voice to prevent undefined errors
     useEffect(() => {
@@ -909,22 +982,294 @@ export function PhilaGuideChat() {
         }
     }, [transcript])
 
-    // NEW: Auto-send voice message when transcript is ready (from original voice chat popup)
-    // DISABLED: Old voice chat system - now using new simplified system
-    // useEffect(() => {
-    //     if (transcript && isVoiceMode && !isVoiceProcessing) {
-    //         // Auto-send after a short delay to allow user to review
-    //         const timer = setTimeout(() => {
-    //             if (transcript.trim()) {
-    //                 console.log('🎤 Auto-sending voice message:', transcript)
-    //                 handleVoiceMessage(transcript)
-    //                 clearTranscript()
-    //             }
-    //         }, 1500) // 1.5 second delay
+    // Speech recognition state for precise mode
+    const [recognition, setRecognition] = useState<any>(null)
+    const [isPreciseListening, setIsPreciseListening] = useState(false)
+    const [isPreciseSessionActive, setIsPreciseSessionActive] = useState(false)
+    const [pendingTranscript, setPendingTranscript] = useState<string>('')
+    const [lastProcessedTranscript, setLastProcessedTranscript] = useState<string>('')
+    const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null)
+    const [accumulatedTranscript, setAccumulatedTranscript] = useState<string>('')
+    const [interimTimer, setInterimTimer] = useState<NodeJS.Timeout | null>(null)
+    const lastProcessedTimeRef = useRef<number>(0)
 
-    //         return () => clearTimeout(timer)
-    //     }
-    // }, [transcript, isVoiceMode, isVoiceProcessing])
+    // Interruption handling
+    const [isUserInterrupting, setIsUserInterrupting] = useState(false)
+    const currentRequestRef = useRef<AbortController | null>(null)
+    const speechSynthesisRef = useRef<HTMLAudioElement | null>(null)
+
+    // Initialize speech recognition for precise mode
+    useEffect(() => {
+        if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
+            const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition
+            const recognitionInstance = new SpeechRecognition()
+
+            // Enable continuous listening for interruption capability
+            recognitionInstance.continuous = true
+            recognitionInstance.interimResults = true
+            recognitionInstance.lang = 'en-US'
+
+            recognitionInstance.onstart = () => {
+                console.log('🎤 Precise mode speech recognition started')
+                setIsPreciseListening(true)
+
+                // Handle interruption - if user starts speaking while AI is processing/speaking
+                if (isVoiceProcessing || speechSynthesis.speaking) {
+                    console.log('🎤 User interrupting - stopping current processing/speech')
+                    setIsUserInterrupting(true)
+
+                    // Stop current API request
+                    if (currentRequestRef.current) {
+                        currentRequestRef.current.abort()
+                        currentRequestRef.current = null
+                    }
+
+                    // Stop current speech synthesis
+                    if (speechSynthesisRef.current) {
+                        speechSynthesisRef.current.pause()
+                        speechSynthesisRef.current.currentTime = 0
+                        speechSynthesisRef.current = null
+                    }
+
+                    // Reset processing state
+                    setIsVoiceProcessing(false)
+                }
+            }
+
+            recognitionInstance.onresult = (event: any) => {
+                let finalTranscript = ''
+                let interimTranscript = ''
+
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript
+                    } else {
+                        interimTranscript += transcript
+                    }
+                }
+
+                // Handle interim results - accumulate and show live transcription
+                if (interimTranscript) {
+                    const newAccumulated = accumulatedTranscript + ' ' + interimTranscript
+                    setAccumulatedTranscript(newAccumulated)
+                    setPendingTranscript(newAccumulated)
+
+                    // Clear existing interim timer
+                    if (interimTimer) {
+                        clearTimeout(interimTimer)
+                    }
+
+                    // Set timer to process after user stops speaking
+                    const newTimer = setTimeout(() => {
+                        processAccumulatedTranscript(newAccumulated)
+                    }, 2000) // 2 seconds pause before processing
+
+                    setInterimTimer(newTimer)
+                }
+
+                // Process final transcript immediately
+                if (finalTranscript) {
+                    const trimmedFinal = finalTranscript.trim()
+                    const wordCount = trimmedFinal.split(/\s+/).length
+
+                    console.log('🎤 Final transcript received:', trimmedFinal, `(${wordCount} words)`)
+
+                    if (wordCount >= 3) {
+                        console.log('🎤 Processing final transcript:', trimmedFinal)
+                        setLastProcessedTranscript(trimmedFinal)
+                        handleVoiceVectorSearch(trimmedFinal)
+                    }
+
+                    // Clear accumulated transcript
+                    setAccumulatedTranscript('')
+                    setPendingTranscript('')
+
+                    // Clear interim timer
+                    if (interimTimer) {
+                        clearTimeout(interimTimer)
+                        setInterimTimer(null)
+                    }
+                }
+            }
+
+            recognitionInstance.onend = () => {
+                console.log('🎤 Precise mode speech recognition ended')
+                setIsPreciseListening(false)
+
+                // Process any accumulated transcript when speech ends
+                if (accumulatedTranscript.trim()) {
+                    console.log('🎤 Processing accumulated transcript on speech end:', accumulatedTranscript)
+                    processAccumulatedTranscript(accumulatedTranscript)
+                }
+
+                // Auto-restart if session is still active
+                if (isPreciseSessionActive && !isVoiceProcessing) {
+                    console.log('🎤 Auto-restarting precise mode speech recognition')
+                    setTimeout(() => {
+                        if (isPreciseSessionActive && !isVoiceProcessing) {
+                            try {
+                                recognitionInstance.start()
+                                console.log('🎤 Speech recognition restarted')
+                            } catch (error) {
+                                console.log('🎤 Speech recognition restart failed:', error)
+                            }
+                        }
+                    }, 200)
+                }
+            }
+
+            recognitionInstance.onerror = (event: any) => {
+                console.error('🎤 Precise mode speech recognition error:', event.error)
+                setIsPreciseListening(false)
+
+                // Auto-restart on certain errors
+                if (isPreciseSessionActive && (event.error === 'no-speech' || event.error === 'audio-capture')) {
+                    setTimeout(() => {
+                        if (isPreciseSessionActive && !isVoiceProcessing) {
+                            try {
+                                recognitionInstance.start()
+                                console.log('🎤 Speech recognition restarted after error')
+                            } catch (error) {
+                                console.error('🎤 Speech recognition restart after error failed:', error)
+                            }
+                        }
+                    }, 1000)
+                }
+            }
+
+            setRecognition(recognitionInstance)
+        }
+    }, [isVoiceProcessing, isPreciseSessionActive, accumulatedTranscript, interimTimer])
+
+    // Process accumulated transcript function
+    const processAccumulatedTranscript = (transcript: string) => {
+        const trimmed = transcript.trim()
+        const wordCount = trimmed.split(/\s+/).length
+
+        console.log('🎤 Processing accumulated transcript:', trimmed, `(${wordCount} words)`)
+
+        // Check if user is interrupting
+        if (isUserInterrupting) {
+            console.log('🎤 User interrupting, skipping transcript processing')
+            setIsUserInterrupting(false)
+            return
+        }
+
+        // Only process if we have enough words and it's not a duplicate
+        if (wordCount >= 3 && trimmed !== lastProcessedTranscript) {
+            console.log('🎤 Processing transcript:', trimmed)
+            setLastProcessedTranscript(trimmed)
+            handleVoiceVectorSearch(trimmed)
+            setAccumulatedTranscript('')
+            setPendingTranscript('')
+            lastProcessedTimeRef.current = Date.now()
+        } else {
+            console.log('🎤 Skipping transcript (too short or duplicate):', trimmed)
+            setAccumulatedTranscript('')
+            setPendingTranscript('')
+        }
+    }
+
+    // Auto-restart speech recognition when voice processing completes
+    useEffect(() => {
+        if (isPreciseSessionActive && !isVoiceProcessing && recognition && !isPreciseListening) {
+            console.log('🎤 Voice processing completed, restarting speech recognition')
+            setTimeout(() => {
+                if (isPreciseSessionActive && !isVoiceProcessing && recognition && !isPreciseListening) {
+                    try {
+                        recognition.start()
+                        console.log('🎤 Speech recognition restarted after processing completion')
+                    } catch (error) {
+                        console.log('🎤 Speech recognition already active or failed to start:', error)
+                    }
+                }
+            }, 500)
+        }
+    }, [isVoiceProcessing, isPreciseSessionActive, recognition, isPreciseListening])
+
+    // Cleanup precise mode session when switching modes
+    useEffect(() => {
+        if (voiceMode !== 'precise' && isPreciseSessionActive) {
+            console.log('🎤 Cleaning up precise mode session due to mode change')
+            stopPreciseVoiceInput()
+        }
+    }, [voiceMode])
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (isPreciseSessionActive) {
+                console.log('🎤 Cleaning up precise mode session on unmount')
+                stopPreciseVoiceInput()
+            }
+
+            // Clear timers
+            if (debounceTimer) {
+                clearTimeout(debounceTimer)
+            }
+            if (interimTimer) {
+                clearTimeout(interimTimer)
+            }
+        }
+    }, [debounceTimer, interimTimer])
+
+    // Start precise mode voice input session
+    const startPreciseVoiceInput = () => {
+        if (recognition && !isPreciseSessionActive) {
+            console.log('🎤 Starting precise mode voice session')
+            setIsPreciseSessionActive(true)
+            recognition.start()
+        }
+    }
+
+    // Stop precise mode voice input session
+    const stopPreciseVoiceInput = () => {
+        if (recognition && isPreciseSessionActive) {
+            console.log('🎤 Stopping precise mode voice session')
+            setIsPreciseSessionActive(false)
+            recognition.stop()
+            setPendingTranscript('')
+            setLastProcessedTranscript('')
+            setAccumulatedTranscript('')
+
+            // Clear timers
+            if (debounceTimer) {
+                clearTimeout(debounceTimer)
+                setDebounceTimer(null)
+            }
+            if (interimTimer) {
+                clearTimeout(interimTimer)
+                setInterimTimer(null)
+            }
+        }
+    }
+
+    // NEW: Auto-send voice message when transcript is ready (only for conversation mode)
+    useEffect(() => {
+        if (transcript && isVoiceMode && voiceMode === 'conversation' && !isVoiceProcessing) {
+            // Only process clean user transcripts, not AI responses or system messages
+            const cleanTranscript = transcript.replace(/\n(You|AI):\s*/g, '').replace(/\[AI_COMPLETE\]/g, '').trim()
+
+            // Skip if this looks like an AI response or system message
+            if (cleanTranscript &&
+                !transcript.includes('[AI_COMPLETE]') &&
+                !transcript.includes('\nAI:') &&
+                transcript.includes('\nYou:')) {
+
+                // Auto-send after a short delay to allow user to review
+                const timer = setTimeout(() => {
+                    if (cleanTranscript) {
+                        console.log('🎤 Auto-sending conversation voice message:', cleanTranscript)
+                        handleVoiceMessage(cleanTranscript)
+                        clearTranscript()
+                    }
+                }, 1500) // 1.5 second delay
+
+                return () => clearTimeout(timer)
+            }
+        }
+    }, [transcript, isVoiceMode, isVoiceProcessing, voiceMode])
 
     // NEW: Debug voice messages changes
     useEffect(() => {
@@ -988,6 +1333,133 @@ export function PhilaGuideChat() {
             setIsVoiceMode(true)
             // Initialize voice messages with existing conversation
             setVoiceMessages([...messages])
+        }
+    }
+
+    // Handle voice vector search
+    const handleVoiceVectorSearch = async (message: string) => {
+        if (!message.trim()) return
+
+        // Handle interruption - if user is interrupting, stop current processing
+        if (isUserInterrupting) {
+            console.log('🎤 User interrupted, skipping this request:', message)
+            setIsUserInterrupting(false)
+            return
+        }
+
+        const requestId = `${message}_${Date.now()}`
+
+        console.log('🎤 Starting voice vector search for:', message, 'Request ID:', requestId)
+        console.log('🎤 Voice processing state before:', isVoiceProcessing)
+
+        // Create abort controller for this request
+        const abortController = new AbortController()
+        currentRequestRef.current = abortController
+
+        setIsVoiceProcessing(true)
+        console.log('🎤 Voice processing state after:', true)
+
+        // Add user message immediately when user stops speaking
+        const userMessage: Message = {
+            id: `voice_user_${Date.now()}`,
+            content: message,
+            role: 'user',
+            timestamp: new Date()
+        }
+        setVoiceMessages(prev => [...prev, userMessage])
+        setMessages(prev => [...prev, userMessage])
+
+        try {
+            console.log('🎤 Voice vector search for:', message)
+
+            const response = await fetch('/api/voice-vector-search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    transcript: message,
+                    sessionId: voiceSessionId,
+                    mode: 'precise'
+                }),
+                signal: abortController.signal // Add abort signal
+            })
+
+            if (!response.ok) {
+                throw new Error(`Voice vector search API error: ${response.status}`)
+            }
+
+            const data = await response.json()
+            console.log('🎤 Voice vector search response data:', data)
+
+            if (data.success) {
+                // Create AI message but don't add to UI yet
+                const aiMessage: Message = {
+                    id: `voice_ai_${Date.now()}`,
+                    content: data.content,
+                    role: 'assistant',
+                    timestamp: new Date(),
+                    structuredData: data.structured
+                }
+
+                // Add AI message to UI immediately when response is received
+                setVoiceMessages(prev => [...prev, aiMessage])
+                setMessages(prev => [...prev, aiMessage])
+
+                // Start streaming text effect
+                streamText(data.content, aiMessage.id)
+
+                // Speak the response
+                if (data.content) {
+                    console.log('🎤 Speaking response:', data.content.substring(0, 100) + '...')
+                    console.log('🎤 Selected voice for synthesis:', selectedVoiceFromPanel)
+
+                    try {
+                        // Start speaking (non-blocking)
+                        speakResponse(data.content).then(() => {
+                            console.log('🎤 Speech synthesis completed successfully')
+                        }).catch((speechError) => {
+                            console.error('🎤 Speech synthesis failed:', speechError)
+                        })
+                    } catch (speechError) {
+                        console.error('🎤 Speech synthesis failed:', speechError)
+                    }
+                }
+            } else {
+                throw new Error(data.error || 'Voice vector search failed')
+            }
+        } catch (error) {
+            // Check if request was aborted (user interrupted)
+            if (error instanceof Error && error.name === 'AbortError') {
+                console.log('🎤 Voice vector search aborted (user interrupted)')
+                return
+            }
+
+            console.error('❌ Voice vector search failed:', error)
+            const errorMessage: Message = {
+                id: `voice_error_${Date.now()}`,
+                content: 'Sorry, I encountered an error while searching for stamps. Please try again.',
+                role: 'assistant',
+                timestamp: new Date()
+            }
+
+            try {
+                // Speak error message first
+                await speakResponse(errorMessage.content)
+                // Then add to UI
+                setVoiceMessages(prev => [...prev, errorMessage])
+                setMessages(prev => [...prev, errorMessage])
+            } catch (speechError) {
+                console.error('🎤 Error message speech synthesis failed:', speechError)
+                // Add message even if speech fails
+                setVoiceMessages(prev => [...prev, errorMessage])
+                setMessages(prev => [...prev, errorMessage])
+            }
+        } finally {
+            console.log('🎤 Voice vector search completed, clearing active request ID')
+            console.log('🎤 Setting isVoiceProcessing to false')
+            currentRequestRef.current = null
+            setIsVoiceProcessing(false)
         }
     }
 
@@ -1099,11 +1571,18 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
     const speakResponse = async (text: string) => {
         console.log('🎤 speakResponse called with text:', text.substring(0, 50) + '...')
 
+        // Check if user is interrupting
+        if (isUserInterrupting) {
+            console.log('🎤 User interrupting, skipping speech synthesis')
+            return
+        }
+
         try {
-            // Use the voice selected in the voice chat panel
-            const voiceToUse = selectedVoiceFromPanel
+            // Use the voice selected in the voice chat panel, or default to 'alloy'
+            const voiceToUse = selectedVoiceFromPanel || 'alloy'
             console.log('🎤 Using voice from panel:', voiceToUse, 'for text:', text.substring(0, 30) + '...')
 
+            console.log('🎤 Making voice synthesis request to:', `${BACKEND_URL}/api/voice-synthesis`)
             const response = await fetch(`${BACKEND_URL}/api/voice-synthesis`, {
                 method: 'POST',
                 headers: {
@@ -1115,29 +1594,69 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
                 }),
             })
 
+            console.log('🎤 Voice synthesis response status:', response.status)
             if (!response.ok) {
-                throw new Error('Failed to synthesize speech')
+                const errorText = await response.text()
+                console.error('🎤 Voice synthesis error response:', errorText)
+                throw new Error(`Voice synthesis failed: ${response.status} - ${errorText}`)
             }
 
             // Get audio blob
             const audioBlob = await response.blob()
+            console.log('🎤 Audio blob received, size:', audioBlob.size, 'bytes')
             const audioUrl = URL.createObjectURL(audioBlob)
 
             // Create audio element and play
             const audio = new Audio(audioUrl)
+            console.log('🎤 Starting audio playback...')
 
-            audio.onended = () => {
-                console.log('🎤 OpenAI speech ended')
-                URL.revokeObjectURL(audioUrl) // Clean up
-            }
+            // Store audio reference for interruption
+            speechSynthesisRef.current = audio
 
-            audio.onerror = (error) => {
-                console.error('🎤 OpenAI speech error:', error)
-                URL.revokeObjectURL(audioUrl) // Clean up
-            }
+            // Set up promise-based audio playback with timeout
+            const playPromise = new Promise<void>((resolve, reject) => {
+                let resolved = false
+
+                const cleanup = () => {
+                    if (!resolved) {
+                        resolved = true
+                        URL.revokeObjectURL(audioUrl)
+                        speechSynthesisRef.current = null
+                    }
+                }
+
+                audio.onended = () => {
+                    console.log('🎤 OpenAI speech ended')
+                    cleanup()
+                    resolve()
+                }
+
+                audio.onerror = (error) => {
+                    console.error('🎤 OpenAI speech error:', error)
+                    cleanup()
+                    reject(error)
+                }
+
+                audio.oncanplaythrough = () => {
+                    console.log('🎤 Audio ready to play')
+                }
+
+                // Add timeout to prevent hanging
+                setTimeout(() => {
+                    if (!resolved) {
+                        console.warn('🎤 Audio playback timeout, forcing completion')
+                        cleanup()
+                        resolve()
+                    }
+                }, 30000) // 30 second timeout
+            })
 
             console.log('🎤 Playing OpenAI voice synthesis...')
             await audio.play()
+
+            // Wait for playback to complete
+            await playPromise
+            console.log('🎤 Voice synthesis playback completed')
 
         } catch (error) {
             console.error('🎤 Voice synthesis error:', error)
@@ -1838,15 +2357,29 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
                                         <MessageSquare className="w-10 h-10 text-primary" />
                                     )}
                                 </div>
-                                <h3 className="text-xl font-bold text-foreground mb-3">
-                                    {isVoiceMode ? 'Voice Chat Mode' : 'Welcome to PhilaGuide AI!'}
-                                </h3>
-                                <p className="text-sm text-muted-foreground mb-8 leading-relaxed">
-                                    {isVoiceMode
-                                        ? 'Speak naturally to ask about stamps, values, history, or collecting tips. Click the microphone to start speaking.'
-                                        : 'I\'m your specialized stamp collecting assistant. Ask me about stamps, values, history, or collecting tips, or use the image search feature.'
-                                    }
-                                </p>
+                                {isVoiceMode ? (
+                                    <div className="text-center space-y-4 mb-8">
+                                        <div>
+                                            <h3 className="text-xl font-bold text-foreground mb-2">Start Continuous Voice Chat</h3>
+                                            <p className="text-sm text-muted-foreground mb-4">
+                                                Once started, you can speak naturally without pressing buttons. The AI will listen continuously and respond automatically.
+                                            </p>
+                                        </div>
+                                        <div className="text-xs text-muted-foreground text-center">
+                                            {voiceMode === 'conversation'
+                                                ? 'General chat about stamp collecting and philatelic topics'
+                                                : 'Search for specific stamps using our comprehensive database'
+                                            }
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <h3 className="text-xl font-bold text-foreground mb-3">Welcome to PhilaGuide AI!</h3>
+                                        <p className="text-sm text-muted-foreground mb-8 leading-relaxed">
+                                            I'm your specialized stamp collecting assistant. Ask me about stamps, values, history, or collecting tips, or use the image search feature.
+                                        </p>
+                                    </>
+                                )}
 
                                 {!isVoiceMode && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1883,6 +2416,26 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
                             </div>
                         )}
 
+                        {/* Function Call Progress Bubble */}
+                        {functionCallProgress.isInProgress && (
+                            <div className="flex gap-4 animate-in slide-in-from-bottom duration-300 justify-start">
+                                <Avatar className="w-9 h-9 flex-shrink-0 border-2 border-primary/20">
+                                    <AvatarImage src="/images/stamp-bot-avatar.png" alt="PhilaGuide AI" />
+                                    <AvatarFallback className="bg-primary/10 text-primary text-sm">PG</AvatarFallback>
+                                </Avatar>
+                                <div className="max-w-[85%] space-y-2 order-2">
+                                    <div className="px-4 py-3 text-sm break-words bg-muted text-foreground rounded-2xl rounded-tl-md mr-auto">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-4 h-4 animate-spin rounded-full border-2 border-yellow-300 border-t-yellow-600" />
+                                            <span className="text-sm font-medium text-yellow-600">
+                                                {functionCallProgress.message || 'Searching database...'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {/* NEW: Show messages based on current mode */}
                         {(isVoiceMode ? voiceMessages : messages).map((message) => (
                             <div key={message.id} className={cn(
@@ -1909,7 +2462,12 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
                                                     : "bg-muted text-foreground rounded-2xl rounded-tl-md mr-auto"
                                             )}>
                                                 {message.role === 'assistant' ? (
-                                                    <MarkdownMessage content={message.content} />
+                                                    <MarkdownMessage
+                                                        content={message.content}
+                                                        messageId={message.id}
+                                                        isStreaming={isStreamingText && currentStreamingId === message.id}
+                                                        streamingText={streamingText}
+                                                    />
                                                 ) : (
                                                     message.content
                                                 )}
@@ -2119,25 +2677,63 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
                         <div className="space-y-4 animate-in slide-in-from-bottom duration-300 delay-300">
                             {/* Voice Input Display */}
                             <div className="bg-background rounded-xl border border-border shadow-md animate-in zoom-in duration-300">
-                                <div className="flex items-center justify-between p-4 border-b border-border animate-in slide-in-from-top duration-300 delay-350">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                                            <AudioLines className="w-4 h-4 text-primary" />
+                                <div className="p-4 border-b border-border animate-in slide-in-from-top duration-300 delay-350">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                                                <AudioLines className="w-4 h-4 text-primary" />
+                                            </div>
+                                            <span className="text-sm font-medium text-foreground">Voice Chat</span>
                                         </div>
-                                        <span className="text-sm font-medium text-foreground">Voice Chat</span>
+                                    </div>
+
+                                    {/* Mode Selection - Moved to top */}
+                                    <div className="flex items-center justify-center">
+                                        <div className="flex bg-muted rounded-lg p-1">
+                                            <button
+                                                onClick={() => setVoiceMode('conversation')}
+                                                className={`px-3 py-1 text-xs rounded-md transition-colors ${voiceMode === 'conversation'
+                                                    ? 'bg-background text-foreground shadow-sm'
+                                                    : 'text-muted-foreground hover:text-foreground'
+                                                    }`}
+                                            >
+                                                Conversation
+                                            </button>
+                                            <button
+                                                onClick={() => setVoiceMode('precise')}
+                                                className={`px-3 py-1 text-xs rounded-md transition-colors ${voiceMode === 'precise'
+                                                    ? 'bg-background text-foreground shadow-sm'
+                                                    : 'text-muted-foreground hover:text-foreground'
+                                                    }`}
+                                            >
+                                                Precise Search
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* VoiceChatPanel Component */}
+                                {/* Voice Input Interface */}
                                 <div className="p-4 animate-in fade-in duration-300 delay-400">
-                                    <VoiceChatPanel
-                                        onTranscript={handleTranscript}
-                                        onClose={() => setIsVoiceMode(false)}
-                                        onVoiceChange={setSelectedVoiceFromPanel}
-                                        onSpeakResponse={speakResponse}
-                                        onListeningChange={setIsListening}
-                                        onTranscribingChange={setIsTranscribing}
-                                    />
+                                    {voiceMode === 'precise' ? (
+                                        /* Realtime API Precise Mode with Function Calling */
+                                        <PreciseVoicePanel
+                                            onTranscript={handleTranscript}
+                                            onTranscribingChange={setIsTranscribing}
+                                            onFunctionCallProgress={handleFunctionCallProgress}
+                                        />
+                                    ) : (
+                                        /* WebRTC Voice Chat Panel for Conversation Mode */
+                                        <VoiceChatPanel
+                                            onTranscript={handleTranscript}
+                                            onClose={() => setIsVoiceMode(false)}
+                                            onVoiceChange={setSelectedVoiceFromPanel}
+                                            onSpeakResponse={speakResponse}
+                                            onListeningChange={setIsListening}
+                                            onTranscribingChange={setIsTranscribing}
+                                            onModeChange={setVoiceMode}
+                                            currentMode={voiceMode}
+                                        />
+                                    )}
                                 </div>
                             </div>
 

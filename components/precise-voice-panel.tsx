@@ -2,19 +2,14 @@
 
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Mic, Square, Volume2 } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { AudioLines, Mic, Square } from 'lucide-react'
+import { useCallback, useRef, useState } from 'react'
 
-interface VoiceChatPanelProps {
-    onClose: () => void
+interface PreciseVoicePanelProps {
     onTranscript: (transcript: string) => void
-    onSpeakResponse?: (text: string) => void
-    onVoiceChange?: (voice: string) => void
-    onListeningChange?: (isListening: boolean) => void
     onTranscribingChange?: (isTranscribing: boolean) => void
-    onModeChange?: (mode: 'conversation' | 'precise') => void
-    currentMode?: 'conversation' | 'precise'
+    onFunctionCallProgress?: (isInProgress: boolean, message?: string) => void
+    className?: string
 }
 
 const VOICE_OPTIONS = [
@@ -26,43 +21,76 @@ const VOICE_OPTIONS = [
     { value: 'shimmer', label: 'Shimmer' }
 ]
 
-export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse, onVoiceChange, onListeningChange, onTranscribingChange, onModeChange, currentMode = 'conversation' }: VoiceChatPanelProps) {
-    const router = useRouter()
-
+export default function PreciseVoicePanel({
+    onTranscript,
+    onTranscribingChange,
+    onFunctionCallProgress,
+    className = ''
+}: PreciseVoicePanelProps) {
     // State for voice chat
     const [isSessionActive, setIsSessionActive] = useState(false)
     const [isConnecting, setIsConnecting] = useState(false)
     const [isUserSpeaking, setIsUserSpeaking] = useState(false)
     const [isAISpeaking, setIsAISpeaking] = useState(false)
     const [selectedVoice, setSelectedVoice] = useState('alloy')
-    const [voiceMode, setVoiceMode] = useState<'conversation' | 'precise'>(currentMode)
+    const [connectionState, setConnectionState] = useState<string>('disconnected')
 
-    // Transcription state for callback integration
+    // Transcription state
     const [currentUserMessage, setCurrentUserMessage] = useState<string>('')
     const [isTranscriptProcessing, setIsTranscriptProcessing] = useState(false)
     const [hasStartedAIResponse, setHasStartedAIResponse] = useState(false)
+    const [isFunctionCallInProgress, setIsFunctionCallInProgress] = useState(false)
 
     // Refs for WebRTC and audio
     const peerConnectionRef = useRef<RTCPeerConnection | null>(null)
     const audioStreamRef = useRef<MediaStream | null>(null)
-    const audioContextRef = useRef<AudioContext | null>(null)
-    const audioIndicatorRef = useRef<HTMLDivElement | null>(null)
     const dataChannelRef = useRef<RTCDataChannel | null>(null)
 
-    // State setters for refs
-    const setPeerConnection = (pc: RTCPeerConnection | null) => {
-        peerConnectionRef.current = pc
-    }
+    // Handle function calls for stamp search
+    const handleFunctionCall = useCallback(async (functionName: string, parameters: any) => {
+        console.log('🎤 Executing function call:', functionName, parameters)
 
-    const setAudioStream = (stream: MediaStream | null) => {
-        audioStreamRef.current = stream
-    }
+        try {
+            if (functionName === 'search_stamp_database') {
+                const query = parameters.query || parameters.search_query || ''
+                const sessionId = `precise_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
-    // Transcription event handlers
+                const response = await fetch('/api/voice-vector-search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        transcript: query,
+                        sessionId: sessionId,
+                        mode: 'precise'
+                    })
+                })
+
+                if (!response.ok) {
+                    const errorText = await response.text()
+                    console.error('🎤 Vector search error:', errorText)
+                    throw new Error(`Vector search failed: ${response.status} - ${errorText}`)
+                }
+
+                const data = await response.json()
+                console.log('🎤 Vector search result:', data)
+                return data
+            }
+
+            return { error: 'Unknown function' }
+        } catch (error) {
+            console.error('🎤 Function call error:', error)
+            return { error: error instanceof Error ? error.message : 'Unknown error' }
+        }
+    }, [])
+
+
+    // Handle data channel messages (simplified like working implementation)
     const handleDataChannelMessage = useCallback((event: MessageEvent) => {
         try {
             const msg = JSON.parse(event.data)
-            console.log('🎤 Data channel message:', msg)
+            console.log('🎤 Precise data channel message:', msg)
 
             switch (msg.type) {
                 // User speech started
@@ -117,10 +145,19 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
                     break
                 }
 
+                // Response started
+                case 'response.created': {
+                    console.log('🎤 AI response started')
+                    console.log('🎤 Response created event:', msg)
+                    setIsAISpeaking(true)
+                    break
+                }
+
                 // Streaming AI response transcription
                 case 'response.audio_transcript.delta': {
                     const deltaText = msg.delta || ''
                     console.log('🎤 AI response delta:', deltaText)
+                    console.log('🎤 Full delta event:', msg)
 
                     // Check if this is the first AI response delta
                     if (!hasStartedAIResponse) {
@@ -148,21 +185,194 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
                     break
                 }
 
+                // Response completed
+                case 'response.done': {
+                    console.log('🎤 AI response done')
+                    console.log('🎤 Response done event:', msg)
+                    setIsAISpeaking(false)
+                    setHasStartedAIResponse(false)
+                    break
+                }
+
+                // Response error
+                case 'response.error': {
+                    console.log('🎤 AI response error:', msg)
+                    setIsAISpeaking(false)
+                    setHasStartedAIResponse(false)
+                    break
+                }
+
+                // Response audio delta (raw audio chunks)
+                case 'response.audio.delta': {
+                    console.log('🎤 AI audio delta received')
+                    break
+                }
+
+                // Response audio done
+                case 'response.audio.done': {
+                    console.log('🎤 AI audio done')
+                    break
+                }
+
+                // Response text delta (alternative to audio_transcript)
+                case 'response.text.delta': {
+                    const deltaText = msg.delta || ''
+                    console.log('🎤 AI response text delta:', deltaText)
+                    console.log('🎤 Full text delta event:', msg)
+
+                    // Check if this is the first AI response delta
+                    if (!hasStartedAIResponse) {
+                        // Send AI response start signal
+                        onTranscript?.('\nAI: ')
+                        setHasStartedAIResponse(true)
+                        setIsAISpeaking(true)
+                    }
+
+                    // Send AI response delta to main chat interface
+                    onTranscript?.(deltaText)
+                    break
+                }
+
+                // Response text done
+                case 'response.text.done': {
+                    console.log('🎤 AI response text done')
+                    console.log('🎤 Response text done event:', msg)
+
+                    // Send AI complete signal to main chat interface
+                    onTranscript?.('\n[AI_COMPLETE]')
+
+                    // Reset AI speaking state
+                    setIsAISpeaking(false)
+                    setHasStartedAIResponse(false)
+                    break
+                }
+
+                // Function call created - just log it, don't execute here
+                case 'conversation.item.created': {
+                    if (msg.item && msg.item.type === 'function_call') {
+                        console.log('🎤 Function call created (waiting for arguments):', msg.item)
+                    }
+                    break
+                }
+
+                // Function call arguments delta
+                case 'response.function_call_arguments.delta': {
+                    console.log('🎤 Function call arguments delta:', msg.arguments)
+                    break
+                }
+
+                // Function call arguments done - execute function
+                case 'response.function_call_arguments.done': {
+                    console.log('🎤 Function call arguments done:', msg.arguments)
+                    console.log('🎤 Function call call_id:', msg.call_id)
+                    console.log('🎤 Function call name:', msg.name)
+
+                    if (msg.arguments) {
+                        try {
+                            const parsedArgs = JSON.parse(msg.arguments)
+                            console.log('🎤 Parsed function call arguments:', parsedArgs)
+
+                            // Execute the function call
+                            if (parsedArgs.query) {
+                                console.log('🎤 Executing function call with query:', parsedArgs.query)
+                                setIsFunctionCallInProgress(true)
+
+                                // Send progress message to chat interface
+                                onFunctionCallProgress?.(true, `🔍 Searching database for: "${parsedArgs.query}"`)
+
+                                handleFunctionCall('search_stamp_database', parsedArgs).then(result => {
+                                    console.log('🎤 Function call result:', result)
+
+                                    // Send function result back to AI using conversation.item.create
+                                    const functionResult = {
+                                        type: 'conversation.item.create',
+                                        item: {
+                                            type: 'function_call_output',
+                                            call_id: msg.call_id,
+                                            output: result.content || result.message || 'Function executed successfully'
+                                        }
+                                    }
+
+                                    console.log('🎤 Sending function result with call_id:', msg.call_id)
+
+                                    if (dataChannelRef.current && dataChannelRef.current.readyState === 'open') {
+                                        dataChannelRef.current.send(JSON.stringify(functionResult))
+                                        console.log('🎤 Function result sent:', functionResult)
+
+                                        // Trigger AI to generate response after function call
+                                        const responseRequest = {
+                                            type: 'response.create',
+                                            response: {
+                                                modalities: ['text', 'audio']
+                                            }
+                                        }
+                                        dataChannelRef.current.send(JSON.stringify(responseRequest))
+                                        console.log('🎤 Response create request sent')
+                                    }
+                                    setIsFunctionCallInProgress(false)
+
+                                    // Clear progress message in chat interface
+                                    onFunctionCallProgress?.(false)
+                                }).catch(error => {
+                                    console.error('🎤 Function call error:', error)
+
+                                    const errorResult = {
+                                        type: 'conversation.item.create',
+                                        item: {
+                                            type: 'function_call_output',
+                                            call_id: msg.call_id,
+                                            output: `Error: ${error.message}`
+                                        }
+                                    }
+
+                                    if (dataChannelRef.current && dataChannelRef.current.readyState === 'open') {
+                                        dataChannelRef.current.send(JSON.stringify(errorResult))
+                                        console.log('🎤 Error result sent:', errorResult)
+
+                                        // Trigger AI to generate response after function call error
+                                        const responseRequest = {
+                                            type: 'response.create',
+                                            response: {
+                                                modalities: ['text', 'audio']
+                                            }
+                                        }
+                                        dataChannelRef.current.send(JSON.stringify(responseRequest))
+                                        console.log('🎤 Response create request sent for error')
+                                    }
+                                    setIsFunctionCallInProgress(false)
+
+                                    // Clear progress message in chat interface
+                                    onFunctionCallProgress?.(false)
+                                })
+                            }
+                        } catch (error) {
+                            console.error('🎤 Error parsing function call arguments:', error)
+                        }
+                    }
+                    break
+                }
+
+                // Error handling
+                case 'error': {
+                    console.error('🎤 Realtime API error:', msg.error)
+                    break
+                }
+
                 default: {
-                    // console.log('🎤 Unhandled message type:', msg.type)
+                    console.log('🎤 Unhandled message type:', msg.type, msg)
                     break
                 }
             }
         } catch (error) {
             console.error('🎤 Error handling data channel message:', error)
         }
-    }, [])
+    }, [onTranscript, onTranscribingChange, hasStartedAIResponse, handleFunctionCall])
 
-    // Configure data channel for transcription
+    // Configure data channel for transcription only (no tools for now)
     const configureDataChannel = useCallback((dataChannel: RTCDataChannel) => {
-        console.log('🎤 Configuring data channel for transcription...')
+        console.log('🎤 Configuring data channel for precise mode...')
 
-        // Send session update to enable transcription
+        // Send session update to enable transcription for input
         const sessionUpdate = {
             type: 'session.update',
             session: {
@@ -177,24 +387,10 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
         console.log('🎤 Session update sent:', sessionUpdate)
     }, [])
 
-    // Handle voice selection change
-    const handleVoiceChange = (value: string) => {
-        setSelectedVoice(value)
-        console.log('🎤 Voice changed to:', value)
-        onVoiceChange?.(value)
-    }
-
-    // Handle mode change
-    const handleModeChange = (mode: 'conversation' | 'precise') => {
-        setVoiceMode(mode)
-        console.log('🎤 Voice mode changed to:', mode)
-        onModeChange?.(mode)
-    }
-
-    // Create OpenAI Realtime session
+    // Create OpenAI Realtime session (same as working implementation)
     const createRealtimeSession = useCallback(async () => {
         try {
-            console.log('🎤 Creating OpenAI Realtime session...')
+            console.log('🎤 Creating OpenAI Realtime session for precise mode...')
 
             const response = await fetch('/api/realtime-session', {
                 method: 'POST',
@@ -203,8 +399,7 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
                 },
                 body: JSON.stringify({
                     voice: selectedVoice,
-                    instructions: voiceMode === 'precise'
-                        ? `You are PhilaGuide AI, a specialized stamp collecting expert providing precise search results. You ONLY respond to philatelic (stamp collecting) related queries.
+                    instructions: `You are PhilaGuide AI, a specialized stamp collecting expert providing precise search results. You ONLY respond to philatelic (stamp collecting) related queries.
 
 CRITICAL RESTRICTION - PHILATELIC QUERIES ONLY:
 - ONLY respond to questions about stamps, stamp collecting, philately, postal history, or related topics
@@ -212,41 +407,19 @@ CRITICAL RESTRICTION - PHILATELIC QUERIES ONLY:
 - Do NOT answer questions about general topics, current events, weather, sports, app navigation, etc.
 
 PRECISE SEARCH MODE:
-- You have access to a comprehensive stamp database through vector search
+- You have access to a comprehensive stamp database through the search_stamp_database function
+- ALWAYS use the search_stamp_database function when users ask about specific stamps
+- Call the function with the user's query to find precise stamp information
 - Provide specific, accurate information about stamps when available
 - When you find matching stamps, describe them with precise details
 - Include specific information like catalog numbers, years, denominations, and countries
 - If you cannot find specific stamps, ask clarifying questions to narrow down the search
 
-VOICE RESPONSE GUIDELINES:
-- Always respond in ENGLISH only, regardless of the user's language
-- Use clear, descriptive language suitable for speech
-- Avoid abbreviations and technical jargon
-- Use complete sentences and natural speech patterns
-- Be informative but friendly and engaging
-- When describing stamps, include details like country, year, denomination, color, and interesting facts
-- Use natural language for denominations (e.g., "one-third penny" instead of "1/3d")
-- Keep responses concise but informative (2-3 sentences max for voice)
-- Always respond in a natural, conversational manner suitable for voice synthesis
-- Maintain conversation context from previous philatelic messages
-- Reference previous stamp topics when relevant to show continuity
-
-IMPORTANT: This is a continuous conversation session. Users can interrupt you at any time by speaking, and you should stop and listen to them.
-
-REMEMBER: You are a stamp collecting expert with access to precise stamp data. Stay focused on philatelic topics only.`
-                        : `You are PhilaGuide AI, a specialized stamp collecting expert providing conversational responses. You ONLY respond to philatelic (stamp collecting) related queries.
-
-CRITICAL RESTRICTION - PHILATELIC QUERIES ONLY:
-- ONLY respond to questions about stamps, stamp collecting, philately, postal history, or related topics
-- For ANY non-philatelic queries, politely redirect users back to stamp-related topics
-- Do NOT answer questions about general topics, current events, weather, sports, app navigation, etc.
-
-CONVERSATIONAL MODE:
-- Provide general philatelic knowledge and guidance
-- Engage in natural conversation about stamp collecting
-- Share interesting facts and historical context
-- Help with general collecting advice and techniques
-- Discuss philatelic terminology and concepts
+FUNCTION CALLING:
+- Use search_stamp_database(query) for any stamp-related search
+- The query should be the user's exact words or a refined version
+- Examples: "1D bright orange vermilion", "Penny Black", "US stamps 1950s"
+- Always call the function first, then provide a response based on the results
 
 VOICE RESPONSE GUIDELINES:
 - Always respond in ENGLISH only, regardless of the user's language
@@ -263,7 +436,24 @@ VOICE RESPONSE GUIDELINES:
 
 IMPORTANT: This is a continuous conversation session. Users can interrupt you at any time by speaking, and you should stop and listen to them.
 
-REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics only.`
+REMEMBER: You are a stamp collecting expert with access to precise stamp data. Always use the search function to provide accurate information. Stay focused on philatelic topics only.`,
+                    tools: [
+                        {
+                            type: 'function',
+                            name: 'search_stamp_database',
+                            description: 'Search the stamp database for specific stamps based on user queries',
+                            parameters: {
+                                type: 'object',
+                                properties: {
+                                    query: {
+                                        type: 'string',
+                                        description: 'The search query for finding stamps (e.g., "1D bright orange vermilion", "Penny Black", "US stamps 1950s")'
+                                    }
+                                },
+                                required: ['query']
+                            }
+                        }
+                    ]
                 })
             })
 
@@ -277,14 +467,12 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
             console.log('🎤 Session created:', data)
 
             // Extract the ephemeral token from the session response
-            // This is what the working example uses: data.client_secret.value
             const ephemeralToken = data.client_secret?.value || data.client_secret
 
             if (!ephemeralToken) {
                 console.error('🎤 Missing ephemeral token in session response:', data)
                 throw new Error('Session creation response missing ephemeral token')
             }
-
 
             return { ephemeralToken }
         } catch (error) {
@@ -293,14 +481,14 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
         }
     }, [selectedVoice])
 
-    // Setup WebRTC connection with OpenAI Realtime API
+    // Setup WebRTC connection (same as working implementation)
     const setupWebRTCConnection = useCallback(async (sessionData: { ephemeralToken: string }) => {
         try {
-            console.log('🎤 Setting up WebRTC connection...')
+            console.log('🎤 Setting up WebRTC connection for precise mode...')
 
             // Get microphone access
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-            setAudioStream(stream)
+            audioStreamRef.current = stream
 
             // Create peer connection
             const pc = new RTCPeerConnection({
@@ -341,7 +529,6 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
             console.log('🎤 Connecting to OpenAI Realtime API...')
 
             // Connect to OpenAI Realtime API using the ephemeral token
-            // This matches the working example exactly
             const realtimeResponse = await fetch(`https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2025-06-03&voice=${selectedVoice}`, {
                 method: 'POST',
                 headers: {
@@ -362,9 +549,9 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
 
             await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp })
 
-            setPeerConnection(pc)
+            peerConnectionRef.current = pc
             setIsSessionActive(true)
-            onListeningChange?.(true)
+            setConnectionState('connected')
 
             console.log('🎤 WebRTC connection established successfully')
 
@@ -372,12 +559,12 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
             console.error('🎤 WebRTC setup failed:', error)
             throw error
         }
-    }, [selectedVoice, onListeningChange, configureDataChannel, handleDataChannelMessage])
+    }, [selectedVoice, configureDataChannel, handleDataChannelMessage])
 
     // Start voice chat session
     const startVoiceChat = useCallback(async () => {
         try {
-            console.log('🎤 Starting voice chat session...')
+            console.log('🎤 Starting precise voice chat session...')
             setIsConnecting(true)
 
             // Step 1: Create OpenAI session
@@ -386,22 +573,20 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
             // Step 2: Setup WebRTC connection
             await setupWebRTCConnection(sessionData)
 
-            console.log('🎤 Voice chat session started successfully')
+            console.log('🎤 Precise voice chat session started successfully')
 
         } catch (error) {
             console.error('🎤 Failed to start voice chat:', error)
-            // Don't reset session state on error - let user try again
             setIsConnecting(false)
-            onListeningChange?.(false)
         } finally {
             setIsConnecting(false)
         }
-    }, [createRealtimeSession, setupWebRTCConnection, onListeningChange])
+    }, [createRealtimeSession, setupWebRTCConnection])
 
     // Stop voice chat session
     const stopVoiceChat = useCallback(async () => {
         try {
-            console.log('🎤 Stopping voice chat session...')
+            console.log('🎤 Stopping precise voice chat session...')
 
             // Close data channel
             if (dataChannelRef.current) {
@@ -412,19 +597,13 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
             // Close peer connection
             if (peerConnectionRef.current) {
                 peerConnectionRef.current.close()
-                setPeerConnection(null)
+                peerConnectionRef.current = null
             }
 
             // Stop audio stream
             if (audioStreamRef.current) {
                 audioStreamRef.current.getTracks().forEach(track => track.stop())
-                setAudioStream(null)
-            }
-
-            // Close audio context
-            if (audioContextRef.current) {
-                audioContextRef.current.close()
-                audioContextRef.current = null
+                audioStreamRef.current = null
             }
 
             // Reset state
@@ -434,111 +613,29 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
             setCurrentUserMessage('')
             setIsTranscriptProcessing(false)
             setHasStartedAIResponse(false)
-            onListeningChange?.(false)
+            setIsFunctionCallInProgress(false)
+            setConnectionState('disconnected')
             onTranscribingChange?.(false)
+            onFunctionCallProgress?.(false)
 
-            console.log('🎤 Voice chat session stopped successfully')
+            console.log('🎤 Precise voice chat session stopped successfully')
 
         } catch (error) {
             console.error('🎤 Error stopping session:', error)
         }
-    }, [onListeningChange])
+    }, [onTranscribingChange])
 
-    // Add connection state monitoring
-    useEffect(() => {
-        if (peerConnectionRef.current) {
-            const handleConnectionStateChange = () => {
-                console.log('🎤 WebRTC connection state changed:', peerConnectionRef.current?.connectionState)
-
-                if (peerConnectionRef.current?.connectionState === 'failed' || peerConnectionRef.current?.connectionState === 'disconnected') {
-                    console.error('🎤 WebRTC connection failed or disconnected')
-                    // Don't automatically stop - let user decide
-                } else if (peerConnectionRef.current?.connectionState === 'connected') {
-                    console.log('🎤 WebRTC connection established')
-                }
-            }
-
-            const handleIceConnectionStateChange = () => {
-                console.log('🎤 ICE connection state:', peerConnectionRef.current?.iceConnectionState)
-
-                if (peerConnectionRef.current?.iceConnectionState === 'failed') {
-                    console.error('🎤 ICE connection failed')
-                }
-            }
-
-            peerConnectionRef.current.addEventListener('connectionstatechange', handleConnectionStateChange)
-            peerConnectionRef.current.addEventListener('iceconnectionstatechange', handleIceConnectionStateChange)
-
-            return () => {
-                peerConnectionRef.current?.removeEventListener('connectionstatechange', handleConnectionStateChange)
-                peerConnectionRef.current?.removeEventListener('iceconnectionstatechange', handleIceConnectionStateChange)
-            }
-        }
-    }, [])
-
-    // Setup audio visualization
-    const setupAudioVisualization = useCallback((stream: MediaStream) => {
-        if (!audioIndicatorRef.current) return
-
-        try {
-            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
-            const source = audioContext.createMediaStreamSource(stream)
-            const analyzer = audioContext.createAnalyser()
-
-            analyzer.fftSize = 256
-            source.connect(analyzer)
-
-            const bufferLength = analyzer.frequencyBinCount
-            const dataArray = new Uint8Array(bufferLength)
-
-            const updateIndicator = () => {
-                if (!audioContext || audioContext.state === 'closed') return
-
-                analyzer.getByteFrequencyData(dataArray)
-                const average = dataArray.reduce((a, b) => a + b) / bufferLength
-
-                if (audioIndicatorRef.current) {
-                    const isActive = average > 30
-                    audioIndicatorRef.current.classList.toggle("animate-pulse", isActive)
-                    audioIndicatorRef.current.classList.toggle("bg-green-500", isActive)
-                    audioIndicatorRef.current.classList.toggle("bg-gray-400", !isActive)
-
-                    // Track user speaking state
-                    setIsUserSpeaking(isActive)
-                }
-
-                requestAnimationFrame(updateIndicator)
-            }
-
-            updateIndicator()
-            audioContextRef.current = audioContext
-
-        } catch (error) {
-            console.error('🎤 Audio visualization setup failed:', error)
-        }
-    }, [])
-
-    // Setup audio visualization when stream is available
-    useEffect(() => {
-        if (audioStreamRef.current && audioIndicatorRef.current) {
-            setupAudioVisualization(audioStreamRef.current)
-        }
-    }, [setupAudioVisualization])
-
-    // Cleanup on unmount
-    useEffect(() => {
-        return () => {
-            console.log('🎤 Component unmounting, cleaning up...')
-            stopVoiceChat()
-        }
-    }, [stopVoiceChat])
+    // Handle voice selection change
+    const handleVoiceChange = (value: string) => {
+        setSelectedVoice(value)
+        console.log('🎤 Voice changed to:', value)
+    }
 
     return (
-        <div className="space-y-4">
+        <div className={`space-y-4 ${className}`}>
             {/* Connection Setup */}
             {!isSessionActive ? (
                 <div className="text-center space-y-4">
-
                     {/* Voice Selection */}
                     <div className="flex items-center gap-3 justify-center">
                         <Select value={selectedVoice} onValueChange={handleVoiceChange}>
@@ -568,7 +665,7 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
                             ) : (
                                 <>
                                     <Mic className="w-4 h-4 mr-2" />
-                                    Start Voice Chat
+                                    Start Precise Search
                                 </>
                             )}
                         </Button>
@@ -578,7 +675,6 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
                 <>
                     {/* Active Session Controls */}
                     <div className="space-y-3">
-
                         <div className="flex items-center gap-3 justify-center">
                             {/* Voice Settings */}
                             <Select value={selectedVoice} onValueChange={handleVoiceChange} disabled={isSessionActive}>
@@ -594,20 +690,13 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
                                 </SelectContent>
                             </Select>
 
-                            {/* Audio Indicator */}
-                            <div
-                                ref={audioIndicatorRef}
-                                className="w-4 h-4 rounded-full bg-gray-400 transition-all duration-200"
-                                title={isUserSpeaking ? 'You are speaking' : 'Listening for speech'}
-                            />
-
                             {/* Stop Button */}
                             <Button
                                 onClick={stopVoiceChat}
                                 className="bg-red-500 hover:bg-red-600 text-white px-6"
                             >
                                 <Square className="w-4 h-4 mr-2" />
-                                Stop Session
+                                Stop Search
                             </Button>
                         </div>
 
@@ -620,9 +709,15 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
                                         <span className="text-sm font-medium">You are speaking</span>
                                     </div>
                                 )}
+                                {isFunctionCallInProgress && (
+                                    <div className="flex items-center gap-1 text-yellow-600">
+                                        <div className="w-4 h-4 animate-spin rounded-full border-2 border-yellow-300 border-t-yellow-600" />
+                                        <span className="text-sm font-medium">Searching database...</span>
+                                    </div>
+                                )}
                                 {isAISpeaking && (
                                     <div className="flex items-center gap-1 text-blue-600">
-                                        <Volume2 className="w-4 h-4" />
+                                        <AudioLines className="w-4 h-4" />
                                         <span className="text-sm font-medium">AI is responding</span>
                                     </div>
                                 )}
@@ -631,9 +726,11 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
                             <div className="text-xs text-muted-foreground">
                                 {isUserSpeaking
                                     ? 'AI will stop and listen to you'
-                                    : isAISpeaking
-                                        ? 'AI is speaking - wait for response'
-                                        : 'Listening for your voice...'
+                                    : isFunctionCallInProgress
+                                        ? 'Searching stamp database for your query...'
+                                        : isAISpeaking
+                                            ? 'AI is speaking - wait for response'
+                                            : 'Listening for your voice...'
                                 }
                             </div>
                         </div>
@@ -650,8 +747,6 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
                     </div>
                 </>
             )}
-
-
         </div>
     )
 }
