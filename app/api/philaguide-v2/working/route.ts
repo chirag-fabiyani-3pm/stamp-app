@@ -90,7 +90,6 @@ export async function POST(request: NextRequest) {
                 console.log('🔍 DEBUG: Starting search with query:', message)
                 console.log('🔍 DEBUG: Using tools:', [
                     { type: 'file_search', vector_store_ids: [VECTOR_STORE_ID] },
-                    { type: 'web_search_preview' }
                 ])
                 console.log('🔍 DEBUG: Vector store ID:', VECTOR_STORE_ID)
 
