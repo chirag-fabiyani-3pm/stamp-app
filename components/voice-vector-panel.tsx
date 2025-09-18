@@ -6,7 +6,7 @@ import { Mic, Square, Volume2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-interface VoiceChatPanelProps {
+interface VoiceVectorPanelProps {
     onClose: () => void
     onTranscript: (transcript: string) => void
     onSpeakResponse?: (text: string) => void
@@ -15,6 +15,8 @@ interface VoiceChatPanelProps {
     onTranscribingChange?: (isTranscribing: boolean) => void
     onModeChange?: (mode: 'conversation' | 'precise') => void
     currentMode?: 'conversation' | 'precise'
+    onVectorSearch?: (query: string) => Promise<void>
+    isVoiceProcessing?: boolean
 }
 
 const VOICE_OPTIONS = [
@@ -26,7 +28,18 @@ const VOICE_OPTIONS = [
     { value: 'shimmer', label: 'Shimmer' }
 ]
 
-export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse, onVoiceChange, onListeningChange, onTranscribingChange, onModeChange, currentMode = 'conversation' }: VoiceChatPanelProps) {
+export default function VoiceVectorPanel({
+    onClose,
+    onTranscript,
+    onSpeakResponse,
+    onVoiceChange,
+    onListeningChange,
+    onTranscribingChange,
+    onModeChange,
+    currentMode = 'precise',
+    onVectorSearch,
+    isVoiceProcessing = false
+}: VoiceVectorPanelProps) {
     const router = useRouter()
 
     // State for voice chat
@@ -58,11 +71,17 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
         audioStreamRef.current = stream
     }
 
-    // Transcription event handlers
+    // Modified transcription event handlers for vector search
     const handleDataChannelMessage = useCallback((event: MessageEvent) => {
         try {
             const msg = JSON.parse(event.data)
             console.log('🎤 Data channel message:', msg)
+
+            // Skip AI response messages in precise mode
+            if (msg.type && msg.type.includes('response') && voiceMode === 'precise') {
+                console.log('🎤 Ignoring AI response in precise mode:', msg.type)
+                return
+            }
 
             switch (msg.type) {
                 // User speech started
@@ -103,7 +122,7 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
                     break
                 }
 
-                // Final user transcription
+                // Final user transcription - THIS IS WHERE WE CALL VECTOR SEARCH
                 case 'conversation.item.input_audio_transcription.completed': {
                     const finalText = msg.transcript || ''
                     console.log('🎤 Final user transcription:', finalText)
@@ -114,38 +133,26 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
 
                     // Send final user transcription to main chat interface
                     onTranscript?.(`\nYou: ${finalText}`)
-                    break
-                }
 
-                // Streaming AI response transcription
-                case 'response.audio_transcript.delta': {
-                    const deltaText = msg.delta || ''
-                    console.log('🎤 AI response delta:', deltaText)
-
-                    // Check if this is the first AI response delta
-                    if (!hasStartedAIResponse) {
-                        // Send AI response start signal
-                        onTranscript?.('\nAI: ')
-                        setHasStartedAIResponse(true)
-                        setIsAISpeaking(true)
+                    // Call vector search for precise results
+                    if (finalText.trim() && onVectorSearch) {
+                        console.log('🎤 Calling vector search for:', finalText)
+                        onVectorSearch(finalText.trim())
                     }
-
-                    // Send AI response delta to main chat interface
-                    onTranscript?.(deltaText)
                     break
                 }
 
-                // AI response transcription completed
+                // AI responses are completely disabled in precise mode
+                case 'response.audio_transcript.delta': {
+                    console.log('🎤 AI response delta (completely ignored in precise mode):', msg.delta)
+                    // Don't send AI responses to transcript handler in precise mode
+                    return
+                }
+
                 case 'response.audio_transcript.done': {
-                    console.log('🎤 AI response completed')
-
-                    // Send AI complete signal to main chat interface
-                    onTranscript?.('\n[AI_COMPLETE]')
-
-                    // Reset AI speaking state
-                    setIsAISpeaking(false)
-                    setHasStartedAIResponse(false)
-                    break
+                    console.log('🎤 AI response completed (completely ignored in precise mode)')
+                    // Don't send AI responses to transcript handler in precise mode
+                    return
                 }
 
                 default: {
@@ -156,25 +163,29 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
         } catch (error) {
             console.error('🎤 Error handling data channel message:', error)
         }
-    }, [])
+    }, [onTranscript, onTranscribingChange, onVectorSearch, voiceMode])
 
-    // Configure data channel for transcription
+    // Configure data channel for transcription only (no AI responses)
     const configureDataChannel = useCallback((dataChannel: RTCDataChannel) => {
-        console.log('🎤 Configuring data channel for transcription...')
+        console.log('🎤 Configuring data channel for transcription only...')
 
-        // Send session update to enable transcription
+        // Send session update to enable transcription only
         const sessionUpdate = {
             type: 'session.update',
             session: {
                 modalities: ['text', 'audio'],
                 input_audio_transcription: {
                     model: 'whisper-1'
+                },
+                // Try to disable AI responses
+                response: {
+                    modalities: []
                 }
             }
         }
 
         dataChannel.send(JSON.stringify(sessionUpdate))
-        console.log('🎤 Session update sent:', sessionUpdate)
+        console.log('🎤 Session update sent (transcription only):', sessionUpdate)
     }, [])
 
     // Handle voice selection change
@@ -194,7 +205,7 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
     // Create OpenAI Realtime session
     const createRealtimeSession = useCallback(async () => {
         try {
-            console.log('🎤 Creating OpenAI Realtime session...')
+            console.log('🎤 Creating OpenAI Realtime session for precise mode (transcription only)...')
 
             const response = await fetch('/api/realtime-session', {
                 method: 'POST',
@@ -203,67 +214,17 @@ export default function VoiceChatPanel({ onClose, onTranscript, onSpeakResponse,
                 },
                 body: JSON.stringify({
                     voice: selectedVoice,
-                    instructions: voiceMode === 'precise'
-                        ? `You are PhilaGuide AI, a specialized stamp collecting expert providing precise search results. You ONLY respond to philatelic (stamp collecting) related queries.
+                    instructions: `You are a transcription service for precise stamp search mode. Your ONLY job is to transcribe user speech accurately. 
 
-CRITICAL RESTRICTION - PHILATELIC QUERIES ONLY:
-- ONLY respond to questions about stamps, stamp collecting, philately, postal history, or related topics
-- For ANY non-philatelic queries, politely redirect users back to stamp-related topics
-- Do NOT answer questions about general topics, current events, weather, sports, app navigation, etc.
+CRITICAL INSTRUCTIONS:
+- Do NOT generate any responses or answers
+- Do NOT provide any stamp information
+- Do NOT engage in conversation
+- Do NOT acknowledge questions
+- Simply transcribe what the user says and wait for the next input
 
-PRECISE SEARCH MODE:
-- You have access to a comprehensive stamp database through vector search
-- Provide specific, accurate information about stamps when available
-- When you find matching stamps, describe them with precise details
-- Include specific information like catalog numbers, years, denominations, and countries
-- If you cannot find specific stamps, ask clarifying questions to narrow down the search
-
-VOICE RESPONSE GUIDELINES:
-- Always respond in ENGLISH only, regardless of the user's language
-- Use clear, descriptive language suitable for speech
-- Avoid abbreviations and technical jargon
-- Use complete sentences and natural speech patterns
-- Be informative but friendly and engaging
-- When describing stamps, include details like country, year, denomination, color, and interesting facts
-- Use natural language for denominations (e.g., "one-third penny" instead of "1/3d")
-- Keep responses concise but informative (2-3 sentences max for voice)
-- Always respond in a natural, conversational manner suitable for voice synthesis
-- Maintain conversation context from previous philatelic messages
-- Reference previous stamp topics when relevant to show continuity
-
-IMPORTANT: This is a continuous conversation session. Users can interrupt you at any time by speaking, and you should stop and listen to them.
-
-REMEMBER: You are a stamp collecting expert with access to precise stamp data. Stay focused on philatelic topics only.`
-                        : `You are PhilaGuide AI, a specialized stamp collecting expert providing conversational responses. You ONLY respond to philatelic (stamp collecting) related queries.
-
-CRITICAL RESTRICTION - PHILATELIC QUERIES ONLY:
-- ONLY respond to questions about stamps, stamp collecting, philately, postal history, or related topics
-- For ANY non-philatelic queries, politely redirect users back to stamp-related topics
-- Do NOT answer questions about general topics, current events, weather, sports, app navigation, etc.
-
-CONVERSATIONAL MODE:
-- Provide general philatelic knowledge and guidance
-- Engage in natural conversation about stamp collecting
-- Share interesting facts and historical context
-- Help with general collecting advice and techniques
-- Discuss philatelic terminology and concepts
-
-VOICE RESPONSE GUIDELINES:
-- Always respond in ENGLISH only, regardless of the user's language
-- Use clear, descriptive language suitable for speech
-- Avoid abbreviations and technical jargon
-- Use complete sentences and natural speech patterns
-- Be informative but friendly and engaging
-- When describing stamps, include details like country, year, denomination, color, and interesting facts
-- Use natural language for denominations (e.g., "one-third penny" instead of "1/3d")
-- Keep responses concise but informative (2-3 sentences max for voice)
-- Always respond in a natural, conversational manner suitable for voice synthesis
-- Maintain conversation context from previous philatelic messages
-- Reference previous stamp topics when relevant to show continuity
-
-IMPORTANT: This is a continuous conversation session. Users can interrupt you at any time by speaking, and you should stop and listen to them.
-
-REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics only.`
+The vector search system will handle all responses. You are ONLY a transcription service.`,
+                    disable_ai_responses: true
                 })
             })
 
@@ -277,14 +238,12 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
             console.log('🎤 Session created:', data)
 
             // Extract the ephemeral token from the session response
-            // This is what the working example uses: data.client_secret.value
             const ephemeralToken = data.client_secret?.value || data.client_secret
 
             if (!ephemeralToken) {
                 console.error('🎤 Missing ephemeral token in session response:', data)
                 throw new Error('Session creation response missing ephemeral token')
             }
-
 
             return { ephemeralToken }
         } catch (error) {
@@ -321,17 +280,11 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
             // Add local audio track
             pc.addTrack(stream.getTracks()[0])
 
-            // Handle remote audio from AI
+            // Handle remote audio from AI (disabled in precise mode)
             pc.ontrack = (event) => {
-                console.log('🎤 Received remote audio track from AI')
-                const audioElement = document.createElement('audio')
-                audioElement.autoplay = true
-                audioElement.srcObject = event.streams[0]
-
-                // Track when AI is speaking
-                audioElement.onplay = () => setIsAISpeaking(true)
-                audioElement.onpause = () => setIsAISpeaking(false)
-                audioElement.onended = () => setIsAISpeaking(false)
+                console.log('🎤 Received remote audio track (ignored in precise mode)')
+                // In precise mode, we don't want AI audio responses
+                // The audio track is received but not played
             }
 
             // Create offer
@@ -341,7 +294,7 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
             console.log('🎤 Connecting to OpenAI Realtime API...')
 
             // Connect to OpenAI Realtime API using the ephemeral token
-            // This matches the working example exactly
+            // For precise mode, we only want transcription, not AI responses
             const realtimeResponse = await fetch(`https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2025-06-03&voice=${selectedVoice}`, {
                 method: 'POST',
                 headers: {
@@ -442,7 +395,7 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
         } catch (error) {
             console.error('🎤 Error stopping session:', error)
         }
-    }, [onListeningChange])
+    }, [onListeningChange, onTranscribingChange])
 
     // Add connection state monitoring
     useEffect(() => {
@@ -538,7 +491,6 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
             {/* Connection Setup */}
             {!isSessionActive ? (
                 <div className="text-center space-y-4">
-
                     {/* Voice Selection */}
                     <div className="flex items-center gap-3 justify-center">
                         <Select value={selectedVoice} onValueChange={handleVoiceChange}>
@@ -568,7 +520,7 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
                             ) : (
                                 <>
                                     <Mic className="w-4 h-4 mr-2" />
-                                    Start Voice Chat
+                                    Start Listening
                                 </>
                             )}
                         </Button>
@@ -578,7 +530,6 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
                 <>
                     {/* Active Session Controls */}
                     <div className="space-y-3">
-
                         <div className="flex items-center gap-3 justify-center">
                             {/* Voice Settings */}
                             <Select value={selectedVoice} onValueChange={handleVoiceChange} disabled={isSessionActive}>
@@ -620,19 +571,19 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
                                         <span className="text-sm font-medium">You are speaking</span>
                                     </div>
                                 )}
-                                {isAISpeaking && (
+                                {isVoiceProcessing && (
                                     <div className="flex items-center gap-1 text-blue-600">
                                         <Volume2 className="w-4 h-4" />
-                                        <span className="text-sm font-medium">AI is responding</span>
+                                        <span className="text-sm font-medium">Processing your question</span>
                                     </div>
                                 )}
                             </div>
 
                             <div className="text-xs text-muted-foreground">
-                                {isUserSpeaking
-                                    ? 'AI will stop and listen to you'
-                                    : isAISpeaking
-                                        ? 'AI is speaking - wait for response'
+                                {isVoiceProcessing
+                                    ? 'Searching our stamp database...'
+                                    : isUserSpeaking
+                                        ? 'AI will stop and listen to you'
                                         : 'Listening for your voice...'
                                 }
                             </div>
@@ -650,8 +601,6 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
                     </div>
                 </>
             )}
-
-
         </div>
     )
 }
