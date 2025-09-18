@@ -134,7 +134,7 @@ export async function fetchStampMasterCatalogWithProgress(
     totalPages,
     totalCount,
     currentItems: firstResponse.items.length,
-    progress: Math.round((1 / totalPages) * 100),
+    progress: Math.round((1 / totalPages) * 85),
     message: `Loaded page 1 of ${totalPages}`
   })
 
@@ -150,7 +150,7 @@ export async function fetchStampMasterCatalogWithProgress(
       totalPages,
       totalCount,
       currentItems: all.length,
-      progress: Math.round((pageNumber / totalPages) * 100),
+      progress: Math.round((pageNumber / totalPages) * 85),
       message: `Loaded page ${pageNumber} of ${totalPages}`
     })
 
@@ -164,7 +164,7 @@ export async function fetchStampMasterCatalogWithProgress(
     totalPages,
     totalCount,
     currentItems: all.length,
-    progress: 100,
+    progress: 85,
     message: `Successfully loaded ${all.length.toLocaleString()} stamps!`
   })
 

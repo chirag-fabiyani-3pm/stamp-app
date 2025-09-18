@@ -481,7 +481,7 @@ export function VisualCatalogContent() {
       <Card className="mx-auto mt-2 mb-4 w-full max-w-4xl border bg-card text-card-foreground shadow-sm">
         <CardContent className="p-3 md:p-6">
           <div className="text-center mb-3 md:mb-6">
-            <h1 className="text-xl md:text-3xl font-bold text-foreground font-serif mb-1">
+            <h1 className="text-xl md:text-3xl font-bold text-foreground mb-1">
               VISUAL CATALOGUE
             </h1>
             <p className="text-sm text-muted-foreground">

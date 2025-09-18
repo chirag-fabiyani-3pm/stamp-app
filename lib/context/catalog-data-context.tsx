@@ -243,15 +243,13 @@ export function CatalogDataProvider({ children }: { children: React.ReactNode })
         setFetchProgress(prev => ({
           ...prev,
           message: "Saving to local storage...",
-          progress: 100,
+          progress: 85,
           // Still keep fetching true during IndexedDB operations
           isFetching: true,
           isComplete: false
         }))
 
         if (!isMounted) return
-        setStamps(apiData)
-        setNormalizedStamps(converted)
 
         // Seed IndexedDB with both raw and normalized for future offline loads
         setFetchProgress(prev => ({
@@ -291,6 +289,12 @@ export function CatalogDataProvider({ children }: { children: React.ReactNode })
             progress: 98
           }))
         }
+
+        const apiFetchedNormalizedStamps =await getStampsFromIndexedDB()
+        const apiFetchedRawStamps = await getRawStampsFromIndexedDB()
+
+        setNormalizedStamps(apiFetchedNormalizedStamps)
+        setStamps(apiFetchedRawStamps)
 
         // Mark data as refreshed for today
         await markDataRefreshed()
