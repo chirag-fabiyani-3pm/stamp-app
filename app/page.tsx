@@ -14,20 +14,9 @@ import { useSubscription } from "@/lib/hooks/useSubscription"
 import { SubscriptionRequired } from "@/components/subscription/subscription-required"
 import { useParams, usePathname, useSearchParams } from "next/navigation"
 
-export default function Home() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const { subscriptionStatus, isLoading: subscriptionLoading, canAccessFeatures } = useSubscription();
+// Separate component to handle search params with Suspense
+function SearchParamsHandler() {
   const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const checkLoginStatus = async () => {
-      const loggedIn = isUserLoggedIn();
-      setIsLoggedIn(loggedIn);
-      setLoading(false);
-    };
-    checkLoginStatus();
-  }, []);
 
   useEffect(() => {
     const payment_intent = searchParams.get('payment_intent');
@@ -37,7 +26,24 @@ export default function Home() {
       localStorage.setItem('demo_subscribed', 'true')
       window.location.href = '/'
     }
-  }, [])
+  }, [searchParams])
+
+  return null; // This component doesn't render anything
+}
+
+export default function Home() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const { subscriptionStatus, isLoading: subscriptionLoading, canAccessFeatures } = useSubscription();
+
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      const loggedIn = isUserLoggedIn();
+      setIsLoggedIn(loggedIn);
+      setLoading(false);
+    };
+    checkLoginStatus();
+  }, []);
 
   if (loading || subscriptionLoading) {
     return (
@@ -49,6 +55,9 @@ export default function Home() {
 
   return (
     <>
+      <Suspense fallback={null}>
+        <SearchParamsHandler />
+      </Suspense>
       {isLoggedIn ? (
         // Check if user has subscription access
         canAccessFeatures() ? (
