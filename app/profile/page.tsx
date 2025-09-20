@@ -4,11 +4,14 @@ import ProfileInfo from "@/components/profile/profile-info"
 import ProfileSettings from "@/components/profile/profile-settings"
 import ProfileCollection from "@/components/profile/profile-collection"
 import { AuthGuard } from "@/components/auth/route-guard"
+import { SubscriptionGuard } from "@/components/auth/subscription-guard"
+import { SubscriptionDashboard } from "@/components/subscription/subscription-dashboard"
 
 export default function ProfilePage() {
   
   return (
-    <AuthGuard>
+    <SubscriptionGuard>
+      <AuthGuard>
       <div className="container py-8 md:py-12">
         <div className="max-w-5xl mx-auto">
           <div className="mb-8">
@@ -19,24 +22,25 @@ export default function ProfilePage() {
           <Tabs defaultValue="profile" className="space-y-6">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="profile">Profile</TabsTrigger>
+              <TabsTrigger value="subscription">Subscription</TabsTrigger>
               <TabsTrigger value="collection">Collection</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
 
             <TabsContent value="profile">
               <ProfileInfo />
             </TabsContent>
 
-            <TabsContent value="collection">
-              <ProfileCollection />
+            <TabsContent value="subscription">
+              <SubscriptionDashboard />
             </TabsContent>
 
-            <TabsContent value="settings">
-              <ProfileSettings />
+            <TabsContent value="collection">
+              <ProfileCollection />
             </TabsContent>
           </Tabs>
         </div>
       </div>
-    </AuthGuard>
+      </AuthGuard>
+    </SubscriptionGuard>
   )
 }

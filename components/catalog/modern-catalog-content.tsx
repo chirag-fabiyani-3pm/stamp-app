@@ -600,7 +600,7 @@ function ModernCatalogContentInner() {
             {/* Premium Header */}
             <header className="relative overflow-hidden">
                 {/* Hero Section */}
-                <div className="relative h-[200px] sm:h-[300px] md:h-[350px] bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900">
+                <div className="relative h-[200px] bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900">
                     {/* Video Background */}
                     <video
                         autoPlay
@@ -620,15 +620,15 @@ function ModernCatalogContentInner() {
                     <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-black/40"></div>
 
                     <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
-                        <div className="max-w-3xl">
+                        <div className="mx-auto">
                             <h1 className="text-3xl md:text-4xl lg:text-6xl font-bold text-white mb-3 leading-tight">
                                 <span className="bg-gradient-to-r from-amber-300 to-orange-500 bg-clip-text text-transparent">Stamps</span> of Approval
                             </h1>
 
-                            <p className="text-sm sm:text-base md:text-lg text-gray-200 mb-6 max-w-2xl drop-shadow-lg leading-relaxed">
+                            {/* <p className="text-sm sm:text-base md:text-lg text-gray-200 mb-6 max-w-2xl drop-shadow-lg leading-relaxed">
                                 Discover exceptional stamps that have earned collector approval through decades of
                                 careful curation. Each specimen represents the finest in philatelic excellence.
-                            </p>
+                            </p> */}
 
                             {modalStack.length > 0 && (
                                 <div className="flex items-center space-x-4">

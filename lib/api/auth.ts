@@ -79,6 +79,13 @@ export interface VerifyEmailResponse {
   message?: string;
 }
 
+export interface ValidateReferralResponse {
+  success: boolean;
+  valid: boolean;
+  message?: string;
+  referrerName?: string;
+}
+
 // Cookie management functions
 function setCookie(name: string, value: string, days: number = 30): void {
   if (typeof window === 'undefined') return;
@@ -191,7 +198,7 @@ export async function verifyEmailOtc(userId: string, otc: number): Promise<Verif
 }
 
 // Maintain Google Sign In
-export async function googleSignIn(idToken: string): Promise<VerifyEmailResponse> {
+export async function googleSignIn(idToken: string, referralCode?: string): Promise<VerifyEmailResponse> {
   const deviceId = getDeviceId();
   const isApple = isAppleDevice();
   
@@ -199,7 +206,8 @@ export async function googleSignIn(idToken: string): Promise<VerifyEmailResponse
   const body = {
     idToken: idToken,
     deviceId: deviceId,
-    isAppleDevice: "false"
+    isAppleDevice: "false",
+    ...(referralCode ? { referralCode } : {})
   };
 
   try {
@@ -318,6 +326,51 @@ export function getUserDisplayName(): string {
 export function getUserAvatar(): string | null {
   const userData = getUserData();
   return userData?.avatarUrl || null;
+}
+
+// Verify Referral Code
+export async function validateReferralCode(referralCode: string): Promise<ValidateReferralResponse> {
+  return {
+    success: true,
+    valid: true,
+    message: "Verified successfully",
+    referrerName: "Harshit Joshi"
+  };
+  try {
+    const response = await fetch(`${API_BASE_URL}/UserFederatedAuth/ValidateReferralCode`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        referralCode: referralCode.toUpperCase()
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return {
+        success: false,
+        valid: false,
+        message: errorData.message || `HTTP error! status: ${response.status}`
+      };
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      valid: data.valid || false,
+      message: data.message,
+      referrerName: data.referrerName
+    };
+  } catch (error: unknown) {
+    console.error('Verify referral code error:', error);
+    return {
+      success: false,
+      valid: false,
+      message: (error as Error)?.message || 'Failed to verify referral code'
+    };
+  }
 }
 
 // Sign out function

@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useRef, useEffect } from "react"
+import { SubscriptionGuard } from "@/components/auth/subscription-guard"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -1828,9 +1829,11 @@ function ScanPage() {
 
 export default function ProtectedScanPage() {
   return (
-    <AuthGuard>
-      <ScanPage />
-      <Toaster />
-    </AuthGuard>
+    <SubscriptionGuard>
+      <AuthGuard>
+        <ScanPage />
+        <Toaster />
+      </AuthGuard>
+    </SubscriptionGuard>
   )
 }
