@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
-import { Archive, Eye, ArrowLeft, Home, Globe, X, AlertCircle, LayoutGrid } from "lucide-react"
+import { ArrowLeft, X, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { CountryOption, YearOption, CurrencyOption, DenominationOption, ColorOption, PaperOption, WatermarkOption, PerforationOption, ItemTypeOption, StampData, ModalType, ModalStackItem, AdditionalCategoryOption, SeriesOption } from "@/types/catalog"
 import { 
@@ -37,6 +37,7 @@ import { parseStampCode } from "@/lib/utils/parse-stamp-code"
 import { useChatContext } from "@/components/chat-provider"
 import { DataFetchingProgress, LoadingStamps, VisualCatalogSkeleton, ListCatalogSkeleton } from "./investigate-search/loading-skeletons"
 import StampCollection from './stamp-collection'
+import { CatalogNavbar } from '../catalog-navbar'
 
 function ModernCatalogContentInner() {
     const router = useRouter()
@@ -51,7 +52,6 @@ function ModernCatalogContentInner() {
     const initialActiveSection = (searchParams.get('tab') as 'countries' | 'visual' | 'list' | 'investigate') || 'countries'
     const [activeSection, setActiveSection] = useState<'countries' | 'visual' | 'list' | 'investigate' | 'stamp-collection'>(initialActiveSection)
     const [loadingModalContent, setLoadingModalContent] = useState(false)
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false) // State for mobile menu
 
     const isMobile = useIsMobile()
     const { isOpen: isChatOpen } = useChatContext()
@@ -525,38 +525,26 @@ function ModernCatalogContentInner() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-800 text-gray-900 dark:text-gray-100">
-                {/* Header Skeleton */}
-                <header className="relative overflow-hidden">
-                    <div className="relative h-[200px] sm:h-[300px] md:h-[350px] bg-gray-900 flex items-center justify-center">
-                        <Skeleton className="absolute inset-0 w-full h-full" />
-                        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center w-full">
-                            <div className="max-w-3xl w-full">
-                                <Skeleton className="h-12 w-3/4 mb-4" />
-                                <Skeleton className="h-6 w-full mb-8" />
-                                <Skeleton className="h-14 w-full max-w-xl mb-8 rounded-full" />
-                                <div className="flex items-center space-x-4">
-                                    <Skeleton className="h-10 w-32 rounded-full" />
-                                    <Skeleton className="h-10 w-32 rounded-full" />
-                                </div>
+            <div className="min-h-screen bg-background text-foreground">
+                {/* Navbar Skeleton */}
+                <div className="sticky top-0 z-30 w-full bg-background/95 backdrop-blur border-b border-border">
+                    <div className="container flex h-16 items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <Skeleton className="h-8 w-32" />
+                            <div className="hidden sm:flex items-center gap-2">
+                                <Skeleton className="h-6 w-px" />
+                                <Skeleton className="h-6 w-20" />
                             </div>
                         </div>
-                    </div>
-                    <div className="bg-white/90 backdrop-blur border-b border-gray-200 dark:bg-gray-900/90 dark:border-gray-700">
-                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                            <div className="flex items-center justify-between h-16">
-                                <nav className="flex space-x-4 sm:space-x-8 overflow-x-auto pb-2 no-scrollbar w-full">
-                                    <Skeleton className="h-8 w-32 rounded-md" />
-                                    <Skeleton className="h-8 w-32 rounded-md" />
-                                    <Skeleton className="h-8 w-32 rounded-md" />
-                                </nav>
-                            </div>
+                        <div className="flex items-center gap-3">
+                            <Skeleton className="h-8 w-24" />
+                            <Skeleton className="h-9 w-9 rounded-md" />
                         </div>
                     </div>
-                </header>
+                </div>
 
-                {/* Main Content Skeleton - match Country Catalog UI */}
-                <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+                {/* Main Content Skeleton */}
+                <main className="w-full px-4 sm:px-6 lg:px-8 py-8 md:py-12">
                     <CountryCatalogContent countries={[]} onCountryClick={handleCountryClick} loading />
                 </main>
             </div>
@@ -565,294 +553,46 @@ function ModernCatalogContentInner() {
 
     if (error) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50 flex items-center justify-center dark:from-gray-950 dark:via-gray-900 dark:to-gray-800">
-                <div className="text-center space-y-6 max-w-md mx-auto">
-                    <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto dark:bg-red-900">
-                        <AlertCircle className="w-10 h-10 text-red-500 dark:text-red-400" />
+            <div className="min-h-screen bg-background text-foreground">
+                <CatalogNavbar />
+                <div className="flex items-center justify-center min-h-[80vh]">
+                    <div className="text-center space-y-6 max-w-md mx-auto">
+                        <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto dark:bg-red-900">
+                            <AlertCircle className="w-10 h-10 text-red-500 dark:text-red-400" />
+                        </div>
+                        <div className="space-y-2">
+                            <h2 className="text-2xl font-bold">Catalog Unavailable</h2>
+                            <p className="text-muted-foreground">{error}</p>
+                        </div>
+                        <Button onClick={() => {
+                            setError(null)
+                            setLoading(true)
+                            try {
+                                const countriesData = groupStampsByCountry(stamps)
+                                setCountries(countriesData as CountryOption[])
+                            } catch (err) {
+                                console.error('Error retrying data load:', err)
+                                setError('Failed to reload catalog data')
+                            } finally {
+                                setLoading(false)
+                            }
+                        }} className="bg-primary hover:bg-primary/90 text-white">
+                            <ArrowLeft className="w-4 h-4 mr-2" />
+                            Try Again
+                        </Button>
                     </div>
-                    <div className="space-y-2">
-                        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Catalog Unavailable</h2>
-                        <p className="text-gray-600 dark:text-gray-300">{error}</p>
-                    </div>
-                    <Button onClick={() => {
-                        setError(null)
-                        setLoading(true)
-                        try {
-                            const countriesData = groupStampsByCountry(stamps)
-                            setCountries(countriesData as CountryOption[])
-                        } catch (err) {
-                            console.error('Error retrying data load:', err)
-                            setError('Failed to reload catalog data')
-                        } finally {
-                            setLoading(false)
-                        }
-                    }} className="bg-primary hover:bg-primary/90 text-white">
-                        <ArrowLeft className="w-4 h-4 mr-2" />
-                        Try Again
-                    </Button>
                 </div>
             </div>
         )
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-800 text-gray-900 dark:text-gray-100">
-            {/* Premium Header */}
-            <header className="relative overflow-hidden">
-                {/* Hero Section */}
-                <div className="relative h-[200px] bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900">
-                    {/* Video Background */}
-                    <video
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                        className="absolute inset-0 w-full h-full object-cover"
-                        style={{ filter: 'brightness(0.5) contrast(1.1)' }}
-                    >
-                        <source src="/video/Stamp_Catalogue_Video_Generation_Complete.mp4" type="video/mp4" />
-                        {/* Fallback background */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900"></div>
-                    </video>
-
-                    {/* Enhanced overlays */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-transparent to-gray-900/30"></div>
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-black/40"></div>
-
-                    <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
-                        <div className="mx-auto">
-                            <h1 className="text-3xl md:text-4xl lg:text-6xl font-bold text-white mb-3 leading-tight">
-                                <span className="bg-gradient-to-r from-amber-300 to-orange-500 bg-clip-text text-transparent">Stamps</span> of Approval
-                            </h1>
-
-                            {/* <p className="text-sm sm:text-base md:text-lg text-gray-200 mb-6 max-w-2xl drop-shadow-lg leading-relaxed">
-                                Discover exceptional stamps that have earned collector approval through decades of
-                                careful curation. Each specimen represents the finest in philatelic excellence.
-                            </p> */}
-
-                            {modalStack.length > 0 && (
-                                <div className="flex items-center space-x-4">
-                                    <Button variant="outline" onClick={closeModal} className="bg-white/10 border-white/30 text-white hover:bg-white/20 backdrop-blur-sm">
-                                        <ArrowLeft className="w-4 h-4 mr-2" />
-                                        Previous Level
-                                    </Button>
-                                    <Button variant="outline" onClick={closeAllModals} className="bg-white/10 border-white/30 text-white hover:bg-white/20 backdrop-blur-sm">
-                                        <Home className="w-4 h-4 mr-2" />
-                                        Start Over
-                                    </Button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Navigation Bar */}
-                <div className="bg-white/90 backdrop-blur border-b border-gray-200 dark:bg-gray-900/90 dark:border-gray-700">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="flex items-center justify-between h-16">
-                            {isMobile && (
-                                <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="sm:hidden">
-                                            <LayoutGrid className="h-6 w-6" />
-                                            <span className="sr-only">Toggle Navigation</span>
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent className="fixed -translate-x-9 w-screen rounded-none bg-white dark:bg-gray-900 p-4 shadow-lg animate-in fade-in-0 slide-in-from-top-2 duration-300 ease-out-sine data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=closed]:duration-300 data-[state=closed]:ease-in-sine">
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <DropdownMenuItem
-                                                onClick={(e) => {
-                                                    setActiveSection('countries');
-                                                    router.push(`?tab=countries`, { scroll: false });
-                                                    const yOffset = -64;
-                                                    const y = (e.target as HTMLElement).getBoundingClientRect().top + window.scrollY + yOffset;
-                                                    window.scrollTo({ top: y, behavior: 'smooth' });
-                                                    setIsDropdownOpen(false);
-                                                }}
-                                                className={cn(
-                                                    "flex flex-col items-center justify-center h-24 text-center cursor-pointer",
-                                                    activeSection === 'countries'
-                                                        ? "bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-amber-400 dark:text-gray-900 dark:hover:bg-amber-500"
-                                                        : "bg-secondary text-secondary-foreground hover:bg-secondary/90 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
-                                                )}
-                                            >
-                                                <Globe className="h-6 w-6 mb-2" />
-                                                Country Catalogs
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem
-                                                onClick={(e) => {
-                                                    setActiveSection('visual');
-                                                    router.push(`?tab=visual`, { scroll: false });
-                                                    const yOffset = -64;
-                                                    const y = (e.target as HTMLElement).getBoundingClientRect().top + window.scrollY + yOffset;
-                                                    window.scrollTo({ top: y, behavior: 'smooth' });
-                                                    setIsDropdownOpen(false);
-                                                }}
-                                                className={cn(
-                                                    "flex flex-col items-center justify-center h-24 text-center cursor-pointer",
-                                                    activeSection === 'visual'
-                                                        ? "bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-amber-400 dark:text-gray-900 dark:hover:bg-amber-500"
-                                                        : "bg-secondary text-secondary-foreground hover:bg-secondary/90 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
-                                                )}
-                                            >
-                                                <Eye className="h-6 w-6 mb-2" />
-                                                Visual Catalog
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem
-                                                onClick={(e) => {
-                                                    setActiveSection('list');
-                                                    router.push(`?tab=list`, { scroll: false });
-                                                    const yOffset = -64;
-                                                    const y = (e.target as HTMLElement).getBoundingClientRect().top + window.scrollY + yOffset;
-                                                    window.scrollTo({ top: y, behavior: 'smooth' });
-                                                    setIsDropdownOpen(false);
-                                                }}
-                                                className={cn(
-                                                    "flex flex-col items-center justify-center h-24 text-center cursor-pointer",
-                                                    activeSection === 'list'
-                                                        ? "bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-amber-400 dark:text-gray-900 dark:hover:bg-amber-500"
-                                                        : "bg-secondary text-secondary-foreground hover:bg-secondary/90 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
-                                                )}
-                                            >
-                                                <Archive className="h-6 w-6 mb-2" />
-                                                List Catalog
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem
-                                                onClick={(e) => {
-                                                    setActiveSection('investigate');
-                                                    router.push(`?tab=investigate`, { scroll: false });
-                                                    const yOffset = -64;
-                                                    const y = (e.target as HTMLElement).getBoundingClientRect().top + window.scrollY + yOffset;
-                                                    window.scrollTo({ top: y, behavior: 'smooth' });
-                                                    setIsDropdownOpen(false);
-                                                }}
-                                                className={cn(
-                                                    "flex flex-col items-center justify-center h-24 text-center cursor-pointer",
-                                                    activeSection === 'investigate'
-                                                        ? "bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-amber-400 dark:text-gray-900 dark:hover:bg-amber-500"
-                                                        : "bg-secondary text-secondary-foreground hover:bg-secondary/90 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
-                                                )}
-                                            >
-                                                <Eye className="h-6 w-6 mb-2" />
-                                                Investigate Search
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem
-                                                onClick={(e) => {
-                                                    setActiveSection('stamp-collection');
-                                                    router.push(`?tab=stamp-collection`, { scroll: false });
-                                                    const yOffset = -64;
-                                                    const y = (e.target as HTMLElement).getBoundingClientRect().top + window.scrollY + yOffset;
-                                                    window.scrollTo({ top: y, behavior: 'smooth' });
-                                                    setIsDropdownOpen(false);
-                                                }}
-                                                className={cn(
-                                                    "flex flex-col items-center justify-center h-24 text-center cursor-pointer",
-                                                    activeSection === 'stamp-collection'
-                                                        ? "bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-amber-400 dark:text-gray-900 dark:hover:bg-amber-500"
-                                                        : "bg-secondary text-secondary-foreground hover:bg-secondary/90 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
-                                                )}
-                                            >
-                                                <Eye className="h-6 w-6 mb-2" />
-                                                Stamp Collection
-                                            </DropdownMenuItem>
-                                        </div>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            )}
-                            <nav className="hidden sm:flex flex-1 space-x-4 sm:space-x-8 overflow-x-auto pb-2 no-scrollbar">
-                                <button
-                                    onClick={(ele) => {
-                                        setActiveSection('countries');
-                                        router.push(`?tab=countries`, { scroll: false });
-                                        const yOffset = -64;
-                                        const y = (ele?.target as HTMLElement)?.getBoundingClientRect().top + window.scrollY + yOffset;
-                                        window.scrollTo({ top: y, behavior: 'smooth' });
-                                    }}
-                                    className={cn(
-                                        "py-2 px-1 border-b-2 font-medium text-sm transition-colors",
-                                        activeSection === 'countries'
-                                            ? "border-primary text-primary dark:border-amber-400 dark:text-amber-400"
-                                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-500"
-                                    )}
-                                >
-                                    Country Catalogs
-                                </button>
-                                <button
-                                    onClick={(ele) => {
-                                        setActiveSection('visual');
-                                        router.push(`?tab=visual`, { scroll: false });
-                                        const yOffset = -64;
-                                        const y = (ele?.target as HTMLElement)?.getBoundingClientRect().top + window.scrollY + yOffset;
-                                        window.scrollTo({ top: y, behavior: 'smooth' });
-                                    }}
-                                    className={cn(
-                                        "py-2 px-1 border-b-2 font-medium text-sm transition-colors",
-                                        activeSection === 'visual'
-                                            ? "border-primary text-primary dark:border-amber-400 dark:text-amber-400"
-                                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                                    )}
-                                >
-                                    Visual Catalog
-                                </button>
-                                <button
-                                    onClick={(ele) => {
-                                        setActiveSection('list');
-                                        router.push(`?tab=list`, { scroll: false });
-                                        const yOffset = -64;
-                                        const y = (ele?.target as HTMLElement)?.getBoundingClientRect().top + window.scrollY + yOffset;
-                                        window.scrollTo({ top: y, behavior: 'smooth' });
-                                    }}
-                                    className={cn(
-                                        "py-2 px-1 border-b-2 font-medium text-sm transition-colors",
-                                        activeSection === 'list'
-                                            ? "border-primary text-primary dark:border-amber-400 dark:text-amber-400"
-                                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                                    )}
-                                >
-                                    List Catalog
-                                </button>
-                                <button
-                                    onClick={(ele) => {
-                                        setActiveSection('investigate');
-                                        router.push(`?tab=investigate`, { scroll: false });
-                                        const yOffset = -64;
-                                        const y = (ele?.target as HTMLElement)?.getBoundingClientRect().top + window.scrollY + yOffset;
-                                        window.scrollTo({ top: y, behavior: 'smooth' });
-                                    }}
-                                    className={cn(
-                                        "py-2 px-1 border-b-2 font-medium text-sm transition-colors",
-                                        activeSection === 'investigate'
-                                            ? "border-primary text-primary dark:border-amber-400 dark:text-amber-400"
-                                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-500"
-                                    )}
-                                >
-                                    Investigate Search
-                                </button>
-                                <button
-                                    onClick={(ele) => {
-                                        setActiveSection('stamp-collection');
-                                        router.push(`?tab=stamp-collection`, { scroll: false });
-                                        const yOffset = -64;
-                                        const y = (ele?.target as HTMLElement)?.getBoundingClientRect().top + window.scrollY + yOffset;
-                                        window.scrollTo({ top: y, behavior: 'smooth' });
-                                    }}
-                                    className={cn(
-                                        "py-2 px-1 border-b-2 font-medium text-sm transition-colors",
-                                        activeSection === 'stamp-collection'
-                                            ? "border-primary text-primary dark:border-amber-400 dark:text-amber-400"
-                                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-500"
-                                    )}
-                                >
-                                    Stamp Collection
-                                </button>
-                            </nav>
-                        </div>
-                    </div>
-                </div>
-            </header>
+        <div className="min-h-screen bg-background text-foreground flex flex-col">
+            {/* Clean Navbar */}
+            <CatalogNavbar />
 
             {/* Main Content */}
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+            <main className="w-full px-4 sm:px-6 lg:px-8 py-8 md:py-12 grow h-0 overflow-y-auto">
                 {modalStack.length === 0 ? (
                     <>
                         {/* API Data Fetching Progress Overlay */}
