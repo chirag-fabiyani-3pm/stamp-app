@@ -341,7 +341,7 @@ export default function PricingPage() {
                 <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg">
                   <p className="text-sm font-medium">Example:</p>
                   <p className="text-lg font-bold text-green-600">
-                    $2/month subscription + $40/month commissions = $42/month earnings
+                    $40/month commissions - $2/month subscription = $38/month net earnings
                   </p>
                 </div>
               </CardContent>

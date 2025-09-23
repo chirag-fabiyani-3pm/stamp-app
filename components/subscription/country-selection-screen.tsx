@@ -31,6 +31,7 @@ const availableCountries = [
   { id: 'uk', name: 'United Kingdom', flag: '🇬🇧', popular: true },
   { id: 'canada', name: 'Canada', flag: '🇨🇦', popular: true },
   { id: 'australia', name: 'Australia', flag: '🇦🇺', popular: true },
+  { id: 'newzealand', name: 'New Zealand', flag: '🇳🇿', popular: true },
   { id: 'germany', name: 'Germany', flag: '🇩🇪', popular: true },
   { id: 'france', name: 'France', flag: '🇫🇷', popular: true },
   { id: 'japan', name: 'Japan', flag: '🇯🇵', popular: false },
