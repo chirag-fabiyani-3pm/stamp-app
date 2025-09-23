@@ -41,12 +41,12 @@ export function CountryCatalogContent({ countries, onCountryClick, loading = fal
 
   return (
     <section>
-      <div className="text-center mb-8 md:mb-12">
+      {/* <div className="text-center mb-8">
         <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">Explore by Country</h2>
         <p className="text-base md:text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
           Browse our premium catalog of stamps organized by country. Each collection features stamps that have earned collector approval through careful authentication and grading.
         </p>
-      </div>
+      </div> */}
 
       <div className="relative mb-8">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
