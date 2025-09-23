@@ -118,12 +118,6 @@ export function MobileNav({ setIsOpen }: MobileNavProps) {
       icon: Sparkles,
       active: pathname === "/scan",
       special: true
-    },
-    {
-      title: "Pricing",
-      href: "/pricing",
-      icon: DollarSign,
-      active: pathname === "/pricing"
     }
   ]
 
@@ -157,45 +151,6 @@ export function MobileNav({ setIsOpen }: MobileNavProps) {
       href: "/?tab=stamp-collection",
       icon: Collection,
       active: pathname === "/" && currentTab === "stamp-collection"
-    }
-  ]
-
-  const bottomNavItems = [
-    {
-      title: "Help",
-      href: "/help",
-      icon: HelpCircle,
-      active: pathname === "/help"
-    },
-    {
-      title: "FAQ",
-      href: "/faq",
-      icon: FileText,
-      active: pathname === "/faq"
-    },
-    {
-      title: "Contact",
-      href: "/contact",
-      icon: Mail,
-      active: pathname === "/contact"
-    },
-    {
-      title: "Privacy",
-      href: "/privacy",
-      icon: Shield,
-      active: pathname === "/privacy"
-    },
-    {
-      title: "Terms",
-      href: "/terms",
-      icon: FileText,
-      active: pathname === "/terms"
-    },
-    {
-      title: "Cookies",
-      href: "/cookies",
-      icon: Cookie,
-      active: pathname === "/cookies"
     }
   ]
 
@@ -278,45 +233,6 @@ export function MobileNav({ setIsOpen }: MobileNavProps) {
                     ))}
                   </div>
                 )}
-
-                {/* AI Chat - Only show when logged in */}
-                {isLoggedIn && (
-                  <div className="mb-6">
-                    <button
-                      onClick={() => {
-                        setIsOpen(true)
-                        setIsSheetOpen(false)
-                      }}
-                      className="w-full flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors bg-primary/10 text-primary hover:bg-primary/20"
-                    >
-                      <MessageSquare className="h-4 w-4" />
-                      <span>AI Chat</span>
-                    </button>
-                  </div>
-                )}
-
-                {/* Support Section */}
-                <div className="mb-6">
-                  <h3 className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Support
-                  </h3>
-                  {bottomNavItems.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setIsSheetOpen(false)}
-                      className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                        item.active
-                          ? "bg-accent text-accent-foreground"
-                          : "text-foreground hover:bg-accent hover:text-accent-foreground"
-                      )}
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  ))}
-                </div>
               </nav>
             </div>
 

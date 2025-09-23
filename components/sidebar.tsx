@@ -50,18 +50,16 @@ import Image from "next/image"
 import { useTheme } from "next-themes"
 
 interface SidebarProps {
-  setIsOpen: (isOpen: boolean) => void;
-  onCollapseChange?: (collapsed: boolean) => void;
+  sidebarCollapsed: boolean;
   setActiveSection: (activeSection: 'countries' | 'visual' | 'list' | 'investigate' | 'stamp-collection') => void;
 }
 
-export function Sidebar({ setIsOpen, onCollapseChange, setActiveSection }: SidebarProps) {
+export function Sidebar({ sidebarCollapsed, setActiveSection }: SidebarProps) {
   const pathname = usePathname()
   const { toast } = useToast()
   const { resolvedTheme } = useTheme()
   const [currentTab, setCurrentTab] = useState('countries')
   
-  const [isCollapsed, setIsCollapsed] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userIsAdmin, setUserIsAdmin] = useState(false)
   const [userName, setUserName] = useState<string>("")
@@ -134,12 +132,6 @@ export function Sidebar({ setIsOpen, onCollapseChange, setActiveSection }: Sideb
       active: pathname === "/scan",
       special: true // Special styling for scan
     },
-    // {
-    //   title: "Pricing",
-    //   href: "/pricing",
-    //   icon: DollarSign,
-    //   active: pathname === "/pricing"
-    // }
   ]
 
   const catalogNavItems = [
@@ -175,45 +167,6 @@ export function Sidebar({ setIsOpen, onCollapseChange, setActiveSection }: Sideb
     }
   ]
 
-  // const bottomNavItems = [
-  //   {
-  //     title: "Help",
-  //     href: "/help",
-  //     icon: HelpCircle,
-  //     active: pathname === "/help"
-  //   },
-  //   {
-  //     title: "FAQ",
-  //     href: "/faq",
-  //     icon: FileText,
-  //     active: pathname === "/faq"
-  //   },
-  //   {
-  //     title: "Contact",
-  //     href: "/contact",
-  //     icon: Mail,
-  //     active: pathname === "/contact"
-  //   },
-  //   {
-  //     title: "Privacy",
-  //     href: "/privacy",
-  //     icon: Shield,
-  //     active: pathname === "/privacy"
-  //   },
-  //   {
-  //     title: "Terms",
-  //     href: "/terms",
-  //     icon: FileText,
-  //     active: pathname === "/terms"
-  //   },
-  //   {
-  //     title: "Cookies",
-  //     href: "/cookies",
-  //     icon: Cookie,
-  //     active: pathname === "/cookies"
-  //   }
-  // ]
-
   if (!mounted) {
     return null
   }
@@ -221,69 +174,32 @@ export function Sidebar({ setIsOpen, onCollapseChange, setActiveSection }: Sideb
   return (
     <div className={cn(
       "bg-background border-r border-border transition-all duration-300 ease-in-out flex flex-col shrink-0",
-      isCollapsed ? "w-16" : "w-64",
+      sidebarCollapsed ? "w-16" : "w-64",
       "hidden md:flex" // Hide on mobile, show on desktop
     )}>
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border">
-        {!isCollapsed && (
+      <div className={cn("flex items-center justify-between p-3 border-b border-border", sidebarCollapsed && "px-1.5 py-3")}>
+        {!sidebarCollapsed && (
           <Link href="/" className="flex items-center gap-2">
-            <Image src={logoSrc} alt="Stamps of Approval" width={120} height={30} className="h-8 w-auto" />
+            <Image src={logoSrc} alt="Stamps of Approval" width={230} height={40} className="h-10" />
           </Link>
         )}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => {
-            const newCollapsed = !isCollapsed;
-            setIsCollapsed(newCollapsed);
-            onCollapseChange?.(newCollapsed);
-          }}
-          className="h-8 w-8"
-        >
-          {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-        </Button>
+        {sidebarCollapsed && (
+          <Link href="/" className="flex items-center gap-2">
+            <div className="h-10 bg-primary rounded-md text-white font-bold flex items-center justify-center px-2">
+              <span>SOA</span>
+            </div>
+          </Link>
+        )}
       </div>
 
       {/* Main Navigation */}
       <div className="flex-1 overflow-y-auto">
         <nav className="p-2 space-y-1">
-          {/* Main Nav Section */}
-          <div className="mb-4">
-            {!isCollapsed && (
-              <h3 className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Main
-              </h3>
-            )}
-            {mainNavItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                  item.active
-                    ? "bg-accent text-accent-foreground"
-                    : "text-foreground hover:bg-accent hover:text-accent-foreground",
-                  item.special && "relative",
-                  isCollapsed && "justify-center"
-                )}
-                title={isCollapsed ? item.title : ""}
-              >
-                <item.icon className={cn("h-4 w-4", item.special && "text-amber-500")} />
-                {!isCollapsed && (
-                  <div className="flex items-center gap-2">
-                    <span>{item.title}</span>
-                    {item.special && <span className="text-xs text-amber-500">✦</span>}
-                  </div>
-                )}
-              </Link>
-            ))}
-          </div>
-
           {/* Catalog Section - Only show when logged in */}
           {isLoggedIn && (
             <div className="mb-4">
-              {!isCollapsed && (
+              {!sidebarCollapsed && (
                 <h3 className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Catalog
                 </h3>
@@ -297,63 +213,20 @@ export function Sidebar({ setIsOpen, onCollapseChange, setActiveSection }: Sideb
                     setCurrentTab(item.href.split('=')[1] as 'countries' | 'visual' | 'list' | 'investigate' | 'stamp-collection')
                   }}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors mb-2",
                     item.active
-                      ? "bg-accent text-accent-foreground"
-                      : "text-foreground hover:bg-accent hover:text-accent-foreground",
-                    isCollapsed && "justify-center"
+                      ? "bg-[#F4831F12] border border-primary text-primary"
+                      : "text-foreground hover:bg-[#F4831F0D] hover:text-primary",
+                    sidebarCollapsed && "justify-center"
                   )}
-                  title={isCollapsed ? item.title : ""}
+                  title={sidebarCollapsed ? item.title : ""}
                 >
                   <item.icon className="h-4 w-4" />
-                  {!isCollapsed && <span>{item.title}</span>}
+                  {!sidebarCollapsed && <span>{item.title}</span>}
                 </Link>
               ))}
             </div>
           )}
-
-          {/* AI Chat - Only show when logged in */}
-          {/* {isLoggedIn && (
-            <div className="mb-4">
-              <button
-                onClick={() => setIsOpen(true)}
-                className={cn(
-                  "w-full flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors bg-primary/10 text-primary hover:bg-primary/20",
-                  isCollapsed && "justify-center"
-                )}
-                title={isCollapsed ? "AI Chat" : ""}
-              >
-                <MessageSquare className="h-4 w-4" />
-                {!isCollapsed && <span>AI Chat</span>}
-              </button>
-            </div>
-          )} */}
-
-          {/* Support Section */}
-          {/* <div className="mb-4">
-            {!isCollapsed && (
-              <h3 className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Support
-              </h3>
-            )}
-            {bottomNavItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                  item.active
-                    ? "bg-accent text-accent-foreground"
-                    : "text-foreground hover:bg-accent hover:text-accent-foreground",
-                  isCollapsed && "justify-center"
-                )}
-                title={isCollapsed ? item.title : ""}
-              >
-                <item.icon className="h-4 w-4" />
-                {!isCollapsed && <span>{item.title}</span>}
-              </Link>
-            ))}
-          </div> */}
         </nav>
       </div>
 
@@ -367,7 +240,7 @@ export function Sidebar({ setIsOpen, onCollapseChange, setActiveSection }: Sideb
                 variant="ghost"
                 className={cn(
                   "w-full justify-start p-2 h-auto",
-                  isCollapsed && "justify-center"
+                  sidebarCollapsed && "justify-center"
                 )}
               >
                 <div className="flex items-center gap-3">
@@ -375,7 +248,7 @@ export function Sidebar({ setIsOpen, onCollapseChange, setActiveSection }: Sideb
                     <AvatarImage src={userAvatar || "/man-avatar-profile-picture.avif"} alt={userName || "User"} />
                     <AvatarFallback>{getUserInitials(userName)}</AvatarFallback>
                   </Avatar>
-                  {!isCollapsed && (
+                  {!sidebarCollapsed && (
                     <div className="flex flex-col items-start min-w-0">
                       <p className="text-sm font-medium leading-none truncate w-full">{userName || "User"}</p>
                       <p className="text-xs text-muted-foreground">
@@ -418,15 +291,15 @@ export function Sidebar({ setIsOpen, onCollapseChange, setActiveSection }: Sideb
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <div className={cn("space-y-2", isCollapsed && "space-y-1")}>
+          <div className={cn("space-y-2", sidebarCollapsed && "space-y-1")}>
             <Link href="/login">
-              <Button variant="ghost" size="sm" className={cn("w-full", isCollapsed && "px-2")}>
-                {isCollapsed ? "LI" : "Log in"}
+              <Button variant="ghost" size="sm" className={cn("w-full", sidebarCollapsed && "px-2")}>
+                {sidebarCollapsed ? "LI" : "Log in"}
               </Button>
             </Link>
             <Link href="/signup">
-              <Button size="sm" className={cn("w-full", isCollapsed && "px-2")}>
-                {isCollapsed ? "SU" : "Sign up"}
+              <Button size="sm" className={cn("w-full", sidebarCollapsed && "px-2")}>
+                {sidebarCollapsed ? "SU" : "Sign up"}
               </Button>
             </Link>
           </div>

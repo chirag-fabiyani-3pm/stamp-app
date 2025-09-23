@@ -31,7 +31,7 @@ function SearchParamsHandler() {
   return null; // This component doesn't render anything
 }
 
-export default function Home({ activeSection }: { activeSection: 'countries' | 'visual' | 'list' | 'investigate' | 'stamp-collection' }) {
+export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
   const { subscriptionStatus, isLoading: subscriptionLoading, canAccessFeatures } = useSubscription();

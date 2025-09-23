@@ -57,13 +57,13 @@ export function AppContent({ children }: AppContentProps) {
                       {/* <MobileNav setIsOpen={setIsOpen} /> */}
 
                       {/* Sidebar - takes fixed width based on collapsed state */}
-                      <Sidebar setIsOpen={setIsOpen} onCollapseChange={setSidebarCollapsed} setActiveSection={setActiveSection} />
+                      <Sidebar sidebarCollapsed={sidebarCollapsed} setActiveSection={setActiveSection} />
 
                       {/* Main Content - flexes to fill remaining space */}
                       <div className="flex-1 flex flex-col min-w-0 min-h-screen transition-all duration-300 ease-in-out bg-background">
-                        <CatalogNavbar setIsOpen={setIsOpen} />
+                        <CatalogNavbar setIsOpen={setIsOpen} isCollapsed={sidebarCollapsed} onCollapseChange={setSidebarCollapsed} />
                         <MobileNav setIsOpen={setIsOpen} />
-                        <main className="grow h-0 overflow-y-auto">{children}</main>
+                        <main className="grow h-0 overflow-y-auto shadow-inner">{children}</main>
                       </div>
                       <Toaster />
                     </div>
