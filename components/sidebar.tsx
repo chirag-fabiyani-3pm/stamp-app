@@ -52,9 +52,10 @@ import { useTheme } from "next-themes"
 interface SidebarProps {
   setIsOpen: (isOpen: boolean) => void;
   onCollapseChange?: (collapsed: boolean) => void;
+  setActiveSection: (activeSection: 'countries' | 'visual' | 'list' | 'investigate' | 'stamp-collection') => void;
 }
 
-export function Sidebar({ setIsOpen, onCollapseChange }: SidebarProps) {
+export function Sidebar({ setIsOpen, onCollapseChange, setActiveSection }: SidebarProps) {
   const pathname = usePathname()
   const { toast } = useToast()
   const { resolvedTheme } = useTheme()
@@ -133,12 +134,12 @@ export function Sidebar({ setIsOpen, onCollapseChange }: SidebarProps) {
       active: pathname === "/scan",
       special: true // Special styling for scan
     },
-    {
-      title: "Pricing",
-      href: "/pricing",
-      icon: DollarSign,
-      active: pathname === "/pricing"
-    }
+    // {
+    //   title: "Pricing",
+    //   href: "/pricing",
+    //   icon: DollarSign,
+    //   active: pathname === "/pricing"
+    // }
   ]
 
   const catalogNavItems = [
@@ -174,44 +175,44 @@ export function Sidebar({ setIsOpen, onCollapseChange }: SidebarProps) {
     }
   ]
 
-  const bottomNavItems = [
-    {
-      title: "Help",
-      href: "/help",
-      icon: HelpCircle,
-      active: pathname === "/help"
-    },
-    {
-      title: "FAQ",
-      href: "/faq",
-      icon: FileText,
-      active: pathname === "/faq"
-    },
-    {
-      title: "Contact",
-      href: "/contact",
-      icon: Mail,
-      active: pathname === "/contact"
-    },
-    {
-      title: "Privacy",
-      href: "/privacy",
-      icon: Shield,
-      active: pathname === "/privacy"
-    },
-    {
-      title: "Terms",
-      href: "/terms",
-      icon: FileText,
-      active: pathname === "/terms"
-    },
-    {
-      title: "Cookies",
-      href: "/cookies",
-      icon: Cookie,
-      active: pathname === "/cookies"
-    }
-  ]
+  // const bottomNavItems = [
+  //   {
+  //     title: "Help",
+  //     href: "/help",
+  //     icon: HelpCircle,
+  //     active: pathname === "/help"
+  //   },
+  //   {
+  //     title: "FAQ",
+  //     href: "/faq",
+  //     icon: FileText,
+  //     active: pathname === "/faq"
+  //   },
+  //   {
+  //     title: "Contact",
+  //     href: "/contact",
+  //     icon: Mail,
+  //     active: pathname === "/contact"
+  //   },
+  //   {
+  //     title: "Privacy",
+  //     href: "/privacy",
+  //     icon: Shield,
+  //     active: pathname === "/privacy"
+  //   },
+  //   {
+  //     title: "Terms",
+  //     href: "/terms",
+  //     icon: FileText,
+  //     active: pathname === "/terms"
+  //   },
+  //   {
+  //     title: "Cookies",
+  //     href: "/cookies",
+  //     icon: Cookie,
+  //     active: pathname === "/cookies"
+  //   }
+  // ]
 
   if (!mounted) {
     return null
@@ -291,6 +292,10 @@ export function Sidebar({ setIsOpen, onCollapseChange }: SidebarProps) {
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={() => {
+                    setActiveSection(item.href.split('=')[1] as 'countries' | 'visual' | 'list' | 'investigate' | 'stamp-collection')
+                    setCurrentTab(item.href.split('=')[1] as 'countries' | 'visual' | 'list' | 'investigate' | 'stamp-collection')
+                  }}
                   className={cn(
                     "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                     item.active
@@ -308,7 +313,7 @@ export function Sidebar({ setIsOpen, onCollapseChange }: SidebarProps) {
           )}
 
           {/* AI Chat - Only show when logged in */}
-          {isLoggedIn && (
+          {/* {isLoggedIn && (
             <div className="mb-4">
               <button
                 onClick={() => setIsOpen(true)}
@@ -322,10 +327,10 @@ export function Sidebar({ setIsOpen, onCollapseChange }: SidebarProps) {
                 {!isCollapsed && <span>AI Chat</span>}
               </button>
             </div>
-          )}
+          )} */}
 
           {/* Support Section */}
-          <div className="mb-4">
+          {/* <div className="mb-4">
             {!isCollapsed && (
               <h3 className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Support
@@ -348,7 +353,7 @@ export function Sidebar({ setIsOpen, onCollapseChange }: SidebarProps) {
                 {!isCollapsed && <span>{item.title}</span>}
               </Link>
             ))}
-          </div>
+          </div> */}
         </nav>
       </div>
 

@@ -159,7 +159,7 @@ function App() {
       )}
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto">
+      <main className="mx-auto">
         {currentView === 'series' && (
           <SeriesGrid
             series={seriesData}

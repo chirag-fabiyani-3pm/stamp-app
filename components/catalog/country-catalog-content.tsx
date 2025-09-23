@@ -59,7 +59,7 @@ export function CountryCatalogContent({ countries, onCountryClick, loading = fal
         />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
         {filteredCountries.map((country) => {
           const countriesForFlag = country.name && country.name.includes(',') ? country.name.split(',').map(c => c.trim()) : [country.name || '']
           const countryCodes: string[] = []
