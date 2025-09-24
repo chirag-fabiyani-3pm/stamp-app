@@ -1,13 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Separator } from "@/components/ui/separator"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Search, Calendar, BookOpen, Archive, Eye, ChevronRight, X, Grid, AlertCircle, ArrowLeft, MapPin, Palette, ImageIcon, ToggleLeft, ToggleRight } from "lucide-react"
-import Image from "next/image"
-import Link from "next/link"
+import { Search, ChevronRight, X } from "lucide-react"
 import { CatalogLayout, SeriesData, CountryData, ListModalStackItem, TypeData, StampGroupData, YearData, ReleaseData, CategoryData, PaperTypeData, StampData } from "@/types/catalog"
 // All deeper levels derived from shared API data
 import { useCatalogData } from "@/lib/context/catalog-data-context"
@@ -21,6 +17,8 @@ import { SeriesModalContent } from "@/components/catalog/series-modal-content"
 import { TypeModalContent } from "@/components/catalog/type-modal-content"
 import { StampGroupModalContent } from "@/components/catalog/stamp-group-modal-content"
 import { Skeleton } from "@/components/ui/skeleton";
+import { ListCatalogSkeleton } from "./investigate-search/loading-skeletons"
+import { convertApiStampToStampData } from "@/lib/data/catalog-data"
 
 export function ListCatalogContent() {
   const { normalizedStamps, stamps: rawStamps, loading: providerLoading } = useCatalogData()
@@ -42,20 +40,19 @@ export function ListCatalogContent() {
 
   // Helper builders using raw and normalized stamps
   const buildTypesForSeries = (seriesName: string): TypeData[] => {
-    const items = rawStamps.filter(i => (i.seriesName || '') === seriesName)
+    const items = rawStamps.filter(i => (i.seriesName || '') === seriesName && !i.isInstance)
     const map = new Map<string, TypeData & { _groupSet?: Set<string> }>()
     for (const i of items) {
-      const typeKey = i.typeId || i.typeName || 'unknown_type'
+      const typeKey = i.typeName
       const entry = map.get(typeKey) || {
         id: typeKey,
         name: i.typeName || 'Type',
-        seriesId: i.seriesId || seriesName,
-        description: i.typeDescription || '',
+        seriesId: i.seriesName || seriesName,
         totalStampGroups: 0,
         catalogPrefix: (i.catalogNumber || '').split(/\d/)[0] || (i.typeName || '')
       }
       ;(entry as any)._groupSet = (entry as any)._groupSet || new Set<string>()
-      if (i.stampGroupId) (entry as any)._groupSet.add(i.stampGroupId)
+      if (i.stampGroupName) (entry as any)._groupSet.add(i.stampGroupName)
       map.set(typeKey, entry)
     }
     return Array.from(map.values()).map(e => ({
@@ -65,17 +62,16 @@ export function ListCatalogContent() {
   }
 
   const buildStampGroupsForType = (seriesName: string, typeId: string): StampGroupData[] => {
-    const items = rawStamps.filter(i => (i.seriesName || '') === seriesName && ((i.typeId || i.typeName || 'unknown_type') === typeId))
+    const items = rawStamps.filter(i => (i.seriesName || '') === seriesName && (i.typeName === typeId) && !i.isInstance)
     const map = new Map<string, StampGroupData & { _count?: number }>()
     for (const i of items) {
-      const groupKey = i.stampGroupId || 'unknown_group'
+      const groupKey = i.stampGroupName
       const entry = map.get(groupKey) || {
         id: groupKey,
         name: i.stampGroupName || groupKey,
         typeId,
         year: i.issueYear || 0,
         issueDate: i.issueDate || '',
-        description: i.stampGroupDescription || '',
         watermark: i.watermarkName || '',
         perforation: i.perforationName || '',
         printingMethod: i.printingMethod || '',
@@ -90,7 +86,7 @@ export function ListCatalogContent() {
   }
 
   const buildYearsForCountry = (countryCode: string): YearData[] => {
-    const items = rawStamps.filter(i => (i.country || '').toLowerCase() === countryCode.toLowerCase() || (i.countryName || '') === countryCode)
+    const items = rawStamps.filter(i => ((i.country || '').toLowerCase() === countryCode.toLowerCase() || (i.countryName || '') === countryCode) && !i.isInstance)
     const set = new Map<number, YearData & { _releaseSet?: Set<string> }>()
     for (const i of items) {
       if (i.issueYear == null) continue
@@ -102,66 +98,63 @@ export function ListCatalogContent() {
         description: ''
       }
       ;(entry as any)._releaseSet = (entry as any)._releaseSet || new Set<string>()
-      if (i.releaseId) (entry as any)._releaseSet.add(i.releaseId)
+      if (i.stampGroupName) (entry as any)._releaseSet.add(i.stampGroupName)
       set.set(i.issueYear, entry)
     }
     return Array.from(set.values()).map(e => ({ ...e, totalReleases: ((e as any)._releaseSet ? (e as any)._releaseSet.size : e.totalReleases) || 0 }))
   }
 
   const buildReleasesForYear = (countryCode: string, year: number): ReleaseData[] => {
-    const items = rawStamps.filter(i => ((i.country || '').toLowerCase() === countryCode.toLowerCase() || (i.countryName || '') === countryCode) && i.issueYear === year)
+    const items = rawStamps.filter(i => ((i.country || '').toLowerCase() === countryCode.toLowerCase() || (i.countryName || '') === countryCode) && i.issueYear === year && !i.isInstance)
     const map = new Map<string, ReleaseData & { _categorySet?: Set<string> }>()
     for (const i of items) {
-      const key = i.releaseId || `${i.releaseName || 'Release'}-${year}`
+      const key = i.stampGroupName
       const entry = map.get(key) || {
         id: key,
-        name: i.releaseName || 'Release',
+        name: i.stampGroupName || 'Group',
         yearId: `${countryCode}-${year}`,
-        dateRange: i.releaseDateRange || '',
-        description: i.releaseDescription || '',
+        dateRange: `${i.periodStart}-${i.periodEnd}`,
         perforation: i.perforationName || '',
         totalCategories: 0,
         hasCategories: false,
       }
       ;(entry as any)._categorySet = (entry as any)._categorySet || new Set<string>()
-      if (i.categoryId) (entry as any)._categorySet.add(i.categoryId)
+      if (i.categoryCode) (entry as any)._categorySet.add(i.categoryCode)
       map.set(key, entry)
     }
     return Array.from(map.values()).map(e => ({ ...e, totalCategories: ((e as any)._categorySet ? (e as any)._categorySet.size : e.totalCategories) || 0, hasCategories: (((e as any)._categorySet)?.size || 0) > 0 }))
   }
 
-  const buildCategoriesForRelease = (countryCode: string, year: number, releaseId: string): CategoryData[] => {
-    const items = rawStamps.filter(i => ((i.country || '').toLowerCase() === countryCode.toLowerCase() || (i.countryName || '') === countryCode) && i.issueYear === year && (i.releaseId || '') === releaseId)
+  const buildCategoriesForRelease = (countryCode: string, year: number, stampGroupId: string): CategoryData[] => {
+    const items = rawStamps.filter(i => ((i.country || '').toLowerCase() === countryCode.toLowerCase() || (i.countryName || '') === countryCode) && i.issueYear === year && (i.stampGroupName || '') === stampGroupId && !i.isInstance)
     const map = new Map<string, CategoryData & { _paperSet?: Set<string> }>()
     for (const i of items) {
-      const key = i.categoryId || i.categoryCode || 'unknown_category'
+      const key = i.categoryCode
       const entry = map.get(key) || {
         id: key,
-        name: i.categoryName || key,
+        name: i.categoryCode || key,
         code: i.categoryCode || key,
-        releaseId,
-        description: i.categoryDescription || '',
+        stampGroupId,
         totalPaperTypes: 0,
         hasPaperTypes: false,
       }
       ;(entry as any)._paperSet = (entry as any)._paperSet || new Set<string>()
-      if (i.paperTypeCode) (entry as any)._paperSet.add(i.paperTypeCode)
+      if (i.paperName) (entry as any)._paperSet.add(i.paperName)
       map.set(key, entry)
     }
     return Array.from(map.values()).map(e => ({ ...e, totalPaperTypes: ((e as any)._paperSet ? (e as any)._paperSet.size : e.totalPaperTypes) || 0, hasPaperTypes: (((e as any)._paperSet)?.size || 0) > 0 }))
   }
 
-  const buildPaperTypesForCategory = (countryCode: string, year: number, releaseId: string, categoryId: string): PaperTypeData[] => {
-    const items = rawStamps.filter(i => ((i.country || '').toLowerCase() === countryCode.toLowerCase() || (i.countryName || '') === countryCode) && i.issueYear === year && (i.releaseId || '') === releaseId && ((i.categoryId || i.categoryCode) === categoryId))
+  const buildPaperTypesForCategory = (countryCode: string, year: number, stampGroupId: string, categoryId: string): PaperTypeData[] => {
+    const items = rawStamps.filter(i => ((i.country || '').toLowerCase() === countryCode.toLowerCase() || (i.countryName || '') === countryCode) && i.issueYear === year && (i.stampGroupName || '') === stampGroupId && ((i.categoryCode) === categoryId) && !i.isInstance)
     const map = new Map<string, PaperTypeData & { _count?: number }>()
     for (const i of items) {
-      const key = i.paperTypeCode || i.paperCode || 'unknown_paper'
+      const key = i.paperName
       const entry = map.get(key) || {
-        id: i.paperTypeId || key,
-        name: i.paperTypeName || i.paperName || key,
+        id: key,
+        name: i.paperName || key,
         code: key,
         categoryId,
-        description: i.paperTypeDescription || i.paperDescription || '',
         totalStamps: 0,
       }
       ;(entry as any)._count = ((entry as any)._count || 0) + 1
@@ -170,29 +163,35 @@ export function ListCatalogContent() {
     return Array.from(map.values()).map(e => ({ ...e, totalStamps: (e as any)._count || e.totalStamps }))
   }
 
-  const buildStampsForPaperType = (countryCode: string, year: number, releaseId: string, categoryId: string, paperTypeCode: string): StampData[] => {
-    const candidates = normalizedStamps.filter(s => (s.countryCode || '').toLowerCase() === countryCode.toLowerCase() && (s.issueYear || 0) === year)
-    // We don't carry release/category/paper codes in normalizedStamps explicitly; match by names via rawStamps join
-    const rawKeyed = new Map<string, any>()
-    for (const r of rawStamps) {
-      rawKeyed.set(r.id, r)
-    }
-    return candidates.filter(s => {
-      const r = rawKeyed.get(s.id)
-      if (!r) return false
-      return (r.releaseId || '') === releaseId && ((r.categoryId || r.categoryCode) === categoryId) && ((r.paperTypeCode || r.paperCode) === paperTypeCode)
+  const buildStampsForPaperType = (countryCode: string, year: number, stampGroupId: string, categoryId: string, paperCode: string): StampData[] => {
+    const set = new Set<string>()
+    rawStamps.forEach(r => {
+      if (((r.country || '').toLowerCase() === countryCode.toLowerCase() || (r.countryName || '') === countryCode) && r.issueYear === year && (r.stampGroupName || '') === stampGroupId && ((r.categoryCode) === categoryId)  && ((r.paperName) === paperCode) && !r.isInstance) {
+        set.add(r.id)
+      }
     })
+    const baseStamps = normalizedStamps.filter(s => set.has(s.id))
+    baseStamps.forEach((s: any) => {
+      const instances = rawStamps.filter(r => r.parentStampId === (s as any).stampId)
+      s.instances = instances.map(convertApiStampToStampData)
+    })
+    return baseStamps
   }
 
   const buildStampsForStampGroup = (seriesName: string, typeId: string, stampGroupId: string): StampData[] => {
     // Join normalized with raw to filter by stampGroupId reliably
     const set = new Set<string>()
     rawStamps.forEach(r => {
-      if ((r.seriesName || '') === seriesName && ((r.typeId || r.typeName || 'unknown_type') === typeId) && (r.stampGroupId || '') === stampGroupId) {
+      if ((r.seriesName || '') === seriesName && (r.typeName === typeId) && (r.stampGroupName === stampGroupId) && !r.isInstance) {
         set.add(r.id)
       }
     })
-    return normalizedStamps.filter(s => set.has(s.id))
+    const baseStamps = normalizedStamps.filter(s => set.has(s.id))
+    baseStamps.forEach((s: any) => {
+      const instances = rawStamps.filter(r => r.parentStampId === (s as any).stampId)
+      s.instances = instances.map(convertApiStampToStampData)
+    })
+    return baseStamps
   }
 
   useEffect(() => {
@@ -203,40 +202,57 @@ export function ListCatalogContent() {
 
         if (catalogLayout === 'campbell-paterson') {
           // Group by seriesName
-          const seriesMap = new Map<string, SeriesData>()
+          const series: Record<string, SeriesData & { typeNames: Record<string, boolean> }> = {}
           stamps.forEach(s => {
+            if(s.isInstance) return
             const key = s.seriesName || 'Unknown Series'
-            const entry = seriesMap.get(key) || {
-              id: s.stampGroupId || key,
-              name: key,
-              description: '',
-              country: s.country || 'Unknown',
-              periodStart: s.issueYear || 0,
-              periodEnd: s.issueYear || 0,
-              totalTypes: 0,
-            } as SeriesData
+            if (!series[key]) {
+              series[key] = {
+                id: key,
+                name: key,
+                country: s.country || 'Unknown',
+                periodStart: s.issueYear || 0,
+                periodEnd: s.issueYear || 0,
+                totalTypes: 0,
+                totalStampGroups: 0,
+                typeNames: {},
+                stampGroupNames: {}
+              }
+            }
 
-            entry.description = entry.description || s.catalogName || s.seriesName || ''
+            const entry = series[key]
             entry.country = entry.country || s.country || 'Unknown'
             if (s.issueYear) {
-              entry.periodStart = Math.min(entry.periodStart || s.issueYear, s.issueYear)
-              entry.periodEnd = Math.max(entry.periodEnd || s.issueYear, s.issueYear)
+              entry.periodStart = Math.min(entry.periodStart, s.issueYear)
+              entry.periodEnd = Math.max(entry.periodEnd, s.issueYear)
             }
-            // Track distinct type names per series as totalTypes
-            ;(entry as any)._typeSet = (entry as any)._typeSet || new Set<string>()
-            if (s.stampGroupId) (entry as any)._typeSet.add(s.stampGroupId)
-            seriesMap.set(key, entry)
+            // Track distinct stamp groups per series
+            if (s.typeName) entry.typeNames[s.typeName] = true
+            if (s.typeName && s.stampGroupName){
+              entry.stampGroupNames[s.typeName] = {
+                ...entry.stampGroupNames[s.typeName],
+                [s.stampGroupName]: true
+              }
+            }
           })
 
-          const builtSeries = Array.from(seriesMap.values()).map(e => ({
-            ...e,
-            totalTypes: ((e as any)._typeSet ? (e as any)._typeSet.size : e.totalTypes) || 0,
+          const builtSeries = Object.values(series).map(seriesItem => ({
+            id: seriesItem.id,
+            name: seriesItem.name,
+            country: seriesItem.country,
+            periodStart: seriesItem.periodStart,
+            periodEnd: seriesItem.periodEnd,
+            totalTypes: Object.keys(seriesItem.typeNames).length,
+            totalStampGroups: Object.values(seriesItem.stampGroupNames).reduce((sum, group) => sum + Object.keys(group).length, 0),
+            typeNames: seriesItem.typeNames,
+            stampGroupNames: seriesItem.stampGroupNames            
           }))
-          setSeriesData(builtSeries)
+          setSeriesData(builtSeries as SeriesData[])
         } else {
           // Group by country
           const countryMap = new Map<string, CountryData>()
           stamps.forEach(s => {
+            if(s.isInstance) return
             const code = s.countryCode || 'XX'
             const entry = countryMap.get(code) || {
               id: code,
@@ -316,7 +332,6 @@ export function ListCatalogContent() {
     if (searchTerm) {
       filtered = filtered.filter(series =>
         series.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        series.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         series.country.toLowerCase().includes(searchTerm.toLowerCase())
       )
     }
@@ -328,7 +343,6 @@ export function ListCatalogContent() {
     if (searchTerm) {
       filtered = filtered.filter(country =>
         country.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        country.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         country.code.toLowerCase().includes(searchTerm.toLowerCase())
       )
     }
@@ -345,78 +359,7 @@ export function ListCatalogContent() {
   }, [])
 
   if (loading) {
-    return (
-      <div className="min-h-screen p-4">
-        <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 shadow-sm mx-auto mt-4 mb-6 rounded-lg">
-          <div className="p-4 sm:p-6">
-            <div className="text-center mb-4 sm:mb-6">
-              <Skeleton className="h-8 w-2/4 mb-1 mx-auto rounded-md" />
-              <Skeleton className="h-5 w-1/3 mx-auto rounded-md" />
-            </div>
-
-            {/* Layout Toggle */}
-            <div className="flex justify-center mb-4 sm:mb-6">
-              <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                <Skeleton className="h-9 w-44 rounded-lg" />
-                <Skeleton className="h-9 w-44 rounded-lg" />
-              </div>
-            </div>
-
-            <hr className="border-gray-300 dark:border-700 mb-4 sm:mb-6" />
-
-            {/* Search and Filter Controls */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
-              <div className="flex-1">
-                <div className="relative">
-                  <Skeleton className="h-10 w-full pl-9 rounded-md" />
-                </div>
-              </div>
-              
-              <Skeleton className="h-10 w-32 rounded-md" />
-            </div>
-
-            {/* Statistics */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center text-sm border-t border-b border-gray-300 dark:border-gray-700 py-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="text-center">
-                  <Skeleton className="h-6 w-1/2 mx-auto mb-1 rounded-md" />
-                  <Skeleton className="h-4 w-3/4 mx-auto rounded-md" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="container mx-auto px-4 pb-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden">
-              <div className="border-b border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2">
-                <div className="grid grid-cols-2 sm:grid-cols-12 gap-4 text-xs font-semibold uppercase tracking-wide">
-                  <Skeleton className="h-4 w-full col-span-1 sm:col-span-4 rounded-md" />
-                  <Skeleton className="h-4 w-full col-span-1 sm:col-span-2 rounded-md" />
-                  <Skeleton className="h-4 w-full hidden sm:block col-span-2 rounded-md" />
-                  <Skeleton className="h-4 w-full hidden sm:block col-span-3 rounded-md" />
-                  <Skeleton className="h-4 w-4 hidden sm:block col-span-1 rounded-md" />
-                </div>
-              </div>
-              <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                {Array.from({ length: 10 }).map((_, i) => (
-                  <div key={i} className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                    <div className="grid grid-cols-2 sm:grid-cols-12 gap-4 items-center text-sm">
-                      <Skeleton className="h-4 w-3/4 col-span-1 sm:col-span-4 rounded-md" />
-                      <Skeleton className="h-4 w-1/2 col-span-1 sm:col-span-2 rounded-md text-center" />
-                      <Skeleton className="h-4 w-1/2 hidden sm:block col-span-2 rounded-md text-center" />
-                      <Skeleton className="h-4 w-3/4 hidden sm:block col-span-3 rounded-md" />
-                      <Skeleton className="h-4 w-4 hidden sm:block col-span-1 rounded-md" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <ListCatalogSkeleton layout={catalogLayout} />
   }
 
   return (
@@ -510,13 +453,13 @@ export function ListCatalogContent() {
                 </div>
                 <div>
                   <div className="text-lg font-bold text-black dark:text-white">
-                    {seriesData.reduce((sum, series) => sum + (series.totalTypes * 3), 0)}
+                    {seriesData.reduce((sum, series) => sum + series.totalStampGroups, 0)}
                   </div>
                   <div className="text-xs text-gray-600 dark:text-gray-400">Stamp Groups</div>
                 </div>
                 <div>
                   <div className="text-lg font-bold text-black dark:text-white">
-                    {seriesData[seriesData.length - 1]?.periodEnd - seriesData[0]?.periodStart || 170}
+                    {seriesData.length > 0 ? Math.max(...seriesData.map(s => s.periodEnd || 0)) - Math.min(...seriesData.map(s => s.periodStart || 0)) : 0}
                   </div>
                   <div className="text-xs text-gray-600 dark:text-gray-400">Years Span</div>
                 </div>
@@ -555,17 +498,16 @@ export function ListCatalogContent() {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 pb-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-3xl mx-auto">
           <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden">
             {catalogLayout === 'campbell-paterson' ? (
               <>
                 {/* Campbell Paterson Table Header */}
                 <div className="border-b border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2 hidden sm:block">
-                  <div className="grid grid-cols-12 gap-4 text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                  <div className="grid grid-cols-9 gap-4 text-xs font-semibold text-gray-700 uppercase tracking-wide">
                     <div className="col-span-4 text-gray-700 dark:text-gray-300">Series Name</div>
                     <div className="col-span-2 text-center text-gray-700 dark:text-gray-300">Period</div>
                     <div className="col-span-2 text-center text-gray-700 dark:text-gray-300">Types</div>
-                    <div className="col-span-3 text-gray-700 dark:text-gray-300">Description</div>
                     <div className="col-span-1"></div>
                   </div>
                 </div>
@@ -580,11 +522,11 @@ export function ListCatalogContent() {
                 <div className="divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredSeries.map((series) => (
                     <div 
-                      key={series.id}
+                      key={series.name}
                       className="cursor-pointer px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                       onClick={() => handleSeriesClick(series)}
                     >
-                      <div className="grid grid-cols-12 gap-4 items-center text-sm">
+                      <div className="hidden sm:grid grid-cols-9 gap-4 items-center text-sm">
                         <div className="col-span-4 font-bold text-gray-900 dark:text-gray-100">
                           {series.name}
                         </div>
@@ -594,9 +536,6 @@ export function ListCatalogContent() {
                         <div className="col-span-2 text-center text-gray-600 dark:text-gray-400">
                           {series.totalTypes}
                         </div>
-                        <div className="col-span-3 text-gray-700 dark:text-gray-300 truncate">
-                          {series.description}
-                        </div>
                         <div className="col-span-1 text-right dark:text-gray-400">
                           <ChevronRight className="h-4 w-4 text-gray-400" />
                         </div>
@@ -604,7 +543,6 @@ export function ListCatalogContent() {
                       <div className="grid sm:hidden grid-cols-2 gap-4 items-center text-sm">
                         <div>
                           <div className="font-bold text-gray-900 dark:text-gray-100">{series.name}</div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">{series.description}</div>
                         </div>
                         <div className="text-right">
                           <div className="text-gray-600 dark:text-gray-400">{series.periodStart}-{series.periodEnd}</div>
@@ -621,11 +559,10 @@ export function ListCatalogContent() {
                 {/* Stanley Gibbons Table Header */}
                 <div className="border-b border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2 hidden sm:block">
                   <div className="grid grid-cols-12 gap-4 text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                    <div className="col-span-3 text-gray-700 dark:text-gray-300">Country</div>
+                    <div className="col-span-4 text-gray-700 dark:text-gray-300">Country</div>
                     <div className="col-span-2 text-center text-gray-700 dark:text-gray-300">Code</div>
                     <div className="col-span-2 text-center text-gray-700 dark:text-gray-300">Years</div>
-                    <div className="col-span-2 text-center text-gray-700 dark:text-gray-300">Period</div>
-                    <div className="col-span-2 text-gray-700 dark:text-gray-300">Description</div>
+                    <div className="col-span-3 text-center text-gray-700 dark:text-gray-300">Period</div>
                     <div className="col-span-1"></div>
                   </div>
                 </div>
@@ -645,7 +582,7 @@ export function ListCatalogContent() {
                       onClick={() => handleCountryClick(country)}
                     >
                       <div className="hidden sm:grid grid-cols-12 gap-4 items-center text-sm">
-                        <div className="col-span-3 font-bold text-gray-900 dark:text-gray-100">
+                        <div className="col-span-4 font-bold text-gray-900 dark:text-gray-100">
                           {country.name}
                         </div>
                         <div className="col-span-2 text-center text-gray-600 dark:text-gray-400 font-mono">
@@ -654,11 +591,8 @@ export function ListCatalogContent() {
                         <div className="col-span-2 text-center text-gray-600 dark:text-gray-400">
                           {country.totalYears}
                         </div>
-                        <div className="col-span-2 text-center text-gray-600 dark:text-gray-400">
+                        <div className="col-span-3 text-center text-gray-600 dark:text-gray-400">
                           {country.yearStart}-{country.yearEnd}
-                        </div>
-                        <div className="col-span-2 text-gray-700 dark:text-gray-300 truncate">
-                          {country.description}
                         </div>
                         <div className="col-span-1 text-right dark:text-gray-400">
                           <ChevronRight className="h-4 w-4 text-gray-400" />
@@ -667,7 +601,6 @@ export function ListCatalogContent() {
                       <div className="grid sm:hidden grid-cols-2 gap-4 items-center text-sm">
                         <div>
                           <div className="font-bold text-gray-900 dark:text-gray-100">{country.name}</div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">{country.description}</div>
                         </div>
                         <div className="text-right">
                           <div className="text-gray-600 dark:text-gray-400">{country.yearStart}-{country.yearEnd} ({country.totalYears} Years)</div>
@@ -826,7 +759,7 @@ export function ListCatalogContent() {
                         setModalStack(prev => [...prev, {
                           type: 'release',
                           data: { countryId: modal.data.countryId, year: modal.data.yearData.year, releaseData, categories: categoryData },
-                          title: releaseData.name
+                          title: releaseData.name && releaseData.name !== 'N/A' ? releaseData.name : 'Stamps with Unknown Release'
                         }])
                       } finally {
                         setLoadingModalContent(false);
@@ -846,8 +779,8 @@ export function ListCatalogContent() {
                         const paperTypeData = buildPaperTypesForCategory(modal.data.countryId, modal.data.year, modal.data.releaseData.id, categoryData.id);
                         setModalStack(prev => [...prev, {
                           type: 'category',
-                          data: { countryId: modal.data.countryId, year: modal.data.year, releaseId: modal.data.releaseData.id, categoryData, paperTypes: paperTypeData },
-                          title: categoryData.name
+                          data: { countryId: modal.data.countryId, year: modal.data.year, stampGroupId: modal.data.releaseData.id, categoryData, paperTypes: paperTypeData },
+                          title: categoryData.name && categoryData.name !== 'N/A' ? categoryData.name : 'Stamps with Unknown Category'
                         }])
                       } finally {
                         setLoadingModalContent(false);
@@ -856,11 +789,11 @@ export function ListCatalogContent() {
                     onPaperTypeClick={async (paperTypeData: PaperTypeData) => {
                       setLoadingModalContent(true);
                       try {
-                        const stampsData = buildStampsForPaperType(modal.data.countryId, modal.data.year, modal.data.releaseId, modal.data.categoryData.id, paperTypeData.code)
+                        const stampsData = buildStampsForPaperType(modal.data.countryId, modal.data.year, modal.data.stampGroupId, modal.data.categoryData.id, paperTypeData.code)
                         setModalStack(prev => [...prev, {
                           type: 'paperType',
-                          data: { countryId: modal.data.countryId, year: modal.data.year, releaseId: modal.data.releaseId, categoryId: modal.data.categoryData.id, paperTypeData, stamps: stampsData },
-                          title: paperTypeData.name
+                          data: { countryId: modal.data.countryId, year: modal.data.year, stampGroupId: modal.data.stampGroupId, categoryId: modal.data.categoryData.id, paperTypeData, stamps: stampsData },
+                          title: paperTypeData.name && paperTypeData.name !== 'N/A' ? paperTypeData.name : 'Stamps with Unknown Paper Type'
                         }])
                       } finally {
                         setLoadingModalContent(false);
@@ -877,11 +810,11 @@ export function ListCatalogContent() {
                     onPaperTypeClick={async (paperTypeData: PaperTypeData) => {
                       setLoadingModalContent(true);
                       try {
-                        const stampsData = buildStampsForPaperType(modal.data.countryId, modal.data.year, modal.data.releaseId, modal.data.categoryData.id, paperTypeData.code)
+                        const stampsData = buildStampsForPaperType(modal.data.countryId, modal.data.year, modal.data.stampGroupId, modal.data.categoryData.id, paperTypeData.code)
                         setModalStack(prev => [...prev, {
                           type: 'paperType',
-                          data: { countryId: modal.data.countryId, year: modal.data.year, releaseId: modal.data.releaseId, categoryId: modal.data.categoryData.id, paperTypeData, stamps: stampsData },
-                          title: paperTypeData.name
+                          data: { countryId: modal.data.countryId, year: modal.data.year, stampGroupId: modal.data.stampGroupId, categoryId: modal.data.categoryData.id, paperTypeData, stamps: stampsData },
+                          title: paperTypeData.name && paperTypeData.name !== 'N/A' ? paperTypeData.name : 'Stamps with Unknown Paper Type'
                         }])
                       } finally {
                         setLoadingModalContent(false);

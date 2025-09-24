@@ -3,7 +3,7 @@
 import React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BarChart3, Home, LayoutDashboard, Settings, Users, Stamp, Upload } from "lucide-react"
+import { BarChart3, Home, LayoutDashboard, Settings, Users, Stamp, Upload, CheckCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { useState } from "react"
@@ -41,6 +41,11 @@ const allSidebarLinks: SidebarLink[] = [
     title: "Catalog Management",
     href: "/admin/catalog-management",
     icon: <Stamp className="h-5 w-5" />,
+  },
+  {
+    title: "Stamp Review",
+    href: "/admin/stamp-review",
+    icon: <CheckCircle className="h-5 w-5" />,
   },
   {
     title: "User Management",

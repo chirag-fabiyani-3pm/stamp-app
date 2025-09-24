@@ -23,7 +23,7 @@ export default function HeroSection() {
                   Try Stamp Recognition <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
-              <Link href="/list-catalogue">
+              <Link href="/login">
                 <Button variant="outline" size="lg">
                   Browse Catalog
                 </Button>

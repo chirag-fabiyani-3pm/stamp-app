@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { BookOpen, ChevronRight, Search } from "lucide-react"
 import { ReleaseData, YearData } from "@/types/catalog"
-import { getReleasesForYear } from "@/lib/data/list-catalog-data"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface YearModalContentProps {
@@ -27,7 +26,6 @@ export function YearModalContent({
     return releases.filter(
       (release) =>
         release.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        release.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         release.perforation.toLowerCase().includes(searchTerm.toLowerCase())
     )
   }, [releases, searchTerm])
@@ -109,9 +107,6 @@ export function YearModalContent({
                   <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
                     {release.name}
                   </h3>
-                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                    {release.description}
-                  </p>
                 </div>
               </div>
 

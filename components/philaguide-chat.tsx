@@ -22,7 +22,7 @@ import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Toaster } from '@/components/ui/toaster'
 import { useToast } from '@/components/ui/use-toast'
-import { BACKEND_URL, FRONTEND_URL } from '@/lib/constants'
+import { BACKEND_URL } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import {
     AudioLines,
@@ -420,7 +420,7 @@ function StampCardDisplay({ data }: StampCardDisplayProps) {
                     <Button
                         variant="default"
                         size="sm"
-                        onClick={() => window.open(`${FRONTEND_URL}/stamp-details/${data.id}`, '_blank')}
+                        onClick={() => window.open(`/stamp-details/${data.id}`, '_blank')}
                         className="h-8 px-4 text-xs rounded-lg shadow-sm"
                     >
                         <ExternalLink className="w-3.5 h-3.5 mr-1" />
@@ -524,7 +524,7 @@ function StampCarouselDisplay({ data }: StampCarouselDisplayProps) {
                     <Button
                         variant="default"
                         size="sm"
-                        onClick={() => window.open(`${FRONTEND_URL}/stamp-details/${currentItem.id}`, '_blank')}
+                        onClick={() => window.open(`/stamp-details/${currentItem.id}`, '_blank')}
                         className="h-8 px-4 text-xs rounded-lg shadow-sm"
                     >
                         <ExternalLink className="w-3.5 h-3.5 mr-1" />
@@ -1922,7 +1922,7 @@ Please try your query again in a moment, or feel free to ask about any specific 
 
             let accumulatedContent = ''
             let structuredData: any = null
-            let foundStamps: number = 0
+            const foundStamps: number = 0
             let assistantMessageId: string | null = null
             let stampPreview: any = null
 

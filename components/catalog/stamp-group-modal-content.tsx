@@ -2,7 +2,6 @@ import React from "react"
 import { StampGroupData, StampData } from "@/types/catalog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import Image from "next/image"
-import { getStampsForStampGroup } from "@/lib/data/list-catalog-data"
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface StampGroupModalContentProps {
@@ -25,7 +24,7 @@ export function StampGroupModalContent({
         <Skeleton className="h-8 w-1/2 mb-4" />
         <Skeleton className="h-4 w-3/4 mb-6" />
 
-        <div className="border rounded-lg overflow-hidden dark:border-gray-700 w-full sm:w-auto">
+        <div className="border rounded-lg dark:border-gray-700 -mx-4 sm:mx-0 overflow-x-auto w-full">
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-50 dark:bg-gray-800 hidden sm:table-row">
@@ -71,13 +70,14 @@ export function StampGroupModalContent({
     <div className="p-4">
       <p className="text-gray-700 dark:text-gray-300 mb-4">{stampGroupData.description}</p>
 
-      <div className="border rounded-lg overflow-hidden dark:border-gray-700">
+      <div className="border rounded-lg dark:border-gray-700 -mx-4 sm:mx-0 overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="bg-gray-50 dark:bg-gray-800 hidden sm:table-row">
               <TableHead className="w-[100px] text-gray-700 dark:text-gray-300">Image</TableHead>
               <TableHead className="text-left py-3 px-4 font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Description</TableHead>
               <TableHead className="text-center py-3 px-4 font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Mint</TableHead>
+              <TableHead className="text-center py-3 px-4 font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Finest Used</TableHead>
               <TableHead className="text-center py-3 px-4 font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Used</TableHead>
             </TableRow>
             <TableRow className="bg-gray-50 dark:bg-gray-800 sm:hidden">
@@ -106,18 +106,25 @@ export function StampGroupModalContent({
                       }}
                     />
                   </TableCell>
-                  <TableCell className="py-3 px-4 font-medium text-black dark:text-gray-100 flex flex-col gap-2">
-                    <span className="font-medium">{stamp.name}</span>
-                    <span className="text-gray-500 dark:text-gray-400"> {(stamp as any).description}</span>
+                  <TableCell className="py-3 px-4 font-medium text-black dark:text-gray-100 hidden sm:table-cell">
+                    <div className="flex flex-col gap-2">
+                      <span className="font-medium">{stamp.name}{stamp.catalogNumber ? ` (${stamp.catalogNumber})` : ''}</span>
+                      <span className="text-gray-500 dark:text-gray-400"> {(stamp as any).description}</span>
+                    </div>
                   </TableCell>
                   <TableCell className="py-3 px-4 text-center hidden sm:table-cell">
                     <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
-                      {stamp.estimatedMarketValue ? `$${stamp.estimatedMarketValue.toFixed(2)}` : '-'}
+                      {stamp.mintValue ? `$${stamp.mintValue.toFixed(2)}` : '-'}
                     </span>
                   </TableCell>
                   <TableCell className="py-3 px-4 text-center hidden sm:table-cell">
                     <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
-                      {stamp.actualPrice ? `$${stamp.actualPrice.toFixed(2)}` : '-'}
+                      {stamp.finestUsedValue ? `$${stamp.finestUsedValue.toFixed(2)}` : '-'}
+                    </span>
+                  </TableCell>
+                  <TableCell className="py-3 px-4 text-center hidden sm:table-cell">
+                    <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
+                      {stamp.usedValue ? `$${stamp.usedValue.toFixed(2)}` : '-'}
                     </span>
                   </TableCell>
                   <TableCell className="py-3 px-4 sm:hidden w-1/2">
@@ -133,7 +140,7 @@ export function StampGroupModalContent({
                           e.currentTarget.src = "/images/stamps/no-image-available.png";
                         }}
                       />
-                      <span className="font-medium text-black dark:text-gray-100 text-sm">
+                      <span className="font-medium text-black dark:text-gray-100 text-sm truncate">
                         {stamp.denominationValue}{stamp.denominationSymbol} {stamp.color}
                       </span>
                     </div>
@@ -141,12 +148,17 @@ export function StampGroupModalContent({
                   <TableCell className="py-3 px-4 sm:hidden w-1/2 text-right">
                     <div className="text-sm mb-1">
                       <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
-                        Mint: {stamp.estimatedMarketValue ? `$${stamp.estimatedMarketValue.toFixed(2)}` : '-'}
+                        Mint: {stamp.mintValue ? `$${stamp.mintValue.toFixed(2)}` : '-'}
                       </span>
                     </div>
                     <div className="text-sm">
                       <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
-                        Used: {stamp.actualPrice ? `$${stamp.actualPrice.toFixed(2)}` : '-'}
+                        Finest Used: {stamp.finestUsedValue ? `$${stamp.finestUsedValue.toFixed(2)}` : '-'}
+                      </span>
+                    </div>
+                    <div className="text-sm">
+                      <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
+                        Used: {stamp.usedValue ? `$${stamp.usedValue.toFixed(2)}` : '-'}
                       </span>
                     </div>
                   </TableCell>
@@ -156,45 +168,59 @@ export function StampGroupModalContent({
                 {stamp.instances && stamp.instances.map((instance) => (
                   <TableRow 
                     key={instance.id}
-                    className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
-                    onClick={() => onStampClick(instance as unknown as StampData)}
+                    className="border-b border-gray-100 dark:border-gray-800 transition-colors"
                   >
                     <TableCell className="py-2 px-4 text-xs text-gray-600 dark:text-gray-400 hidden sm:table-cell"></TableCell>
-                    <TableCell className="py-2 px-4 text-xs text-gray-700 dark:text-gray-300 pl-8 flex flex-col gap-2">
-                      <span>{(instance as any).name && `${(instance as any).name}`}</span>
-                      <span className="text-gray-500 dark:text-gray-400"> {instance.description}</span>
+                    <TableCell className="py-2 px-4 text-xs text-gray-700 dark:text-gray-300 pl-8 hidden sm:table-cell">
+                      <div className="flex flex-col gap-2">
+                        <span>{(instance as any).name && `${(instance as any).name} ${(instance as any).catalogNumber && (instance as any).catalogNumber !== '-' ? ` (${(instance as any).catalogNumber})` : ''}`}</span>
+                      </div>
                     </TableCell>
                     <TableCell className="py-2 px-4 text-center text-xs hidden sm:table-cell">
                       {instance.mintValue ? (
                         <span className={`px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200`}>
-                          {instance.mintValue}
+                          ${instance.mintValue}
+                        </span>
+                      ) : <span className="px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200">-</span>}
+                    </TableCell>
+                    <TableCell className="py-2 px-4 text-center text-xs hidden sm:table-cell">
+                      {instance.finestUsedValue ? (
+                        <span className={`px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200`}>
+                          ${instance.finestUsedValue}
                         </span>
                       ) : <span className="px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200">-</span>}
                     </TableCell>
                     <TableCell className="py-2 px-4 text-center text-xs hidden sm:table-cell">
                       {instance.usedValue ? (
                         <span className={`px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200`}>
-                          {instance.usedValue}
+                          ${instance.usedValue}
                         </span>
                       ) : <span className="px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200">-</span>}
                     </TableCell>
                     <TableCell className="py-2 px-4 sm:hidden w-1/2">
                       <span className="text-xs text-gray-700 dark:text-gray-300">
-                        {instance.code && `${instance.code}. `}{instance.description}
+                      <span>{(instance as any).name && `${(instance as any).name} ${(instance as any).catalogNumber && (instance as any).catalogNumber !== '-' ? ` (${(instance as any).catalogNumber})` : ''}`}</span>
                       </span>
                     </TableCell>
                     <TableCell className="py-2 px-4 sm:hidden w-1/2 text-right">
                       <div className="text-xs mb-1">
                         {instance.mintValue ? (
                           <span className={`px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200`}>
-                            Mint: {instance.mintValue}
+                            Mint: ${instance.mintValue}
+                          </span>
+                        ) : <span className="px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200">-</span>}
+                      </div>
+                      <div className="text-xs">
+                        {instance.finestUsedValue ? (
+                          <span className={`px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200`}>
+                            Finest Used: ${instance.finestUsedValue}
                           </span>
                         ) : <span className="px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200">-</span>}
                       </div>
                       <div className="text-xs">
                         {instance.usedValue ? (
                           <span className={`px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200`}>
-                            Used: {instance.usedValue}
+                            Used: ${instance.usedValue}
                           </span>
                         ) : <span className="px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200">-</span>}
                       </div>

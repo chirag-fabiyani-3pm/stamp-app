@@ -4,15 +4,16 @@ import { ApiStampData, ApiResponse, StampData } from '@/types/catalog'
 export const mapApiStampToStampData = (apiStamp: ApiStampData): StampData => {
   return {
     id: apiStamp.id,
-    stampCode: apiStamp.stampCatalogCode,
+    stampId: apiStamp.stampId,
+    parentStampId: apiStamp.parentStampId,
+    isInstance: apiStamp.instances && apiStamp.instances.length > 0, // True if instances exist
     status: 1, // Default to active
-    userId: 'system', // Default value
-    stampCatalogId: apiStamp.catalogExtractionProcessId,
+    stampCatalogId: apiStamp.catalogExtractionProcessId || null,
     name: apiStamp.name,
     publisher: apiStamp.publisher,
     country: apiStamp.country,
     stampImageUrl: apiStamp.stampImageUrl,
-    catalogName: apiStamp.catalogName,
+    catalogName: apiStamp.catalogName || null,
     catalogNumber: apiStamp.catalogNumber,
     seriesName: apiStamp.seriesName,
     issueDate: apiStamp.issueDate,
@@ -23,12 +24,17 @@ export const mapApiStampToStampData = (apiStamp: ApiStampData): StampData => {
     color: apiStamp.color,
     paperType: apiStamp.paperType || null,
     stampDetailsJson: apiStamp.stampDetailsJson,
-    estimatedMarketValue: null, // Not provided by API
-    actualPrice: null, // Not provided by API
     countryCode: apiStamp.countryCode || '',
     story: apiStamp.story || '',
-    stampGroupId: apiStamp.stampGroupId || '',
-    instances: apiStamp.instances || []
+    stampGroupName: apiStamp.stampGroupName || '',
+    instances: apiStamp.instances || [],
+    mintValue: null, // Default to null, as it's not directly in ApiStampData
+    finestUsedValue: null, // Default to null
+    usedValue: null, // Default to null
+    rarity: undefined, // Default to undefined
+    condition: undefined, // Default to undefined
+    typeName: '', // Default to empty string
+    categoryCode: '', // Default to empty string
   }
 }
 

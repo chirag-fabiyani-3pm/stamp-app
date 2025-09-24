@@ -2,9 +2,8 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Users, Tag, ArrowUpRight, Database, Upload, Clock, BookOpen, Code } from "lucide-react"
+import { Users, Tag, ArrowUpRight, Database, Upload, Clock, BookOpen } from "lucide-react"
 import Link from "next/link"
-import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 
 // Sample data for demonstration

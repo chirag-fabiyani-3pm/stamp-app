@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { BookOpen, ChevronRight, Search } from "lucide-react"
 import { StampGroupData, TypeData } from "@/types/catalog"
-import { getStampGroupsForType } from "@/lib/data/list-catalog-data"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface TypeModalContentProps {
@@ -26,7 +25,6 @@ export function TypeModalContent({
     
     return stampGroups.filter(group => 
       group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      group.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       group.watermark.toLowerCase().includes(searchTerm.toLowerCase()) ||
       group.printer.toLowerCase().includes(searchTerm.toLowerCase())
     )
@@ -61,15 +59,8 @@ export function TypeModalContent({
   }
 
   return (
-    <div className="mt-4">
-            {/* Header */}
-      <div className="mb-6">
-        <p className="text-gray-600 dark:text-gray-400 max-w-2xl">
-          {typeData.description}
-        </p>
-        
-        <hr className="border-gray-300 dark:border-gray-700 my-6" />
-
+    <div>
+      <div>
         {/* Search Controls */}
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="flex-1">
@@ -110,28 +101,24 @@ export function TypeModalContent({
                   <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
                     {stampGroup.name}
                   </h3>
-                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-3">
-                    {stampGroup.description}
-                  </p>
-                  
                   {/* Technical Details */}
                   <div className="grid md:grid-cols-2 gap-4 text-sm">
-                    <div>
+                    {stampGroup.watermark && <div>
                       <span className="font-semibold text-gray-800 dark:text-gray-200">Watermark:</span>
                       <span className="ml-2 text-gray-700 dark:text-gray-300">{stampGroup.watermark}</span>
-                    </div>
-                    <div>
+                    </div>}
+                    {stampGroup.perforation && <div>
                       <span className="font-semibold text-gray-800 dark:text-gray-200">Perforation:</span>
                       <span className="ml-2 text-gray-700 dark:text-gray-300">{stampGroup.perforation}</span>
-                    </div>
-                    <div>
+                    </div>}
+                    {stampGroup.printingMethod && <div>
                       <span className="font-semibold text-gray-800 dark:text-gray-200">Printing:</span>
                       <span className="ml-2 text-gray-700 dark:text-gray-300">{stampGroup.printingMethod}</span>
-                    </div>
-                    <div>
+                    </div>}
+                    {stampGroup.printer && <div>
                       <span className="font-semibold text-gray-800 dark:text-gray-200">Printer:</span>
                       <span className="ml-2 text-gray-700 dark:text-gray-300">{stampGroup.printer}</span>
-                    </div>
+                    </div>}
                   </div>
                 </div>
               </div>

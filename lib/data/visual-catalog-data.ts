@@ -1,25 +1,25 @@
-import { CountryOption, StampGroupOption, YearOption, CurrencyOption, DenominationOption, ColorOption, PaperOption, WatermarkOption, PerforationOption, ItemTypeOption, StampData, AdditionalCategoryOption } from "@/types/catalog"
+import { CountryOption, YearOption, CurrencyOption, DenominationOption, ColorOption, PaperOption, WatermarkOption, PerforationOption, ItemTypeOption, StampData, AdditionalCategoryOption } from "@/types/catalog"
 
 export const generateCountriesData = async (): Promise<CountryOption[]> => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 500))
 
   return [
-    { code: 'NZ', name: 'New Zealand', flag: '🇳🇿', totalStamps: 15420 },
-    { code: 'AU', name: 'Australia', flag: '🇦🇺', totalStamps: 12380 },
-    { code: 'GB', name: 'Great Britain', flag: '🇬🇧', totalStamps: 18950 },
-    { code: 'US', name: 'United States', flag: '🇺🇸', totalStamps: 22100 },
-    { code: 'CA', name: 'Canada', flag: '🇨🇦', totalStamps: 9840 },
-    { code: 'FR', name: 'France', flag: '🇫🇷', totalStamps: 14200 },
-    { code: 'DE', name: 'Germany', flag: '🇩🇪', totalStamps: 16750 },
-    { code: 'IT', name: 'Italy', flag: '🇮🇹', totalStamps: 11890 },
+    { code: 'NZ', name: 'New Zealand', totalStamps: 15420 },
+    { code: 'AU', name: 'Australia', totalStamps: 12380 },
+    { code: 'GB', name: 'Great Britain', totalStamps: 18950 },
+    { code: 'US', name: 'United States', totalStamps: 22100 },
+    { code: 'CA', name: 'Canada', totalStamps: 9840 },
+    { code: 'FR', name: 'France', totalStamps: 14200 },
+    { code: 'DE', name: 'Germany', totalStamps: 16750 },
+    { code: 'IT', name: 'Italy', totalStamps: 11890 },
   ]
 }
 
-export const generateStampGroupsData = async (countryCode: string): Promise<StampGroupOption[]> => {
+export const generateStampGroupsData = async (countryCode: string): Promise<{id: string, name: string, catalogNumber: string, totalStamps: number, stampImageUrl: string}[]> => {
   // Simulate API call to get stamp groups for country
   await new Promise(resolve => setTimeout(resolve, 300))
-  const groups: StampGroupOption[] = []
+  const groups: {id: string, name: string, catalogNumber: string, totalStamps: number, stampImageUrl: string}[] = []
 
   for (let i = 1; i <= 50; i++) {
     const catalogNumber = `${String(i).padStart(3, '0')}`
@@ -87,13 +87,13 @@ export const generateColorsData = async (stampCode: string, denomination: string
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 300))
   const colors: ColorOption[] = [
-    { code: 'Blu', name: 'Blue', hexColor: '#0066CC', totalStamps: 25, stampImageUrl: '/images/stamps/no-image-available.png' },
-    { code: 'R', name: 'Red', hexColor: '#CC0000', totalStamps: 20, stampImageUrl: '/images/stamps/no-image-available.png' },
-    { code: 'Gr', name: 'Green', hexColor: '#00AA00', totalStamps: 18, stampImageUrl: '/images/stamps/no-image-available.png' },
-    { code: 'Pur', name: 'Purple', hexColor: '#6600CC', totalStamps: 15, stampImageUrl: '/images/stamps/no-image-available.png' },
-    { code: 'Br', name: 'Brown', hexColor: '#8B4513', totalStamps: 12, stampImageUrl: '/images/stamps/no-image-available.png' },
-    { code: 'Blk', name: 'Black', hexColor: '#000000', totalStamps: 10, stampImageUrl: '/images/stamps/no-image-available.png' },
-    { code: 'Yel', name: 'Yellow', hexColor: '#FFDD00', totalStamps: 8, stampImageUrl: '/images/stamps/no-image-available.png' },
+    { code: 'Blu', name: 'Blue', hex: '#0066CC', totalStamps: 25, stampImageUrl: '/images/stamps/no-image-available.png' },
+    { code: 'R', name: 'Red', hex: '#CC0000', totalStamps: 20, stampImageUrl: '/images/stamps/no-image-available.png' },
+    { code: 'Gr', name: 'Green', hex: '#00AA00', totalStamps: 18, stampImageUrl: '/images/stamps/no-image-available.png' },
+    { code: 'Pur', name: 'Purple', hex: '#6600CC', totalStamps: 15, stampImageUrl: '/images/stamps/no-image-available.png' },
+    { code: 'Br', name: 'Brown', hex: '#8B4513', totalStamps: 12, stampImageUrl: '/images/stamps/no-image-available.png' },
+    { code: 'Blk', name: 'Black', hex: '#000000', totalStamps: 10, stampImageUrl: '/images/stamps/no-image-available.png' },
+    { code: 'Yel', name: 'Yellow', hex: '#FFDD00', totalStamps: 8, stampImageUrl: '/images/stamps/no-image-available.png' },
   ]
 
   return colors
@@ -172,14 +172,23 @@ export const generateStampDetails = async (stampCode: string, itemTypeCode: stri
 
     stamps.push({
       id: `${stampCode}-${itemTypeCode}-${i}`,
+      stampId: `${stampCode}-${itemTypeCode}-${i}`,
+      parentStampId: stampCode,
+      isInstance: false,
+      status: 1,
+      stampCatalogId: null,
       name: `${baseData.baseStamp.name} - ${postalHistory.type} (${condition.grade})`,
+      publisher: 'Unknown',
       country: baseData.baseStamp.country,
+      countryCode: 'NZ',
       stampImageUrl: '/images/stamps/no-image-available.png',
+      catalogName: null,
       catalogNumber: `SG${i}${postalHistory.type === 'Proofs' ? 'P' : postalHistory.type === 'Essays' ? 'E' : ''}`,
       seriesName: baseData.baseStamp.seriesName,
       issueDate: baseData.baseStamp.issueDate,
       issueYear: baseData.baseStamp.issueYear,
       denominationValue: parseInt(stampCode.split('.')[4]?.replace(/[^\d]/g, '') || '2'),
+      denominationCurrency: 'GBP',
       denominationSymbol: stampCode.split('.')[4]?.replace(/[\d]/g, '') || 'd',
       color: getColorName(stampCode.split('.')[5] || 'Blu'),
       paperType: getPaperName(stampCode.split('.')[6] || 'wh'),
@@ -187,10 +196,8 @@ export const generateStampDetails = async (stampCode: string, itemTypeCode: stri
         perforation: getPerforation(stampCode.split('.')[8] || 'P12'),
         watermark: getWatermarkName(stampCode.split('.')[7] || 'WmkStar'),
         printingMethod: 'Engraved',
-        designer: 'Unknown',
         printer: 'Unknown',
         itemType: getItemTypeName(itemTypeCode),
-        postalHistoryType: postalHistory.type,
         postalHistoryDescription: postalHistory.description,
         condition: condition.grade,
         conditionDescription: condition.description,
@@ -204,10 +211,6 @@ export const generateStampDetails = async (stampCode: string, itemTypeCode: stri
           usage: `${usage.priceMultiplier}x`,
           postalHistory: `${postalHistory.priceMultiplier}x`
         },
-        recentSales: baseData.additionalCategories.marketFactors.actualSales.map(sale => ({
-          ...sale,
-          adjustedPrice: (sale.price * condition.priceMultiplier * usage.priceMultiplier * postalHistory.priceMultiplier).toFixed(2)
-        })),
         marketTrend: baseData.additionalCategories.marketFactors.marketTrend,
         rarity: baseData.additionalCategories.marketFactors.rarity,
         demandLevel: baseData.additionalCategories.marketFactors.demandLevel,
@@ -216,7 +219,16 @@ export const generateStampDetails = async (stampCode: string, itemTypeCode: stri
             postalHistory.type === 'Essays' ? 'Design essay - extremely rare' :
               'Standard catalog entry with market pricing variations'
       }),
-      stampCode: `${stampCode}.${postalHistory.type.replace(/\s/g, '')}.${condition.grade.replace(/\s/g, '')}.${usage.state.replace(/\s/g, '')}`
+      mintValue: finalPrice,
+      finestUsedValue: finalPrice * 0.9,
+      usedValue: finalPrice * 0.8,
+      rarity: baseData.additionalCategories.marketFactors.rarity,
+      condition: condition.grade,
+      story: `${baseData.baseStamp.name} in ${condition.grade} condition`,
+      stampGroupName: '',
+      instances: [],
+      typeName: postalHistory.type,
+      categoryCode: itemTypeCode
     })
   }
 
@@ -311,14 +323,23 @@ export const generateStampsForAdditionalCategory = async (baseStampCode: string,
 
     stamps.push({
       id: `${baseStampCode}-${categoryCode}-${i}`,
+      stampId: `${baseStampCode}-${categoryCode}-${i}`,
+      parentStampId: baseStampCode,
+      isInstance: false,
+      status: 1,
+      stampCatalogId: null,
       name: `${baseData.baseStamp.name} - ${categoryName} (${categoryCode})`,
+      publisher: 'Unknown',
       country: baseData.baseStamp.country,
+      countryCode: 'NZ',
       stampImageUrl: '/images/stamps/no-image-available.png',
+      catalogName: null,
       catalogNumber: `SG${i}${categoryCode.substring(0, 2)}`,
       seriesName: baseData.baseStamp.seriesName,
       issueDate: baseData.baseStamp.issueDate,
       issueYear: baseData.baseStamp.issueYear,
       denominationValue: parseInt(baseStampCode.split('.')[4]?.replace(/[^\d]/g, '') || '2'),
+      denominationCurrency: 'GBP',
       denominationSymbol: baseStampCode.split('.')[4]?.replace(/[\d]/g, '') || 'd',
       color: getColorName(baseStampCode.split('.')[5] || 'Blu'),
       paperType: getPaperName(baseStampCode.split('.')[6] || 'wh'),
@@ -326,7 +347,6 @@ export const generateStampsForAdditionalCategory = async (baseStampCode: string,
         perforation: getPerforation(baseStampCode.split('.')[8] || 'P12'),
         watermark: getWatermarkName(baseStampCode.split('.')[7] || 'WmkStar'),
         printingMethod: 'Engraved',
-        designer: 'Unknown',
         printer: 'Unknown',
         categoryType: categoryType,
         categoryCode: categoryCode,
@@ -347,7 +367,16 @@ export const generateStampsForAdditionalCategory = async (baseStampCode: string,
         rarity: categoryMultiplier > 10 ? 'extremely rare' : categoryMultiplier > 5 ? 'very rare' : categoryMultiplier > 2 ? 'rare' : 'uncommon',
         specialNotes: `${categoryName} variant with specific characteristics affecting market value`
       }),
-      stampCode: `${baseStampCode}.${categoryCode}.${condition.grade.replace(/\s/g, '')}.${usage.state.replace(/\s/g, '')}`
+      mintValue: finalPrice,
+      finestUsedValue: finalPrice * 0.9,
+      usedValue: finalPrice * 0.8,
+      rarity: categoryMultiplier > 10 ? 'extremely rare' : categoryMultiplier > 5 ? 'very rare' : categoryMultiplier > 2 ? 'rare' : 'uncommon',
+      condition: condition.grade,
+      story: `${baseData.baseStamp.name} - ${categoryName} variant`,
+      stampGroupName: '',
+      instances: [],
+      typeName: categoryName,
+      categoryCode: categoryCode
     })
   }
 

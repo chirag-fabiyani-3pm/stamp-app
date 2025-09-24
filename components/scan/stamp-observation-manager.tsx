@@ -157,7 +157,7 @@ function initializeFormDataFromCategories(categories: Category[]): Record<string
 }
 
 // Comprehensive mapping function from API data to nested category structure
-function mapApiDataToFormStructure(apiData: Record<string, unknown>): Record<string, unknown> {
+function mapApiDataToFormStructure(apiData: any): Record<string, unknown> {
     if (!apiData) return {};
 
     // Helper function to map color to the nested color structure
@@ -402,8 +402,14 @@ function mapApiDataToFormStructure(apiData: Record<string, unknown>): Record<str
     }
 
     // Add issue date if available
-    if (apiData.issueDate) {
-        primaryDetails.issuedate = new Date(apiData.issueDate).toISOString().split('T')[0];
+    if (apiData.issueDate && typeof apiData.issueDate === 'string') {
+        const parsedDate = new Date(apiData.issueDate);
+        // Check if the date is valid before converting to ISO string
+        if (!isNaN(parsedDate.getTime())) {
+            primaryDetails.issuedate = parsedDate.toISOString().split('T')[0];
+        } else {
+            console.warn('Invalid date format received:', apiData.issueDate);
+        }
     }
 
     // Add denomination information
@@ -418,7 +424,7 @@ function mapApiDataToFormStructure(apiData: Record<string, unknown>): Record<str
     // Add other primary details
     if (apiData.artist) primaryDetails.designer = apiData.artist;
     if (apiData.engraver) primaryDetails.printer = apiData.engraver;
-    if (apiData.catalogNumber) primaryDetails.cataloguenumber = apiData.catalogNumber;
+    if (apiData.catalogNumber) primaryDetails.cataloguenumber = apiData.categoryCode;
 
     // Add ownership and purchase info with defaults
     primaryDetails.ownershipstatus = 'Owned';
@@ -923,7 +929,7 @@ export default function StampObservationManager({
 
             // If detailed form JSON exists, parse and apply values dynamically
             const detailsJson = (selectedStamp.apiData as any).stampDetailsJson as string | undefined;
-            console.log(detailsJson)
+
             if (detailsJson) {
                 try {
                     const parsed = JSON.parse(detailsJson);
@@ -2969,13 +2975,7 @@ export default function StampObservationManager({
 
         // Year (Yr) - from issue date
         if (apiData.issueDate) {
-            const dateStr = typeof apiData.issueDate === 'string'
-                ? apiData.issueDate
-                : String(apiData.issueDate);
-            const year = new Date(dateStr).getFullYear();
-            if (!isNaN(year)) {
-                parts.push(year.toString());
-            }
+            parts.push(apiData.issueYear.toString());
         }
 
         // Currency (Cur) - from denomination - USE FORM DATA FIRST
@@ -3909,7 +3909,9 @@ export default function StampObservationManager({
             apiFormData.append('CatalogName', mergedData.catalogName || selectedStamp?.apiData?.catalogName || '');
             apiFormData.append('CatalogNumber', mergedData.catalogNumber || '');
             apiFormData.append('SeriesName', mergedData.seriesName || selectedStamp?.apiData?.seriesName || '');
-            apiFormData.append('IssueDate', mergedData.issueDate || '');
+            if(!isNaN(Date.parse(mergedData.issueDate))) {
+                apiFormData.append('IssueDate', mergedData.issueDate || '');
+            }
 
             // Extract year from issue date - Enhanced to handle formData directly
             let issueYear = '';

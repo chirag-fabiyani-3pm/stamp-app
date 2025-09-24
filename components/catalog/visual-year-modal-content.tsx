@@ -1,12 +1,13 @@
 import React, { useState, useMemo } from "react"
-import { Card, CardContent } from "@/components/ui/card"
+import Image from "next/image"
 import { Input } from "@/components/ui/input"
 import { Archive, Calendar, ChevronRight, Search } from "lucide-react"
 import { SeriesOption, YearOption } from "@/types/catalog"
+import { useCatalogData } from "@/lib/context/catalog-data-context"
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface YearModalContentProps {
-  data: { series: SeriesOption, years: YearOption[] }
+  data: { series: SeriesOption, years: YearOption[], countryCode: string, seriesName: string }
   onYearClick: (year: YearOption) => void
   isLoading: boolean;
 }
@@ -16,6 +17,7 @@ export function YearModalContent({
   onYearClick,
   isLoading
 }: YearModalContentProps) {
+  const { stamps } = useCatalogData()
   const [searchTerm, setSearchTerm] = useState("")
 
   const filteredYears = useMemo(() => {
@@ -78,16 +80,17 @@ export function YearModalContent({
       </div>
 
       <div className="w-full overflow-x-auto">
-        <div className="bg-card rounded-lg border border-border shadow-sm min-w-[600px] max-w-[600px] mx-auto">
-          {/* Years Table Header */}
-          <div className="border-b border-border bg-muted/50 px-4 py-2">
-            <div className="grid grid-cols-4 gap-4 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              <div className="col-span-1 text-center"></div>
-              <div className="col-span-1 text-left">Year</div>
-              <div className="col-span-1 text-right">Total Stamps</div>
-              <div className="col-span-1 text-right"></div>
+                  <div className="bg-card rounded-lg border border-border shadow-sm min-w-[700px] max-w-[700px] mx-auto">
+            {/* Years Table Header */}
+            <div className="border-b border-border bg-muted/50 px-4 py-2">
+              <div className="grid grid-cols-5 gap-4 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                <div className="col-span-1 text-center">Image</div>
+                <div className="col-span-1 text-left">Year</div>
+                <div className="col-span-1 text-right">Total Stamps</div>
+                <div className="col-span-1 text-right"></div>
+                <div className="col-span-1 text-right"></div>
+              </div>
             </div>
-          </div>
 
           {/* Years Rows */}
           <div className="divide-y divide-border">
@@ -97,9 +100,21 @@ export function YearModalContent({
                 className="cursor-pointer px-4 py-3 hover:bg-muted/70 transition-colors"
                 onClick={() => onYearClick(year)}
               >
-                <div className="grid grid-cols-4 gap-4 items-center text-sm">
+                <div className="grid grid-cols-5 gap-4 items-center text-sm">
                   <div className="col-span-1 text-center">
-                    <Calendar className="h-5 w-5 text-muted-foreground" />
+                    <Image
+                      src={year.featuredStampUrl || '/images/stamps/no-image-available.png'}
+                      alt={`${year.year} stamps`}
+                      width={40}
+                      height={50}
+                      className="rounded border border-border mx-auto"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        if (target.src !== '/images/stamps/no-image-available.png') {
+                          target.src = '/images/stamps/no-image-available.png';
+                        }
+                      }}
+                    />
                   </div>
                   <div className="col-span-1 font-bold text-lg text-foreground">
                     {year.year}
@@ -109,6 +124,9 @@ export function YearModalContent({
                       <Archive className="h-4 w-4 text-muted-foreground" />
                       <span>{year.totalStamps}</span>
                     </div>
+                  </div>
+                  <div className="col-span-1 text-right flex justify-end">
+                    <Calendar className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <div className="col-span-1 text-right flex justify-end">
                     <ChevronRight className="h-4 w-4 text-muted-foreground" />

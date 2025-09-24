@@ -1,7 +1,6 @@
 export interface CountryOption {
   code: string
   name: string
-  flag: string
   totalStamps: number
   firstIssue?: string
   lastIssue?: string
@@ -15,7 +14,7 @@ export interface SeriesOption {
   name: string
   catalogNumber: string
   totalStamps: number
-  stampImageUrl: string
+  featuredStampUrl?: string
   description?: string
   period?: string
   featured?: boolean
@@ -28,6 +27,7 @@ export interface YearOption {
   lastIssue: string
   highlightedSeries?: string
   historicalEvents?: string[]
+  featuredStampUrl?: string
 }
 
 export interface CurrencyOption {
@@ -37,6 +37,7 @@ export interface CurrencyOption {
   totalStamps: number
   country?: string
   description?: string
+  featuredStampUrl?: string
 }
 
 export interface DenominationOption {
@@ -47,6 +48,7 @@ export interface DenominationOption {
   stampImageUrl: string
   commonColors?: string[]
   featured?: boolean
+  featuredStampUrl?: string
 }
 
 export interface ColorOption {
@@ -57,6 +59,7 @@ export interface ColorOption {
   stampImageUrl: string
   popularity?: number
   description?: string
+  featuredStampUrl?: string
 }
 
 export interface PaperOption {
@@ -67,6 +70,7 @@ export interface PaperOption {
   stampImageUrl: string
   texture?: string
   technicalNote?: string
+  featuredStampUrl?: string
 }
 
 export interface WatermarkOption {
@@ -77,6 +81,7 @@ export interface WatermarkOption {
   stampImageUrl: string
   pattern?: string
   historicalInfo?: string
+  featuredStampUrl?: string
 }
 
 export interface PerforationOption {
@@ -87,6 +92,7 @@ export interface PerforationOption {
   stampImageUrl: string
   style?: string
   technicalDetail?: string
+  featuredStampUrl?: string
 }
 
 export interface ItemTypeOption {
@@ -97,15 +103,18 @@ export interface ItemTypeOption {
   stampImageUrl: string
   category?: string
   collectorsNote?: string
+  featuredStampUrl?: string
 }
 
 export interface StampData {
   id: string
-  stampCode: string
+  stampId: string
+  parentStampId: string
+  isInstance: boolean
   status: number
-  userId: string
   stampCatalogId: string | null
   name: string
+  description: string
   publisher: string
   country: string
   countryCode: string
@@ -121,13 +130,16 @@ export interface StampData {
   color: string
   paperType: string | null
   stampDetailsJson: string
-  estimatedMarketValue: number | null
-  actualPrice: number | null
+  mintValue: number | null
+  finestUsedValue: number | null
+  usedValue: number | null
   rarity?: string
   condition?: string
   story: string
-  stampGroupId: string;
+  stampGroupName: string;
   instances: StampInstance[];
+  typeName: string;
+  categoryCode: string;
 }
 
 export interface ApiStampData {
@@ -139,7 +151,7 @@ export interface ApiStampData {
   country: string
   countryCode: string
   story: string
-  stampGroupId: string
+  stampGroupName: string
   instances: StampInstance[]
   stampImageUrl: string
   catalogName: string
@@ -153,6 +165,8 @@ export interface ApiStampData {
   color: string
   paperType: string
   stampDetailsJson: string
+  stampId: string
+  parentStampId: string
 }
 
 export interface ApiResponse {
@@ -182,6 +196,7 @@ export interface StampInstance {
   code: string
   description: string
   mintValue: string
+  finestUsedValue: string
   usedValue: string
 }
 
@@ -190,11 +205,9 @@ export interface ParsedStampDetails {
   watermark?: string
   printingMethod?: string
   designer?: string
-  printRun?: string
   paperType?: string
   gum?: string
   varieties?: string[]
-  theme?: string
   size?: string
   errors?: string[]
   rarityRating?: string
@@ -206,7 +219,6 @@ export interface ParsedStampDetails {
   conditionDescription?: string
   usage?: string
   usageDescription?: string
-  postalHistoryType?: string
   postalHistoryDescription?: string
   priceFactors?: {
     condition?: string
@@ -214,12 +226,6 @@ export interface ParsedStampDetails {
     postalHistory?: string
     category?: string
   }
-  recentSales?: Array<{
-    date: string
-    price: number
-    venue: string
-    adjustedPrice: string
-  }>
   marketTrend?: string
   demandLevel?: string
   specialNotes?: string
@@ -280,18 +286,19 @@ export interface FeaturedStory {
 export interface SeriesData {
   id: string
   name: string
-  description: string
   totalTypes: number
   country: string
   periodStart: number
   periodEnd: number
+  totalStampGroups: number
+  typeNames: Record<string, boolean>
+  stampGroupNames: Record<string, Record<string, boolean>>
 }
 
 export interface TypeData {
   id: string
   name: string
   seriesId: string
-  description: string
   totalStampGroups: number
   catalogPrefix: string
 }
@@ -302,7 +309,6 @@ export interface StampGroupData {
   typeId: string
   year: number
   issueDate: string
-  description: string
   watermark: string
   perforation: string
   printingMethod: string
@@ -333,7 +339,6 @@ export interface ReleaseData {
   name: string
   yearId: string
   dateRange: string
-  description: string
   perforation: string
   totalCategories: number
   hasCategories: boolean
@@ -343,8 +348,7 @@ export interface CategoryData {
   id: string
   name: string
   code: string
-  releaseId: string
-  description: string
+  stampGroupId: string
   totalPaperTypes: number
   hasPaperTypes: boolean
 }
@@ -354,7 +358,6 @@ export interface PaperTypeData {
   name: string
   code: string
   categoryId: string
-  description: string
   totalStamps: number
 }
 

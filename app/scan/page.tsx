@@ -2,19 +2,13 @@
 
 import React, { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+
+
 import { Progress } from "@/components/ui/progress"
-import { Check, Camera, Upload, RotateCcw, AlertCircle, Loader2, X, CheckCircle } from "lucide-react"
+import { Check, Camera, Upload, RotateCcw, AlertCircle, Loader2, CheckCircle } from "lucide-react"
 import Image from "next/image"
 import StampViewer from "@/components/scan/stamp-viewer"
 import ReferenceInfo from "@/components/scan/reference-info"
@@ -24,7 +18,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog"
 import { AuthGuard } from "@/components/auth/route-guard"
 import { useToast } from "@/hooks/use-toast"
@@ -48,7 +41,6 @@ interface ApiStampResponse {
   publisher?: string
   country?: string
   countryName?: string
-  countryFlag?: string
 
   // Imagery
   stampImageUrl?: string
@@ -82,9 +74,7 @@ interface ApiStampResponse {
   // Printing / paper / perforation / watermark
   printing?: string
   printingMethod?: string
-  printingProcess?: string
-  paperType?: string
-  paperTypeName?: string
+  paperName?: string
   perforation?: string
   perforationName?: string
   perforationMeasurement?: string
@@ -109,7 +99,6 @@ interface ApiStampResponse {
   // Gum / condition
   hasGum?: boolean
   gumCondition?: string
-  gumType?: string
   gumQuality?: string
 
   // Rarity
@@ -146,7 +135,7 @@ const getJWT = (): string | null => {
 
     // Try to get from cookies
     const cookies = document.cookie.split(';');
-    for (let cookie of cookies) {
+    for (const cookie of cookies) {
       const [name, value] = cookie.trim().split('=');
       if (name === 'stamp_jwt') {
         return value;
@@ -165,9 +154,9 @@ const transformApiStampToInternal = (apiStamp: ApiStampResponse, capturedImageUr
     ? apiStamp.watermark
     : (apiStamp.watermarkName || undefined)
 
-  const yearString = (apiStamp.issueDate
-    ? new Date(apiStamp.issueDate).getFullYear().toString()
-    : (typeof apiStamp.issueYear === 'number' ? String(apiStamp.issueYear) : ""))
+  const yearString = typeof apiStamp.issueYear === 'number' ? String(apiStamp.issueYear) : ""
+
+  console.log("Printing", apiStamp);
 
   return {
     id: apiStamp.id || apiStamp.stampId || apiStamp.stampCode || "",
@@ -198,8 +187,8 @@ const transformApiStampToInternal = (apiStamp: ApiStampResponse, capturedImageUr
       "Print Process Error"
     ],
     certifiers: ["Expert Committee", "RPSNZ", "BPA", "APS"],
-    paperTypes: [apiStamp.paperType || apiStamp.paperTypeName || "", "Thick", "Thin", "Wove", "Laid"],
-    printTypes: [apiStamp.printing || apiStamp.printingMethod || apiStamp.printingProcess || "", "Typography", "Lithography", "Intaglio"],
+    paperTypes: [apiStamp.paperName || "", "Thick", "Thin", "Wove", "Laid"],
+    printTypes: [apiStamp.printing || apiStamp.printingMethod || "", "Typography", "Lithography", "Intaglio"],
     millimeterMeasurements: [derivedSize || "", "20 x 24", "21 x 25", "19 x 23", "Other"],
     colors: [apiStamp.color || apiStamp.colorName || "", "Red", "Blue", "Green", "Brown"],
     grades: ["Fine", "Very Fine", "Good", "Poor", "Superb"],
@@ -214,12 +203,12 @@ const transformApiStampToInternal = (apiStamp: ApiStampResponse, capturedImageUr
     denominationSymbol: apiStamp.denominationSymbol,
     design: apiStamp.design,
     theme: apiStamp.theme,
-    artist: apiStamp.artist,
-    engraver: apiStamp.engraver,
-    printingQuantity: apiStamp.printingQuantity || (apiStamp.printRun ? Number.parseInt(String(apiStamp.printRun).replace(/[^0-9]/g, '')) : undefined),
+    artist: apiStamp.artist && apiStamp.artist.toLowerCase() !== "unknown" && apiStamp.artist.toLowerCase() !== "n/a" ? apiStamp.artist : undefined,
+    engraver: apiStamp.engraver && apiStamp.engraver.toLowerCase() !== "unknown" && apiStamp.engraver.toLowerCase() !== "n/a" ? apiStamp.engraver : undefined,
+    printingQuantity: apiStamp.printingQuantity || ((apiStamp.printRun && apiStamp.printRun.toLowerCase() !== "unknown" && apiStamp.printRun.toLowerCase() !== "n/a") ? Number.parseInt(String(apiStamp.printRun).replace(/[^0-9]/g, '')) : undefined),
     usagePeriod: apiStamp.usagePeriod || ((apiStamp.periodStart || apiStamp.periodEnd) ? `${apiStamp.periodStart || ''}${(apiStamp.periodStart || apiStamp.periodEnd) ? '–' : ''}${apiStamp.periodEnd || ''}` : undefined),
     hasGum: apiStamp.hasGum,
-    gumCondition: apiStamp.gumCondition || apiStamp.gumQuality,
+    gumCondition: apiStamp.gumCondition && apiStamp.gumCondition.toLowerCase() !== "unknown" && apiStamp.gumCondition.toLowerCase() !== "n/a" && apiStamp.gumCondition.toLowerCase() !== "not applicable" ? apiStamp.gumCondition : undefined,
     specialNotes: apiStamp.specialNotes,
     historicalContext: apiStamp.historicalContext || apiStamp.historicalSignificance
   };
@@ -231,8 +220,8 @@ const mapApiStampToFormData = (apiStamp: ApiStampResponse) => {
     // Basic identification
     watermark: (apiStamp.watermark ?? apiStamp.watermarkName) || "unknown-watermark",
     perforation: (apiStamp.perforation || apiStamp.perforationName || apiStamp.perforationMeasurement) || "unknown-perforation", 
-    paper: (apiStamp.paperType || apiStamp.paperTypeName) || "unknown-paper",
-    printType: (apiStamp.printing || apiStamp.printingMethod || apiStamp.printingProcess) || "unknown-print",
+    paper: (apiStamp.paperName) || "unknown-paper",
+    printType: (apiStamp.printing || apiStamp.printingMethod) || "unknown-print",
     certifier: "none-certifier", // Not provided by API
     itemType: "Stamp", // Default from API context
     color: (apiStamp.color || apiStamp.colorName) || "unknown-color",
@@ -1284,10 +1273,7 @@ function ScanPage() {
                       <Badge variant="default" className="text-xs">Primary Match</Badge>
                     </div>
                     
-                    <Card className={`border-2 max-w-sm mx-auto ${selectedStamp.selectedType === 'primary' && selectedStamp.selectedIndex === 0
-                      ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
-                      : 'border-border'
-                    }`}>
+                    <Card className={"border-2 max-w-sm mx-auto border-border"}>
                       <CardContent className="space-y-4 flex-1 flex flex-col px-4 py-4">
                         <div className="aspect-square relative bg-card rounded border overflow-hidden">
                           <Image
@@ -1355,11 +1341,11 @@ function ScanPage() {
                           </div>
 
                           {/* Action buttons */}
-                          <div className="flex flex-col sm:flex-row gap-2 pt-3 mt-auto">
+                          <div className="flex flex-col gap-2 pt-3 mt-auto">
                             <Button
                               variant="outline"
                               size="sm"
-                              className="flex-1 text-xs h-8 min-w-0"
+                              className="flex-1 text-xs min-w-0 py-2"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 openStampDetail(selectedStamp.primaryMatch);
@@ -1369,14 +1355,15 @@ function ScanPage() {
                             </Button>
                             <Button
                               size="sm"
-                              className="flex-1 text-xs h-8 min-w-0"
+                              className="flex-1 text-xs min-w-0 py-2"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setSelectedStamp((prev: any) => ({ ...prev, selectedIndex: 0, selectedType: 'primary' }));
+                                selectFinalStamp(selectedStamp.primaryMatch, 0);
+                                goToObservation();
                               }}
-                              variant={selectedStamp.selectedType === 'primary' && selectedStamp.selectedIndex === 0 ? "default" : "outline"}
                             >
-                              {selectedStamp.selectedType === 'primary' && selectedStamp.selectedIndex === 0 ? "Selected" : "Select"}
+                              <Check className="size-3 mr-1" />
+                              Select & Start Observation
                             </Button>
                           </div>
                         </div>
@@ -1401,10 +1388,7 @@ function ScanPage() {
                         {selectedStamp.similarMatches.map((match: any, index: number) => (
                           <Card
                             key={match.id}
-                            className={`cursor-pointer transition-all duration-200 hover:shadow-lg border-2 min-h-[450px] w-full ${selectedStamp.selectedType === 'similar' && selectedStamp.selectedIndex === index
-                              ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
-                              : 'border-border hover:border-primary/50'
-                              }`}
+                            className={"cursor-pointer transition-all duration-200 hover:shadow-lg border-2 min-h-[450px] w-full border-border hover:border-primary/50"}
                             onClick={(e) => {
                               e.stopPropagation();
                               openStampDetail(match);
@@ -1477,11 +1461,11 @@ function ScanPage() {
                                 </div>
 
                                 {/* Action buttons - pushed to bottom */}
-                                <div className="flex flex-col sm:flex-row gap-2 pt-3 mt-auto">
+                                <div className="flex flex-col gap-2 pt-3 mt-auto">
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className="flex-1 text-xs h-8 min-w-0"
+                                    className="flex-1 text-xs min-w-0 py-2"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       openStampDetail(match);
@@ -1491,14 +1475,15 @@ function ScanPage() {
                                   </Button>
                                   <Button
                                     size="sm"
-                                    className="flex-1 text-xs h-8 min-w-0"
+                                    className="flex-1 text-xs min-w-0 py-2"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      setSelectedStamp((prev: any) => ({ ...prev, selectedIndex: index, selectedType: 'similar' }));
+                                      selectFinalStamp(match, index);
+                                      goToObservation();
                                     }}
-                                    variant={selectedStamp.selectedType === 'similar' && selectedStamp.selectedIndex === index ? "default" : "outline"}
                                   >
-                                    {selectedStamp.selectedType === 'similar' && selectedStamp.selectedIndex === index ? "Selected" : "Select"}
+                                    <Check className="size-3 mr-1" />
+                                    Select & Start Observation
                                   </Button>
                                 </div>
                               </div>
@@ -1524,23 +1509,6 @@ function ScanPage() {
                     >
                       <RotateCcw className="size-4" />
                       Start Over
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        let selectedMatch;
-                        if (selectedStamp.selectedType === 'primary') {
-                          selectedMatch = selectedStamp.primaryMatch;
-                        } else {
-                          selectedMatch = selectedStamp.similarMatches[selectedStamp.selectedIndex];
-                        }
-                        selectFinalStamp(selectedMatch, selectedStamp.selectedIndex);
-                        goToObservation();
-                      }}
-                      className="gap-2"
-                      disabled={!selectedStamp.selectedType || (selectedStamp.selectedType === 'similar' && selectedStamp.selectedIndex === undefined)}
-                    >
-                      <Check className="size-4" />
-                      Confirm Selection
                     </Button>
                   </div>
                 </div>
@@ -1649,7 +1617,7 @@ function ScanPage() {
                 </div>
 
                 {/* Catalog Information */}
-                {(detailModalStamp.catalogName || detailModalStamp.catalogNumber || detailModalStamp.catalogId) && (
+                {/* {(detailModalStamp.catalogName || detailModalStamp.catalogNumber || detailModalStamp.catalogId) && (
                   <div className="space-y-2">
                     <h3 className="text-sm font-semibold text-foreground border-b pb-1">Catalog Information</h3>
                     <div className="space-y-1.5 text-sm">
@@ -1661,15 +1629,9 @@ function ScanPage() {
                           </Badge>
                         </div>
                       )}
-                      {detailModalStamp.catalogId && (
-                        <div className="flex justify-between items-start">
-                          <span className="text-muted-foreground">Catalog ID</span>
-                          <span className="font-medium text-right max-w-[200px] text-xs leading-tight break-all">{detailModalStamp.catalogId}</span>
-                        </div>
-                      )}
                     </div>
                   </div>
-                )}
+                )} */}
 
                 {/* Technical Specifications */}
                 <div className="space-y-2">
@@ -1840,22 +1802,22 @@ function ScanPage() {
             <Button
               onClick={() => {
                 if (detailModalStamp) {
-                  // Check if it's the primary match
+                  // Determine if modal stamp is primary or from similar list
                   if (selectedStamp.primaryMatch && selectedStamp.primaryMatch.id === detailModalStamp.id) {
-                    setSelectedStamp((prev: any) => ({ ...prev, selectedIndex: 0, selectedType: 'primary' }));
+                    selectFinalStamp(selectedStamp.primaryMatch, 0);
                   } else {
-                    // Check if it's in similar matches
                     const matchIndex = selectedStamp.similarMatches?.findIndex((m: any) => m.id === detailModalStamp.id);
                     if (matchIndex !== -1) {
-                      setSelectedStamp((prev: any) => ({ ...prev, selectedIndex: matchIndex, selectedType: 'similar' }));
+                      selectFinalStamp(selectedStamp.similarMatches[matchIndex], matchIndex);
                     }
                   }
+                  setDetailModalOpen(false);
+                  goToObservation();
                 }
-                setDetailModalOpen(false);
               }}
               className="flex-1"
             >
-              Select This Stamp
+              Select & Start Observation
             </Button>
           </div>
         </DialogContent>

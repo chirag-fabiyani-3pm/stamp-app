@@ -21,7 +21,7 @@ import {
   signOut
 } from "@/lib/api/auth"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, LogOut, Menu, MessageSquare, Sparkles, User } from "lucide-react"
+import { Home, LayoutDashboard, LogOut, Menu, MessageSquare, Sparkles, User } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -103,24 +103,32 @@ export function HeaderActions({ setIsOpen }: HeaderActionsProps) {
     </Link>
   )
 
+  const HomeButton = () => (
+    <Link
+      href="/"
+      className={cn(
+        "group px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5",
+        pathname === "/" ? "bg-accent text-accent-foreground" : "text-foreground hover:bg-accent",
+      )}
+    >
+      <Home className="h-4 w-4" />
+      <span>Home</span>
+    </Link>
+  )
+
   // Show loading state during SSR to prevent hydration mismatch
   if (!mounted) {
     return (
       <div className="flex items-center gap-2">
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-1">
+          <HomeButton />
           <ScanButton />
         </nav>
 
         <ModeToggle />
 
-        <button
-          onClick={() => setIsOpen(true)}
-          className="mr-2.5 hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors duration-300 ease-in-out group"
-        >
-          <MessageSquare className="w-4 h-4 mr-1 opacity-90 group-hover:opacity-100 transition-opacity" />
-          <span className="text-sm font-medium">AI Chat</span>
-        </button>
+        {/* Chat button will be conditionally rendered after auth check */}
 
         {/* Default to sign in button during SSR */}
         <Link href="/login">
@@ -134,9 +142,19 @@ export function HeaderActions({ setIsOpen }: HeaderActionsProps) {
             <span className="sr-only">Toggle menu</span>
           </SheetTrigger>
           <SheetContent side="right">
-            <nav className="flex flex-col gap-4">
-              <Link href="/login">
-                <Button className="w-full">Sign in</Button>
+            <nav className="flex flex-col gap-1 mt-2">
+              <Link href="/" className="flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition-colors hover:bg-accent">
+                <Home className="h-5 w-5" />
+                <span>Home</span>
+              </Link>
+              <Link href="/scan" className="flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition-colors hover:bg-accent">
+                <Sparkles className="h-5 w-5 text-amber-500" />
+                <span>Scan</span>
+                <span className="ml-auto text-xs text-amber-500">✦</span>
+              </Link>
+              <div className="h-px bg-border my-2" />
+              <Link href="/login" className="mt-1">
+                <Button className="w-full" size="lg">Sign in</Button>
               </Link>
             </nav>
           </SheetContent>
@@ -149,18 +167,21 @@ export function HeaderActions({ setIsOpen }: HeaderActionsProps) {
     <div className="flex items-center gap-2">
       {/* Desktop Navigation */}
       <nav className="hidden md:flex items-center space-x-1">
+        <HomeButton />
         <ScanButton />
       </nav>
 
       <ModeToggle />
 
-      <button
-        onClick={() => setIsOpen(true)}
-        className="mr-2.5 hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors duration-300 ease-in-out group"
-      >
-        <MessageSquare className="w-4 h-4 mr-1 opacity-90 group-hover:opacity-100 transition-opacity" />
-        <span className="text-sm font-medium">AI Chat</span>
-      </button>
+      {isLoggedIn && (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="mr-2.5 hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors duration-300 ease-in-out group"
+        >
+          <MessageSquare className="w-4 h-4 mr-1 opacity-90 group-hover:opacity-100 transition-opacity" />
+          <span className="text-sm font-medium">AI Chat</span>
+        </button>
+      )}
 
       {isLoggedIn ? (
         <DropdownMenu>
@@ -214,57 +235,74 @@ export function HeaderActions({ setIsOpen }: HeaderActionsProps) {
           <span className="sr-only">Toggle menu</span>
         </SheetTrigger>
         <SheetContent side="right">
-          <nav className="flex flex-col gap-4">
-            {/* Mobile Scan Button */}
-            <div className="relative">
-              <Link
-                href="/scan"
-                className={cn(
-                  "text-lg font-medium transition-colors hover:text-primary",
-                  pathname === "/scan" ? "text-primary" : "text-muted-foreground",
-                )}
-                onClick={() => setIsSheetOpen(false)}
-              >
-                Scan
-              </Link>
-            </div>
-
-            <button
-              onClick={() => {
-                setIsOpen(true);
-                setIsSheetOpen(false);
-              }}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors bg-primary/10 text-primary hover:bg-primary/20 md:hidden"
+          <nav className="flex flex-col gap-1 mt-2">
+            <Link
+              href="/"
+              className={cn(
+                "flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition-colors",
+                pathname === "/" ? "bg-accent text-accent-foreground" : "hover:bg-accent text-foreground",
+              )}
+              onClick={() => setIsSheetOpen(false)}
             >
-              <MessageSquare className="w-4 h-4 mr-1 opacity-70 group-hover:opacity-100 transition-opacity" />
-              <span className="text-xs">AI Chat</span>
-            </button>
+              <Home className="h-5 w-5" />
+              <span>Home</span>
+            </Link>
+
+            <Link
+              href="/scan"
+              className={cn(
+                "flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition-colors",
+                pathname === "/scan" ? "bg-accent text-accent-foreground" : "hover:bg-accent text-foreground",
+              )}
+              onClick={() => setIsSheetOpen(false)}
+            >
+              <Sparkles className="h-5 w-5 text-amber-500" />
+              <span>Scan</span>
+              <span className="ml-auto text-xs text-amber-500">✦</span>
+            </Link>
+
+            {isLoggedIn && (
+              <button
+                onClick={() => {
+                  setIsOpen(true)
+                  setIsSheetOpen(false)
+                }}
+                className="flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition-colors bg-primary/10 text-primary hover:bg-primary/20 md:hidden"
+              >
+                <MessageSquare className="h-5 w-5" />
+                <span>AI Chat</span>
+              </button>
+            )}
 
             {isLoggedIn && (
               <>
                 <Link
                   href="/profile"
                   className={cn(
-                    "text-lg font-medium transition-colors hover:text-primary",
-                    pathname === "/profile" ? "text-primary" : "text-muted-foreground",
+                    "flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition-colors",
+                    pathname === "/profile" ? "bg-accent text-accent-foreground" : "hover:bg-accent text-foreground",
                   )}
                   onClick={() => setIsSheetOpen(false)}
                 >
-                  Profile
+                  <User className="h-5 w-5" />
+                  <span>Profile</span>
                 </Link>
 
                 {userIsAdmin && (
                   <Link
                     href="/admin"
                     className={cn(
-                      "text-lg font-medium transition-colors hover:text-primary",
-                      pathname.startsWith("/admin") ? "text-primary" : "text-muted-foreground",
+                      "flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition-colors",
+                      pathname.startsWith("/admin") ? "bg-accent text-accent-foreground" : "hover:bg-accent text-foreground",
                     )}
                     onClick={() => setIsSheetOpen(false)}
                   >
-                    Admin Dashboard
+                    <LayoutDashboard className="h-5 w-5" />
+                    <span>Admin Dashboard</span>
                   </Link>
                 )}
+
+                <div className="h-px bg-border my-2" />
 
                 <Button
                   variant="outline"
@@ -272,7 +310,7 @@ export function HeaderActions({ setIsOpen }: HeaderActionsProps) {
                     handleLogout()
                     setIsSheetOpen(false)
                   }}
-                  className="mt-4"
+                  className="mt-2"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
                   Sign out
@@ -281,9 +319,9 @@ export function HeaderActions({ setIsOpen }: HeaderActionsProps) {
             )}
 
             {!isLoggedIn && (
-              <div className="mt-4">
+              <div className="mt-2">
                 <Link href="/login" onClick={() => setIsSheetOpen(false)}>
-                  <Button className="w-full">Sign in</Button>
+                  <Button className="w-full" size="lg">Sign in</Button>
                 </Link>
               </div>
             )}

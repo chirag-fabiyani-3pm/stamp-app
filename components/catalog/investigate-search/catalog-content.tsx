@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -23,7 +23,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { ChevronRight, Search, Filter, Grid, List, ArrowLeft, Home, Share2, RefreshCw } from "lucide-react"
+import { ChevronRight, Search, Filter, Grid, List, ArrowLeft, Home, Maximize, Minimize } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
 import {
@@ -45,7 +45,7 @@ import 'reactflow/dist/style.css'
 import dagre from 'dagre'
 
 import { StampDetailsModal } from "./stamp-details-modal"
-import { StampCardSkeleton, StampListSkeleton, GroupCardSkeleton, LoadingStamps } from "./loading-skeletons"
+import { LoadingStamps, DataFetchingProgress, InvestigateSearchSkeleton } from "./loading-skeletons"
 import { GroupNode } from "./group-node"
 import { StampNode } from "./stamp-node"
 
@@ -53,27 +53,20 @@ import {
   StampData,
   GroupedStamps,
   GroupingField,
-  NavigationState,
 } from "@/types/catalog"
 
 import {
-  openDB,
   saveStampsToIndexedDB,
   getStampsFromIndexedDB,
   getPaginatedStampsFromIndexedDB,
   getTotalStampsCountFromIndexedDB,
-  clearIndexedDB,
-  checkIndexedDBEmpty,
-  recreateIndexedDB
+  checkIndexedDBEmpty
 } from "@/lib/data/investigate-search-db"
 
-import {
-  mapApiStampToStampData,
-  fetchAllStampsFromAPI
-} from "@/lib/api/investigate-search-api"
+
+
 // Use shared data provider instead of importing apiStampData directly
 import { useCatalogData } from "@/lib/context/catalog-data-context"
-import { Skeleton } from "@/components/ui/skeleton"
 
 
 // Override ReactFlow default styles to match theme
@@ -233,6 +226,23 @@ const reactFlowStyles = `
     border-radius: var(--radius) !important;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
+  
+  /* Fullscreen mode styling */
+  .react-flow-fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9999 !important;
+    background: hsl(var(--background)) !important;
+  }
+  
+  .react-flow-fullscreen .react-flow__controls {
+    position: absolute !important;
+    bottom: 20px !important;
+    left: 20px !important;
+  }
 `
 
 // Central registry of grouping options with display labels and accessors.
@@ -248,56 +258,58 @@ const GROUPING_FIELDS: { value: GroupingField; label: string; accessor: (s: Stam
   { value: 'publisher', label: 'Publisher', accessor: (s) => s.publisher || 'Unknown Publisher' },
   // Additional groupings leveraging richer apiStampData → StampData mapping
   { value: 'catalogName', label: 'Catalog Name', accessor: (s) => s.catalogName || 'Unknown Catalog' },
-  { value: 'stampGroupId', label: 'Stamp Group', accessor: (s) => s.stampGroupId || 'Unknown Group' },
+  { value: 'stampGroupName', label: 'Stamp Group', accessor: (s) => s.stampGroupName || 'Unknown Group' },
   { value: 'countryCode', label: 'Country Code', accessor: (s) => s.countryCode || 'Unknown Country' },
   { value: 'denominationCurrency', label: 'Currency Code', accessor: (s) => s.denominationCurrency || 'Unknown Currency' },
   { value: 'denominationSymbol', label: 'Currency Symbol', accessor: (s) => s.denominationSymbol || 'Unknown Symbol' },
   { value: 'rarity', label: 'Rarity', accessor: (s) => s.rarity || 'Unknown' },
   { value: 'condition', label: 'Condition', accessor: (s) => s.condition || 'Unknown' },
   // Extracted from stampDetailsJson
-  { value: 'perforation', label: 'Perforation', accessor: (s) => {
+  {
+    value: 'perforation', label: 'Perforation', accessor: (s) => {
       try { const d = JSON.parse(s.stampDetailsJson); return d.perforation || 'Unknown'; } catch { return 'Unknown'; }
     }
   },
-  { value: 'watermark', label: 'Watermark', accessor: (s) => {
+  {
+    value: 'watermark', label: 'Watermark', accessor: (s) => {
       try { const d = JSON.parse(s.stampDetailsJson); return d.watermark || 'Unknown'; } catch { return 'Unknown'; }
     }
   },
-  { value: 'printingMethod', label: 'Printing Method', accessor: (s) => {
+  {
+    value: 'printingMethod', label: 'Printing Method', accessor: (s) => {
       try { const d = JSON.parse(s.stampDetailsJson); return d.printingMethod || 'Unknown'; } catch { return 'Unknown'; }
     }
   },
-  { value: 'designer', label: 'Designer', accessor: (s) => {
-      try { const d = JSON.parse(s.stampDetailsJson); return d.designer || 'Unknown'; } catch { return 'Unknown'; }
-    }
-  },
-  { value: 'postalHistoryType', label: 'Postal History Type', accessor: (s) => {
-      try { const d = JSON.parse(s.stampDetailsJson); return d.postalHistoryType || 'Unknown'; } catch { return 'Unknown'; }
-    }
-  },
-  { value: 'errorType', label: 'Error Type', accessor: (s) => {
+  {
+    value: 'errorType', label: 'Error Type', accessor: (s) => {
       try { const d = JSON.parse(s.stampDetailsJson); return d.errorType || 'None'; } catch { return 'Unknown'; }
     }
   },
 ]
 
 export function CatalogContent() {
-  const { normalizedStamps, dbReady } = useCatalogData()
+  const {
+    normalizedStamps,
+    dbReady,
+    fetchProgress,
+    loadingType,
+    loading: dataLoading
+  } = useCatalogData()
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
-  
+
   // Inject custom styles to override ReactFlow defaults
   useEffect(() => {
     const styleElement = document.createElement('style')
     styleElement.textContent = reactFlowStyles
     document.head.appendChild(styleElement)
-    
+
     return () => {
       document.head.removeChild(styleElement)
     }
   }, [])
-  
+
   const [stamps, setStamps] = useState<StampData[]>([])
   const [allStampsLoaded, setAllStampsLoaded] = useState(false)
   const [totalStampsCount, setTotalStampsCount] = useState(0)
@@ -311,11 +323,15 @@ export function CatalogContent() {
   const [groupSearchTerm, setGroupSearchTerm] = useState("")
   const [debouncedGroupSearchTerm, setDebouncedGroupSearchTerm] = useState("")
   const [isInitialized, setIsInitialized] = useState(false) // Track initialization
-  
+
   // Modal state for stamp details
   const [selectedStamp, setSelectedStamp] = useState<StampData | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  
+
+  // Fullscreen state for tree view
+  const [isTreeFullscreen, setIsTreeFullscreen] = useState(false)
+  const treeContainerRef = useRef<HTMLDivElement>(null)
+
   // Infinite scrolling state
   const [displayedItemsCount, setDisplayedItemsCount] = useState(6)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
@@ -325,7 +341,29 @@ export function CatalogContent() {
   // Get navigation state from URL
   const navigation = useMemo(() => {
     const pathParam = searchParams.get('path')
-    const path = pathParam ? decodeURIComponent(pathParam).split(',').filter(Boolean) : []
+    let path: string[] = []
+
+    if (pathParam) {
+      try {
+        // Path segments are JSON-encoded to handle special characters like commas
+        const decodedPath = decodeURIComponent(pathParam)
+        // Split by a multi-character delimiter that's extremely unlikely to appear in JSON
+        const segments = decodedPath.split('|||').filter(Boolean)
+        path = segments.map(segment => {
+          try {
+            return JSON.parse(segment)
+          } catch (e) {
+            // Fallback for any malformed segments
+            console.warn('Failed to parse path segment:', segment, e)
+            return segment
+          }
+        })
+      } catch (e) {
+        console.warn('Failed to decode path parameter:', pathParam, e)
+        path = []
+      }
+    }
+
     return {
       path,
       level: path.length
@@ -349,7 +387,7 @@ export function CatalogContent() {
     }
     if (urlViewMode && ['grid', 'list'].includes(urlViewMode)) setViewMode(urlViewMode)
     if (urlGrouping) {
-      const groupingFields = urlGrouping.split(',').filter(field => 
+      const groupingFields = urlGrouping.split(',').filter(field =>
         GROUPING_FIELDS.some(f => f.value === field)
       ) as GroupingField[]
       if (groupingFields.length > 0) {
@@ -364,7 +402,7 @@ export function CatalogContent() {
     const timeoutId = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm)
     }, 300)
-    
+
     return () => clearTimeout(timeoutId)
   }, [searchTerm])
 
@@ -372,7 +410,7 @@ export function CatalogContent() {
     const timeoutId = setTimeout(() => {
       setDebouncedGroupSearchTerm(groupSearchTerm)
     }, 300)
-    
+
     return () => clearTimeout(timeoutId)
   }, [groupSearchTerm])
 
@@ -380,11 +418,11 @@ export function CatalogContent() {
   useEffect(() => {
     // Only update URL after initial load to prevent overwriting pasted URLs
     if (!isInitialized) return
-    
+
     const timeoutId = setTimeout(() => {
       updateURLParams()
     }, 300) // Debounce for search
-    
+
     return () => clearTimeout(timeoutId)
   }, [searchTerm, groupSearchTerm, viewMode, groupingLevels, isInitialized])
 
@@ -395,9 +433,16 @@ export function CatalogContent() {
       ? new URLSearchParams(window.location.search)
       : new URLSearchParams()
 
-    // Path
+    // Path - JSON encode each segment to handle special characters
     if (newPath.length > 0) {
-      params.set('path', encodeURIComponent(newPath.join(',')))
+      try {
+        const encodedSegments = newPath.map(segment => JSON.stringify(segment))
+        params.set('path', encodeURIComponent(encodedSegments.join('|||')))
+      } catch (e) {
+        console.error('Failed to encode path segments:', newPath, e)
+        // Fallback to simple encoding if JSON fails
+        params.set('path', encodeURIComponent(newPath.join('|||')))
+      }
     } else {
       params.delete('path')
     }
@@ -442,44 +487,6 @@ export function CatalogContent() {
     }
   }
 
-  // Force refresh data from API
-  const refreshDataFromAPI = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      
-      // Clear existing data
-      await clearIndexedDB()
-      
-      // Reset state
-      setStamps([])
-      setCurrentOffset(0)
-      setAllStampsLoaded(false)
-      setTotalStampsCount(0)
-      
-      // Initialize with fresh data
-      await initializeIndexedDB()
-      
-      // Reload data
-      await loadInitialStamps()
-      
-      toast({
-        title: "Data Refreshed",
-        description: "Catalog data has been refreshed from server",
-      })
-    } catch (error) {
-      console.error('Error refreshing data:', error)
-      setError('Failed to refresh data from server')
-      toast({
-        title: "Refresh Failed",
-        description: "Unable to refresh data from server",
-        variant: "destructive"
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
   // Load initial stamps data
   const loadInitialStamps = async () => {
     setLoading(true)
@@ -487,11 +494,11 @@ export function CatalogContent() {
     setCurrentOffset(0)
     setAllStampsLoaded(false)
 
-    try {  
+    try {
       // Try to get total count first
       const totalCount = await getTotalStampsCountFromIndexedDB()
       setTotalStampsCount(totalCount)
-      
+
       if (totalCount > 0) {
         // Load first page from IndexedDB
         const { stamps: initialStamps, hasMore } = await getPaginatedStampsFromIndexedDB(0, INDEXEDDB_PAGE_SIZE)
@@ -514,12 +521,12 @@ export function CatalogContent() {
   // Load more stamps from IndexedDB for infinite scroll
   const loadMoreStamps = async () => {
     if (isLoadingMore || allStampsLoaded) return
-    
+
     setIsLoadingMore(true)
-    
+
     try {
       const { stamps: moreStamps, hasMore } = await getPaginatedStampsFromIndexedDB(currentOffset, INDEXEDDB_PAGE_SIZE)
-      
+
       if (moreStamps.length > 0) {
         setStamps(prevStamps => [...prevStamps, ...moreStamps])
         setCurrentOffset(prev => prev + INDEXEDDB_PAGE_SIZE)
@@ -562,16 +569,16 @@ export function CatalogContent() {
 
   // Filter stamps based on debounced search term
   const filteredStamps = useMemo(() => {
-    if (!debouncedSearchTerm) return stamps
-    
+    if (!debouncedSearchTerm) return stamps;
+
     const lowerSearchTerm = debouncedSearchTerm.toLowerCase()
-    return stamps.filter(stamp => 
+    return stamps.filter(stamp =>
       stamp.name.toLowerCase().includes(lowerSearchTerm) ||
       stamp.seriesName.toLowerCase().includes(lowerSearchTerm) ||
-      stamp.country.toLowerCase().includes(lowerSearchTerm) ||
+      stamp.country?.toLowerCase().includes(lowerSearchTerm) ||
       stamp.color.toLowerCase().includes(lowerSearchTerm) ||
-      (stamp.denominationValue && stamp.denominationSymbol && 
-       `${stamp.denominationValue}${stamp.denominationSymbol}`.toLowerCase().includes(lowerSearchTerm))
+      (stamp.denominationValue && stamp.denominationSymbol &&
+        `${stamp.denominationValue}${stamp.denominationSymbol}`.toLowerCase().includes(lowerSearchTerm))
     )
   }, [stamps, debouncedSearchTerm])
 
@@ -646,7 +653,7 @@ export function CatalogContent() {
   // Get top-level group options for quick filter
   const topLevelGroups = useMemo(() => {
     if (groupingLevels.length === 0) return []
-    
+
     const topLevel = Object.keys(groupedStamps)
     return topLevel.sort()
   }, [groupedStamps, groupingLevels])
@@ -668,16 +675,16 @@ export function CatalogContent() {
       return 0
     }
     visited.add(groups)
-    
+
     if (Array.isArray(groups)) {
       return groups.length
     }
-    
+
     // Check if groups is a valid object
     if (!groups || typeof groups !== 'object') {
       return 0
     }
-    
+
     return Object.values(groups).reduce((total, value) => {
       // Ensure value exists and is valid before recursing
       if (value == null) {
@@ -699,7 +706,7 @@ export function CatalogContent() {
   // Get current level data based on navigation path
   const getCurrentLevelData = useMemo(() => {
     let currentData: GroupedStamps | StampData[] = filteredGroups
-    
+
     for (const pathSegment of navigation.path) {
       if (!Array.isArray(currentData) && currentData[pathSegment]) {
         currentData = currentData[pathSegment]
@@ -709,7 +716,7 @@ export function CatalogContent() {
         return filteredGroups
       }
     }
-    
+
     return currentData
   }, [filteredGroups, navigation.path])
 
@@ -722,25 +729,26 @@ export function CatalogContent() {
   useEffect(() => {
     const debounceTimer = setTimeout(async () => {
       if (!isInitialized) return
-      
+
       // If user is searching or grouping is applied, we need all stamps for accurate results
       const needsAllStamps = debouncedSearchTerm.trim() !== '' || groupingLevels.length > 0
-      
+
       if (needsAllStamps && !allStampsLoaded) {
         try {
           setLoading(true)
-          
+
           // Load all stamps from IndexedDB
           const allStamps = await getStampsFromIndexedDB()
-          if (allStamps.length > 0) {
-            setStamps(allStamps)
+          const baseStamps = allStamps.filter(stamp => stamp.isInstance === false)
+          if (baseStamps.length > 0) {
+            setStamps(baseStamps)
             setAllStampsLoaded(true)
-            setCurrentOffset(allStamps.length)
-            setTotalStampsCount(allStamps.length)
-            
+            setCurrentOffset(baseStamps.length)
+            setTotalStampsCount(baseStamps.length)
+
             toast({
               title: "Complete Dataset Loaded",
-              description: `All ${allStamps.length} stamps are now available for accurate search and grouping results.`,
+              description: `All ${baseStamps.length} stamps are now available for accurate search and grouping results.`,
             })
           }
         } catch (error) {
@@ -766,7 +774,7 @@ export function CatalogContent() {
     if (scrollTop + clientHeight >= scrollHeight - 200) {
       // Calculate current level data within the callback
       let currentLevelData: GroupedStamps | StampData[] = filteredGroups
-      
+
       for (const pathSegment of navigation.path) {
         if (!Array.isArray(currentLevelData) && currentLevelData[pathSegment]) {
           currentLevelData = currentLevelData[pathSegment]
@@ -775,11 +783,11 @@ export function CatalogContent() {
           break
         }
       }
-      
+
       // Determine what type of data we're currently displaying
       let currentTotalCount: number
       let needsMoreFromDB = false
-      
+
       if (groupingLevels.length === 0) {
         // No grouping - showing all filtered stamps
         currentTotalCount = filteredStamps.length
@@ -800,7 +808,7 @@ export function CatalogContent() {
         currentTotalCount = groupEntries.length
         needsMoreFromDB = false // Groups are already computed from loaded data
       }
-      
+
       // Check if we need to load more data from IndexedDB
       if (needsMoreFromDB) {
         loadMoreStamps()
@@ -842,26 +850,7 @@ export function CatalogContent() {
     updateURL([])
   }
 
-  // Share current URL
-  const shareCurrentURL = async () => {
-    const currentURL = window.location.href
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: 'Investigate Search - Stamp Collection',
-          url: currentURL
-        })
-      } else {
-        await navigator.clipboard.writeText(currentURL)
-        toast({
-          title: "URL copied to clipboard",
-          description: "You can now share this URL with others",
-        })
-      }
-    } catch (error) {
-      console.error('Error sharing URL:', error)
-    }
-  }
+
 
   const addGroupingLevel = (field: GroupingField) => {
     if (!groupingLevels.includes(field)) {
@@ -891,9 +880,80 @@ export function CatalogContent() {
     setIsModalOpen(true)
   }
 
+  // Fullscreen functionality for tree view
+  const enterTreeFullscreen = async () => {
+    if (treeContainerRef.current) {
+      try {
+        if (treeContainerRef.current.requestFullscreen) {
+          await treeContainerRef.current.requestFullscreen()
+        } else if ((treeContainerRef.current as any).webkitRequestFullscreen) {
+          await (treeContainerRef.current as any).webkitRequestFullscreen()
+        } else if ((treeContainerRef.current as any).msRequestFullscreen) {
+          await (treeContainerRef.current as any).msRequestFullscreen()
+        }
+        setIsTreeFullscreen(true)
+      } catch (error) {
+        console.error('Error entering fullscreen:', error)
+      }
+    }
+  }
+
+  const exitTreeFullscreen = async () => {
+    try {
+      if (document.exitFullscreen) {
+        await document.exitFullscreen()
+      } else if ((document as any).webkitExitFullscreen) {
+        await (document as any).webkitExitFullscreen()
+      } else if ((document as any).msExitFullscreen) {
+        await (document as any).msExitFullscreen()
+      }
+      setIsTreeFullscreen(false)
+    } catch (error) {
+      console.error('Error exiting fullscreen:', error)
+    }
+  }
+
+  const toggleTreeFullscreen = () => {
+    if (isTreeFullscreen) {
+      exitTreeFullscreen()
+    } else {
+      enterTreeFullscreen()
+    }
+  }
+
+  // Listen for fullscreen changes and ESC key
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isCurrentlyFullscreen = !!(
+        document.fullscreenElement ||
+        (document as any).webkitFullscreenElement ||
+        (document as any).msFullscreenElement
+      )
+      setIsTreeFullscreen(isCurrentlyFullscreen)
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isTreeFullscreen) {
+        exitTreeFullscreen()
+      }
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange)
+    document.addEventListener('msfullscreenchange', handleFullscreenChange)
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange)
+      document.removeEventListener('msfullscreenchange', handleFullscreenChange)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isTreeFullscreen])
+
   const renderStampCard = (stamp: StampData) => (
-    <Card 
-      key={stamp.id} 
+    <Card
+      key={stamp.id}
       className="group cursor-pointer transition-all duration-200 hover:shadow-lg border bg-background hover:bg-muted/20"
       onClick={() => handleStampClick(stamp)}
     >
@@ -906,18 +966,18 @@ export function CatalogContent() {
           className="object-contain transition-transform duration-300 group-hover:scale-105"
           sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
         />
-        
+
         {/* Simple denomination badge */}
         <div className="absolute top-2 left-2 z-10">
           <Badge variant="secondary" className="text-xs font-medium bg-background/90 backdrop-blur-sm">
             {formatDenomination(stamp.denominationValue, stamp.denominationSymbol)}
           </Badge>
         </div>
-        
+
         {/* Hover overlay */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-200" />
       </div>
-      
+
       {/* Content Section */}
       <div className="p-3 space-y-2">
         {/* Title */}
@@ -929,25 +989,31 @@ export function CatalogContent() {
             {stamp.seriesName}
           </p>
         </div>
-        
+
         {/* Simple info row */}
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>{stamp.issueYear || 'Unknown'}</span>
           <span>•</span>
           <span>{stamp.country}</span>
+          {(stamp.catalogNumber && stamp.catalogNumber !== '-') ? <>
+            <span>•</span>
+            <span className="text-xs text-muted-foreground">
+              {stamp.catalogNumber}
+            </span>
+          </> : <></>}
         </div>
-        
+
         {/* Catalog number */}
-        <div className="text-xs text-muted-foreground">
-          #{stamp.catalogNumber}
-        </div>
+        {/* <div className="text-xs text-muted-foreground">
+          {stamp.catalogNumber}
+        </div> */}
       </div>
     </Card>
   )
 
   const renderStampList = (stamp: StampData) => (
-    <Card 
-      key={stamp.id} 
+    <Card
+      key={stamp.id}
       className="group mb-3 cursor-pointer transition-all duration-200 hover:shadow-md border bg-background hover:bg-muted/10"
       onClick={() => handleStampClick(stamp)}
     >
@@ -962,7 +1028,7 @@ export function CatalogContent() {
               sizes="64px"
             />
           </div>
-          
+
           <div className="flex-1 min-w-0 space-y-2">
             <div>
               <h3 className="font-semibold text-base leading-tight mb-1" title={stamp.name}>
@@ -972,7 +1038,7 @@ export function CatalogContent() {
                 {stamp.seriesName}
               </p>
             </div>
-            
+
             <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
               <Badge variant="secondary" className="text-xs">
                 {formatDenomination(stamp.denominationValue, stamp.denominationSymbol)}
@@ -981,10 +1047,15 @@ export function CatalogContent() {
               <span>•</span>
               <span>{stamp.country}</span>
               <span>•</span>
-              <span>#{stamp.catalogNumber}</span>
+              {stamp.catalogNumber ? <>
+                <span>•</span>
+                <span className="text-xs text-muted-foreground">
+                  {stamp.catalogNumber}
+                </span>
+              </> : <></>}
             </div>
           </div>
-          
+
           <div className="flex-shrink-0 opacity-50 group-hover:opacity-100 transition-opacity duration-200">
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
           </div>
@@ -993,14 +1064,14 @@ export function CatalogContent() {
     </Card>
   )
 
-   
+
 
   // Function to create tree layout using dagre
   const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
-    
+
     const g = new dagre.graphlib.Graph()
     g.setDefaultEdgeLabel(() => ({}))
-    g.setGraph({ 
+    g.setGraph({
       rankdir: 'TB', // Top to Bottom
       ranksep: 120,  // Increased vertical spacing between ranks
       nodesep: 80,   // Increased horizontal spacing between nodes
@@ -1077,7 +1148,7 @@ export function CatalogContent() {
             target: nodeId,
             targetHandle: 'top',
             className: 'stamp-connection',
-            style: { 
+            style: {
               stroke: 'url(#stamp-gradient)',
               strokeWidth: 2,
               strokeOpacity: 0.8,
@@ -1096,17 +1167,17 @@ export function CatalogContent() {
     } else {
       // This is a grouped object
       const entries = Object.entries(data)
-      
+
       // Validate grouping levels to prevent infinite recursion
       if (level >= groupingLevels.length) {
         console.warn(`Level ${level} exceeds available grouping levels (${groupingLevels.length}), treating as stamps`)
         // If we've exceeded grouping levels, treat any remaining data as stamps
         return { nodes, edges }
       }
-      
+
       const groupingField = groupingLevels[level]
       const fieldLabel = GROUPING_FIELDS.find(f => f.value === groupingField)?.label || 'Group'
-      
+
       // Prevent processing too many groups at once to avoid stack overflow
       if (entries.length > 100) {
         console.warn(`Too many groups (${entries.length}) at level ${level}, limiting to first 100`)
@@ -1119,13 +1190,13 @@ export function CatalogContent() {
           console.warn(`Invalid group data for "${groupName}":`, groupData)
           return // Skip this group
         }
-        
+
         // Ensure we don't have empty group names that could cause issues
         if (!groupName || groupName.trim() === '') {
           console.warn('Empty group name detected, skipping')
           return
         }
-        
+
         const nodeId = `group-${level}-${groupName.replace(/[^a-zA-Z0-9]/g, '_')}-${Math.random()}`
         const stampCount = (() => {
           try {
@@ -1135,16 +1206,16 @@ export function CatalogContent() {
             return 0
           }
         })()
-        
+
         nodes.push({
           id: nodeId,
           type: 'group',
           position: { x: 0, y: 0 }, // Will be set by layout
-          data: { 
-            name: groupName, 
-            count: stampCount, 
-            level, 
-            fieldLabel 
+          data: {
+            name: groupName,
+            count: stampCount,
+            level,
+            fieldLabel
           },
         })
 
@@ -1156,7 +1227,7 @@ export function CatalogContent() {
             target: nodeId,
             targetHandle: 'top',
             className: 'group-connection',
-            style: { 
+            style: {
               stroke: 'url(#group-gradient)',
               strokeWidth: 3,
               strokeOpacity: 0.9
@@ -1207,7 +1278,7 @@ export function CatalogContent() {
         fieldLabel: GROUPING_FIELDS.find(f => f.value === groupingLevels[0])?.label || 'Root'
       },
     }
-    
+
     // Create tree structure for this specific group
     let treeData: { nodes: Node[], edges: Edge[] }
     try {
@@ -1219,7 +1290,7 @@ export function CatalogContent() {
         return (
           <div className="space-y-2 p-4">
             {groupData.map(stamp => (
-              <div 
+              <div
                 key={stamp.id}
                 className="group cursor-pointer transition-all duration-200 hover:bg-muted/30 rounded-lg p-3 border border-muted/50 hover:border-primary/30"
                 onClick={() => handleStampClick(stamp)}
@@ -1234,7 +1305,7 @@ export function CatalogContent() {
                       sizes="40px"
                     />
                   </div>
-                  
+
                   <div className="flex-1 min-w-0">
                     <h4 className="font-medium text-sm leading-tight mb-1 text-foreground truncate" title={stamp.name}>
                       {stamp.name}
@@ -1247,7 +1318,7 @@ export function CatalogContent() {
                       <span>#{stamp.catalogNumber}</span>
                     </div>
                   </div>
-                  
+
                   <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     <ChevronRight className="h-3 w-3 text-muted-foreground" />
                   </div>
@@ -1265,13 +1336,13 @@ export function CatalogContent() {
         </div>
       )
     }
-    
+
     // If no sub-structure, just show stamps
     if (Array.isArray(groupData)) {
       return (
         <div className="space-y-2 p-4">
           {groupData.map(stamp => (
-            <div 
+            <div
               key={stamp.id}
               className="group cursor-pointer transition-all duration-200 hover:bg-muted/30 rounded-lg p-3 border border-muted/50 hover:border-primary/30"
               onClick={() => handleStampClick(stamp)}
@@ -1286,7 +1357,7 @@ export function CatalogContent() {
                     sizes="40px"
                   />
                 </div>
-                
+
                 <div className="flex-1 min-w-0">
                   <h4 className="font-medium text-sm leading-tight mb-1 text-foreground truncate" title={stamp.name}>
                     {stamp.name}
@@ -1299,7 +1370,7 @@ export function CatalogContent() {
                     <span>#{stamp.catalogNumber}</span>
                   </div>
                 </div>
-                
+
                 <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                   <ChevronRight className="h-3 w-3 text-muted-foreground" />
                 </div>
@@ -1313,11 +1384,53 @@ export function CatalogContent() {
     // Apply layout for tree visualization including root node
     const allNodes = [rootNode, ...treeData.nodes]
     const allEdges = treeData.edges
-    
+
     const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(allNodes, allEdges)
 
     return (
-      <div className="h-[400px] w-full">
+      <div 
+        ref={treeContainerRef}
+        className={cn(
+          "w-full relative",
+          isTreeFullscreen ? "react-flow-fullscreen" : "h-[400px]"
+        )}
+      >
+        {/* Fullscreen Toggle Button */}
+        <div className={cn(
+          "absolute z-50",
+          isTreeFullscreen ? "top-8 right-8" : "top-4 right-4"
+        )}>
+          <Button
+            variant="outline"
+            size={isTreeFullscreen ? "default" : "sm"}
+            onClick={toggleTreeFullscreen}
+            className={cn(
+              "bg-background/90 backdrop-blur-sm shadow-lg hover:bg-background transition-all duration-200",
+              isTreeFullscreen && "hover:scale-105"
+            )}
+            title={isTreeFullscreen ? "Exit Fullscreen (ESC)" : "Enter Fullscreen"}
+          >
+            {isTreeFullscreen ? (
+              <>
+                <Minimize className="h-4 w-4 mr-2" />
+                Exit Fullscreen
+              </>
+            ) : (
+              <Maximize className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+
+        {/* Fullscreen Info Banner */}
+        {isTreeFullscreen && (
+          <div className="absolute top-8 left-8 z-40 bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg shadow-lg backdrop-blur-sm">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <div className="w-2 h-2 bg-primary-foreground rounded-full animate-pulse"></div>
+              Fullscreen Mode - Press ESC to exit
+            </div>
+          </div>
+        )}
+        
         <ReactFlow
           nodes={layoutedNodes}
           edges={layoutedEdges}
@@ -1325,13 +1438,16 @@ export function CatalogContent() {
           connectionMode={ConnectionMode.Strict}
           fitView
           attributionPosition="bottom-left"
-          className="bg-background"
+          className={cn(
+            "bg-background",
+            isTreeFullscreen && "h-full"
+          )}
           panOnDrag={true}
           zoomOnScroll={true}
-          minZoom={0.5}
-          maxZoom={2}
+          minZoom={isTreeFullscreen ? 0.1 : 0.5}
+          maxZoom={isTreeFullscreen ? 5 : 2}
           defaultEdgeOptions={{
-            style: { 
+            style: {
               strokeWidth: 2,
               strokeOpacity: 1
             },
@@ -1347,26 +1463,26 @@ export function CatalogContent() {
                 <stop offset="50%" stopColor="#fb923c" stopOpacity="0.8" />
                 <stop offset="100%" stopColor="#fdba74" stopOpacity="0.7" />
               </linearGradient>
-              
+
               <linearGradient id="group-gradient-hover" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor="#ea580c" stopOpacity="1" />
                 <stop offset="50%" stopColor="#f97316" stopOpacity="0.9" />
                 <stop offset="100%" stopColor="#fb923c" stopOpacity="0.8" />
               </linearGradient>
-              
+
               {/* Stamp connection gradients */}
               <linearGradient id="stamp-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor="#64748b" stopOpacity="0.8" />
                 <stop offset="50%" stopColor="#94a3b8" stopOpacity="0.7" />
                 <stop offset="100%" stopColor="#cbd5e1" stopOpacity="0.6" />
               </linearGradient>
-              
+
               <linearGradient id="stamp-gradient-hover" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.9" />
                 <stop offset="50%" stopColor="#60a5fa" stopOpacity="0.8" />
                 <stop offset="100%" stopColor="#93c5fd" stopOpacity="0.7" />
               </linearGradient>
-              
+
               {/* Selected edge gradient */}
               <linearGradient id="selected-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor="#64748b" stopOpacity="1" />
@@ -1375,38 +1491,41 @@ export function CatalogContent() {
                 <stop offset="75%" stopColor="#e2e8f0" stopOpacity="0.9" />
                 <stop offset="100%" stopColor="#64748b" stopOpacity="1" />
               </linearGradient>
-              
+
               {/* Custom arrow markers */}
               <marker id="group-arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
                 <polygon points="0,0 0,6 9,3" fill="url(#group-gradient)" stroke="none" />
               </marker>
-              
+
               <marker id="stamp-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
                 <polygon points="0,0 0,6 7,3" fill="url(#stamp-gradient)" stroke="none" />
               </marker>
-              
+
               <marker id="elegant-arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
                 <polygon points="0,0 0,6 9,3" fill="#64748b" stroke="none" />
               </marker>
             </defs>
           </svg>
-          
-          <Background 
-            color="hsl(214.3 31.8% 91.4%)" 
-            size={1} 
+
+          <Background
+            color="hsl(214.3 31.8% 91.4%)"
+            size={1}
           />
-          <Controls 
-            className="bg-background border border-muted rounded-lg shadow-sm" 
+          <Controls
+            className="bg-background border border-muted rounded-lg shadow-sm"
             showInteractive={false}
+            showFitView={false}
           />
         </ReactFlow>
-        
-        {/* Debug info */}
-        <div className="mt-2 p-2 bg-gray-100 text-xs">
-          <div>Nodes: {layoutedNodes.length}</div>
-          <div>Edges: {layoutedEdges.length}</div>
-          <div>Sample edge: {layoutedEdges[0] ? `${layoutedEdges[0].source} → ${layoutedEdges[0].target}` : 'None'}</div>
-        </div>
+
+        {/* Debug info - hidden in fullscreen mode */}
+        {!isTreeFullscreen && (
+          <div className="mt-2 p-2 bg-gray-100 text-xs">
+            <div>Nodes: {layoutedNodes.length}</div>
+            <div>Edges: {layoutedEdges.length}</div>
+            <div>Sample edge: {layoutedEdges[0] ? `${layoutedEdges[0].source} → ${layoutedEdges[0].target}` : 'None'}</div>
+          </div>
+        )}
       </div>
     )
   }
@@ -1414,7 +1533,7 @@ export function CatalogContent() {
   // Main hierarchical accordion view with pagination
   const renderHierarchicalAccordionView = () => {
     const currentData = getCurrentLevelData
-    
+
     // If no grouping levels, show message
     if (groupingLevels.length === 0) {
       return (
@@ -1436,7 +1555,7 @@ export function CatalogContent() {
     const displayedGroups = groupEntries.slice(0, displayedItemsCount)
     const hasMoreGroups = displayedItemsCount < groupEntries.length
     const rootFieldLabel = GROUPING_FIELDS.find(f => f.value === groupingLevels[0])?.label || 'Groups'
-    
+
     return (
       <div className="space-y-4">
         <div className="text-sm text-muted-foreground mb-4 p-3 bg-muted/20 rounded-lg border border-muted/50">
@@ -1453,7 +1572,7 @@ export function CatalogContent() {
             </span>
           </p>
         </div>
-        
+
         <Accordion type="single" collapsible className="w-full space-y-3">
           {displayedGroups.map(([groupName, groupData]) => {
             const stampCount = (() => {
@@ -1464,10 +1583,10 @@ export function CatalogContent() {
                 return 0
               }
             })()
-            
+
             return (
-              <AccordionItem 
-                key={groupName} 
+              <AccordionItem
+                key={groupName}
                 value={groupName}
                 className="border border-muted/50 rounded-lg shadow-sm bg-background hover:shadow-md transition-shadow"
               >
@@ -1505,7 +1624,7 @@ export function CatalogContent() {
             )
           })}
         </Accordion>
-        
+
         {/* Loading more accordions */}
         {isLoadingMore && hasMoreGroups && (
           <div className="text-center py-6">
@@ -1519,14 +1638,14 @@ export function CatalogContent() {
             </div>
           </div>
         )}
-        
+
         {/* Show completion message */}
         {!hasMoreGroups && !isLoadingMore && groupEntries.length > 6 && displayedGroups.length >= groupEntries.length && (
           <div className="text-center py-4 text-muted-foreground">
             All {groupEntries.length} groups loaded
           </div>
         )}
-        
+
         {groupEntries.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
             No groups found
@@ -1545,20 +1664,20 @@ export function CatalogContent() {
     }
 
     const currentData = getCurrentLevelData
-    
+
     // If no grouping levels are set, show all filtered stamps directly
     if (groupingLevels.length === 0) {
       const displayedStamps = filteredStamps.slice(0, displayedItemsCount)
       const hasMore = displayedItemsCount < filteredStamps.length
-      
+
       return (
         <div className="space-y-4">
           <div className={cn(
-            viewMode === 'grid' 
+            viewMode === 'grid'
               ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4"
               : "space-y-2"
           )}>
-            {displayedStamps.map(stamp => 
+            {displayedStamps.map(stamp =>
               viewMode === 'grid' ? renderStampCard(stamp) : renderStampList(stamp)
             )}
           </div>
@@ -1576,8 +1695,8 @@ export function CatalogContent() {
           )}
           {!hasMore && !isLoadingMore && filteredStamps.length > 6 && displayedItemsCount >= filteredStamps.length && (
             <div className="text-center py-4 text-muted-foreground">
-              {allStampsLoaded 
-                ? `All ${filteredStamps.length} stamps loaded` 
+              {allStampsLoaded
+                ? `All ${filteredStamps.length} stamps loaded`
                 : `Showing ${filteredStamps.length} stamps (${totalStampsCount - stamps.length} more available)`
               }
             </div>
@@ -1585,20 +1704,20 @@ export function CatalogContent() {
         </div>
       )
     }
-    
+
     if (Array.isArray(currentData)) {
       // We're at the final level - show stamps
       const displayedStamps = currentData.slice(0, displayedItemsCount)
       const hasMore = displayedItemsCount < currentData.length
-      
+
       return (
         <div className="space-y-4">
           <div className={cn(
-            viewMode === 'grid' 
+            viewMode === 'grid'
               ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4"
               : "space-y-2"
           )}>
-            {displayedStamps.map(stamp => 
+            {displayedStamps.map(stamp =>
               viewMode === 'grid' ? renderStampCard(stamp) : renderStampList(stamp)
             )}
           </div>
@@ -1616,8 +1735,8 @@ export function CatalogContent() {
           )}
           {!hasMore && !isLoadingMore && currentData.length > 6 && displayedItemsCount >= currentData.length && (
             <div className="text-center py-4 text-muted-foreground">
-              {allStampsLoaded 
-                ? `All ${currentData.length} stamps loaded in this group` 
+              {allStampsLoaded
+                ? `All ${currentData.length} stamps loaded in this group`
                 : `Showing ${currentData.length} stamps in this group (more may be available)`
               }
             </div>
@@ -1643,10 +1762,10 @@ export function CatalogContent() {
                 return 0
               }
             })()
-            
+
             return (
-              <Card 
-                key={groupName} 
+              <Card
+                key={groupName}
                 className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-primary/20"
                 onClick={() => navigateToGroup(groupName)}
               >
@@ -1695,7 +1814,7 @@ export function CatalogContent() {
 
   const renderBreadcrumbs = () => {
     if (navigation.path.length === 0) return null
-  
+
     return (
       <Breadcrumb className="mb-4 bg-white px-4 py-2 rounded-lg shadow">
         <BreadcrumbList>
@@ -1710,16 +1829,16 @@ export function CatalogContent() {
               Catalog
             </BreadcrumbLink>
           </BreadcrumbItem>
-  
+
           {navigation.path.map((segment, i) => {
             const isLast = i === navigation.path.length - 1
-  
+
             return (
               <BreadcrumbItem key={i} className="flex items-center">
                 <BreadcrumbSeparator>
                   <ChevronRight className="h-4 w-4 text-gray-400" />
                 </BreadcrumbSeparator>
-  
+
                 {isLast ? (
                   <BreadcrumbPage className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-primary text-white">
                     {segment}
@@ -1740,57 +1859,38 @@ export function CatalogContent() {
       </Breadcrumb>
     )
   }
-  
-  if (loading && stamps.length === 0) {
+
+  // Show API data fetching progress overlay
+  if (fetchProgress.isFetching) {
     return (
-      <div className="container mx-auto p-6 space-y-6">
-        {/* Header skeleton */}
-        <div className="flex items-center justify-between">
-          <div>
-            <Skeleton className="h-8 w-32 mb-2" />
-            <Skeleton className="h-4 w-48" />
-          </div>
-          <div className="flex items-center space-x-2">
-            <Skeleton className="h-10 w-10" />
-            <Skeleton className="h-10 w-10" />
-            <Skeleton className="h-10 w-10" />
-            <Skeleton className="h-10 w-10" />
-          </div>
-        </div>
-
-        {/* Controls skeleton */}
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-48" />
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Skeleton className="h-4 w-24 mb-2" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-            <div>
-              <Skeleton className="h-4 w-32 mb-2" />
-              <div className="flex gap-2 mb-2">
-                <Skeleton className="h-6 w-20 rounded-full" />
-                <Skeleton className="h-6 w-24 rounded-full" />
-              </div>
-              <Skeleton className="h-10 w-full" />
-            </div>
-            <Skeleton className="h-4 w-40" />
-          </CardContent>
-        </Card>
-
-        {/* Stamps skeleton */}
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-24" />
-          </CardHeader>
-          <CardContent>
-            <LoadingStamps count={12} type="grid" />
-          </CardContent>
-        </Card>
+      <div className="container mx-auto p-6">
+        <DataFetchingProgress
+          progress={fetchProgress.progress}
+          totalItems={fetchProgress.totalItems}
+          currentItems={fetchProgress.currentItems}
+          currentPage={fetchProgress.currentPage}
+          totalPages={fetchProgress.totalPages}
+          isComplete={fetchProgress.isComplete}
+        />
       </div>
     )
+  }
+
+  // Show IndexedDB loading state
+  if (loadingType === 'indexeddb' && !dbReady) {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Loading Stamp Catalog</h2>
+          <p className="text-muted-foreground mb-6">Retrieving data from local storage...</p>
+        </div>
+        <LoadingStamps count={12} type="grid" />
+      </div>
+    )
+  }
+
+  if (loading && stamps.length === 0 && loadingType === 'none') {
+    return <InvestigateSearchSkeleton />
   }
 
   if (error) {
@@ -1816,23 +1916,6 @@ export function CatalogContent() {
           <p className="text-muted-foreground">Advanced stamp catalog with flexible grouping</p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={refreshDataFromAPI}
-            title="Refresh data from server"
-            disabled={loading}
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={shareCurrentURL}
-            title="Share current view"
-          >
-            <Share2 className="h-4 w-4" />
-          </Button>
           <Button
             variant={viewMode === 'grid' ? 'default' : 'outline'}
             size="icon"
@@ -1895,7 +1978,7 @@ export function CatalogContent() {
                 </Button>
               )}
             </div>
-            
+
             {groupingLevels.length > 0 && (
               <div className="bg-muted/30 rounded-lg p-3 space-y-2">
                 <div className="text-xs text-muted-foreground mb-2">
@@ -1904,18 +1987,18 @@ export function CatalogContent() {
                 <div className="flex items-center gap-2 flex-wrap">
                   {groupingLevels.map((level, index) => (
                     <>
-                    <div key={index} className="flex items-center gap-2">
-                      {/* Level indicator */}
-                      <div className={cn(
+                      <div key={index} className="flex items-center gap-2">
+                        {/* Level indicator */}
+                        <div className={cn(
                           "flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold",
-                          index === 0 
-                            ? "bg-primary text-primary-foreground" 
+                          index === 0
+                            ? "bg-primary text-primary-foreground"
                             : "bg-primary/20 text-primary"
                         )}>
                           {index + 1}
                         </div>
-                        <Badge 
-                          variant={index === 0 ? "default" : "secondary"} 
+                        <Badge
+                          variant={index === 0 ? "default" : "secondary"}
                           className={cn(
                             "flex items-center gap-1 pr-1",
                             index === groupingLevels.length - 1 && "ring-2 ring-primary/20"
@@ -1937,7 +2020,7 @@ export function CatalogContent() {
                           )}
                         </Badge>
                       </div>
-                      
+
                       {/* Arrow separator (except for last item) */}
                       {index < groupingLevels.length - 1 && (
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -1947,15 +2030,15 @@ export function CatalogContent() {
                 </div>
               </div>
             )}
-            
-            <Select 
+
+            <Select
               onValueChange={(value) => addGroupingLevel(value as GroupingField)}
               value="" // Always keep the select empty/uncontrolled
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder={
-                  groupingLevels.length === 0 
-                    ? "Select root grouping level" 
+                  groupingLevels.length === 0
+                    ? "Select root grouping level"
                     : `Add level ${groupingLevels.length + 1} grouping`
                 } />
               </SelectTrigger>
@@ -1970,7 +2053,7 @@ export function CatalogContent() {
                 ))}
               </SelectContent>
             </Select>
-            
+
             {/* Quick Grouping Options */}
             {groupingLevels.length === 0 && (
               <div className="space-y-2">
@@ -2016,7 +2099,7 @@ export function CatalogContent() {
             {/* Helpful explanation */}
             {groupingLevels.length === 0 && (
               <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/20 p-2 rounded border border-blue-200 dark:border-blue-800">
-                💡 <strong>Tip:</strong> Start with a root grouping (e.g., Country), then add nested levels (e.g., Year, then Series). 
+                💡 <strong>Tip:</strong> Start with a root grouping (e.g., Country), then add nested levels (e.g., Year, then Series).
                 Stamps will be organized hierarchically based on your selection order.
               </div>
             )}
@@ -2046,7 +2129,7 @@ export function CatalogContent() {
                   </Button>
                 )}
               </div>
-              
+
               {/* Quick Group Value Filters */}
               {topLevelGroups.length > 0 && (
                 <div className="space-y-2">
@@ -2101,7 +2184,7 @@ export function CatalogContent() {
               </span>
             )}
           </div>
-          
+
 
         </CardContent>
       </Card>
@@ -2112,9 +2195,9 @@ export function CatalogContent() {
           <div className="flex items-center justify-between">
             <CardTitle>
               {groupingLevels.length === 0 ? 'All Stamps' :
-               navigation.level === 0 ? 'All Groups' : 
-               navigation.level >= groupingLevels.length ? 'Stamps' :
-               `${GROUPING_FIELDS.find(f => f.value === groupingLevels[navigation.level])?.label || 'Groups'}`}
+                navigation.level === 0 ? 'All Groups' :
+                  navigation.level >= groupingLevels.length ? 'Stamps' :
+                    `${GROUPING_FIELDS.find(f => f.value === groupingLevels[navigation.level])?.label || 'Groups'}`}
             </CardTitle>
             {navigation.level > 0 && (
               <Button variant="outline" size="sm" onClick={navigateBack} className="flex items-center gap-2">
@@ -2146,19 +2229,19 @@ export function CatalogContent() {
                   </div>
                 </div>
               </div>
-              
+
               {/* Show skeleton while loading */}
-              <LoadingStamps 
-                count={6} 
-                type={groupingLevels.length === 0 ? viewMode : 
-                      Array.isArray(getCurrentLevelData) ? viewMode : 'groups'} 
+              <LoadingStamps
+                count={6}
+                type={groupingLevels.length === 0 ? viewMode :
+                  Array.isArray(getCurrentLevelData) ? viewMode : 'groups'}
               />
             </div>
           ) : filteredStamps.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground">No stamps found</p>
             </div>
-                      ) : Object.keys(filteredGroups).length === 0 && debouncedGroupSearchTerm ? (
+          ) : Object.keys(filteredGroups).length === 0 && debouncedGroupSearchTerm ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground">No groups found matching "{debouncedGroupSearchTerm}"</p>
               <Button variant="outline" className="mt-2" onClick={clearGroupSearch}>

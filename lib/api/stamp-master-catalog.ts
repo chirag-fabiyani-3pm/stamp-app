@@ -6,218 +6,59 @@ export type StampMasterCatalogItem = {
   isInstance: boolean
   parentStampId: string
   catalogNumber: string
-  stampCode: string
   name: string
   description: string
   country: string
   countryName: string
-  countryFlag: string
-  seriesId: string
   seriesName: string
-  seriesDescription: string
-  typeId: string
   typeName: string
-  typeDescription: string
-  stampGroupId: string
   stampGroupName: string
-  stampGroupDescription: string
-  releaseId: string
-  releaseName: string
-  releaseDateRange: string
-  releaseDescription: string
-  categoryId: string
-  categoryName: string
+  subCategoryCode: string
   categoryCode: string
-  categoryDescription: string
-  paperTypeId: string
-  paperTypeName: string
-  paperTypeCode: string
-  paperTypeDescription: string
   currencyCode: string
   currencyName: string
   currencySymbol: string
-  currencyDescription: string
   denominationValue: string
   denominationSymbol: string
   denominationDisplay: string
-  denominationDescription: string
   colorCode: string
   colorName: string
   colorHex: string
-  colorDescription: string
-  colorVariant: string
+  colorGroup: string
   paperCode: string
   paperName: string
-  paperDescription: string
-  paperFiber: string
-  paperThickness: string
-  paperOpacity: string
+  paperOrientation: string
   watermarkCode: string
   watermarkName: string
-  watermarkDescription: string
   watermarkPosition: string
-  watermarkClarity: string
   perforationCode: string
   perforationName: string
   perforationMeasurement: string
-  perforationGauge: string
-  perforationCleanCut: boolean
-  perforationComb: boolean
   itemTypeCode: string
   itemTypeName: string
-  itemTypeDescription: string
-  itemFormat: string
   issueDate: string
   issueYear: number
-  issueMonth: number
-  issueDay: number
-  firstDayIssue: boolean
   periodStart: number
   periodEnd: number
-  issueLocation: string
-  issuePurpose: string
-  issueContext: string
   printingMethod: string
-  printingProcess: string
-  printingQuality: string
-  designer: string
-  designerNotes: string
   printer: string
-  printerLocation: string
-  printerReputation: string
   engraver: string
-  dieNumber: string
-  plateNumber: string
-  plateCharacteristics: string
-  paperManufacturer: string
-  gumType: string
   gumCondition: string
   sizeWidth: string
   sizeHeight: string
-  sizeFormat: string
-  theme: string
-  themeCategory: string
-  subject: string
-  artisticStyle: string
-  printRun: string
-  estimatedPrintRun: number
-  sheetsPrinted: string
-  stampsPerSheet: number
-  positionVarieties: boolean
-  plateVariety: string
   stampImageUrl: string
-  stampImageAlt: string
   stampImageHighRes: string
   watermarkImageUrl: string
   perforationImageUrl: string
   rarityRating: string
   rarityScale: string
   rarityScore: number
-  hasVarieties: boolean
-  varietyCount: number
-  varietyType: string
-  perforationVariety: string
-  colorVariety: string
-  paperVariety: string
-  watermarkVariety: string
-  knownError: string
-  majorVariety: string
-  postalHistoryType: string
-  postmarkType: string
-  proofType: string
-  essayType: string
-  errorType: string
-  authenticationRequired: boolean
-  expertCommittee: string
-  authenticationPoint: string
-  certificateAvailable: boolean
-  commonForgery: string
   historicalSignificance: string
-  culturalImportance: string
-  philatelicImportance: string
-  collectingPopularity: string
-  exhibitionFrequency: string
-  researchStatus: string
   bibliography: string
   specialNotes: string
-  collectorNotes: string
-  conditionNotes: string
-  rarityNotes: string
-  marketNotes: string
-  researchNotes: string
-  instanceCatalogCode: string
-  instanceDescription: string
-  condition: string
-  conditionGrade: string
-  conditionDescription: string
-  conditionDetails: string
-  usageState: string
-  usageDescription: string
-  usageCode: string
-  gumConditionSpecific: string
-  gumDescription: string
-  gumQuality: string
-  centering: string
-  centeringScore: string
-  centeringDescription: string
-  margins: string
-  marginMeasurements: string
-  colorFreshness: string
-  colorIntensity: string
-  colorDescriptionSpecific: string
-  paperCondition: string
-  paperFreshness: string
-  surfaceCondition: string
-  perforationsCondition: string
-  perforationTips: string
-  faults: string
-  repairs: string
-  alterations: string
-  grade: string
-  gradingService: string
-  certification: string
-  certificateNumber: string
-  expertOpinion: string
-  postmarkTypeInInstance: string
-  postmarkLocation: string
-  postmarkDate: string
-  postmarkClarity: string
-  postmarkPosition: string
-  postmarkDescription: string
   mintValue: number
   usedValue: number
   finestUsedValue: number
-  priceMultiplier: number
-  priceFactors: string
-  instanceRarity: string
-  conditionRarity: string
-  availability: string
-  marketFrequency: string
-  auctionFrequency: string
-  lastAuctionDate: string
-  lastAuctionPrice: number
-  priceTrend: string
-  instanceNotes: string
-  investmentNotes: string
-  exhibitionSuitability: string
-  photographicQuality: string
-  varietyTypeInInstance: string
-  varietyDescription: string
-  varietyPosition: string
-  varietySeverity: string
-  varietyVisibility: string
-  varietyRarity: string
-  varietyNotes: string
-  stampVectorJson: string
-  stampDetailsJson: string
-  alternativeNames: string
-  plateFlaws: string
-  stampImageVariants: string[]
-  recentSales: string
-  primaryReferences: string
-  researchPapers: string
-  exhibitionLiterature: string
-  onlineResources: string
 }
 
 type StampMasterCatalogResponse = {
@@ -230,7 +71,7 @@ type StampMasterCatalogResponse = {
   hasNextPage: boolean
 }
 
-const BASE_URL = 'https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/StampMasterCatalog'
+const BASE_URL = 'https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/StampMasterCatalog/Published'
 const JWT_COOKIE_NAME = 'jwt'
 
 export async function fetchStampMasterCatalogPage(params: { pageNumber: number, pageSize: number, catalogExtractionProcessId: string, jwt?: string }): Promise<StampMasterCatalogResponse> {
@@ -259,6 +100,74 @@ export async function fetchStampMasterCatalogAll(catalogExtractionProcessId: str
     if (!hasNextPage || (items || []).length < pageSize) break
     pageNumber += 1
   }
+  return all
+}
+
+// New function with progress tracking
+export async function fetchStampMasterCatalogWithProgress(
+  catalogExtractionProcessId: string,
+  pageSize = 200,
+  jwt?: string,
+  onProgress?: (progress: {
+    currentPage: number,
+    totalPages: number,
+    totalCount: number,
+    currentItems: number,
+    progress: number,
+    message: string
+  }) => void
+): Promise<StampMasterCatalogItem[]> {
+  let pageNumber = 1
+  const all: StampMasterCatalogItem[] = []
+  let totalCount = 0
+  let totalPages = 1
+
+  // Get first page to determine total count and pages
+  const firstResponse = await fetchStampMasterCatalogPage({ pageNumber, pageSize, catalogExtractionProcessId, jwt })
+  all.push(...(firstResponse.items || []))
+  totalCount = firstResponse.totalCount
+  totalPages = firstResponse.totalPages
+
+  // Report initial progress
+  onProgress?.({
+    currentPage: 1,
+    totalPages,
+    totalCount,
+    currentItems: firstResponse.items.length,
+    progress: Math.round((1 / totalPages) * 85),
+    message: `Loaded page 1 of ${totalPages}`
+  })
+
+  // Continue fetching remaining pages
+  pageNumber = 2
+  while (pageNumber <= totalPages && pageNumber <= 2000) {
+    const response = await fetchStampMasterCatalogPage({ pageNumber, pageSize, catalogExtractionProcessId, jwt })
+    all.push(...(response.items || []))
+
+    // Report progress
+    onProgress?.({
+      currentPage: pageNumber,
+      totalPages,
+      totalCount,
+      currentItems: all.length,
+      progress: Math.round((pageNumber / totalPages) * 85),
+      message: `Loaded page ${pageNumber} of ${totalPages}`
+    })
+
+    if (!response.hasNextPage || (response.items || []).length < pageSize) break
+    pageNumber += 1
+  }
+
+  // Final progress update
+  onProgress?.({
+    currentPage: totalPages,
+    totalPages,
+    totalCount,
+    currentItems: all.length,
+    progress: 85,
+    message: `Successfully loaded ${all.length.toLocaleString()} stamps!`
+  })
+
   return all
 }
 

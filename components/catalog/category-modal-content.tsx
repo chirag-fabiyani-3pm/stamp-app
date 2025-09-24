@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { BookOpen, ChevronRight, Search } from "lucide-react"
 import { CategoryData, PaperTypeData } from "@/types/catalog"
-import { getPaperTypesForCategory } from "@/lib/data/list-catalog-data"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface CategoryModalContentProps {
@@ -25,8 +24,7 @@ export function CategoryModalContent({
     if (!searchTerm) return paperTypes
     
     return paperTypes.filter(paperType => 
-      paperType.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      paperType.description.toLowerCase().includes(searchTerm.toLowerCase())
+      paperType.name.toLowerCase().includes(searchTerm.toLowerCase())
     )
   }, [paperTypes, searchTerm])
 
@@ -58,11 +56,6 @@ export function CategoryModalContent({
     <div className="mt-4">
       {/* Header */}
       <div className="mb-6">
-        <p className="text-gray-600 dark:text-gray-400">
-          {categoryData.description}
-        </p>
-        
-        <hr className="border-gray-300 dark:border-gray-700 my-6" />
 
         {/* Search Controls */}
         <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -98,10 +91,7 @@ export function CategoryModalContent({
               {/* Center Column: Paper Type Details */}
               <div className="lg:col-span-8">
                 <div className="mb-4">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{paperType.name}</h3>
-                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                    {paperType.description}
-                  </p>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{paperType.name && paperType.name !== 'N/A' ? paperType.name : 'Stamps with Unknown Paper Type'}</h3>
                   <div className="mt-2 text-sm text-gray-600">
                     {paperType.totalStamps} stamps
                   </div>

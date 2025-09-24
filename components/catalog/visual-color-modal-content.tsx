@@ -4,10 +4,11 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ChevronRight, Search } from "lucide-react"
 import { ColorOption, DenominationOption } from "@/types/catalog"
+import { useCatalogData } from "@/lib/context/catalog-data-context"
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface ColorModalContentProps {
-  data: { denomination: DenominationOption, colors: ColorOption[] }
+  data: { denomination: DenominationOption, colors: ColorOption[], countryCode: string, seriesName: string, year: number, currencyCode: string }
   onColorClick: (color: ColorOption) => void
   isLoading: boolean;
 }
@@ -17,6 +18,7 @@ export function ColorModalContent({
   onColorClick,
   isLoading
 }: ColorModalContentProps) {
+  const { stamps } = useCatalogData()
   const [searchTerm, setSearchTerm] = useState("")
 
   const filteredColors = useMemo(() => {
@@ -79,12 +81,14 @@ export function ColorModalContent({
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
                 <div className="flex items-center space-x-2 flex-shrink-0">
-                  <div
+                  {color.hex === '#XXXXXX' ? (
+                    <div className="w-6 h-6 rounded border border-border bg-gradient-to-br from-red-400 via-orange-400 to-purple-400"></div>
+                  ) : <div
                     className="w-6 h-6 rounded border border-border"
                     style={{ backgroundColor: color.hex }}
-                  />
+                  />}
                   <Image
-                    src={color.stampImageUrl}
+                    src={color.featuredStampUrl || '/images/stamps/no-image-available.png'}
                     alt={color.name}
                     width={50}
                     height={60}

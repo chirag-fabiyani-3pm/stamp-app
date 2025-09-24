@@ -8,12 +8,11 @@ import { Badge } from "@/components/ui/badge"
 import {
   ArrowLeft,
   Calendar,
-  Award,
-  Globe,
   FileText,
   Share2,
   Bookmark,
   Maximize2,
+  X,
 } from "lucide-react"
 import Image from "next/image"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -34,8 +33,8 @@ import {
   BreadcrumbSeparator,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb"
-import { ReportDialog } from "@/components/report-dialog"
 import { toast } from "@/components/ui/use-toast"
+import { generateStampCodeFromCatalogData } from "@/lib/utils/parse-stamp-code"
 
 interface StampDetailData {
   id: string
@@ -45,20 +44,13 @@ interface StampDetailData {
   isInstance?: boolean
   parentStampId?: string
   catalogNumber: string
-  stampCode: string
   name: string
   description?: string
   country?: string
   countryName?: string
-  countryFlag?: string
-  seriesId?: string
   seriesName?: string
   typeName?: string
   stampGroupName?: string
-  releaseName?: string
-  releaseDateRange?: string
-  categoryName?: string
-  paperTypeName?: string
   currencySymbol?: string
   denominationValue?: string
   denominationSymbol?: string
@@ -70,11 +62,11 @@ interface StampDetailData {
   perforationName?: string
   perforationMeasurement?: string
   itemTypeName?: string
+  paperName?: string
   issueDate?: string
   issueYear?: number
   printingMethod?: string
   stampImageUrl?: string
-  stampImageAlt?: string
   stampImageHighRes?: string
   stampImageVariants?: string[]
   rarityRating?: string
@@ -89,11 +81,14 @@ interface StampDetailData {
   stampDetailsJson?: string
 }
 
-const formatStampCode = (stampCode: string, watermarkCode: string | null | undefined): string => {
-  if (watermarkCode === null) {
-    return stampCode.replace('.null.', '.NoWmk.')
+const formatStampCode = (stampCode: string | null | undefined): string => {
+  if (!stampCode || typeof stampCode !== 'string') return ''
+  // Assuming the watermark is the 8th part (index 7) of the stampCode if it's null
+  const parts = stampCode.split('|||')
+  if (parts.length > 7 && (parts[7] === 'null' || parts[7] == null || parts[7] === '')) {
+    parts[7] = 'NoWmk'
   }
-  return stampCode
+  return parts.join('.')
 }
 
 function StampDetailContent() {
@@ -122,7 +117,7 @@ function StampDetailContent() {
 
         // Get JWT from localStorage first, then check query parameters as fallback
         let jwt = null
-        
+
         // Try localStorage first
         const userDataStr = localStorage.getItem('stamp_user_data')
         if (userDataStr) {
@@ -133,7 +128,7 @@ function StampDetailContent() {
             console.warn('Failed to parse user data from localStorage:', parseError)
           }
         }
-        
+
         // If no JWT from localStorage, check query parameters
         if (!jwt) {
           const jwtFromQuery = searchParams.get('jwt')
@@ -290,7 +285,7 @@ function StampDetailContent() {
             <p className="text-sm text-muted-foreground">Error loading stamp information</p>
           </div>
         </div>
-        
+
         <Card>
           <CardContent className="p-6 text-center">
             <div className="text-red-600 mb-4">
@@ -353,7 +348,7 @@ function StampDetailContent() {
               )}
               <Image
                 src={activeImageUrl || stamp.stampImageUrl || '/images/stamps/no-image-available.png'}
-                alt={stamp.stampImageAlt || stamp.name}
+                alt={stamp.name}
                 fill
                 className="object-contain"
                 sizes="(max-width: 768px) 100vw, 380px"
@@ -378,17 +373,6 @@ function StampDetailContent() {
                 )}
               </div>
               <div className="absolute top-3 right-3 flex items-center gap-2">
-                <Badge
-                  className={cn(
-                    "text-xs px-2 py-0.5 bg-black/70 text-white backdrop-blur-sm border border-white/30 shadow-sm",
-                    (stamp.rarityRating || '').toLowerCase().includes('collector approved') && "border-primary/60",
-                    (stamp.rarityRating || '').toLowerCase().includes('rare') && "border-orange-400",
-                    (stamp.rarityRating || '').toLowerCase().includes('uncommon') && "border-yellow-400",
-                    (stamp.rarityRating || '').toLowerCase().includes('common') && "border-green-500"
-                  )}
-                >
-                  {stamp.rarityRating || '—'}
-                </Badge>
                 <Button size="icon" variant="secondary" className="h-8 w-8 bg-background/80 backdrop-blur border border-white/20"
                   onClick={() => setIsLightboxOpen(true)} aria-label="Open large view">
                   <Maximize2 className="h-4 w-4" />
@@ -422,15 +406,13 @@ function StampDetailContent() {
               <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 text-center">
                 <div className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Country</div>
                 <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center justify-center gap-1">
-                  {(stamp.countryFlag && stamp.countryFlag.length === 2) ? (
-                    <ReactCountryFlag countryCode={stamp.countryFlag} svg className="" />
-                  ) : null}
+                  <ReactCountryFlag countryCode={stamp.country || ''} svg className="" />
                   <span className="truncate max-w-[8rem]">{stamp.country || stamp.countryName || '—'}</span>
                 </div>
               </div>
               <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 text-center">
                 <div className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Catalog</div>
-                <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{stamp.catalogNumber || '—'}</div>
+                <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{(stamp as any).categoryCode || '—'}</div>
               </div>
             </div>
 
@@ -496,13 +478,13 @@ function StampDetailContent() {
                     <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">{stamp.description}</p>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-4">
                       <div className="rounded-lg bg-gray-50 dark:bg-gray-800 px-3 py-2">
-                        <div className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Catalog Number</div>
-                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{stamp.catalogNumber || '—'}</div>
+                        <div className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Type</div>
+                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{stamp.typeName || '—'}</div>
                       </div>
-                      {stamp.releaseName && (
+                      {stamp.stampGroupName && (
                         <div className="rounded-lg bg-gray-50 dark:bg-gray-800 px-3 py-2">
                           <div className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Release</div>
-                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{stamp.releaseName}</div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{stamp.stampGroupName}</div>
                         </div>
                       )}
                       {stamp.itemTypeName && (
@@ -528,12 +510,12 @@ function StampDetailContent() {
                       <div>
                         <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">Color</dt>
                         <dd className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                          {stamp.colorHex && <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: stamp.colorHex }} />} {stamp.colorName || '—'}
+                          {stamp.colorHex && <span className="inline-block w-3 h-3 rounded-full border border-gray-300 dark:border-gray-600" style={{ backgroundColor: stamp.colorHex }} />} {stamp.colorName || '—'}
                         </dd>
                       </div>
                       <div>
                         <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">Paper Type</dt>
-                        <dd className="text-base font-semibold text-gray-900 dark:text-gray-100">{stamp.paperTypeName || '—'}</dd>
+                        <dd className="text-base font-semibold text-gray-900 dark:text-gray-100">{stamp.paperName || '—'}</dd>
                       </div>
                     </div>
                     <div className="space-y-3">
@@ -551,12 +533,15 @@ function StampDetailContent() {
                       </div>
                     </div>
                   </div>
-                  {(stamp.sizeWidth || stamp.sizeHeight) && (
+                  {(!isNaN(Number(stamp.sizeWidth)) || !isNaN(Number(stamp.sizeHeight))) ? (
                     <div className="mt-3">
                       <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">Size</dt>
-                      <dd className="text-base font-semibold text-gray-900 dark:text-gray-100">{[stamp.sizeWidth, stamp.sizeHeight].filter(Boolean).join(' × ')}</dd>
+                      <dd className="text-base font-semibold text-gray-900 dark:text-gray-100">{[stamp.sizeWidth, stamp.sizeHeight].filter(s => !isNaN(Number(s))).join(' × ')}</dd>
                     </div>
-                  )}
+                  ) : <div className="mt-3">
+                    <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">Size</dt>
+                    <dd className="text-base font-semibold text-gray-900 dark:text-gray-100">Unknown</dd>
+                  </div>}
                 </section>
               </TabsContent>
 
@@ -565,11 +550,11 @@ function StampDetailContent() {
                   <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Market Insights</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
                     <div>
-                      <div className="text-xl md:text-3xl font-bold text-green-700 dark:text-green-300">{typeof stamp.mintValue === 'number' ? `$${stamp.mintValue}` : '—'}</div>
+                      <div className="text-xl md:text-3xl font-bold text-green-700 dark:text-green-300">{stamp.mintValue && typeof stamp.mintValue === 'number' ? `${new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(stamp.mintValue)}` : '—'}</div>
                       <div className="text-xs text-green-700/80 dark:text-green-300/80">Mint Value</div>
                     </div>
                     <div>
-                      <div className="text-xl md:text-3xl font-bold text-blue-700 dark:text-blue-300">{typeof stamp.usedValue === 'number' ? `$${stamp.usedValue}` : '—'}</div>
+                      <div className="text-xl md:text-3xl font-bold text-blue-700 dark:text-blue-300">{stamp.usedValue && typeof stamp.usedValue === 'number' ? `${new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(stamp.usedValue)}` : '—'}</div>
                       <div className="text-xs text-blue-700/80 dark:text-blue-300/80">Used Value</div>
                     </div>
                     <div>
@@ -592,7 +577,7 @@ function StampDetailContent() {
                       {stamp.priceTrend && (
                         <span className="inline-block text-xs px-2 py-1 rounded bg-white/70 dark:bg-black/20 border border-white/40 dark:border-white/10 mr-2">Trend: {stamp.priceTrend}</span>
                       )}
-                      {stamp.marketNotes && (
+                      {stamp.marketNotes && stamp.marketNotes !== "N/A" && (
                         <p className="text-xs mt-2 text-gray-800 dark:text-gray-200">{stamp.marketNotes}</p>
                       )}
                     </div>
@@ -604,7 +589,7 @@ function StampDetailContent() {
                 <section className="bg-primary/5 dark:bg-primary/10 rounded-2xl p-5">
                   <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Stamps of Approval ID</h2>
                   <code className="bg-white dark:bg-gray-800 border border-primary/20 dark:border-primary/30 rounded-lg p-3 text-xs font-mono block break-all text-primary dark:text-amber-300">
-                    {`SOA-${formatStampCode(decodeURIComponent(stamp.stampCode || ''), stamp.watermarkCode ?? undefined)}`}
+                    {`SOA-${generateStampCodeFromCatalogData(stamp)}`}
                   </code>
                   <p className="text-primary/70 dark:text-amber-400 text-xs mt-2">This unique identifier confirms authentication and approval in our premium catalog system.</p>
                 </section>
@@ -628,13 +613,24 @@ function StampDetailContent() {
       <Dialog open={isLightboxOpen} onOpenChange={setIsLightboxOpen}>
         <DialogContent className="max-w-5xl p-0">
           <DialogHeader className="px-6 pt-6">
-            <DialogTitle className="text-base">{stamp.name}</DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-base">{stamp.name}</DialogTitle>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setIsLightboxOpen(false)}
+                aria-label="Close image popup"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </DialogHeader>
           <div className="px-6 pb-6">
             <div className="relative w-full aspect-[3/2] rounded-xl overflow-hidden bg-muted">
               <Image
                 src={activeImageUrl || stamp.stampImageUrl || '/images/stamps/no-image-available.png'}
-                alt={stamp.stampImageAlt || stamp.name}
+                alt={stamp.name}
                 fill
                 className="object-contain"
                 sizes="(max-width: 1024px) 100vw, 960px"

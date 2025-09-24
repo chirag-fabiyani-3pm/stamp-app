@@ -3,11 +3,15 @@
 // Role Master IDs
 export const ROLE_MASTER_IDS = {
   ADMIN: "9fb0e270-a6b1-4612-b708-a5caedc88bb3",
+  SUPER_ADMIN: "9a3e3947-212b-49cf-8eac-5c0a37a03c16"
   // Add other role IDs here as needed
 } as const;
 
 // Admin role ID constant for easy access
 export const ADMIN_ROLE_ID = ROLE_MASTER_IDS.ADMIN;
+
+// Super admin role ID constant for easy access
+export const SUPER_ADMIN_ROLE_ID = ROLE_MASTER_IDS.SUPER_ADMIN;
 
 // Route paths
 export const ROUTES = {
@@ -26,8 +30,3 @@ export const isUserAdmin = (roleMasterId: string): boolean => {
 export const BACKEND_URL = process.env.NODE_ENV === 'development'
   ? "http://localhost:3000"
   : (process.env.NEXT_PUBLIC_BACKEND_URL || "https://decoded-app-stamp-ai-expert-prod.azurewebsites.net");
-
-// Frontend URL - use local development server when running locally, otherwise use the production URL
-export const FRONTEND_URL = process.env.NODE_ENV === 'development'
-  ? "http://localhost:3000"
-  : (process.env.NEXT_PUBLIC_FRONTEND_URL || "https://stamp-app-sand.vercel.app"); 

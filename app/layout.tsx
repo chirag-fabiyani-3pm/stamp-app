@@ -1,6 +1,6 @@
 import { AppContent } from "@/components/app-content"
 import { ChatProvider } from "@/components/chat-provider"
-import { PhilaGuideChat } from "@/components/philaguide-chat"
+import { ConditionalChat } from "@/components/conditional-chat"
 import { ThemeProvider } from "@/components/theme-provider"
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import type { Metadata, Viewport } from "next"
@@ -55,7 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           >
             <ChatProvider>
               <AppContent>{children}</AppContent>
-              <PhilaGuideChat />
+              <ConditionalChat />
             </ChatProvider>
           </ThemeProvider>
         </GoogleOAuthProvider>

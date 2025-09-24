@@ -20,6 +20,40 @@ const config = {
     },
     extend: {
       colors: {
+        stamp: {
+          primary: '#8B4513',     // Rich Brown
+          secondary: '#D2B48C',   // Tan
+          accent: '#DAA520',      // Goldenrod
+          royal: {
+            50: '#FDF8F3',        // Lightest cream
+            100: '#FAF0E6',       // Light cream
+            200: '#F5E6D3',       // Cream
+            300: '#E6D2B5',       // Light tan
+            400: '#D2B48C',       // Tan
+            500: '#C19A6B',       // Medium tan
+            600: '#A0522D',       // Sienna
+            700: '#8B4513',       // Saddle brown
+            800: '#654321',       // Dark brown
+            900: '#3E2723'        // Very dark brown
+          },
+          gold: {
+            50: '#FFFEF7',
+            100: '#FFF9E6',
+            200: '#FFF2CC',
+            300: '#FFE699',
+            400: '#FFD700',       // Pure gold
+            500: '#DAA520',       // Goldenrod
+            600: '#B8860B',       // Dark goldenrod
+            700: '#996515',       // Darker gold
+            800: '#7A5C20',       // Bronze
+            900: '#5B4015'        // Dark bronze
+          },
+          red: {
+            500: '#DC143C',       // Crimson red for accents
+            600: '#B91C1C',       // Darker red
+            700: '#991B1B'        // Deep red
+          }
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

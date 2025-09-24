@@ -659,7 +659,7 @@ export default function ProfileCollection() {
                   <h3 className="font-medium">{selectedStamp.name}</h3>
                   <p className="text-sm text-muted-foreground">
                     {selectedStamp.country && `${selectedStamp.country}, `}
-                    {selectedStamp.issueDate && formatDate(selectedStamp.issueDate)}
+                    {selectedStamp.issueYear && selectedStamp.issueYear}
                     {selectedStamp.denominationValue && ` • ${selectedStamp.denominationValue}${selectedStamp.denominationSymbol}`}
                   </p>
                   {selectedStamp.catalogNumber && (
@@ -730,7 +730,7 @@ export default function ProfileCollection() {
                           <DialogDescription className="text-base text-muted-foreground/80 flex items-center gap-2 mt-2">
                             <div className="h-1.5 w-1.5 rounded-full bg-primary/60"></div>
                             {selectedStamp.country && `${selectedStamp.country}`}
-                            {selectedStamp.issueDate && ` • ${formatDate(selectedStamp.issueDate)}`}
+                            {selectedStamp.issueYear && ` • ${selectedStamp.issueYear}`}
                             {selectedStamp.stampCode && (
                               <span className="ml-2 px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full">
                                 {selectedStamp.stampCode}
@@ -799,7 +799,7 @@ export default function ProfileCollection() {
                               { label: 'Catalog Name', value: selectedStamp.catalogName },
                               { label: 'Catalog Number', value: selectedStamp.catalogNumber },
                               { label: 'Country', value: selectedStamp.country },
-                              { label: 'Issue Date', value: selectedStamp.issueDate ? formatDate(selectedStamp.issueDate) : null }
+                              { label: 'Issue Year', value: selectedStamp.issueYear }
                             ].filter(item => item.value).map((item, index) => (
                               <div key={index} className="flex justify-between items-center py-2 border-b border-border/30 last:border-b-0">
                                 <span className="text-sm font-medium text-muted-foreground">{item.label}:</span>
@@ -978,7 +978,7 @@ export default function ProfileCollection() {
                 <h3 className="font-medium line-clamp-2 min-h-[2.5rem]">{stamp.name}</h3>
               <div className="flex justify-between text-sm text-muted-foreground mt-1">
                   <span>{stamp.country || "Unknown"}</span>
-                  <span>{stamp.issueDate ? formatDate(stamp.issueDate) : "Unknown"}</span>
+                  <span>{stamp.issueYear ? stamp.issueYear : "Unknown"}</span>
               </div>
               <div className="mt-2 flex justify-between items-center">
                   {stamp.denominationValue && (

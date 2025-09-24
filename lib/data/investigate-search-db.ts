@@ -1,9 +1,13 @@
 import { StampData } from '@/types/catalog'
 
 const DB_NAME = 'StampCatalogDB'
-const DB_VERSION = 3 // Increment version to handle schema changes
+const DB_VERSION = 6 // Version 5: added metadata store, Version 6: fixed date refresh logic
 const STORE_NAME = 'stamps'
 const RAW_STORE_NAME = 'rawStamps'
+const METADATA_STORE_NAME = 'metadata' // Store for app version and refresh tracking
+
+// Update this version number on each deployment to trigger data refetch
+export const APP_VERSION = '1.0.1'
 
 export const openDB = (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
@@ -16,41 +20,309 @@ export const openDB = (): Promise<IDBDatabase> => {
       const db = (event.target as IDBOpenDBRequest).result
       const transaction = (event.target as IDBOpenDBRequest).transaction!
       
-      // Ensure normalized store exists and has indexes, preserve existing data
+      // Ensure normalized store exists and has only necessary indexes, preserve existing data
       let store: IDBObjectStore
       if (db.objectStoreNames.contains(STORE_NAME)) {
         store = transaction.objectStore(STORE_NAME)
       } else {
         store = db.createObjectStore(STORE_NAME, { keyPath: 'id' })
       }
-      const ensureIndex = (name: string, keyPath: string) => {
-        if (!(store.indexNames as unknown as DOMStringList).contains(name)) {
-          store.createIndex(name, keyPath, { unique: false })
+
+      // Only create indexes that are actually used for queries
+      const usedIndexes = [
+        { name: 'country', keyPath: 'country' },
+        { name: 'seriesName', keyPath: 'seriesName' },
+        { name: 'issueYear', keyPath: 'issueYear' }
+      ]
+
+      // Remove all unused indexes more aggressively
+      const allCurrentIndexes = Array.from((store.indexNames as unknown as DOMStringList))
+      const unusedIndexNames = ['stampCode', 'publisher']
+
+      for (const indexName of allCurrentIndexes) {
+        if (unusedIndexNames.includes(indexName)) {
+          try {
+            store.deleteIndex(indexName)
+            console.log(`Deleted unused index: ${indexName}`)
+          } catch (error) {
+            console.warn(`Failed to delete index ${indexName}:`, error)
+          }
         }
       }
-      ensureIndex('stampCode', 'stampCode')
-      ensureIndex('country', 'country')
-      ensureIndex('seriesName', 'seriesName')
-      ensureIndex('issueYear', 'issueYear')
-      ensureIndex('publisher', 'publisher')
+
+      // Create only the indexes we actually use
+      for (const { name, keyPath } of usedIndexes) {
+        if (!(store.indexNames as unknown as DOMStringList).contains(name)) {
+          try {
+            store.createIndex(name, keyPath, { unique: false })
+            console.log(`Created index: ${name}`)
+          } catch (error) {
+            console.warn(`Failed to create index ${name}:`, error)
+          }
+        }
+      }
 
       // Create raw store for API items used by grouping UIs (preserve if already exists)
-      if (!db.objectStoreNames.contains(RAW_STORE_NAME)) {
-        const rawStore = db.createObjectStore(RAW_STORE_NAME, { keyPath: 'id' })
-        rawStore.createIndex('country', 'country', { unique: false })
-        rawStore.createIndex('seriesName', 'seriesName', { unique: false })
-        rawStore.createIndex('issueYear', 'issueYear', { unique: false })
-        rawStore.createIndex('currencyCode', 'currencyCode', { unique: false })
-        rawStore.createIndex('denominationValue', 'denominationValue', { unique: false })
-        rawStore.createIndex('colorCode', 'colorCode', { unique: false })
-        rawStore.createIndex('paperCode', 'paperCode', { unique: false })
-        rawStore.createIndex('watermarkCode', 'watermarkCode', { unique: false })
-        rawStore.createIndex('perforationCode', 'perforationCode', { unique: false })
-        rawStore.createIndex('itemTypeCode', 'itemTypeCode', { unique: false })
-        rawStore.createIndex('isInstance', 'isInstance', { unique: false })
+      let rawStore: IDBObjectStore
+      if (db.objectStoreNames.contains(RAW_STORE_NAME)) {
+        rawStore = transaction.objectStore(RAW_STORE_NAME)
+      } else {
+        rawStore = db.createObjectStore(RAW_STORE_NAME, { keyPath: 'id' })
+      }
+
+      // Only create indexes that are actually used for queries in rawStamps store
+      const rawUsedIndexes = [
+        { name: 'country', keyPath: 'country' },
+        { name: 'seriesName', keyPath: 'seriesName' },
+        { name: 'issueYear', keyPath: 'issueYear' }
+      ]
+
+      // Remove all unused indexes from rawStamps store more aggressively
+      const rawAllCurrentIndexes = Array.from((rawStore.indexNames as unknown as DOMStringList))
+      const rawUnusedIndexNames = [
+        'currencyCode', 'denominationValue', 'colorCode', 'paperCode',
+        'watermarkCode', 'perforationCode', 'itemTypeCode', 'isInstance'
+      ]
+
+      for (const indexName of rawAllCurrentIndexes) {
+        if (rawUnusedIndexNames.includes(indexName)) {
+          try {
+            rawStore.deleteIndex(indexName)
+            console.log(`Deleted unused rawStamps index: ${indexName}`)
+          } catch (error) {
+            console.warn(`Failed to delete rawStamps index ${indexName}:`, error)
+          }
+        }
+      }
+
+      // Create only the indexes we actually use for rawStamps
+      for (const { name, keyPath } of rawUsedIndexes) {
+        if (!(rawStore.indexNames as unknown as DOMStringList).contains(name)) {
+          try {
+            rawStore.createIndex(name, keyPath, { unique: false })
+            console.log(`Created rawStamps index: ${name}`)
+          } catch (error) {
+            console.warn(`Failed to create rawStamps index ${name}:`, error)
+          }
+        }
+      }
+
+      // Create metadata store for tracking last refresh date
+      if (!db.objectStoreNames.contains(METADATA_STORE_NAME)) {
+        const metadataStore = db.createObjectStore(METADATA_STORE_NAME, { keyPath: 'key' })
+        metadataStore.createIndex('key', 'key', { unique: true })
       }
     }
   })
+}
+
+// Helper functions for version-based data refresh
+export const getStoredAppVersion = async (): Promise<string | null> => {
+  try {
+    const db = await openDB()
+
+    // Check if metadata store exists
+    if (!db.objectStoreNames.contains(METADATA_STORE_NAME)) {
+      console.log('Metadata store does not exist yet')
+      return null
+    }
+
+    const transaction = db.transaction([METADATA_STORE_NAME], 'readonly')
+    const store = transaction.objectStore(METADATA_STORE_NAME)
+
+    return new Promise((resolve, reject) => {
+      const request = store.get('appVersion')
+      request.onsuccess = () => {
+        const result = request.result
+        const value = result?.value || null
+        console.log('Retrieved stored app version:', { result, value })
+        resolve(value)
+      }
+      request.onerror = () => {
+        console.error('Failed to get stored app version from store:', request.error)
+        reject(request.error)
+      }
+    })
+  } catch (error) {
+    console.error('❌ Error getting stored app version:', error)
+    return null
+  }
+}
+
+export const setStoredAppVersion = async (version: string): Promise<void> => {
+  try {
+    console.log(`Setting stored app version to: "${version}"`)
+    const db = await openDB()
+    const transaction = db.transaction([METADATA_STORE_NAME], 'readwrite')
+    const store = transaction.objectStore(METADATA_STORE_NAME)
+
+    await new Promise<void>((resolve, reject) => {
+      const request = store.put({ key: 'appVersion', value: version })
+      request.onsuccess = () => {
+        console.log(`✅ Successfully set stored app version to: "${version}"`)
+        resolve()
+      }
+      request.onerror = () => {
+        console.error('❌ Failed to set stored app version:', request.error)
+        reject(request.error)
+      }
+    })
+  } catch (error) {
+    console.error('❌ Error setting stored app version:', error)
+    throw error
+  }
+}
+
+export const shouldRefreshData = async (): Promise<boolean> => {
+  try {
+    const currentVersion = APP_VERSION
+    const storedVersion = await getStoredAppVersion()
+
+    console.log('Version refresh check:', {
+      currentVersion,
+      storedVersion,
+      storedVersionType: typeof storedVersion,
+      isNullOrUndefined: storedVersion == null
+    })
+
+    if (!storedVersion || storedVersion.trim() === '') {
+      // No stored version, should refresh (first time or cleared)
+      console.log('No stored app version found, will refresh data')
+      return true
+    }
+
+    // Check if versions mismatch
+    const versionsMatch = storedVersion.trim() === currentVersion
+    const shouldRefreshDueToVersion = !versionsMatch
+
+    console.log('Version comparison:', {
+      currentVersion,
+      storedVersion: storedVersion.trim(),
+      versionsMatch,
+      shouldRefreshDueToVersion
+    })
+
+    if (shouldRefreshDueToVersion) {
+      console.log(`✅ App version changed (${storedVersion} → ${currentVersion}), refreshing data...`)
+    } else {
+      console.log(`⏸️ App version matches (${currentVersion}), using cached data`)
+    }
+
+    return shouldRefreshDueToVersion
+  } catch (error) {
+    console.error('❌ Error checking if data should be refreshed:', error)
+    // On error, don't refresh to avoid breaking the app
+    return false
+  }
+}
+
+export const markDataRefreshed = async (): Promise<void> => {
+  const currentVersion = APP_VERSION
+  console.log(`🎯 Marking data as refreshed for app version: ${currentVersion}`)
+  await setStoredAppVersion(currentVersion)
+  console.log(`✅ Data refresh marked for app version: ${currentVersion}`)
+}
+
+export const clearAllData = async (): Promise<void> => {
+  try {
+    const db = await openDB()
+    const transaction = db.transaction([STORE_NAME, RAW_STORE_NAME], 'readwrite')
+
+    // Clear both stores
+    const stampsStore = transaction.objectStore(STORE_NAME)
+    const rawStampsStore = transaction.objectStore(RAW_STORE_NAME)
+
+    await Promise.all([
+      new Promise<void>((resolve, reject) => {
+        const clearRequest = stampsStore.clear()
+        clearRequest.onsuccess = () => resolve()
+        clearRequest.onerror = () => reject(clearRequest.error)
+      }),
+      new Promise<void>((resolve, reject) => {
+        const clearRequest = rawStampsStore.clear()
+        clearRequest.onsuccess = () => resolve()
+        clearRequest.onerror = () => reject(clearRequest.error)
+      })
+    ])
+
+    console.log('All data cleared for version refresh')
+  } catch (error) {
+    console.error('Error clearing all data:', error)
+    throw error
+  }
+}
+
+// Manual cleanup function for existing users to force remove unused indexes
+export const forceCleanupUnusedIndexes = async (): Promise<void> => {
+  try {
+    console.log('🔧 Starting manual cleanup of unused indexes...')
+
+    const db = await openDB()
+    const transaction = db.transaction([STORE_NAME, RAW_STORE_NAME], 'readwrite')
+
+    // Clean up stamps store indexes
+    const stampsStore = transaction.objectStore(STORE_NAME)
+    const stampsIndexes = Array.from((stampsStore.indexNames as unknown as DOMStringList))
+    const unusedStampsIndexes = ['stampCode', 'publisher']
+
+    for (const indexName of stampsIndexes) {
+      if (unusedStampsIndexes.includes(indexName)) {
+        try {
+          stampsStore.deleteIndex(indexName)
+          console.log(`🗑️ Deleted unused index: ${indexName} from stamps store`)
+        } catch (error) {
+          console.warn(`Failed to delete index ${indexName}:`, error)
+        }
+      }
+    }
+
+    // Clean up rawStamps store indexes
+    const rawStampsStore = transaction.objectStore(RAW_STORE_NAME)
+    const rawStampsIndexes = Array.from((rawStampsStore.indexNames as unknown as DOMStringList))
+    const unusedRawStampsIndexes = [
+      'currencyCode', 'denominationValue', 'colorCode', 'paperCode',
+      'watermarkCode', 'perforationCode', 'itemTypeCode', 'isInstance'
+    ]
+
+    for (const indexName of rawStampsIndexes) {
+      if (unusedRawStampsIndexes.includes(indexName)) {
+        try {
+          rawStampsStore.deleteIndex(indexName)
+          console.log(`🗑️ Deleted unused index: ${indexName} from rawStamps store`)
+        } catch (error) {
+          console.warn(`Failed to delete index ${indexName}:`, error)
+        }
+      }
+    }
+
+    // Wait for transaction to complete
+    await new Promise<void>((resolve, reject) => {
+      transaction.oncomplete = () => {
+        console.log('✅ Manual index cleanup completed successfully')
+        resolve()
+      }
+      transaction.onerror = () => {
+        console.error('❌ Manual index cleanup failed:', transaction.error)
+        reject(transaction.error)
+      }
+    })
+
+  } catch (error) {
+    console.error('❌ Error during manual index cleanup:', error)
+    throw error
+  }
+}
+
+// Utility function for manual cleanup - can be called from browser console
+// Usage: import { manualCleanup } from '@/lib/data/investigate-search-db'; manualCleanup()
+export const manualCleanup = async (): Promise<void> => {
+  console.log('🧹 Starting manual cleanup...')
+  try {
+    await forceCleanupUnusedIndexes()
+    console.log('✅ Manual cleanup completed!')
+  } catch (error) {
+    console.error('❌ Manual cleanup failed:', error)
+  }
 }
 
 export const saveStampsToIndexedDB = async (stamps: StampData[]): Promise<void> => {
@@ -134,60 +406,49 @@ export const saveRawStampsToIndexedDB = async (rawStamps: any[]): Promise<void> 
       itemTypeCode: item.itemTypeCode ?? '',
 
       // Other useful fields (optional)
+      stampId: item.stampId,
       parentStampId: item.parentStampId,
       catalogNumber: item.catalogNumber,
-      stampCode: item.stampCode,
       name: item.name,
       description: item.description,
       countryName: item.countryName,
-      countryFlag: item.countryFlag,
-      seriesId: item.seriesId,
-      seriesDescription: item.seriesDescription,
-      typeId: item.typeId,
       typeName: item.typeName,
-      typeDescription: item.typeDescription,
-      stampGroupId: item.stampGroupId,
       stampGroupName: item.stampGroupName,
-      stampGroupDescription: item.stampGroupDescription,
-      releaseId: item.releaseId,
-      releaseName: item.releaseName,
-      releaseDateRange: item.releaseDateRange,
-      releaseDescription: item.releaseDescription,
-      categoryId: item.categoryId,
-      categoryName: item.categoryName,
       categoryCode: item.categoryCode,
-      categoryDescription: item.categoryDescription,
-      paperTypeId: item.paperTypeId,
-      paperTypeName: item.paperTypeName,
-      paperTypeCode: item.paperTypeCode,
-      paperTypeDescription: item.paperTypeDescription,
+      subCategoryCode: item.subCategoryCode,
       currencyName: item.currencyName,
       currencySymbol: item.currencySymbol,
-      currencyDescription: item.currencyDescription,
       denominationSymbol: item.denominationSymbol,
       denominationDisplay: item.denominationDisplay,
-      denominationDescription: item.denominationDescription,
       colorName: item.colorName,
       colorHex: item.colorHex,
-      colorDescription: item.colorDescription,
-      colorVariant: item.colorVariant,
+      colorGroup: item.colorGroup,
       paperName: item.paperName,
-      paperDescription: item.paperDescription,
+      paperOrientation: item.paperOrientation,
       watermarkName: item.watermarkName,
-      watermarkDescription: item.watermarkDescription,
+      watermarkPosition: item.watermarkPosition,
       perforationName: item.perforationName,
       perforationMeasurement: item.perforationMeasurement,
       itemTypeName: item.itemTypeName,
-      itemTypeDescription: item.itemTypeDescription,
-      itemFormat: item.itemFormat,
       issueDate: item.issueDate,
+      periodStart: item.periodStart,
+      periodEnd: item.periodEnd,
+      printingMethod: item.printingMethod,
+      printer: item.printer,
+      engraver: item.engraver,
+      gumCondition: item.gumCondition,
+      sizeWidth: item.sizeWidth,
+      sizeHeight: item.sizeHeight,
+      rarityRating: item.rarityRating,
+      rarityScale: item.rarityScale,
+      rarityScore: item.rarityScore,
+      historicalSignificance: item.historicalSignificance,
+      bibliography: item.bibliography,
+      specialNotes: item.specialNotes,
       stampImageUrl: item.stampImageUrl,
-      hasVarieties: item.hasVarieties,
-      varietyCount: item.varietyCount,
-      postalHistoryType: item.postalHistoryType,
-      proofType: item.proofType,
-      essayType: item.essayType,
-      errorType: item.errorType,
+      mintValue: item.mintValue,
+      finestUsedValue: item.finestUsedValue,
+      usedValue: item.usedValue,
       stampDetailsJson: item.stampDetailsJson,
     })
 
@@ -236,9 +497,9 @@ export const getPaginatedStampsFromIndexedDB = async (offset: number = 0, limit:
     const store = transaction.objectStore(STORE_NAME)
     
     // First, get the total count
-    const countRequest = store.count()
+    const countRequest = store.getAll()
     const total = await new Promise<number>((resolve, reject) => {
-      countRequest.onsuccess = () => resolve(countRequest.result)
+      countRequest.onsuccess = () => resolve(countRequest.result.filter(stamp => stamp.isInstance === false).length)
       countRequest.onerror = () => reject(countRequest.error)
     })
     
@@ -254,7 +515,7 @@ export const getPaginatedStampsFromIndexedDB = async (offset: number = 0, limit:
         const cursor = (event.target as IDBRequest).result
         
         if (cursor && collected < limit) {
-          if (currentOffset >= offset) {
+          if (currentOffset >= offset && cursor.value.isInstance === false) {
             stamps.push(cursor.value)
             collected++
           }
@@ -281,8 +542,8 @@ export const getTotalStampsCountFromIndexedDB = async (): Promise<number> => {
     const store = transaction.objectStore(STORE_NAME)
     
     return new Promise((resolve, reject) => {
-      const request = store.count()
-      request.onsuccess = () => resolve(request.result)
+      const request = store.getAll()
+      request.onsuccess = () => resolve(request.result.filter(stamp => stamp.isInstance === false).length)
       request.onerror = () => reject(request.error)
     })
   } catch (error) {
