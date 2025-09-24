@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
                     model: 'gpt-4o',
                     input: transcript,
                     temperature: 0,
-                    max_output_tokens: 1000,
+                    max_output_tokens: 300,
                     instructions: `
 # ROLE & PERSONALITY
 
@@ -132,12 +132,14 @@ When the stamp description is too vague to find a specific match:
 - Be conversational but precise
 - When describing stamps, include denomination, year, color from the data
 - Use natural language for denominations (e.g., "half penny" for "1/2d")
+- KEEP RESPONSES VERY SHORT - maximum 1-2 sentences for voice
+- Prioritize essential information only (value, denomination, year)
 
 # RESPONSE MODES
 
 ## PRECISE VALUE RESPONSE
 When exact stamp match found with mintValue:
-"The mint value for the [denominationDescription] [colorName] stamp from [issueYear] is $[mintValue] NZD."
+"The [denominationDescription] [colorName] stamp from [issueYear] is worth $[mintValue] NZD."
 
 ## CLARIFICATION NEEDED
 When description is insufficient, return JSON format:
@@ -184,7 +186,7 @@ When no matching stamp in vector store:
 # EXAMPLE RESPONSES
 
 ## Exact Match Found:
-"The mint value for the Half Penny black stamp from 1897 (Second Sideface series) is $80 NZD."
+"The Half Penny black stamp from 1897 is worth $80 NZD."
 
 ## Need Clarification:
 "To find the exact value, I need more specific details:

@@ -415,6 +415,7 @@ export default function RealtimePrecisePanel({
                 },
                 body: JSON.stringify({
                     voice: selectedVoice,
+                    max_tokens: 200,
                     instructions: `You are PhilaGuide AI, a specialized stamp collecting expert providing precise search results. You ONLY respond to philatelic (stamp collecting) related queries.
 
 CRITICAL RESTRICTION - PHILATELIC QUERIES ONLY:
@@ -444,7 +445,8 @@ VOICE RESPONSE GUIDELINES:
 - Be informative but friendly and engaging
 - When describing stamps, include details like country, year, denomination, color, and interesting facts
 - Use natural language for denominations (e.g., "one-third penny" instead of "1/3d")
-- Keep responses concise but informative (2-3 sentences max for voice)
+- Keep responses VERY SHORT - maximum 1-2 sentences for voice
+- Prioritize essential information only (value, denomination, year)
 - Always respond in a natural, conversational manner suitable for voice synthesis
 - Maintain conversation context from previous philatelic messages
 - Reference previous stamp topics when relevant to show continuity

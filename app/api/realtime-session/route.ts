@@ -5,11 +5,12 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 export async function POST(request: NextRequest) {
   try {
-    const { voice = 'alloy', instructions, disable_ai_responses = false } = await request.json()
+    const { voice = 'alloy', instructions, disable_ai_responses = false, max_tokens = 300 } = await request.json()
 
     console.log('🎤 Creating OpenAI Realtime session:', {
       voice,
       disable_ai_responses,
+      max_tokens,
       instructions: instructions ? instructions.substring(0, 100) + '...' : 'Default instructions'
     })
 
@@ -34,7 +35,7 @@ You help with:
 2. App navigation and features
 3. General philatelic knowledge
 
-Keep responses concise, helpful, and always in the user's language. Respond naturally to user voice input.
+RESPONSE LENGTH: Keep responses VERY SHORT - maximum 1-2 sentences for voice. Prioritize essential information only.
 
 IMPORTANT: This is a continuous conversation session. Users can interrupt you at any time by speaking, and you should stop and listen to them.`,
       tools: instructions?.includes('search_stamp_database') ? [
