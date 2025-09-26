@@ -35,6 +35,7 @@ import {
     X
 } from 'lucide-react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import React, { useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -631,6 +632,8 @@ export function PhilaGuideChat() {
     // Streaming text effect
     const [streamingText, setStreamingText] = useState<string>('')
     const [isStreamingText, setIsStreamingText] = useState(false)
+
+    const router = useRouter()
 
     // Function to create streaming text effect
     const streamText = (text: string, messageId: string) => {
@@ -1954,6 +1957,10 @@ Please try your query again in a moment, or feel free to ask about any specific 
                     }
 
                     console.log('📝 Responses API - Creating new message:', newMessage)
+                    if (newMessage.structuredData?.id != null) {
+                        router.push(`/stamp-details/${newMessage.structuredData.id}`)
+                    }
+
 
                     setMessages(prev => {
                         console.log('🔄 Responses API - Previous messages count:', prev.length)
