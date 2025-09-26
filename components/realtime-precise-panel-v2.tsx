@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AudioLines, Loader2, Mic, Square } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useCallback, useRef, useState } from 'react'
 
 interface RealtimePrecisePanelV2Props {
@@ -25,6 +26,8 @@ export default function RealtimePrecisePanelV2({
     onTranscribingChange,
     className = ''
 }: RealtimePrecisePanelV2Props) {
+    const router = useRouter()
+
     const [isConnecting, setIsConnecting] = useState(false)
     const [isSessionActive, setIsSessionActive] = useState(false)
     const [isTranscribing, setIsTranscribing] = useState(false)
@@ -117,6 +120,18 @@ export default function RealtimePrecisePanelV2({
 
                 const data = await response.json()
                 console.log('🎤 Vector search result:', data)
+
+                // Check for structured data with stamp ID and navigate if found
+                if (data.structured?.mode === 'cards' && data.structured.cards?.length > 0) {
+                    const firstStamp = data.structured.cards[0]
+                    if (firstStamp.id) {
+                        console.log('🎤 Realtime precise v2 search found stamp with ID, navigating to:', firstStamp.id)
+                        router.push(`/stamp-details/${firstStamp.id}`)
+                    }
+                } else if (data.structured?.id) {
+                    console.log('🎤 Realtime precise v2 search found single stamp ID, navigating to:', data.structured.id)
+                    router.push(`/stamp-details/${data.structured.id}`)
+                }
 
                 // Format the result for the AI
                 const formattedResult = {

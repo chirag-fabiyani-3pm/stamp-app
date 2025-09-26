@@ -95,6 +95,18 @@ export default function RealtimePrecisePanel({
                 const data = await response.json()
                 console.log('🎤 Vector search response:', data)
 
+                // Check for structured data with stamp ID and navigate if found
+                if (data.structured?.mode === 'cards' && data.structured.cards?.length > 0) {
+                    const firstStamp = data.structured.cards[0]
+                    if (firstStamp.id) {
+                        console.log('🎤 Realtime precise search found stamp with ID, navigating to:', firstStamp.id)
+                        router.push(`/stamp-details/${firstStamp.id}`)
+                    }
+                } else if (data.structured?.id) {
+                    console.log('🎤 Realtime precise search found single stamp ID, navigating to:', data.structured.id)
+                    router.push(`/stamp-details/${data.structured.id}`)
+                }
+
                 // Return the search results for the AI to process
                 return {
                     success: true,

@@ -1378,6 +1378,18 @@ export function PhilaGuideChat() {
                 setVoiceMessages(prev => [...prev, aiMessage])
                 setMessages(prev => [...prev, aiMessage])
 
+                // Check for structured data with stamp ID and navigate if found
+                if (data.structured?.mode === 'cards' && data.structured.cards?.length > 0) {
+                    const firstStamp = data.structured.cards[0]
+                    if (firstStamp.id) {
+                        console.log('🎤 Voice search found stamp with ID, navigating to:', firstStamp.id)
+                        router.push(`/stamp-details/${firstStamp.id}`)
+                    }
+                } else if (data.structured?.id) {
+                    console.log('🎤 Voice search found single stamp ID, navigating to:', data.structured.id)
+                    router.push(`/stamp-details/${data.structured.id}`)
+                }
+
                 // Start streaming text effect
                 streamText(data.content, aiMessage.id)
 

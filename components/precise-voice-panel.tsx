@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AudioLines, Mic, Square } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useCallback, useRef, useState } from 'react'
 
 interface PreciseVoicePanelProps {
@@ -27,6 +28,8 @@ export default function PreciseVoicePanel({
     onFunctionCallProgress,
     className = ''
 }: PreciseVoicePanelProps) {
+    const router = useRouter()
+
     // State for voice chat
     const [isSessionActive, setIsSessionActive] = useState(false)
     const [isConnecting, setIsConnecting] = useState(false)
@@ -75,6 +78,19 @@ export default function PreciseVoicePanel({
 
                 const data = await response.json()
                 console.log('🎤 Vector search result:', data)
+
+                // Check for structured data with stamp ID and navigate if found
+                if (data.structured?.mode === 'cards' && data.structured.cards?.length > 0) {
+                    const firstStamp = data.structured.cards[0]
+                    if (firstStamp.id) {
+                        console.log('🎤 Precise voice search found stamp with ID, navigating to:', firstStamp.id)
+                        router.push(`/stamp-details/${firstStamp.id}`)
+                    }
+                } else if (data.structured?.id) {
+                    console.log('🎤 Precise voice search found single stamp ID, navigating to:', data.structured.id)
+                    router.push(`/stamp-details/${data.structured.id}`)
+                }
+
                 return data
             }
 
