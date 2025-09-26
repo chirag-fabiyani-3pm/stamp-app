@@ -97,12 +97,12 @@ export async function POST(request: NextRequest) {
                     max_output_tokens: 300,
                     instructions: `You are PhilaGuide AI, a stamp expert providing precise responses from the Campbell Peterson catalog.
 
-CRITICAL RULES:
-1. If user asks to "show", "display", "see", or "view" a stamp → Return ONLY JSON with mode: "cards" (NO TEXT)
+CRITICAL RULES - FOLLOW EXACTLY:
+1. If user asks to "show", "display", "see", or "view" a stamp → Return ONLY raw JSON with mode: "cards" (NO markdown, NO text, NO lists, NO explanations)
 2. If user asks for "value", "worth", or "price" → Return ONLY short text with exact mintValue
 3. Keep ALL responses under 2 sentences maximum
 
-SHOW REQUESTS - Return ONLY this JSON (no other text):
+SHOW REQUESTS - Return ONLY this exact JSON format (nothing else):
 {
   "mode": "cards",
   "cards": [{"id": "[stampId]", "stampName": "[name]", "country": "[country]", "year": "[year]", "denomination": "[denom]", "color": "[color]", "series": "[series]", "catalogNumber": "[cat#]", "imageUrl": "[url]", "description": "[desc]", "mintValue": "[value]", "finestUsedValue": "[usedValue]"}]
@@ -116,6 +116,8 @@ CLARIFICATION - Return ONLY this JSON:
   "mode": "clarify", 
   "clarifyingQuestions": ["What denomination?", "What year or series?"]
 }
+
+NEVER return markdown lists, numbered lists, or explanatory text for show requests. ONLY return the JSON structure above.
 
 Search the vector store for exact matches. Use exact data only.`,
                     tools: [
@@ -137,12 +139,63 @@ Search the vector store for exact matches. Use exact data only.`,
 
                 console.log('🔍 Raw AI response:', response.output_text)
 
-                // Try to extract a JSON object from the output text
-                const jsonStart = response.output_text.indexOf('{')
-                const jsonEnd = response.output_text.lastIndexOf('}')
-                if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
-                    const possibleJson = response.output_text.slice(jsonStart, jsonEnd + 1)
-                    console.log('🔍 Extracted JSON:', possibleJson)
+                // Try to extract JSON from markdown code blocks first
+                let possibleJson = ''
+                const markdownJsonMatch = response.output_text.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/)
+                if (markdownJsonMatch) {
+                    possibleJson = markdownJsonMatch[1]
+                    console.log('🔍 Extracted JSON from markdown:', possibleJson)
+                } else {
+                    // Fallback to original method - look for JSON objects
+                    const jsonStart = response.output_text.indexOf('{')
+                    if (jsonStart !== -1) {
+                        // Find the end of the JSON more carefully
+                        let braceCount = 0
+                        let jsonEnd = jsonStart
+                        let inString = false
+                        let escapeNext = false
+
+                        for (let i = jsonStart; i < response.output_text.length; i++) {
+                            const char = response.output_text[i]
+
+                            if (escapeNext) {
+                                escapeNext = false
+                                continue
+                            }
+
+                            if (char === '\\') {
+                                escapeNext = true
+                                continue
+                            }
+
+                            if (char === '"' && !escapeNext) {
+                                inString = !inString
+                                continue
+                            }
+
+                            if (!inString) {
+                                if (char === '{') {
+                                    braceCount++
+                                } else if (char === '}') {
+                                    braceCount--
+                                    if (braceCount === 0) {
+                                        jsonEnd = i
+                                        break
+                                    }
+                                }
+                            }
+                        }
+
+                        if (braceCount === 0 && jsonEnd > jsonStart) {
+                            possibleJson = response.output_text.slice(jsonStart, jsonEnd + 1)
+                            console.log('🔍 Extracted JSON from plain text:', possibleJson)
+                        } else {
+                            console.log('❌ Incomplete JSON detected, brace count:', braceCount)
+                        }
+                    }
+                }
+
+                if (possibleJson) {
                     try {
                         const parsed = JSON.parse(possibleJson)
                         if (parsed && typeof parsed === 'object' && parsed.mode) {
@@ -151,9 +204,80 @@ Search the vector store for exact matches. Use exact data only.`,
                         }
                     } catch (e) {
                         console.log('❌ JSON parsing failed:', e)
+                        // Try to fix incomplete JSON by adding missing closing brackets
+                        if (possibleJson.includes('"mode": "cards"') && possibleJson.includes('"cards": [')) {
+                            let fixedJson = possibleJson
+                            // Count missing closing brackets
+                            const openBraces = (fixedJson.match(/\{/g) || []).length
+                            const closeBraces = (fixedJson.match(/\}/g) || []).length
+                            const openBrackets = (fixedJson.match(/\[/g) || []).length
+                            const closeBrackets = (fixedJson.match(/\]/g) || []).length
+
+                            // Add missing closing brackets
+                            for (let i = 0; i < (openBrackets - closeBrackets); i++) {
+                                fixedJson += ']'
+                            }
+                            for (let i = 0; i < (openBraces - closeBraces); i++) {
+                                fixedJson += '}'
+                            }
+
+                            console.log('🔧 Attempting to fix JSON:', fixedJson)
+                            try {
+                                const fixedParsed = JSON.parse(fixedJson)
+                                if (fixedParsed && typeof fixedParsed === 'object' && fixedParsed.mode) {
+                                    structured = fixedParsed
+                                    console.log('✅ Successfully parsed fixed structured data:', structured)
+                                }
+                            } catch (fixError) {
+                                console.log('❌ Fixed JSON parsing also failed:', fixError)
+                            }
+                        }
                     }
                 } else {
                     console.log('❌ No JSON found in response, using raw text')
+
+                    // Fallback: Try to extract stamp data from text response for show requests
+                    if (response.output_text.toLowerCase().includes('show') ||
+                        response.output_text.toLowerCase().includes('display') ||
+                        response.output_text.toLowerCase().includes('see') ||
+                        response.output_text.toLowerCase().includes('view')) {
+
+                        console.log('🔧 Attempting to extract stamp data from text response')
+
+                        // Try to extract stamp information from the text
+                        const stampMatch = response.output_text.match(/\*\*([^*]+)\*\*/)
+                        const countryMatch = response.output_text.match(/Country:\s*([^\n]+)/i)
+                        const yearMatch = response.output_text.match(/Year:\s*([^\n]+)/i)
+                        const denominationMatch = response.output_text.match(/Denomination:\s*([^\n]+)/i)
+                        const colorMatch = response.output_text.match(/Color:\s*([^\n]+)/i)
+                        const seriesMatch = response.output_text.match(/Series:\s*([^\n]+)/i)
+                        const imageMatch = response.output_text.match(/\[Link\]\(([^)]+)\)/)
+
+                        if (stampMatch && countryMatch && yearMatch) {
+                            // Generate a simple ID based on the stamp name
+                            const stampId = `extracted-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
+                            structured = {
+                                mode: "cards",
+                                cards: [{
+                                    id: stampId,
+                                    stampName: stampMatch[1].trim(),
+                                    country: countryMatch[1].trim(),
+                                    year: yearMatch[1].trim(),
+                                    denomination: denominationMatch?.[1]?.trim() || 'Unknown',
+                                    color: colorMatch?.[1]?.trim() || 'Unknown',
+                                    series: seriesMatch?.[1]?.trim() || 'Unknown',
+                                    catalogNumber: 'Unknown',
+                                    imageUrl: imageMatch?.[1]?.trim() || '/images/stamps/no-image-available.png',
+                                    description: `Extracted from text: ${stampMatch[1].trim()}`,
+                                    mintValue: '0',
+                                    finestUsedValue: '0'
+                                }]
+                            }
+
+                            console.log('✅ Successfully extracted structured data from text:', structured)
+                        }
+                    }
                 }
 
                 // Handle structured responses for precise mode
