@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { isAuthenticated } from '@/lib/api/auth'
+import { isAuthenticated, getUserData, getAuthToken, signOut } from '@/lib/api/auth'
 
 export interface SubscriptionStatus {
   isSubscribed: boolean
@@ -45,31 +45,43 @@ export function useSubscription() {
 
   useEffect(() => {
     const fetchSubscriptionStatus = async () => {
+      console.log
       setIsLoading(true)
       setError(null)
 
+      const userData = getUserData()
+      const token = getAuthToken();
+
+      const userDataResponse = await fetch(`https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1/User/${userData?.userId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }).then(res => res.json()).catch(err => {
+        setIsLoading(false)
+      })
+
       try {
         if (!isAuthenticated()) {
-          setSubscriptionStatus(MOCK_SUBSCRIPTION_DATA)
           return
         }
 
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1000))
-
-        // TODO: Replace with actual API call when backend is ready
-        // const response = await fetch('/api/subscription/status')
-        // const data = await response.json()
-        // setSubscriptionStatus(data)
-
-        // For now, use mock data
-        // Toggle between subscribed/unsubscribed for demo
-        const isDemo = localStorage.getItem('demo_subscribed') === 'true'
-        setSubscriptionStatus(isDemo ? MOCK_SUBSCRIBED_DATA : MOCK_SUBSCRIPTION_DATA)
+        setSubscriptionStatus({
+          accountBalance: userDataResponse.walletBalance,
+          isDealer: userDataResponse.isDealer,
+          isSubscribed: userDataResponse.subscriptionStatus === "Inactive" ? false : true,
+          monthlyCommission: 0,
+          nextBillingDate: null,
+          referralCount: userDataResponse.activeReferralCount,
+          referralToken: userDataResponse.myReferralCode,
+          subscriptionCost: 0,
+          subscriptionTier: 'none'
+        })
 
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch subscription status')
-        setSubscriptionStatus(MOCK_SUBSCRIPTION_DATA)
+        setIsLoading(false)
+        signOut()
       } finally {
         setIsLoading(false)
       }

@@ -1,16 +1,18 @@
 "use client"
 
-import React, { useState, createContext, useContext, Suspense } from "react";
+import React, { useState, createContext, useContext, useEffect } from "react";
 import { LayoutWrapper } from "./layout-wrapper";
 import { Sidebar } from "./sidebar";
 import { MobileNav } from "./mobile-nav";
 import Footer from "./footer";
 import { Toaster } from "./ui/toaster";
 import { useChatContext } from "./chat-provider";
-import { isAuthenticated } from "@/lib/api/auth";
 import { CatalogNavbar } from "./catalog-navbar";
 import { useSearchParams } from "next/navigation";
 import Header from "./header";
+import { CatalogLayoutWrapper } from "./catalog-layout-wrapper";
+import { isUserLoggedIn } from "@/lib/client/auth-utils";
+import { Spinner } from "./ui/spinner";
 
 // Create a context for sidebar state
 const SidebarContext = createContext<{
@@ -39,11 +41,29 @@ function SearchParamsHandler({ children }: { children: (initialActiveSection: 'c
 export function AppContent({ children }: AppContentProps) {
   const { setIsOpen } = useChatContext();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const isLoggedIn = isAuthenticated();
+  // const isLoggedIn = isAuthenticated();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      const loggedIn = isUserLoggedIn();
+      setIsLoggedIn(loggedIn);
+      setLoading(false);
+    };
+    checkLoginStatus();
+  }, []); 
+
+  if(loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Spinner size="lg" />
+      </div>
+    )
+  }
 
   return (
     <LayoutWrapper>
-      <Suspense fallback={null}>
         <SearchParamsHandler>
           {(initialActiveSection) => {
             const [activeSection, setActiveSection] = useState<'countries' | 'visual' | 'list' | 'investigate' | 'stamp-collection'>(initialActiveSection)
@@ -53,9 +73,6 @@ export function AppContent({ children }: AppContentProps) {
                 {isLoggedIn ?
                   <SidebarContext.Provider value={{ sidebarCollapsed, setSidebarCollapsed, activeSection }}>
                     <div className="flex min-h-screen">
-                      {/* Mobile Navigation */}
-                      {/* <MobileNav setIsOpen={setIsOpen} /> */}
-
                       {/* Sidebar - takes fixed width based on collapsed state */}
                       <Sidebar sidebarCollapsed={sidebarCollapsed} setActiveSection={setActiveSection} />
 
@@ -63,7 +80,9 @@ export function AppContent({ children }: AppContentProps) {
                       <div className="flex-1 flex flex-col min-w-0 min-h-screen transition-all duration-300 ease-in-out bg-background">
                         <CatalogNavbar setIsOpen={setIsOpen} isCollapsed={sidebarCollapsed} onCollapseChange={setSidebarCollapsed} />
                         <MobileNav setIsOpen={setIsOpen} />
-                        <main className="grow h-0 overflow-y-auto shadow-inner">{children}</main>
+                        <CatalogLayoutWrapper>
+                          {children}
+                        </CatalogLayoutWrapper>
                       </div>
                       <Toaster />
                     </div>
@@ -78,7 +97,6 @@ export function AppContent({ children }: AppContentProps) {
             )
           }}
         </SearchParamsHandler>
-      </Suspense>
     </LayoutWrapper>
   );
 } 

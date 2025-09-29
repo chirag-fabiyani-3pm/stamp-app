@@ -507,7 +507,7 @@ const [modalStack, setModalStack] = useState<ModalStackItem[]>([])
   return (
     <>
       <section>
-        <div className="relative mb-8 w-1/3 mx-auto">
+        <div className="relative mb-8 w-1/2 mx-auto">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
           <Input
             type="text"
@@ -622,10 +622,12 @@ const [modalStack, setModalStack] = useState<ModalStackItem[]>([])
           isChatOpen && "pr-[28rem]" // Leave space for chat modal (28rem = 448px, which is max-w-sm + padding)
         )}>
           <div className={cn(
-            "relative w-full max-w-7xl h-[95vh] max-h-[95vh] overflow-y-auto bg-gradient-to-br from-orange-50 to-white dark:from-gray-900 dark:to-gray-950 border-0 shadow-2xl rounded-lg",
+            "relative w-full max-w-7xl h-[95vh] max-h-[95vh] bg-gradient-to-br from-orange-50 to-white dark:from-gray-900 dark:to-gray-950 border-0 shadow-2xl rounded-lg flex flex-col",
             isChatOpen && "max-w-6xl" // Reduce max width when chat is open
           )}>
-            <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-4 md:pb-6 mb-4 md:mb-6 px-6 py-4">
+            {/* Sticky Close Button */}
+            <div className="sticky top-0 z-20 flex justify-between items-center px-6 pt-4 pb-6 rounded-t-lg border-b border-gray-200 dark:border-gray-700">
+              {/* Header Section */}
               <div>
                 <h3 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1 md:mb-2">
                   {modalStack[modalStack.length - 1]?.title}
@@ -637,32 +639,36 @@ const [modalStack, setModalStack] = useState<ModalStackItem[]>([])
                     <code className="bg-primary/10 dark:bg-primary/20 px-2 py-1 rounded font-mono text-xs text-primary dark:text-amber-300 break-all">
                       {decodeURIComponent(modalStack[modalStack.length - 1].stampCode).split('|||').join('.')}
                     </code>
-
                   </div>
                 )}
               </div>
-              <Button variant="ghost" size="sm" onClick={closeModal} className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300">
-                <X className="w-5 h-5 md:w-6 md-6" />
+              <Button variant="ghost" size="sm" onClick={closeModal} className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-200">
+                <X className="w-5 h-5 md:w-6 md:h-6" />
               </Button>
             </div>
 
-            <div className="px-6">
-              {modalStack.length > 0 && (
-                <ModalContent
-                  modalItem={modalStack[modalStack.length - 1]}
-                  onSeriesClick={handleSeriesClick}
-                  onYearClick={handleYearClick}
-                  onCurrencyClick={handleCurrencyClick}
-                  onDenominationClick={handleDenominationClick}
-                  onColorClick={handleColorClick}
-                  onPaperClick={handlePaperClick}
-                  onWatermarkClick={handleWatermarkClick}
-                  onPerforationClick={handlePerforationClick}
-                  onItemTypeClick={handleItemTypeClick}
-                  onStampDetailClick={handleStampDetailClick}
-                  isLoading={loadingModalContent}
-                />
-              )}
+            {/* Scrollable Content Area */}
+            <div className="flex-1 overflow-y-auto">
+
+              {/* Modal Content */}
+              <div className="px-6 py-4">
+                {modalStack.length > 0 && (
+                  <ModalContent
+                    modalItem={modalStack[modalStack.length - 1]}
+                    onSeriesClick={handleSeriesClick}
+                    onYearClick={handleYearClick}
+                    onCurrencyClick={handleCurrencyClick}
+                    onDenominationClick={handleDenominationClick}
+                    onColorClick={handleColorClick}
+                    onPaperClick={handlePaperClick}
+                    onWatermarkClick={handleWatermarkClick}
+                    onPerforationClick={handlePerforationClick}
+                    onItemTypeClick={handleItemTypeClick}
+                    onStampDetailClick={handleStampDetailClick}
+                    isLoading={loadingModalContent}
+                  />
+                )}
+              </div>
             </div>
           </div>
         </div>

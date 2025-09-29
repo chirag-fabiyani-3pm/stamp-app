@@ -633,24 +633,30 @@ export function ListCatalogContent() {
           onOpenChange={() => index === modalStack.length - 1 && closeModal()}
         >
           <DialogContent 
-            className="max-w-md sm:max-w-6xl max-h-[95vh] overflow-y-auto bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700"
+            className="max-w-md sm:max-w-6xl max-h-[95vh] bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-0 flex flex-col border-0 rounded-lg"
             style={{ zIndex: 1000 + index * 10 }} // Increasing z-index for stack effect
           >
-            <DialogHeader>
-              <DialogTitle className="text-xl font-bold text-black dark:text-white flex items-center justify-between">
-                {modal.title}
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="bg-white border-gray-300 text-black hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
-                  onClick={closeModal}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </DialogTitle>
-            </DialogHeader>
+            {/* Sticky Header */}
+            <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-6 pb-4 rounded-t-lg">
+              <DialogHeader>
+                <DialogTitle className="text-xl font-bold text-black dark:text-white flex items-center justify-between">
+                  {modal.title}
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="bg-white border-gray-300 text-black hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
+                    onClick={closeModal}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </DialogTitle>
+              </DialogHeader>
+            </div>
+            
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-6 pt-2">
             {loadingModalContent ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <Card key={i} className="w-full">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -844,6 +850,7 @@ export function ListCatalogContent() {
                 )}
               </>
             )}
+            </div>
           </DialogContent>
         </Dialog>
       ))}

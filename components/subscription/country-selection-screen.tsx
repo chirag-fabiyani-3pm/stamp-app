@@ -20,6 +20,7 @@ interface CountrySelectionScreenProps {
     countries: string
     price: number
     description: string
+    countryCount: number
   }
   onBack: () => void
   userReferralCode?: string
@@ -27,36 +28,34 @@ interface CountrySelectionScreenProps {
 
 // List of available countries for stamp catalogs
 const availableCountries = [
-  { id: 'usa', name: 'United States', flag: '🇺🇸', popular: true },
-  { id: 'uk', name: 'United Kingdom', flag: '🇬🇧', popular: true },
-  { id: 'canada', name: 'Canada', flag: '🇨🇦', popular: true },
-  { id: 'australia', name: 'Australia', flag: '🇦🇺', popular: true },
-  { id: 'newzealand', name: 'New Zealand', flag: '🇳🇿', popular: true },
-  { id: 'germany', name: 'Germany', flag: '🇩🇪', popular: true },
-  { id: 'france', name: 'France', flag: '🇫🇷', popular: true },
-  { id: 'japan', name: 'Japan', flag: '🇯🇵', popular: false },
-  { id: 'china', name: 'China', flag: '🇨🇳', popular: false },
-  { id: 'india', name: 'India', flag: '🇮🇳', popular: false },
-  { id: 'brazil', name: 'Brazil', flag: '🇧🇷', popular: false },
-  { id: 'russia', name: 'Russia', flag: '🇷🇺', popular: false },
-  { id: 'italy', name: 'Italy', flag: '🇮🇹', popular: false },
-  { id: 'spain', name: 'Spain', flag: '🇪🇸', popular: false },
-  { id: 'netherlands', name: 'Netherlands', flag: '🇳🇱', popular: false },
-  { id: 'switzerland', name: 'Switzerland', flag: '🇨🇭', popular: false },
-  { id: 'sweden', name: 'Sweden', flag: '🇸🇪', popular: false },
-  { id: 'norway', name: 'Norway', flag: '🇳🇴', popular: false },
-  { id: 'denmark', name: 'Denmark', flag: '🇩🇰', popular: false },
-  { id: 'belgium', name: 'Belgium', flag: '🇧🇪', popular: false },
-  { id: 'austria', name: 'Austria', flag: '🇦🇹', popular: false },
+  { id: 'usa', name: 'United States', countryCode: 'US', flag: '🇺🇸', popular: true },
+  { id: 'uk', name: 'United Kingdom', countryCode: 'UK', flag: '🇬🇧', popular: true },
+  { id: 'canada', name: 'Canada', countryCode: 'CA', flag: '🇨🇦', popular: true },
+  { id: 'australia', name: 'Australia', countryCode: 'AU', flag: '🇦🇺', popular: true },
+  { id: 'newzealand', name: 'New Zealand', countryCode: 'NZ', flag: '🇳🇿', popular: true },
+  { id: 'germany', name: 'Germany', countryCode: 'DE', flag: '🇩🇪', popular: true },
+  { id: 'france', name: 'France', countryCode: 'FR', flag: '🇫🇷', popular: true },
+  { id: 'japan', name: 'Japan', countryCode: 'JP', flag: '🇯🇵', popular: false },
+  { id: 'china', name: 'China', countryCode: 'CN', flag: '🇨🇳', popular: false },
+  { id: 'india', name: 'India', countryCode: 'IN', flag: '🇮🇳', popular: false },
+  { id: 'brazil', name: 'Brazil', countryCode: 'BR', flag: '🇧🇷', popular: false },
+  { id: 'russia', name: 'Russia', countryCode: 'RU', flag: '🇷🇺', popular: false },
+  { id: 'italy', name: 'Italy', countryCode: 'IT', flag: '🇮🇹', popular: false },
+  { id: 'spain', name: 'Spain', countryCode: 'ES', flag: '🇪🇸', popular: false },
+  { id: 'netherlands', name: 'Netherlands', countryCode: 'NL', flag: '🇳🇱', popular: false },
+  { id: 'switzerland', name: 'Switzerland', countryCode: 'CH', flag: '🇨🇭', popular: false },
+  { id: 'sweden', name: 'Sweden', countryCode: 'SE', flag: '🇸🇪', popular: false },
+  { id: 'norway', name: 'Norway', countryCode: 'NO', flag: '🇳🇴', popular: false },
+  { id: 'denmark', name: 'Denmark', countryCode: 'DK', flag: '🇩🇰', popular: false },
+  { id: 'belgium', name: 'Belgium', countryCode: 'BE', flag: '🇧🇪', popular: false },
+  { id: 'austria', name: 'Austria', countryCode: 'AT', flag: '🇦🇹', popular: false },
 ]
 
 export function CountrySelectionScreen({ selectedTier, onBack, userReferralCode }: CountrySelectionScreenProps) {
   const [selectedCountries, setSelectedCountries] = useState<string[]>([])
   const [showPayment, setShowPayment] = useState(false)
 
-  const maxCountries = selectedTier.id === '1-country' ? 1 : 
-                      selectedTier.id === '2-countries' ? 2 : 
-                      selectedTier.id === '3-countries' ? 3 : 0
+  const maxCountries = selectedTier.countryCount
 
   const handleCountryToggle = (countryId: string) => {
     setSelectedCountries(prev => {

@@ -1,4 +1,4 @@
-import React, { use, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import SeriesGrid from './series-grid';
 import TypesView from './types-view';
 import StampView from './stamp-view';
@@ -117,47 +117,6 @@ function App() {
 
   return (
     <div>
-      {/* Mobile Breadcrumb Navigation */}
-      {(selectedTypes || selectedSeries) && (
-        <div className="md:hidden border-b border-stamp-gold-500 px-4 py-3 mb-8">
-          <div className="flex items-center space-x-2 text-sm">
-            <button
-              onClick={handleBackToSeries}
-              className="flex items-center text-stamp-primary hover:text-stamp-gold-600 font-medium transition-colors duration-200"
-            >
-              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Series
-            </button>
-            {selectedTypes && (
-              <>
-                <span className="text-stamp-gold-400">/</span>
-                {currentView === 'stamps' ? (
-                  <button
-                    onClick={handleBackToTypes}
-                    className="flex items-center text-stamp-primary hover:text-stamp-gold-600 font-medium transition-colors duration-200"
-                  >
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                    {selectedSeries.name}
-                  </button>
-                ) : (
-                  <span className="text-stamp-royal-700 font-medium">{selectedSeries.name}</span>
-                )}
-              </>
-            )}
-            {selectedTypes && (
-              <>
-                <span className="text-stamp-gold-400">/</span>
-                <span className="text-stamp-royal-700 font-medium">{selectedTypes.name}</span>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Main Content */}
       <main className="mx-auto">
         {currentView === 'series' && (

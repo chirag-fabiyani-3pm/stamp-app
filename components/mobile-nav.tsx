@@ -32,7 +32,9 @@ import {
   FileText,
   Shield,
   Cookie,
-  Mail
+  Mail,
+  Layers,
+  CircleDollarSign,
 } from "lucide-react"
 import Image from "next/image"
 import { useTheme } from "next-themes"
@@ -47,7 +49,6 @@ export function MobileNav({ setIsOpen }: MobileNavProps) {
   const pathname = usePathname()
   const { toast } = useToast()
   const { resolvedTheme } = useTheme()
-  const [currentTab, setCurrentTab] = useState('countries')
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -71,11 +72,6 @@ export function MobileNav({ setIsOpen }: MobileNavProps) {
       setUserAvatar(avatar)
     }
 
-    if (typeof window !== 'undefined') {
-      const searchParams = new URLSearchParams(window.location.search)
-      const tab = searchParams.get('tab') || 'countries'
-      setCurrentTab(tab)
-    }
 
     checkAuth()
   }, [pathname])
@@ -124,33 +120,48 @@ export function MobileNav({ setIsOpen }: MobileNavProps) {
   const catalogNavItems = [
     {
       title: "Country Catalogs",
-      href: "/?tab=countries",
+      href: "/catalog/country-catalog",
       icon: Globe,
-      active: pathname === "/" && currentTab === "countries"
+      active: pathname === "/catalog/country-catalog"
     },
     {
       title: "Visual Catalog",
-      href: "/?tab=visual",
+      href: "/catalog/visual-catalog",
       icon: Eye,
-      active: pathname === "/" && currentTab === "visual"
+      active: pathname === "/catalog/visual-catalog"
     },
     {
       title: "List Catalog",
-      href: "/?tab=list",
+      href: "/catalog/list-catalog",
       icon: Archive,
-      active: pathname === "/" && currentTab === "list"
+      active: pathname === "/catalog/list-catalog"
     },
     {
       title: "Investigate Search",
-      href: "/?tab=investigate",
+      href: "/catalog/investigate-search",
       icon: Search,
-      active: pathname === "/" && currentTab === "investigate"
+      active: pathname === "/catalog/investigate-search"
+    }
+  ]
+
+  const profileNavItems = [
+    {
+      title: "Account",
+      href: "/profile/account",
+      icon: User,
+      active: pathname === "/profile/account"
     },
     {
-      title: "Stamp Collection",
-      href: "/?tab=stamp-collection",
-      icon: Collection,
-      active: pathname === "/" && currentTab === "stamp-collection"
+      title: "My Collection",
+      href: "/profile/collection",
+      icon: Layers,
+      active: pathname === "/profile/collection"
+    },
+    {
+      title: "Subscription",
+      href: "/profile/subscription",
+      icon: CircleDollarSign,
+      active: pathname === "/profile/subscription"
     }
   ]
 
@@ -165,6 +176,14 @@ export function MobileNav({ setIsOpen }: MobileNavProps) {
       </Link>
       
       <div className="flex items-center gap-2">
+        <button
+          onClick={() => setIsOpen(true)}
+          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors bg-primary/10 text-primary hover:bg-primary/20"
+          title="AI Chat"
+        >
+          <MessageSquare className="h-4 w-4" />
+          <span className="hidden sm:inline">AI Chat</span>
+        </button>
         <ModeToggle />
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
           <SheetTrigger asChild>
@@ -175,8 +194,13 @@ export function MobileNav({ setIsOpen }: MobileNavProps) {
         <SheetContent side="right" className="w-72">
           <div className="flex flex-col h-full">
             {/* Header */}
-            <div className="pb-4 border-b border-border">
-              <h2 className="text-lg font-semibold">Navigation</h2>
+            <div className="pb-6 border-b border-border/60">
+              <div className="flex items-center">
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">Menu</h2>
+                  <p className="text-xs text-muted-foreground">Navigate your stamp collection</p>
+                </div>
+              </div>
             </div>
 
             {/* Navigation */}
@@ -193,10 +217,10 @@ export function MobileNav({ setIsOpen }: MobileNavProps) {
                       href={item.href}
                       onClick={() => setIsSheetOpen(false)}
                       className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                        "flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium transition-colors mb-2",
                         item.active
-                          ? "bg-accent text-accent-foreground"
-                          : "text-foreground hover:bg-accent hover:text-accent-foreground",
+                          ? "bg-[#F4831F12] border-l-2 border-primary text-primary"
+                          : "text-foreground hover:bg-[#F4831F08] hover:border-l-2 hover:border-primary hover:text-primary",
                         item.special && "relative"
                       )}
                     >
@@ -221,10 +245,35 @@ export function MobileNav({ setIsOpen }: MobileNavProps) {
                         href={item.href}
                         onClick={() => setIsSheetOpen(false)}
                         className={cn(
-                          "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                          "flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium transition-colors mb-2",
                           item.active
-                            ? "bg-accent text-accent-foreground"
-                            : "text-foreground hover:bg-accent hover:text-accent-foreground"
+                            ? "bg-[#F4831F12] border-l-2 border-primary text-primary"
+                            : "text-foreground hover:bg-[#F4831F08] hover:border-l-2 hover:border-primary hover:text-primary"
+                        )}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+
+                {/* Profile Section - Only show when logged in */}
+                {isLoggedIn && (
+                  <div className="mb-6">
+                    <h3 className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Profile
+                    </h3>
+                    {profileNavItems.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setIsSheetOpen(false)}
+                        className={cn(
+                          "flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium transition-colors mb-2",
+                          item.active
+                            ? "bg-[#F4831F12] border-l-2 border-primary text-primary"
+                            : "text-foreground hover:bg-[#F4831F08] hover:border-l-2 hover:border-primary hover:text-primary"
                         )}
                       >
                         <item.icon className="h-4 w-4" />
@@ -241,7 +290,7 @@ export function MobileNav({ setIsOpen }: MobileNavProps) {
               {/* User Section */}
               {isLoggedIn ? (
                 <div className="space-y-2">
-                  <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-accent/50">
+                  <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-[#F4831F08] border border-primary/20">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={userAvatar || "/man-avatar-profile-picture.avif"} alt={userName || "User"} />
                       <AvatarFallback>{getUserInitials(userName)}</AvatarFallback>
@@ -254,29 +303,9 @@ export function MobileNav({ setIsOpen }: MobileNavProps) {
                     </div>
                   </div>
                   
-                  <Link
-                    href="/profile"
-                    onClick={() => setIsSheetOpen(false)}
-                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
-                  >
-                    <User className="h-4 w-4" />
-                    <span>Profile</span>
-                  </Link>
-                  
-                  {userIsAdmin && (
-                    <Link
-                      href="/admin"
-                      onClick={() => setIsSheetOpen(false)}
-                      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
-                    >
-                      <LayoutDashboard className="h-4 w-4" />
-                      <span>Admin Dashboard</span>
-                    </Link>
-                  )}
-                  
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-accent text-red-600 hover:text-red-700"
+                    className="w-full flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-red-50 hover:text-red-700 text-red-600 dark:hover:bg-red-900/20"
                   >
                     <LogOut className="h-4 w-4" />
                     <span>Sign out</span>

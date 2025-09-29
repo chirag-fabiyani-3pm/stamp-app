@@ -901,7 +901,7 @@ export default function StampEditForm({ stamp, onClose, onSave }: StampEditFormP
             }
 
             // Make API call with PUT method for editing (only difference from saveStampToAPI)
-            const apiResponse = await fetch(`https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/Stamp/${stamp.id}`, {
+            const apiResponse = await fetch(`https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1/Stamp/${stamp.id}`, {
                 method: 'PUT', // Changed from POST to PUT for editing
                 headers: {
                     'Authorization': `Bearer ${jwt}`

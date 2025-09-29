@@ -1,9 +1,9 @@
-import React from "react"
+import React, { useState } from "react"
 import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { TrendingUp, AlertCircle } from "lucide-react"
+import { TrendingUp, AlertCircle, Maximize2, X } from "lucide-react"
 import { StampData, ModalType, AdditionalCategoryOption, ParsedStampDetails } from "@/types/catalog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
@@ -22,6 +22,7 @@ export function StampDetailsModalContent({
   onStampClick,
   isLoading
 }: StampDetailsModalContentProps) {
+  const [enlargedImage, setEnlargedImage] = useState<string | null>(null)
   const { stamp, stamps, showAsIndividualCards, selectedAdditionalCategories, stampCode } = data;
 
   if (isLoading) {
@@ -221,203 +222,237 @@ export function StampDetailsModalContent({
   const parsedDetails: ParsedStampDetails = stamp.stampDetailsJson ? JSON.parse(stamp.stampDetailsJson) : {};
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Left Column - Stamp Image and Basic Info */}
-        <div className="lg:w-2/4 space-y-4">
-          {/* Stamp Image */}
-          <div className="relative w-full h-72 md:h-96">
-            <Image
-              src={stamp.stampImageUrl || '/images/stamps/no-image-available.png'}
-              alt={stamp.name}
-              fill
-              className="object-contain rounded-lg border border-border shadow-lg"
-              onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                const target = e.currentTarget;
-                if (target.src !== '/images/stamps/no-image-available.png') {
-                  target.src = '/images/stamps/no-image-available.png';
-                };
-              }}
-              sizes="(max-width: 768px) 100vw, 33vw"
-            />
-            <div className="absolute top-2 right-2">
-              <Badge variant="secondary" className="text-xs">
-                {stamp.categoryCode}
-              </Badge>
+    <>
+      <div className="space-y-6">
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Left Column - Stamp Image and Basic Info */}
+          <div className="lg:w-2/4 space-y-4">
+            {/* Stamp Image */}
+            <div className="relative w-full h-72 md:h-96 group">
+              <Image
+                src={stamp.stampImageUrl || '/images/stamps/no-image-available.png'}
+                alt={stamp.name}
+                fill
+                className="object-contain rounded-lg border border-border shadow-lg"
+                onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                  const target = e.currentTarget;
+                  if (target.src !== '/images/stamps/no-image-available.png') {
+                    target.src = '/images/stamps/no-image-available.png';
+                  };
+                }}
+                sizes="(max-width: 768px) 100vw, 33vw"
+              />
+              <div className="absolute top-2 right-2 flex items-center space-x-2">
+                <Badge variant="secondary" className="text-xs">
+                  {stamp.categoryCode}
+                </Badge>
+                <button
+                  onClick={() => setEnlargedImage(stamp.stampImageUrl || '/images/stamps/no-image-available.png')}
+                  className="bg-white/90 hover:bg-white rounded-full p-2 shadow-md transition-all duration-200 hover:scale-110 opacity-0 group-hover:opacity-100"
+                  title="View larger image"
+                >
+                  <Maximize2 className="w-4 h-4 text-foreground" />
+                </button>
+              </div>
             </div>
+
+
           </div>
 
-          
-        </div>
-
-        {/* Right Column - Details and Market Data */}
-        <div className="lg:w-2/4 space-y-6">
-        {/* Header */}
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">{stamp.name}</h2>
-            <p className="text-lg text-muted-foreground">{stamp.seriesName}</p>
-            <p className="text-sm text-muted-foreground">{stamp.country} • {stamp.issueYear}</p>
-          </div>
-          {/* Core Details Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  SERIES NAME
-                </label>
-                <p className="text-sm font-semibold text-foreground">
-                  {stamp.seriesName}
-                </p>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  COLOR
-                </label>
-                <p className="text-sm font-semibold text-foreground">
-                  {stamp.color || "Color Info Not Available"}
-                </p>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  PERFORATION
-                </label>
-                <p className="text-sm font-semibold text-foreground">
-                  {parsedDetails.perforation || "Perforation Info Not Available"}
-                </p>
-              </div>
+          {/* Right Column - Details and Market Data */}
+          <div className="lg:w-2/4 space-y-6">
+            {/* Header */}
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">{stamp.name}</h2>
+              <p className="text-lg text-muted-foreground">{stamp.seriesName}</p>
+              <p className="text-sm text-muted-foreground">{stamp.country} • {stamp.issueYear}</p>
             </div>
-
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  DENOMINATION
-                </label>
-                <p className="text-sm font-semibold text-foreground">
-                  {stamp.denominationValue}{stamp.denominationSymbol}
-                </p>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  PAPER TYPE
-                </label>
-                <p className="text-sm font-semibold text-foreground">
-                  {stamp.paperType || "Paper Type Info Not Available"}
-                </p>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  WATERMARK
-                </label>
-                <p className="text-sm font-semibold text-foreground">
-                  {parsedDetails.watermark || "Watermark Info Not Available"}
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  MINT VALUE
-                </label>
-                <p className="text-sm font-semibold text-foreground">
-                  {stamp.mintValue ? `${new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(stamp.mintValue)}` : "-"}
-                </p>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  FINEST USED PRICE
-                </label>
-                <p className="text-sm font-semibold text-foreground">
-                  {stamp.finestUsedValue ? `${new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(stamp.finestUsedValue)}` : "-"}
-                </p>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  USED PRICE
-                </label>
-                <p className="text-sm font-semibold text-foreground">
-                  {stamp.usedValue ? `${new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(stamp.usedValue)}` : "-"}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      {/* Stamp Instances */}
-      <Card className="bg-gradient-to-r from-blue-900/10 to-green-900/10 border-blue-800/20 text-card-foreground">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold text-foreground">Stamp Instances</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {stamp.instances && stamp.instances.length > 0 ? (
-                <div className="border rounded-lg overflow-hidden dark:border-gray-700">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-gray-50 dark:bg-gray-800">
-                        <TableHead className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Name</TableHead>
-                        <TableHead className="text-center py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Mint</TableHead>
-                        <TableHead className="text-center py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Finest Used</TableHead>
-                        <TableHead className="text-center py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Used</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {stamp.instances.map((instance: any) => (
-                        <TableRow 
-                          key={instance.id}
-                          className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors bg-gray-50 dark:bg-gray-800"
-                        >
-                          <TableCell className="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">
-                            <div className="flex flex-col gap-1">
-                              <span className="font-medium">{(instance as any).name}{(instance as any).catalogNumber ? ` (${(instance as any).catalogNumber})` : ''}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="py-3 px-4 text-center">
-                            {instance.mintValue ? (
-                              <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
-                                {new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(instance.mintValue)}
-                              </span>
-                            ) : (
-                              <span className="text-gray-400 dark:text-gray-500 text-xs">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="py-3 px-4 text-center">
-                            {instance.finestUsedValue ? (
-                              <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
-                                {new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(instance.finestUsedValue)}
-                              </span>
-                            ) : (
-                              <span className="text-gray-400 dark:text-gray-500 text-xs">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="py-3 px-4 text-center">
-                            {instance.usedValue ? (
-                              <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
-                                {new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(instance.usedValue)}
-                              </span>
-                            ) : (
-                              <span className="text-gray-400 dark:text-gray-500 text-xs">-</span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+            {/* Core Details Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    SERIES NAME
+                  </label>
+                  <p className="text-sm font-semibold text-foreground">
+                    {stamp.seriesName}
+                  </p>
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
-                      <AlertCircle className="w-6 h-6 text-gray-400 dark:text-gray-500" />
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">No instances available</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">This stamp doesn't have any specific instances or varieties catalogued.</p>
-                    </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    COLOR
+                  </label>
+                  <p className="text-sm font-semibold text-foreground">
+                    {stamp.color || "Color Info Not Available"}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    PERFORATION
+                  </label>
+                  <p className="text-sm font-semibold text-foreground">
+                    {parsedDetails.perforation || "Perforation Info Not Available"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    DENOMINATION
+                  </label>
+                  <p className="text-sm font-semibold text-foreground">
+                    {stamp.denominationValue}{stamp.denominationSymbol}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    PAPER TYPE
+                  </label>
+                  <p className="text-sm font-semibold text-foreground">
+                    {stamp.paperType || "Paper Type Info Not Available"}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    WATERMARK
+                  </label>
+                  <p className="text-sm font-semibold text-foreground">
+                    {parsedDetails.watermark || "Watermark Info Not Available"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    MINT VALUE
+                  </label>
+                  <p className="text-sm font-semibold text-foreground">
+                    {stamp.mintValue ? `${new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(stamp.mintValue)}` : "-"}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    FINEST USED PRICE
+                  </label>
+                  <p className="text-sm font-semibold text-foreground">
+                    {stamp.finestUsedValue ? `${new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(stamp.finestUsedValue)}` : "-"}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    USED PRICE
+                  </label>
+                  <p className="text-sm font-semibold text-foreground">
+                    {stamp.usedValue ? `${new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(stamp.usedValue)}` : "-"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* Stamp Instances */}
+        <Card className="bg-gradient-to-r from-blue-900/10 to-green-900/10 border-blue-800/20 text-card-foreground">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold text-foreground">Stamp Instances</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {stamp.instances && stamp.instances.length > 0 ? (
+              <div className="border rounded-lg overflow-hidden dark:border-gray-700">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50 dark:bg-gray-800">
+                      <TableHead className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Name</TableHead>
+                      <TableHead className="text-center py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Mint</TableHead>
+                      <TableHead className="text-center py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Finest Used</TableHead>
+                      <TableHead className="text-center py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Used</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {stamp.instances.map((instance: any) => (
+                      <TableRow
+                        key={instance.id}
+                        className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors bg-gray-50 dark:bg-gray-800"
+                      >
+                        <TableCell className="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">
+                          <div className="flex flex-col gap-1">
+                            <span className="font-medium">{(instance as any).name}{(instance as any).catalogNumber ? ` (${(instance as any).catalogNumber})` : ''}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-3 px-4 text-center">
+                          {instance.mintValue ? (
+                            <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
+                              {new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(instance.mintValue)}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 dark:text-gray-500 text-xs">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-3 px-4 text-center">
+                          {instance.finestUsedValue ? (
+                            <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
+                              {new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(instance.finestUsedValue)}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 dark:text-gray-500 text-xs">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-3 px-4 text-center">
+                          {instance.usedValue ? (
+                            <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
+                              {new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(instance.usedValue)}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 dark:text-gray-500 text-xs">-</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                    <AlertCircle className="w-6 h-6 text-gray-400 dark:text-gray-500" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">No instances available</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">This stamp doesn't have any specific instances or varieties catalogued.</p>
                   </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-    </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Enlarged Image Modal */}
+      {enlargedImage && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+          <div className="max-w-4xl max-h-[90vh] w-full">
+            <div className="bg-white rounded-lg shadow-2xl relative">
+              <div className="border-b flex justify-end p-3 pr-5">
+                <button
+                  onClick={() => setEnlargedImage(null)}
+                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-white/80 dark:hover:bg-gray-800/80 transition-colors duration-200 z-10"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <Image
+                src={enlargedImage}
+                alt="Enlarged stamp"
+                width={800}
+                height={750}
+                className="w-full h-auto max-h-[85vh] object-contain rounded-xl p-2 shadow-inner"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 } 

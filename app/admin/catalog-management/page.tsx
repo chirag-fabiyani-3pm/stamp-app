@@ -801,7 +801,7 @@ export default function CatalogManagementPage() {
       formData.append("CatalogName", catalogName)
       formData.append("StampFileAttachment", file)
 
-      const response = await fetch("https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/CatalogExtractionProcess", {
+      const response = await fetch("https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1/CatalogExtractionProcess", {
         method: "POST",
         headers: {
           'Authorization': `Bearer ${jwt}`
@@ -936,7 +936,7 @@ export default function CatalogManagementPage() {
       }
 
       const response = await fetch(
-        `https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/StampCatalog?pageNumber=${pageNumber}&pageSize=${pageSize}`,
+        `https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1/StampCatalog?pageNumber=${pageNumber}&pageSize=${pageSize}`,
         {
           method: "GET",
           headers: {
@@ -1000,7 +1000,7 @@ export default function CatalogManagementPage() {
       }
 
       const response = await fetch(
-        `https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/CatalogExtractionProcess?pageNumber=${pageNumber}&pageSize=${pageSize}`,
+        `https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1/CatalogExtractionProcess?pageNumber=${pageNumber}&pageSize=${pageSize}`,
         {
           method: "GET",
           headers: {

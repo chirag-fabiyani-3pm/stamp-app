@@ -49,98 +49,9 @@ function ModernCatalogContentInner() {
 
     // Data via shared provider
     const {
-        stamps,
-        loading: dataLoading,
-        error: dataError,
         fetchProgress,
         loadingType
     } = useCatalogData()
-    // Data states - derived from API data
-    const [countries, setCountries] = useState<CountryOption[]>([])
-
-    // Initialize component with API data from context
-    useEffect(() => {
-        try {
-            setLoading(true)
-            if (stamps && stamps.length > 0) {
-                const countriesData = groupStampsByCountry(stamps)
-                setCountries(countriesData as CountryOption[])
-            } else {
-                setCountries([])
-            }
-        } catch (err) {
-            console.error('Error loading initial data:', err)
-            setError('Failed to load catalog data')
-        } finally {
-            setLoading(false)
-        }
-    }, [stamps])
-
-
-    // Filtering now handled inside CountryCatalogContent
-
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-background text-foreground">
-                {/* Navbar Skeleton */}
-                <div className="sticky top-0 z-30 w-full bg-background/95 backdrop-blur border-b border-border">
-                    <div className="container flex h-16 items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <Skeleton className="h-8 w-32" />
-                            <div className="hidden sm:flex items-center gap-2">
-                                <Skeleton className="h-6 w-px" />
-                                <Skeleton className="h-6 w-20" />
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <Skeleton className="h-8 w-24" />
-                            <Skeleton className="h-9 w-9 rounded-md" />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Main Content Skeleton */}
-                <main className="w-full px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-                    <CountryCatalogContent />
-                </main>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="min-h-screen bg-background text-foreground">
-
-                <div className="flex items-center justify-center min-h-[80vh]">
-                    <div className="text-center space-y-6 max-w-md mx-auto">
-                        <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto dark:bg-red-900">
-                            <AlertCircle className="w-10 h-10 text-red-500 dark:text-red-400" />
-                        </div>
-                        <div className="space-y-2">
-                            <h2 className="text-2xl font-bold">Catalog Unavailable</h2>
-                            <p className="text-muted-foreground">{error}</p>
-                        </div>
-                        <Button onClick={() => {
-                            setError(null)
-                            setLoading(true)
-                            try {
-                                const countriesData = groupStampsByCountry(stamps)
-                                setCountries(countriesData as CountryOption[])
-                            } catch (err) {
-                                console.error('Error retrying data load:', err)
-                                setError('Failed to reload catalog data')
-                            } finally {
-                                setLoading(false)
-                            }
-                        }} className="bg-primary hover:bg-primary/90 text-white">
-                            <ArrowLeft className="w-4 h-4 mr-2" />
-                            Try Again
-                        </Button>
-                    </div>
-                </div>
-            </div>
-        )
-    }
 
     return (
         <div className="text-foreground">
@@ -178,108 +89,16 @@ function ModernCatalogContentInner() {
             </div>
             {/* Main Content */}
             <main className="w-full p-10">
-                {modalStack.length === 0 ? (
-                    <>
-                        {/* API Data Fetching Progress Overlay */}
-                        {fetchProgress.isFetching && (
-                            <DataFetchingProgress
-                                progress={fetchProgress.progress}
-                                totalItems={fetchProgress.totalItems}
-                                currentItems={fetchProgress.currentItems}
-                                currentPage={fetchProgress.currentPage}
-                                totalPages={fetchProgress.totalPages}
-                                isComplete={fetchProgress.isComplete}
-                            />
-                        )}
-
-                        {/* IndexedDB Loading State */}
-                        {loadingType === 'indexeddb' && !fetchProgress.isFetching && (
-                            <div className="space-y-6">
-                                <div className="text-center">
-                                    <h2 className="text-2xl font-bold mb-4">Loading Stamp Catalog</h2>
-                                    <p className="text-muted-foreground mb-6">Retrieving data from local storage...</p>
-                                </div>
-                                {activeSection === 'countries' ? (
-                                    <CountryCatalogContent />
-                                ) : activeSection === 'visual' ? (
-                                    <VisualCatalogSkeleton />
-                                ) : activeSection === 'list' ? (
-                                    <ListCatalogSkeleton />
-                                ) : (
-                                    <LoadingStamps
-                                        count={12}
-                                        type="grid"
-                                    />
-                                )}
-                            </div>
-                        )}
-
-                        {/* Normal Content - Show when not loading */}
-                        {loadingType === 'none' && !loading && (
-                            <>
-                                {/* Visual Catalog Section */}
-                                {activeSection === 'visual' && (
-                                    <VisualCatalogContent />
-                                )}
-
-                                {/* List Catalog Section */}
-                                {activeSection === 'list' && (
-                                    <ListCatalogContent />
-                                )}
-
-                                {/* Investigate Search Section */}
-                                {activeSection === 'investigate' && (
-                                    <CatalogContent />
-                                )}
-
-                                {activeSection === 'stamp-collection' && (
-                                    <StampCollection />
-                                )}
-
-                                {/* Country Catalogs Section */}
-                                {activeSection === 'countries' && (
-                                    <CountryCatalogContent />
-                                )}
-                            </>
-                        )}
-
-                        {/* Regular Loading State (for other operations) */}
-                        {loading && loadingType === 'none' && !fetchProgress.isFetching && (
-                            <div className="space-y-6">
-                                <div className="text-center">
-                                    <h2 className="text-2xl font-bold mb-4">Loading Stamp Catalog</h2>
-                                    <p className="text-muted-foreground mb-6">Preparing your catalog...</p>
-                                </div>
-                                {activeSection === 'countries' ? (
-                                    <CountryCatalogContent />
-                                ) : activeSection === 'visual' ? (
-                                    <VisualCatalogSkeleton />
-                                ) : activeSection === 'list' ? (
-                                    <ListCatalogSkeleton />
-                                ) : (
-                                    <LoadingStamps
-                                        count={8}
-                                        type="grid"
-                                    />
-                                )}
-                            </div>
-                        )}
-
-                        {/* Error State */}
-                        {error && (
-                            <div className="text-center py-12">
-                                <div className="text-red-500 mb-4">
-                                    <AlertCircle className="w-12 h-12 mx-auto mb-4" />
-                                    <h2 className="text-xl font-semibold mb-2">Error Loading Catalog</h2>
-                                    <p className="text-muted-foreground">{error}</p>
-                                </div>
-                                <Button onClick={() => window.location.reload()} variant="outline">
-                                    Try Again
-                                </Button>
-                            </div>
-                        )}
-                    </>
-                ) : null}
+                {fetchProgress.isFetching && (
+                    <DataFetchingProgress
+                        progress={fetchProgress.progress}
+                        totalItems={fetchProgress.totalItems}
+                        currentItems={fetchProgress.currentItems}
+                        currentPage={fetchProgress.currentPage}
+                        totalPages={fetchProgress.totalPages}
+                        isComplete={fetchProgress.isComplete}
+                    />
+                )}
             </main>
         </div>
     )

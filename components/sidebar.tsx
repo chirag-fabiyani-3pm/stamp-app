@@ -44,7 +44,11 @@ import {
   FileText,
   Shield,
   Cookie,
-  Mail
+  Mail,
+  PersonStanding,
+  Layers,
+  BadgeDollarSign,
+  CircleDollarSign
 } from "lucide-react"
 import Image from "next/image"
 import { useTheme } from "next-themes"
@@ -59,7 +63,7 @@ export function Sidebar({ sidebarCollapsed, setActiveSection }: SidebarProps) {
   const { toast } = useToast()
   const { resolvedTheme } = useTheme()
   const [currentTab, setCurrentTab] = useState('countries')
-  
+
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userIsAdmin, setUserIsAdmin] = useState(false)
   const [userName, setUserName] = useState<string>("")
@@ -69,7 +73,7 @@ export function Sidebar({ sidebarCollapsed, setActiveSection }: SidebarProps) {
   // Avoid hydration mismatch by only showing theme-dependent content after mount
   useEffect(() => {
     setMounted(true)
-    
+
     // Check authentication status
     const checkAuth = () => {
       const authenticated = isAuthenticated()
@@ -117,53 +121,53 @@ export function Sidebar({ sidebarCollapsed, setActiveSection }: SidebarProps) {
   }
 
   const logoSrc = mounted && resolvedTheme === "dark" ? "/icons/logo-dark.png" : "/icons/logo-light.png"
-
-  const mainNavItems = [
-    {
-      title: "Home",
-      href: "/",
-      icon: Home,
-      active: pathname === "/"
-    },
-    {
-      title: "Scan",
-      href: "/scan",
-      icon: Sparkles,
-      active: pathname === "/scan",
-      special: true // Special styling for scan
-    },
-  ]
+  const logoCollapsedSrc = mounted && resolvedTheme === "dark" ? "/icons/logo-collapsed-dark.png" : "/icons/logo-collapsed-light.png"
 
   const catalogNavItems = [
     {
       title: "Country Catalogs",
-      href: "/?tab=countries",
+      href: "/catalog/country-catalog",
       icon: Globe,
-      active: pathname === "/" && currentTab === "countries"
+      active: pathname === "/catalog/country-catalog"
     },
     {
       title: "Visual Catalog",
-      href: "/?tab=visual",
+      href: "/catalog/visual-catalog",
       icon: Eye,
-      active: pathname === "/" && currentTab === "visual"
+      active: pathname === "/catalog/visual-catalog"
     },
     {
       title: "List Catalog",
-      href: "/?tab=list",
+      href: "/catalog/list-catalog",
       icon: Archive,
-      active: pathname === "/" && currentTab === "list"
+      active: pathname === "/catalog/list-catalog"
     },
     {
       title: "Investigate Search",
-      href: "/?tab=investigate",
+      href: "/catalog/investigate-search",
       icon: Search,
-      active: pathname === "/" && currentTab === "investigate"
+      active: pathname === "/catalog/investigate-search"
+    }
+  ]
+
+  const profileNavItems = [
+    {
+      title: "Account",
+      href: "/profile/account",
+      icon: User,
+      active: pathname === "/profile/account"
     },
     {
-      title: "Stamp Collection",
-      href: "/?tab=stamp-collection",
-      icon: Collection,
-      active: pathname === "/" && currentTab === "stamp-collection"
+      title: "My Collection",
+      href: "/profile/collection",
+      icon: Layers,
+      active: pathname === "/profile/collection"
+    },
+    {
+      title: "Subscription",
+      href: "/profile/subscription",
+      icon: CircleDollarSign,
+      active: pathname === "/profile/subscription"
     }
   ]
 
@@ -178,7 +182,7 @@ export function Sidebar({ sidebarCollapsed, setActiveSection }: SidebarProps) {
       "hidden md:flex" // Hide on mobile, show on desktop
     )}>
       {/* Header */}
-      <div className={cn("flex items-center justify-between p-3 border-b border-border", sidebarCollapsed && "px-1.5 py-3")}>
+      <div className={cn("flex items-center justify-between p-3 border-b border-border", sidebarCollapsed && "px-0 py-3")}>
         {!sidebarCollapsed && (
           <Link href="/" className="flex items-center gap-2">
             <Image src={logoSrc} alt="Stamps of Approval" width={230} height={40} className="h-10" />
@@ -186,21 +190,19 @@ export function Sidebar({ sidebarCollapsed, setActiveSection }: SidebarProps) {
         )}
         {sidebarCollapsed && (
           <Link href="/" className="flex items-center gap-2">
-            <div className="h-10 bg-primary rounded-md text-white font-bold flex items-center justify-center px-2">
-              <span>SOA</span>
-            </div>
+            <Image src={logoCollapsedSrc} alt="Stamps of Approval" width={63} height={40} className="h-10" />
           </Link>
         )}
       </div>
 
       {/* Main Navigation */}
       <div className="flex-1 overflow-y-auto">
-        <nav className="p-2 space-y-1">
+        <nav className="px-3 py-2 space-y-1">
           {/* Catalog Section - Only show when logged in */}
           {isLoggedIn && (
             <div className="mb-4">
               {!sidebarCollapsed && (
-                <h3 className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <h3 className="py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Catalog
                 </h3>
               )}
@@ -209,20 +211,49 @@ export function Sidebar({ sidebarCollapsed, setActiveSection }: SidebarProps) {
                   key={item.href}
                   href={item.href}
                   onClick={() => {
-                    setActiveSection(item.href.split('=')[1] as 'countries' | 'visual' | 'list' | 'investigate' | 'stamp-collection')
-                    setCurrentTab(item.href.split('=')[1] as 'countries' | 'visual' | 'list' | 'investigate' | 'stamp-collection')
+                    setActiveSection(item.href.split('/')[2] as 'countries' | 'visual' | 'list' | 'investigate' | 'stamp-collection')
+                    setCurrentTab(item.href.split('/')[2] as 'countries' | 'visual' | 'list' | 'investigate' | 'stamp-collection')
                   }}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors mb-2",
+                    "flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium transition-colors mb-2",
                     item.active
-                      ? "bg-[#F4831F12] border border-primary text-primary"
-                      : "text-foreground hover:bg-[#F4831F0D] hover:text-primary",
+                      ? "bg-[#F4831F12] border-l-2 border-primary text-primary"
+                      : "text-foreground hover:bg-[#F4831F08] hover:border-l-2 hover:border-primary hover:text-primary",
                     sidebarCollapsed && "justify-center"
                   )}
                   title={sidebarCollapsed ? item.title : ""}
                 >
                   <item.icon className="h-4 w-4" />
                   {!sidebarCollapsed && <span>{item.title}</span>}
+                  {item.active && !sidebarCollapsed && <ChevronRight className="h-4 w-4 ml-auto" />}
+                </Link>
+              ))}
+
+              {!sidebarCollapsed && (
+                <h3 className="py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Profile
+                </h3>
+              )}
+              {profileNavItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => {
+                    setActiveSection(item.href.split('/')[2] as 'countries' | 'visual' | 'list' | 'investigate' | 'stamp-collection')
+                    setCurrentTab(item.href.split('/')[2] as 'countries' | 'visual' | 'list' | 'investigate' | 'stamp-collection')
+                  }}
+                  className={cn(
+                    "flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium transition-colors mb-2",
+                    item.active
+                      ? "bg-[#F4831F12] border-l-2 border-primary text-primary"
+                      : "text-foreground hover:bg-[#F4831F08] hover:border-l-2 hover:border-primary hover:text-primary",
+                    sidebarCollapsed && "justify-center"
+                  )}
+                  title={sidebarCollapsed ? item.title : ""}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {!sidebarCollapsed && <span>{item.title}</span>}
+                  {item.active && !sidebarCollapsed && <ChevronRight className="h-4 w-4 ml-auto" />}
                 </Link>
               ))}
             </div>
@@ -269,12 +300,6 @@ export function Sidebar({ sidebarCollapsed, setActiveSection }: SidebarProps) {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/profile" className="cursor-pointer flex items-center">
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
-                </Link>
-              </DropdownMenuItem>
               {userIsAdmin && (
                 <DropdownMenuItem asChild>
                   <Link href="/admin" className="cursor-pointer flex items-center">

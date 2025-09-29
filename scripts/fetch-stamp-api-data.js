@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Configuration
-const API_BASE_URL = 'https://decoded-app-stamp-api-prod-01.azurewebsites.net';
+const API_BASE_URL = 'https://decoded-app-stamp-api-dev.azurewebsites.net';
 const OUTPUT_FILE = 'stamp_master_catalog.ndjson';
 const CREDENTIALS = {
     username: "harshit.joshi@decoded.digital",

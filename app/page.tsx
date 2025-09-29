@@ -6,30 +6,12 @@ import { ArrowRight, Camera, Database, BarChart3, Users } from "lucide-react"
 import HeroSection from "@/components/hero-section"
 import FeatureCard from "@/components/feature-card"
 import { isUserLoggedIn } from "@/lib/client/auth-utils"
-import { ModernCatalogContent } from "@/components/catalog/modern-catalog-content"
-import TestUI from "@/components/catalog/stamp-collection"
 import { Suspense, useState, useEffect } from "react"
 import { Spinner } from "@/components/ui/spinner"
 import { useSubscription } from "@/lib/hooks/useSubscription"
 import { SubscriptionRequired } from "@/components/subscription/subscription-required"
-import { useParams, usePathname, useSearchParams } from "next/navigation"
-
-// Separate component to handle search params with Suspense
-function SearchParamsHandler() {
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const payment_intent = searchParams.get('payment_intent');
-    const payment_intent_client_secret = searchParams.get('payment_intent_client_secret');
-    const redirect_status = searchParams.get('redirect_status');
-    if (payment_intent && payment_intent_client_secret && redirect_status) {
-      localStorage.setItem('demo_subscribed', 'true')
-      window.location.href = '/'
-    }
-  }, [searchParams])
-
-  return null; // This component doesn't render anything
-}
+import { useSearchParams } from "next/navigation"
+import StampCollection from "@/components/catalog/stamp-collection"
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -45,6 +27,8 @@ export default function Home() {
     checkLoginStatus();
   }, []);
 
+  console.log(loading, subscriptionLoading)
+
   if (loading || subscriptionLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -55,14 +39,11 @@ export default function Home() {
 
   return (
     <>
-      <Suspense fallback={null}>
-        <SearchParamsHandler />
-      </Suspense>
       {isLoggedIn ? (
         // Check if user has subscription access
         canAccessFeatures() ? (
           <Suspense fallback={<div>Loading...</div>}>
-            <ModernCatalogContent />
+            <StampCollection />
           </Suspense>
         ) : (
           // Show subscription required screen

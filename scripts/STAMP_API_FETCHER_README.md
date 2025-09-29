@@ -42,7 +42,7 @@ node scripts/fetch-stamp-api-data.js
 The script uses these default settings:
 
 ```javascript
-const API_BASE_URL = 'https://decoded-app-stamp-api-prod-01.azurewebsites.net';
+const API_BASE_URL = 'https://decoded-app-stamp-api-dev.azurewebsites.net';
 const CREDENTIALS = {
     username: "harshit@decoded.digital",
     password: "harshit",
@@ -76,7 +76,7 @@ const PAGE_SIZE = 200;
 
 ### 📊 Progress Monitoring
 ```
-🌐 Making request to: https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/Session
+🌐 Making request to: https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1/Session
 ✅ Authentication successful!
 🎫 Token: eyJhbGciOiJIUzI1NiIs...
 📄 Fetching page 1 (200 stamps per page)...

@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2, Mail, ArrowLeft, Users, DollarSign, CheckCircle } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
-import { sendEmailOtc, verifyEmailOtc, googleSignIn, validateReferralCode } from "@/lib/api/auth"
+import { createAccountAndSendEmailOtc, verifyEmailOtc, googleSignIn, validateReferralCode } from "@/lib/api/auth"
 import { ADMIN_ROLE_ID, ROUTES } from "@/lib/constants"
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google'
 import Link from "next/link"
@@ -30,7 +30,10 @@ export function FederatedSignUp() {
     referral: false
   })
   const [email, setEmail] = useState("")
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
   const [otp, setOtp] = useState("")
+  const [otpDigits, setOtpDigits] = useState(Array(6).fill(""))
   const [userId, setUserId] = useState("")
   const [referralCode, setReferralCode] = useState("")
   const [showReferralInfo, setShowReferralInfo] = useState(false)
@@ -72,7 +75,7 @@ export function FederatedSignUp() {
       if (response.success && response.valid) {
         setReferralValidation({
           isValid: true,
-          referrerName: response.referrerName || null,
+          referrerName: response.fullName || null,
           isLoading: false,
           error: null
         })
@@ -120,6 +123,80 @@ export function FederatedSignUp() {
         error: null
       })
     }
+  }
+
+  // Handle OTP digit input
+  const handleOtpDigitChange = (index: number, value: string) => {
+    // Only allow digits
+    if (value && !/^\d$/.test(value)) return
+
+    const newDigits = [...otpDigits]
+    newDigits[index] = value
+    setOtpDigits(newDigits)
+    
+    // Update the combined OTP string
+    const newOtp = newDigits.join("")
+    setOtp(newOtp)
+
+    // Auto-focus next input
+    if (value && index < 5) {
+      const nextInput = document.getElementById(`otp-${index + 1}`)
+      nextInput?.focus()
+    }
+  }
+
+  // Handle OTP digit keydown for navigation
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace') {
+      e.preventDefault()
+      const newDigits = [...otpDigits]
+      
+      if (otpDigits[index]) {
+        // Clear current digit
+        newDigits[index] = ""
+      } else if (index > 0) {
+        // Move to previous and clear
+        newDigits[index - 1] = ""
+        const prevInput = document.getElementById(`otp-${index - 1}`)
+        prevInput?.focus()
+      }
+      
+      setOtpDigits(newDigits)
+      setOtp(newDigits.join(""))
+    } else if (e.key === 'ArrowLeft' && index > 0) {
+      e.preventDefault()
+      const prevInput = document.getElementById(`otp-${index - 1}`)
+      prevInput?.focus()
+    } else if (e.key === 'ArrowRight' && index < 5) {
+      e.preventDefault()
+      const nextInput = document.getElementById(`otp-${index + 1}`)
+      nextInput?.focus()
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      if (otpDigits.join("").length >= 4) {
+        handleOtpVerification(e as any)
+      }
+    }
+  }
+
+  // Handle paste for OTP
+  const handleOtpPaste = (e: React.ClipboardEvent) => {
+    e.preventDefault()
+    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+    const newDigits = Array(6).fill("")
+    
+    for (let i = 0; i < pastedData.length; i++) {
+      newDigits[i] = pastedData[i]
+    }
+    
+    setOtpDigits(newDigits)
+    setOtp(newDigits.join(""))
+    
+    // Focus the next empty input or the last input
+    const nextEmptyIndex = newDigits.findIndex(digit => digit === "")
+    const targetIndex = nextEmptyIndex === -1 ? 5 : Math.min(nextEmptyIndex, 5)
+    const targetInput = document.getElementById(`otp-${targetIndex}`)
+    targetInput?.focus()
   }
 
   // Google OAuth success handler
@@ -198,6 +275,24 @@ export function FederatedSignUp() {
       })
       return
     }
+    
+    if (!firstName.trim()) {
+      toast({
+        title: "First name required",
+        description: "Please enter your first name.",
+        variant: "destructive",
+      })
+      return
+    }
+    
+    if (!lastName.trim()) {
+      toast({
+        title: "Last name required",
+        description: "Please enter your last name.",
+        variant: "destructive",
+      })
+      return
+    }
 
     // Check referral code validation if provided
     if (Boolean(referralCode) && referralValidation.isValid !== true) {
@@ -212,7 +307,9 @@ export function FederatedSignUp() {
     setIsLoading(prev => ({ ...prev, email: true }))
 
     try {
-      const response = await sendEmailOtc(email)
+      const response = await createAccountAndSendEmailOtc(email, firstName.trim(), lastName.trim(), referralCode)
+
+      console.log(response)
 
       if (response.success && response.userId) {
         setUserId(response.userId)
@@ -222,6 +319,10 @@ export function FederatedSignUp() {
           description: "We sent you a verification code. Be sure to check your spam too.",
         })
       } else {
+        toast({
+          title: "Error",
+          description: response.message,
+        })
         throw new Error(response.message || 'Failed to send verification code')
       }
 
@@ -311,6 +412,7 @@ export function FederatedSignUp() {
   const handleBackToEmail = () => {
     setAuthStep('email')
     setOtp("")
+    setOtpDigits(Array(6).fill(""))
     setUserId("")
   }
 
@@ -320,7 +422,7 @@ export function FederatedSignUp() {
     setIsLoading(prev => ({ ...prev, email: true }))
 
     try {
-      const response = await sendEmailOtc(email)
+      const response = await createAccountAndSendEmailOtc(email, firstName.trim(), lastName.trim(), referralCode)
 
       if (response.success && response.userId) {
         setUserId(response.userId)
@@ -356,24 +458,44 @@ export function FederatedSignUp() {
         </div>
 
         <form onSubmit={handleOtpVerification}>
-          <div className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="otp">Verification Code</Label>
-              <Input
-                id="otp"
-                placeholder="Enter 6-digit code"
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={6}
-                autoComplete="one-time-code"
-                disabled={isLoading.otp}
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                className="text-center text-lg tracking-widest"
-              />
+          <div className="grid gap-6">
+            <div className="space-y-4">
+              <Label className="text-center block text-sm font-medium">
+                Verification Code
+              </Label>
+              <div className="flex justify-center gap-3">
+                {otpDigits.map((digit, index) => (
+                  <Input
+                    key={index}
+                    id={`otp-${index}`}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleOtpDigitChange(index, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                    onPaste={index === 0 ? handleOtpPaste : undefined}
+                    disabled={isLoading.otp}
+                    className={`w-12 h-12 text-center text-xl font-semibold border-2 rounded-lg transition-all duration-200 bg-background ${
+                      digit 
+                        ? 'border-primary bg-primary/5 text-primary' 
+                        : 'border-border hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20'
+                    }`}
+                    autoComplete="off"
+                    autoFocus={index === 0}
+                  />
+                ))}
+              </div>
+              <p className="text-xs text-center text-muted-foreground">
+                Enter the 6-digit code sent to your email
+              </p>
             </div>
-            <Button disabled={isLoading.otp || otp.length < 4}>
+            <Button 
+              disabled={isLoading.otp || otp.length < 4}
+              className="w-full h-11 font-medium"
+              size="lg"
+            >
               {isLoading.otp && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create Account
             </Button>
@@ -542,6 +664,42 @@ export function FederatedSignUp() {
 
           <div className="space-y-5">
             <form onSubmit={handleEmailSignUp} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName" className="text-sm font-medium">
+                    First Name
+                  </Label>
+                  <Input
+                    id="firstName"
+                    placeholder="John"
+                    type="text"
+                    autoCapitalize="words"
+                    autoComplete="given-name"
+                    autoCorrect="off"
+                    disabled={isLoading.email}
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="h-11"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName" className="text-sm font-medium">
+                    Last Name
+                  </Label>
+                  <Input
+                    id="lastName"
+                    placeholder="Doe"
+                    type="text"
+                    autoCapitalize="words"
+                    autoComplete="family-name"
+                    autoCorrect="off"
+                    disabled={isLoading.email}
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="h-11"
+                  />
+                </div>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium">
                   Email Address
@@ -560,7 +718,7 @@ export function FederatedSignUp() {
                 />
               </div>
               <Button
-                disabled={isLoading.email || !email.trim() || (Boolean(referralCode) && referralValidation.isValid !== true)}
+                disabled={isLoading.email || !email.trim() || !firstName.trim() || !lastName.trim() || (Boolean(referralCode) && referralValidation.isValid !== true)}
                 className="w-full h-11 font-medium"
                 size="lg"
               >

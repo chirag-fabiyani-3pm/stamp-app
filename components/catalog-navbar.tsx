@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { useTheme } from "next-themes"
 import { ModeToggle } from "@/components/mode-toggle"
-import { Home, MessageSquare, Sparkles, PanelLeft } from "lucide-react"
+import { Home, MessageSquare, Sparkles, PanelLeft, SeparatorVertical } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -15,18 +15,20 @@ interface CatalogNavbarProps {
   onCollapseChange: (isCollapsed: boolean) => void
 }
 
+const PathToNavMap: Record<string,string> = {
+  '/catalog/country-catalog': 'Country Catalog',
+  '/catalog/visual-catalog': 'Visual Catalog',
+  '/catalog/list-catalog': 'List Catalog',
+  '/catalog/investigate-search': 'Investigate Search',
+  '/profile/account': 'Account',
+  '/profile/collection': 'My Collection',
+  '/profile/subscription': 'Subscription',
+  '/scan': 'Scan',
+  '/': 'Home',
+}
+
 export function CatalogNavbar({ className, setIsOpen, isCollapsed, onCollapseChange }: CatalogNavbarProps) {
-  const { resolvedTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
-
-  // Avoid hydration mismatch by only showing theme-dependent content after mount
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  // Use light theme as default during SSR to prevent hydration mismatch
-  const logoSrc = mounted && resolvedTheme === "dark" ? "/icons/logo-dark.png" : "/icons/logo-light.png"
 
   return (
     <nav className={cn(
@@ -34,9 +36,13 @@ export function CatalogNavbar({ className, setIsOpen, isCollapsed, onCollapseCha
       className
     )}>
       <div className="flex h-16 items-center justify-between px-10">
-        <button onClick={() => onCollapseChange(!isCollapsed)}>
-          <PanelLeft className="h-4 w-4"/>
-        </button>
+        <div className="flex items-center">
+          <button onClick={() => onCollapseChange(!isCollapsed)}>
+            <PanelLeft className="h-4 w-4" />
+          </button>
+          {PathToNavMap[pathname] && <div className="border-l border-gray-300 h-4 mx-4" ></div>}
+          <span className="text-sm font-medium transition-colors text-foreground">{PathToNavMap[pathname]}</span>
+        </div>
         <div className="flex justify-end gap-3">
           <Link
             href={"/"}
@@ -44,7 +50,6 @@ export function CatalogNavbar({ className, setIsOpen, isCollapsed, onCollapseCha
               "flex items-center gap-3 px-3 py-2 text-sm font-medium transition-colors",
               pathname === "/"
                 ? "text-primary border-b-2 border-primary"
-                // ? "bg-accent text-accent-foreground"
                 : "text-foreground hover:text-primary",
             )}
             title={"Home"}
@@ -72,7 +77,10 @@ export function CatalogNavbar({ className, setIsOpen, isCollapsed, onCollapseCha
           </Link>
           <ModeToggle />
           <button
-            onClick={() => setIsOpen(true)}
+            onClick={() => {
+              setIsOpen(true)
+              onCollapseChange(true)
+            }}
             className={cn(
               "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors bg-primary/10 text-primary hover:bg-primary/20"
             )}

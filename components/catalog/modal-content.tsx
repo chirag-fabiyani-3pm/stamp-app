@@ -2,7 +2,7 @@ import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { AlertCircle, Award, BookOpen, Calendar, ChevronRight, Clock, Coins, FileText, Gem, Globe, Palette, Package, Quote, Star, Zap, Menu, Layers, Loader2 } from "lucide-react"
+import { AlertCircle, Award, BookOpen, Calendar, ChevronRight, Clock, Coins, FileText, Gem, Globe, Palette, Package, Quote, Star, Zap, Menu, Layers, Loader2, Maximize2, X } from "lucide-react"
 import { AdditionalCategoryOption, ColorOption, CurrencyOption, DenominationOption, ItemTypeOption, ModalStackItem, PaperOption, PerforationOption, StampData, WatermarkOption, YearOption, ParsedStampDetails, SeriesOption } from "@/types/catalog"
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -56,6 +56,9 @@ export default function ModalContent({
     const [displayedCount, setDisplayedCount] = useState(20)
     const [isLoadingMore, setIsLoadingMore] = useState(false)
     const loaderRef = useRef<HTMLDivElement>(null)
+
+    // Enlarged image state
+    const [enlargedImage, setEnlargedImage] = useState<string | null>(null)
     const countryData = data as { country: any, series: SeriesOption[] };
     const displayedSeries = useMemo(() => {
         return countryData?.series ? countryData?.series?.slice?.(0, displayedCount) : []
@@ -846,11 +849,12 @@ export default function ModalContent({
             }
 
             return (
+                <>
                 <article className="max-w-6xl mx-auto px-2 pb-12">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-12">
                         {/* Stamp Image */}
                         <div className="space-y-4">
-                            <div className="mx-auto relative w-full md:w-80 h-96 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-900 rounded-xl overflow-hidden shadow-xl">
+                            <div className="mx-auto relative w-full md:w-80 h-96 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-900 rounded-xl overflow-hidden shadow-xl group">
                                 <Image
                                     src={stamp.stampImageUrl || '/images/stamps/no-image-available.png'}
                                     alt={stamp.name}
@@ -864,6 +868,16 @@ export default function ModalContent({
                                         }
                                     }}
                                 />
+                                <button
+                                    onClick={() => {
+                                        console.log(stamp.stampImageUrl)
+                                        setEnlargedImage(stamp.stampImageUrl || '/images/stamps/no-image-available.png')
+                                    }}
+                                    className="absolute top-2 right-2 bg-white/90 hover:bg-white rounded-full p-2 shadow-md transition-all duration-200 hover:scale-110 opacity-0 group-hover:opacity-100 z-50"
+                                    title="View larger image"
+                                >
+                                    <Maximize2 className="w-4 h-4 text-gray-700 dark:text-gray-900" />
+                                </button>
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
                             </div>
 
@@ -1083,6 +1097,31 @@ export default function ModalContent({
                         </div>
                     </div>
                 </article>
+                {/* Enlarged Image Modal */}
+                {enlargedImage && (
+                    <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+                        <div className="max-w-4xl max-h-[90vh] w-full">
+                            <div className="bg-white rounded-lg shadow-2xl relative">
+                                <div className="border-b flex justify-end p-3 pr-5">
+                                    <button
+                                        onClick={() => setEnlargedImage(null)}
+                                        className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-white/80 dark:hover:bg-gray-800/80 transition-colors duration-200 z-10"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+                                <Image
+                                    src={enlargedImage}
+                                    alt="Enlarged stamp"
+                                    width={800}
+                                    height={750}
+                                    className="w-full h-auto max-h-[85vh] object-contain rounded-xl p-2 shadow-inner"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                )}
+                </>
             )
 
         default:
