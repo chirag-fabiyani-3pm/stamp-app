@@ -1385,6 +1385,12 @@ export function PhilaGuideChat() {
                         console.log('🎤 Voice search found stamp with ID, navigating to:', firstStamp.id)
                         router.push(`/stamp-details/${firstStamp.id}`)
                     }
+                } else if (data.structured?.mode === 'comparison' && data.structured.stampIds?.length > 0) {
+                    const stampIds = data.structured.stampIds.filter(Boolean)
+                    if (stampIds.length > 0) {
+                        console.log('🎤 Voice search found comparison request, navigating to comparison view with IDs:', stampIds)
+                        router.push(`/stamp-comparison?ids=${stampIds.join(',')}`)
+                    }
                 } else if (data.structured?.id) {
                     console.log('🎤 Voice search found single stamp ID, navigating to:', data.structured.id)
                     router.push(`/stamp-details/${data.structured.id}`)
@@ -1969,7 +1975,15 @@ Please try your query again in a moment, or feel free to ask about any specific 
                     }
 
                     console.log('📝 Responses API - Creating new message:', newMessage)
-                    if (newMessage.structuredData?.id != null) {
+
+                    // Check for comparison mode in structured data
+                    if (jsonResponse.structured?.mode === 'comparison' && jsonResponse.structured.stampIds?.length > 0) {
+                        const stampIds = jsonResponse.structured.stampIds.filter(Boolean)
+                        if (stampIds.length > 0) {
+                            console.log('🔄 Responses API - Found comparison request, navigating to comparison view with IDs:', stampIds)
+                            router.push(`/stamp-comparison?ids=${stampIds.join(',')}`)
+                        }
+                    } else if (newMessage.structuredData?.id != null) {
                         router.push(`/stamp-details/${newMessage.structuredData.id}`)
                     }
 

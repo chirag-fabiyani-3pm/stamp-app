@@ -128,6 +128,12 @@ export default function RealtimePrecisePanelV2({
                         console.log('🎤 Realtime precise v2 search found stamp with ID, navigating to:', firstStamp.id)
                         router.push(`/stamp-details/${firstStamp.id}`)
                     }
+                } else if (data.structured?.mode === 'comparison' && data.structured.stampIds?.length > 0) {
+                    const stampIds = data.structured.stampIds.filter(Boolean)
+                    if (stampIds.length > 0) {
+                        console.log('🎤 Realtime precise v2 search found comparison request, navigating to comparison view with IDs:', stampIds)
+                        router.push(`/stamp-comparison?ids=${stampIds.join(',')}`)
+                    }
                 } else if (data.structured?.id) {
                     console.log('🎤 Realtime precise v2 search found single stamp ID, navigating to:', data.structured.id)
                     router.push(`/stamp-details/${data.structured.id}`)

@@ -99,13 +99,25 @@ export async function POST(request: NextRequest) {
 
 CRITICAL RULES - FOLLOW EXACTLY:
 1. If user asks to "show", "display", "see", or "view" a stamp → Return ONLY raw JSON with mode: "cards" (NO markdown, NO text, NO lists, NO explanations)
-2. If user asks for "value", "worth", or "price" → Return ONLY short text with exact mintValue
-3. Keep ALL responses under 2 sentences maximum
+2. If user asks to "compare" stamps → Return ONLY raw JSON with mode: "comparison" with MULTIPLE stamp IDs (NO markdown, NO text, NO lists, NO explanations)
+3. If user asks for "value", "worth", or "price" → Return ONLY short text with exact mintValue
+4. Keep ALL responses under 2 sentences maximum
 
 SHOW REQUESTS - Return ONLY this exact JSON format (nothing else):
 {
   "mode": "cards",
   "cards": [{"id": "[stampId]", "stampName": "[name]", "country": "[country]", "year": "[year]", "denomination": "[denom]", "color": "[color]", "series": "[series]", "catalogNumber": "[cat#]", "imageUrl": "[url]", "description": "[desc]", "mintValue": "[value]", "finestUsedValue": "[usedValue]"}]
+}
+
+COMPARISON REQUESTS - Return ONLY this exact JSON format (nothing else):
+- When user says "compare", "compare both", "show comparison" → ALWAYS return comparison mode
+- MUST find ALL stamps mentioned in the comparison request
+- MUST return at least 2 stamp IDs, up to 3 maximum
+- Example: "compare 1d orange and 1d red" → find BOTH stamps and return their IDs
+- NEVER return cards mode for comparison requests
+{
+  "mode": "comparison",
+  "stampIds": ["[stampId1]", "[stampId2]", "[stampId3]"]
 }
 
 VALUE REQUESTS - Return ONLY this text:
@@ -130,7 +142,8 @@ Search the vector store for exact matches. Use exact data only.`,
                 console.log('🔍 Voice search response received:', {
                     responseId: response.id,
                     status: response.status,
-                    outputType: response.output?.[0]?.type
+                    outputType: response.output?.[0]?.type,
+                    outputText: response.output_text?.substring(0, 200) + '...'
                 })
 
                 // Build normalized content text and structured field
@@ -278,57 +291,98 @@ Search the vector store for exact matches. Use exact data only.`,
                             console.log('✅ Successfully extracted structured data from text:', structured)
                         }
                     }
-                }
 
-                // Handle structured responses for precise mode
-                if (structured && typeof structured === 'object' && structured.mode) {
-                    if (structured.mode === 'clarify' && Array.isArray(structured.clarifyingQuestions)) {
-                        const questions = structured.clarifyingQuestions.filter(Boolean)
-                        if (questions.length > 0) {
-                            contentText = 'To find the exact value, I need more specific details:\n' + questions.map((q: string) => `- ${q}`).join('\n')
+                    // Fallback: Try to extract comparison data from text response for compare requests
+                    if (response.output_text.toLowerCase().includes('compare') ||
+                        response.output_text.toLowerCase().includes('comparison') ||
+                        transcript.toLowerCase().includes('compare')) {
+
+                        console.log('🔧 Attempting to extract comparison data from text response')
+                        console.log('🔧 Original transcript:', transcript)
+
+                        // Try to extract stamp IDs from the text response
+                        const stampIdMatches = response.output_text.match(/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi)
+
+                        console.log('🔧 Found stamp ID matches:', stampIdMatches)
+
+                        if (stampIdMatches && stampIdMatches.length >= 2) {
+                            structured = {
+                                mode: "comparison",
+                                stampIds: stampIdMatches.slice(0, 3) // Limit to 3 stamps
+                            }
+
+                            console.log('✅ Successfully extracted comparison data from text:', structured)
+                        } else if (stampIdMatches && stampIdMatches.length === 1) {
+                            console.log('⚠️ Only found 1 stamp ID for comparison, need at least 2')
+                            console.log('⚠️ Single stamp ID found:', stampIdMatches[0])
+                            // Force comparison mode even with 1 stamp to trigger navigation
+                            structured = {
+                                mode: "comparison",
+                                stampIds: stampIdMatches
+                            }
+                            console.log('🔧 Forcing comparison mode with single stamp:', structured)
+                        } else {
+                            console.log('❌ No stamp IDs found in comparison response')
+                            console.log('❌ Response text:', response.output_text.substring(0, 500))
                         }
-                    } else if (structured.mode === 'value' && structured.mintValue) {
-                        // Handle precise value responses
-                        const mintValue = structured.mintValue
-                        const denomination = structured.denomination || 'stamp'
-                        const year = structured.year || ''
-                        const color = structured.color || ''
-                        const series = structured.series || ''
-
-                        let valueResponse = `The mint value for the ${denomination}`
-                        if (color) valueResponse += ` ${color}`
-                        valueResponse += ' stamp'
-                        if (year) valueResponse += ` from ${year}`
-                        if (series) valueResponse += ` (${series} series)`
-                        valueResponse += ` is $${mintValue} NZD.`
-
-                        contentText = valueResponse
-                    } else if (structured.mode === 'cards' && Array.isArray(structured.cards)) {
-                        const toCardBlock = (c: any) => [
-                            '## Stamp Information',
-                            `**Stamp Name**: ${c.stampName || ''}`,
-                            `**Country**: ${c.country || ''}`,
-                            `**ID**: ${c.id || ''}`,
-                            `**Image URL**: ${c.imageUrl || '/images/stamps/no-image-available.png'}`,
-                            `**Description**: ${c.description || ''}`,
-                            `**Series**: ${c.series || ''}`,
-                            `**Year**: ${c.year || ''}`,
-                            `**Denomination**: ${c.denomination || ''}`,
-                            `**Catalog Number**: ${c.catalogNumber || ''}`,
-                            `**Theme**: ${c.theme || ''}`,
-                            `**Technical Details**: ${c.technicalDetails || ''}`
-                        ].join('\n')
-
-                        const baseFirst = structured.cards.slice().sort((a: any, b: any) => (a.isBase === b.isBase) ? 0 : (a.isBase ? -1 : 1))
-                        contentText = baseFirst.map(toCardBlock).join('\n\n')
-                    } else if (structured.mode === 'educational' && typeof structured.educationalText === 'string') {
-                        contentText = structured.educationalText
                     }
-                } else {
-                    // If no structured response but the text contains value information, use it directly
-                    // This handles cases where the AI provides direct value responses without JSON structure
-                    if (response.output_text.includes('$') && response.output_text.includes('NZD')) {
-                        contentText = response.output_text
+
+                    // Handle structured responses for precise mode
+                    if (structured && typeof structured === 'object' && structured.mode) {
+                        if (structured.mode === 'clarify' && Array.isArray(structured.clarifyingQuestions)) {
+                            const questions = structured.clarifyingQuestions.filter(Boolean)
+                            if (questions.length > 0) {
+                                contentText = 'To find the exact value, I need more specific details:\n' + questions.map((q: string) => `- ${q}`).join('\n')
+                            }
+                        } else if (structured.mode === 'value' && structured.mintValue) {
+                            // Handle precise value responses
+                            const mintValue = structured.mintValue
+                            const denomination = structured.denomination || 'stamp'
+                            const year = structured.year || ''
+                            const color = structured.color || ''
+                            const series = structured.series || ''
+
+                            let valueResponse = `The mint value for the ${denomination}`
+                            if (color) valueResponse += ` ${color}`
+                            valueResponse += ' stamp'
+                            if (year) valueResponse += ` from ${year}`
+                            if (series) valueResponse += ` (${series} series)`
+                            valueResponse += ` is $${mintValue} NZD.`
+
+                            contentText = valueResponse
+                        } else if (structured.mode === 'cards' && Array.isArray(structured.cards)) {
+                            const toCardBlock = (c: any) => [
+                                '## Stamp Information',
+                                `**Stamp Name**: ${c.stampName || ''}`,
+                                `**Country**: ${c.country || ''}`,
+                                `**ID**: ${c.id || ''}`,
+                                `**Image URL**: ${c.imageUrl || '/images/stamps/no-image-available.png'}`,
+                                `**Description**: ${c.description || ''}`,
+                                `**Series**: ${c.series || ''}`,
+                                `**Year**: ${c.year || ''}`,
+                                `**Denomination**: ${c.denomination || ''}`,
+                                `**Catalog Number**: ${c.catalogNumber || ''}`,
+                                `**Theme**: ${c.theme || ''}`,
+                                `**Technical Details**: ${c.technicalDetails || ''}`
+                            ].join('\n')
+
+                            const baseFirst = structured.cards.slice().sort((a: any, b: any) => (a.isBase === b.isBase) ? 0 : (a.isBase ? -1 : 1))
+                            contentText = baseFirst.map(toCardBlock).join('\n\n')
+                        } else if (structured.mode === 'comparison' && Array.isArray(structured.stampIds)) {
+                            // Handle comparison requests
+                            const stampIds = structured.stampIds.filter(Boolean)
+                            if (stampIds.length > 0) {
+                                contentText = `Opening comparison view for ${stampIds.length} stamp${stampIds.length > 1 ? 's' : ''}...`
+                            }
+                        } else if (structured.mode === 'educational' && typeof structured.educationalText === 'string') {
+                            contentText = structured.educationalText
+                        }
+                    } else {
+                        // If no structured response but the text contains value information, use it directly
+                        // This handles cases where the AI provides direct value responses without JSON structure
+                        if (response.output_text.includes('$') && response.output_text.includes('NZD')) {
+                            contentText = response.output_text
+                        }
                     }
                 }
 
@@ -342,6 +396,13 @@ Search the vector store for exact matches. Use exact data only.`,
                     structured,
                     mode: 'precise'
                 }
+
+                console.log('🔍 Final result being returned:', {
+                    success: result.success,
+                    structured: result.structured,
+                    contentLength: result.content?.length,
+                    hasComparison: result.structured?.mode === 'comparison'
+                })
 
                 // Store the new response ID for future context
                 activeSessions.set(sessionId, response.id)
