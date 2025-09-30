@@ -1,6 +1,7 @@
-import React from "react"
+import React, { useState } from "react"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
+import { Maximize2, X } from "lucide-react"
 import { StampData } from "@/types/catalog"
 import { createStampDetailData } from "@/lib/data/list-catalog-data"
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,6 +17,7 @@ export function StampModalContent({ stampData, isLoading }: StampModalContentPro
   console.log(stampData)
   const selectedImage = stampData.stampImageUrl
   const details = stampData.stampDetailsJson ? JSON.parse(stampData.stampDetailsJson) : {}
+  const [enlargedImage, setEnlargedImage] = useState<string | null>(null)
 
   if (isLoading) {
     return (
@@ -91,13 +93,20 @@ export function StampModalContent({ stampData, isLoading }: StampModalContentPro
             
             <div className="space-y-4">
               {/* Main Image */}
-              <div className="relative aspect-[3/4] border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800">
+              <div className="relative aspect-[3/4] border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 group">
                 <Image
                   src={selectedImage}
                   alt={stampDetailData.name}
                   fill
                   className="object-contain p-2"
                 />
+                <button
+                  onClick={() => setEnlargedImage(selectedImage)}
+                  className="absolute top-2 right-2 bg-white/90 hover:bg-white rounded-full p-2 shadow-md transition-all duration-200 hover:scale-110 opacity-0 group-hover:opacity-100"
+                  title="View larger image"
+                >
+                  <Maximize2 className="w-4 h-4 text-gray-700" />
+                </button>
               </div>
 
               {/* Quick Info */}
@@ -218,6 +227,31 @@ export function StampModalContent({ stampData, isLoading }: StampModalContentPro
           </div>
         </div>
       </div>
+
+      {/* Enlarged Image Modal */}
+      {enlargedImage && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+          <div className="max-w-4xl max-h-[90vh] w-full">
+            <div className="bg-white rounded-lg shadow-2xl relative">
+              <div className="border-b flex justify-end p-3 pr-5">
+                <button
+                  onClick={() => setEnlargedImage(null)}
+                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-white/80 dark:hover:bg-gray-800/80 transition-colors duration-200 z-10"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <Image
+                src={enlargedImage}
+                alt="Enlarged stamp"
+                width={800}
+                height={750}
+                className="w-full h-auto max-h-[85vh] object-contain rounded-xl p-2 shadow-inner"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 } 

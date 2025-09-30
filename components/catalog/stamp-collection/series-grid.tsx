@@ -3,16 +3,7 @@ import React from 'react';
 const SeriesGrid = ({ series, onSeriesSelect }: any) => {
   return (
     <div className="fade-in">
-      <div className="text-center mb-12">
-        <h2 className="text-4xl font-bold theme-text-primary mb-4 font-serif">
-          🏛️ PREMIUM STAMP COLLECTION
-        </h2>
-        <p className="text-xl theme-text-secondary max-w-2xl mx-auto">
-          Discover our carefully curated selection of premium philatelic treasures
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
         {series.map((s: any, index: number) => (
           <div
             key={s.id}

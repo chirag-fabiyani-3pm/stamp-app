@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useRef, useEffect } from "react"
+import { SubscriptionGuard } from "@/components/auth/subscription-guard"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -868,7 +869,7 @@ function ScanPage() {
       }, 200);
 
       // Make API call
-      const apiResponse = await fetch('https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/StampMasterCatalog/StampSearchGlobal', {
+      const apiResponse = await fetch('https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1/StampMasterCatalog/StampSearchGlobal', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${jwt}`
@@ -1828,9 +1829,11 @@ function ScanPage() {
 
 export default function ProtectedScanPage() {
   return (
-    <AuthGuard>
-      <ScanPage />
-      <Toaster />
-    </AuthGuard>
+    <SubscriptionGuard>
+      <AuthGuard>
+        <ScanPage />
+        <Toaster />
+      </AuthGuard>
+    </SubscriptionGuard>
   )
 }

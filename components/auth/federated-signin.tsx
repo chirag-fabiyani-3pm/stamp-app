@@ -15,8 +15,6 @@ import { GoogleLogin, CredentialResponse } from '@react-oauth/google'
 
 type AuthStep = 'email' | 'otp'
 
-
-
 export function FederatedSignIn() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -38,10 +36,6 @@ export function FederatedSignIn() {
     const currentTheme = resolvedTheme || theme
     return currentTheme === 'dark' ? 'filled_black' : 'outline'
   }
-
-
-
-
 
   // Google OAuth success handler
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {

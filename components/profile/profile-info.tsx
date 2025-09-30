@@ -114,7 +114,7 @@ export default function ProfileInfo() {
     setError(null)
 
     try {
-      const response = await fetch(`https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/User/${userId}?id=${userId}`, {
+      const response = await fetch(`https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1/User/${userId}?id=${userId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${jwt}`,
@@ -152,7 +152,7 @@ export default function ProfileInfo() {
     setAddressLoading(true)
 
     try {
-      const response = await fetch(`https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/UserAddress?userId=${userId}`, {
+      const response = await fetch(`https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1/UserAddress?userId=${userId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${jwt}`,
@@ -209,7 +209,7 @@ export default function ProfileInfo() {
         userName: editForm.userName
       }
       const userId = localStorage.getItem('stamp_user_data') && JSON.parse(localStorage.getItem('stamp_user_data') || '{}').userId || ''
-      const userResponse = await fetch(`https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/User/${userId}`, {
+      const userResponse = await fetch(`https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1/User/${userId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -231,8 +231,8 @@ export default function ProfileInfo() {
 
       // Use PUT method with address ID if available, otherwise POST for new address
       const addressEndpoint = addressItem?.id
-        ? `https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/UserAddress/${addressItem.id}`
-        : `https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/UserAddress`;
+        ? `https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1/UserAddress/${addressItem.id}`
+        : `https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1/UserAddress`;
 
       const addressResponse = await fetch(addressEndpoint, {
         method: addressItem?.id ? 'PUT' : 'POST',
@@ -301,7 +301,7 @@ export default function ProfileInfo() {
       const formData = new FormData()
       formData.append('profileImage', selectedImage)
 
-      const response = await fetch(`https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/User/ManageProfileImage?id=${userData.userId}`, {
+      const response = await fetch(`https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1/User/ManageProfileImage?id=${userData.userId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${userData.jwt}`

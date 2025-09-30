@@ -4,15 +4,13 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Search, Archive, ChevronRight, X } from "lucide-react"
 import ReactCountryFlag from "react-country-flag"
-import { CountryOption, YearOption, CurrencyOption, DenominationOption, ColorOption, PaperOption, WatermarkOption, PerforationOption, ItemTypeOption, StampData, AdditionalCategoryOption, ModalType, ModalStackItem, SeriesOption } from "@/types/catalog"
+import { CountryOption, YearOption, CurrencyOption, DenominationOption, ColorOption, PaperOption, WatermarkOption, PerforationOption, ItemTypeOption, StampData, ModalStackItem, SeriesOption } from "@/types/catalog"
 import { groupStampsByCountry, groupStampsBySeries, groupStampsByYear, groupStampsByCurrency, groupStampsByDenomination, groupStampsByColor, groupStampsByPaper, groupStampsByWatermark, groupStampsByPerforation, groupStampsByItemType, getStampDetails, convertApiStampToStampData } from "@/lib/data/catalog-data"
 import { useCatalogData } from "@/lib/context/catalog-data-context"
 import { parseStampCode } from "@/lib/utils/parse-stamp-code"
 import { TraditionalPinnedStampCard } from "@/components/catalog/traditional-pinned-stamp-card"
-import { AdditionalCategoryModalContent } from "@/components/catalog/additional-category-modal-content"
 import { SeriesModalContent as VisualSeriesModalContent } from "@/components/catalog/visual-series-modal-content"
 import { YearModalContent as VisualYearModalContent } from "@/components/catalog/visual-year-modal-content"
 import { CurrencyModalContent as VisualCurrencyModalContent } from "@/components/catalog/visual-currency-modal-content"
@@ -590,128 +588,130 @@ export function VisualCatalogContent() {
 
       {/* Modal Stack Rendering - LIFO with stacked positioning */}
       {modalStack.map((modal, index) => (
-        <Dialog key={index} open={true} onOpenChange={() => {
-          // Close only the top modal (LIFO)
-          if (index === modalStack.length - 1) {
-            closeModal()
-          }
-        }}>
-          <DialogContent
-            className="max-w-[calc(100vw-2rem)] md:max-w-6xl max-h-[90vh] overflow-y-auto bg-background text-foreground border border-border shadow-lg"
-            style={{
-              zIndex: 50 + index * 10,
-            }}
-          >
-            <DialogHeader className="border-b border-border pb-3 mb-3">
-              <div className="flex items-center justify-between">
+        <div key={index} className="fixed inset-0 z-50 overflow-auto bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" style={{ zIndex: 50 + index * 10 }}>
+          <div className="fixed inset-0 z-50 grid place-items-center p-4">
+            <div className="relative w-full max-w-6xl h-[95vh] max-h-[95vh] bg-background border border-border shadow-2xl rounded-lg flex flex-col text-foreground">
+              {/* Sticky Close Button */}
+              <div className="sticky top-0 z-20 flex justify-between items-center px-6 pt-4 pb-6 rounded-t-lg border-b border-border bg-background">
+                {/* Header Section */}
                 <div>
-                  <DialogTitle className="text-lg md:text-2xl font-bold text-foreground">
+                  <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-1 md:mb-2">
                     {modal.title}
-                  </DialogTitle>
-                  <p className="text-xs text-muted-foreground mt-1 break-words">
-                    Stamp Code: <code className="bg-muted px-1 py-0.5 rounded text-xs text-foreground break-all">{formatStampCode(decodeURIComponent(modal.stampCode))}</code>
-                  </p>
+                  </h3>
+                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                    <span>Level {modalStack.length}</span>
+                    <span>•</span>
+                    <code className="bg-muted px-2 py-1 rounded font-mono text-xs text-foreground break-all">
+                      {formatStampCode(decodeURIComponent(modal.stampCode))}
+                    </code>
+                  </div>
                 </div>
-                <Button variant="ghost" size="sm" onClick={closeModal} className="text-muted-foreground hover:bg-muted/70 w-8 h-8 p-0">
-                  <X className="h-4 w-4" />
+                <Button variant="ghost" size="sm" onClick={closeModal} className="text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200">
+                  <X className="w-5 h-5 md:w-6 md:h-6" />
                 </Button>
               </div>
-            </DialogHeader>
 
-            {/* Render content based on modal type */}
-            {loadingModalContent ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <Card key={i} className="w-full">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <Skeleton className="h-5 w-3/4" />
-                      <Skeleton className="h-7 w-7 rounded-full" />
-                    </CardHeader>
-                    <CardContent>
-                      <Skeleton className="h-3 w-1/2 mb-1" />
-                      <Skeleton className="h-3 w-full" />
-                      <Skeleton className="h-20 w-full mt-3" />
-                      <Skeleton className="h-8 w-full mt-3" />
-                    </CardContent>
-                  </Card>
-                ))}
+              {/* Scrollable Content Area */}
+              <div className="flex-1 overflow-y-auto">
+                {/* Modal Content */}
+                <div className="px-6 py-4">
+                  {/* Render content based on modal type */}
+                  {loadingModalContent ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3">
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <Card key={i} className="w-full">
+                          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <Skeleton className="h-5 w-3/4" />
+                            <Skeleton className="h-7 w-7 rounded-full" />
+                          </CardHeader>
+                          <CardContent>
+                            <Skeleton className="h-3 w-1/2 mb-1" />
+                            <Skeleton className="h-3 w-full" />
+                            <Skeleton className="h-20 w-full mt-3" />
+                            <Skeleton className="h-8 w-full mt-3" />
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto no-scrollbar">
+                      {modal.type === 'series' && (
+                        <VisualSeriesModalContent
+                          data={modal.data}
+                          onSeriesClick={(series: SeriesOption) => handleSeriesClick(series, modal.stampCode)}
+                          isLoading={loadingModalContent}
+                        />
+                      )}
+                      {modal.type === 'year' && (
+                        <VisualYearModalContent
+                          data={modal.data}
+                          onYearClick={(year: YearOption) => handleYearClick(year, modal.stampCode)}
+                          isLoading={loadingModalContent}
+                        />
+                      )}
+                      {modal.type === 'currency' && (
+                        <VisualCurrencyModalContent
+                          data={modal.data}
+                          onCurrencyClick={(currency: CurrencyOption) => handleCurrencyClick(currency, modal.stampCode)}
+                          isLoading={loadingModalContent}
+                        />
+                      )}
+                      {modal.type === 'denomination' && (
+                        <VisualDenominationModalContent
+                          data={modal.data}
+                          onDenominationClick={(denomination: DenominationOption) => handleDenominationClick(denomination, modal.stampCode)}
+                          isLoading={loadingModalContent}
+                        />
+                      )}
+                      {modal.type === 'color' && (
+                        <VisualColorModalContent
+                          data={modal.data}
+                          onColorClick={(color: ColorOption) => handleColorClick(color, modal.stampCode)}
+                          isLoading={loadingModalContent}
+                        />
+                      )}
+                      {modal.type === 'paper' && (
+                        <VisualPaperTypeModalContent
+                          data={modal.data}
+                          onPaperClick={(paper: PaperOption) => handlePaperClick(paper, modal.stampCode)}
+                          isLoading={loadingModalContent}
+                        />
+                      )}
+                      {modal.type === 'watermark' && (
+                        <VisualWatermarkModalContent
+                          data={modal.data}
+                          onWatermarkClick={(watermark: WatermarkOption) => handleWatermarkClick(watermark, modal.stampCode)}
+                          isLoading={loadingModalContent}
+                        />
+                      )}
+                      {modal.type === 'perforation' && (
+                        <VisualPerforationModalContent
+                          data={modal.data}
+                          onPerforationClick={(perforation: PerforationOption) => handlePerforationClick(perforation, modal.stampCode)}
+                          isLoading={loadingModalContent}
+                        />
+                      )}
+                      {modal.type === 'itemType' && (
+                        <VisualItemTypeModalContent
+                          data={modal.data}
+                          onItemTypeClick={(itemType: ItemTypeOption) => handleItemTypeClick(itemType, modal.stampCode)}
+                          isLoading={loadingModalContent}
+                        />
+                      )}
+                      {modal.type === 'stampDetails' && (
+                        <VisualStampDetailsModalContent
+                          data={modal.data}
+                          onStampClick={(stamp, currentStampCode) => handleStampDetailClick(stamp, currentStampCode)}
+                          isLoading={loadingModalContent}
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-            ) : (
-              <div className="overflow-x-auto no-scrollbar">
-                {modal.type === 'series' && (
-                  <VisualSeriesModalContent
-                    data={modal.data}
-                    onSeriesClick={(series: SeriesOption) => handleSeriesClick(series, modal.stampCode)}
-                    isLoading={loadingModalContent}
-                  />
-                )}
-                {modal.type === 'year' && (
-                  <VisualYearModalContent
-                    data={modal.data}
-                    onYearClick={(year: YearOption) => handleYearClick(year, modal.stampCode)}
-                    isLoading={loadingModalContent}
-                  />
-                )}
-                {modal.type === 'currency' && (
-                  <VisualCurrencyModalContent
-                    data={modal.data}
-                    onCurrencyClick={(currency: CurrencyOption) => handleCurrencyClick(currency, modal.stampCode)}
-                    isLoading={loadingModalContent}
-                  />
-                )}
-                {modal.type === 'denomination' && (
-                  <VisualDenominationModalContent
-                    data={modal.data}
-                    onDenominationClick={(denomination: DenominationOption) => handleDenominationClick(denomination, modal.stampCode)}
-                    isLoading={loadingModalContent}
-                  />
-                )}
-                {modal.type === 'color' && (
-                  <VisualColorModalContent
-                    data={modal.data}
-                    onColorClick={(color: ColorOption) => handleColorClick(color, modal.stampCode)}
-                    isLoading={loadingModalContent}
-                  />
-                )}
-                {modal.type === 'paper' && (
-                  <VisualPaperTypeModalContent
-                    data={modal.data}
-                    onPaperClick={(paper: PaperOption) => handlePaperClick(paper, modal.stampCode)}
-                    isLoading={loadingModalContent}
-                  />
-                )}
-                {modal.type === 'watermark' && (
-                  <VisualWatermarkModalContent
-                    data={modal.data}
-                    onWatermarkClick={(watermark: WatermarkOption) => handleWatermarkClick(watermark, modal.stampCode)}
-                    isLoading={loadingModalContent}
-                  />
-                )}
-                {modal.type === 'perforation' && (
-                  <VisualPerforationModalContent
-                    data={modal.data}
-                    onPerforationClick={(perforation: PerforationOption) => handlePerforationClick(perforation, modal.stampCode)}
-                    isLoading={loadingModalContent}
-                  />
-                )}
-                {modal.type === 'itemType' && (
-                  <VisualItemTypeModalContent
-                    data={modal.data}
-                    onItemTypeClick={(itemType: ItemTypeOption) => handleItemTypeClick(itemType, modal.stampCode)}
-                    isLoading={loadingModalContent}
-                  />
-                )}
-                {modal.type === 'stampDetails' && (
-                  <VisualStampDetailsModalContent
-                    data={modal.data}
-                    onStampClick={(stamp, currentStampCode) => handleStampDetailClick(stamp, currentStampCode)}
-                    isLoading={loadingModalContent}
-                  />
-                )}
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
+            </div>
+          </div>
+        </div>
       ))}
 
       {/* Pinned Stamp Card */}

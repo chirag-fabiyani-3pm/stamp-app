@@ -1,6 +1,6 @@
 import { ADMIN_ROLE_ID, SUPER_ADMIN_ROLE_ID } from '@/lib/constants';
 
-const API_BASE_URL = 'https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1';
+const API_BASE_URL = 'https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1';
 
 // Generate a unique device ID
 function generateDeviceId(): string {
@@ -16,7 +16,7 @@ function getDeviceId(): string {
     // Server-side fallback
     return generateDeviceId();
   }
-  
+
   let deviceId = localStorage.getItem('stamp_device_id');
   if (!deviceId) {
     deviceId = generateDeviceId();
@@ -28,7 +28,7 @@ function getDeviceId(): string {
 // Check if device is Apple (iOS/macOS)
 function isAppleDevice(): boolean {
   if (typeof window === 'undefined') return false;
-  
+
   const userAgent = window.navigator.userAgent;
   return /iPad|iPhone|iPod|Macintosh/.test(userAgent);
 }
@@ -79,22 +79,33 @@ export interface VerifyEmailResponse {
   message?: string;
 }
 
+export interface ValidateReferralResponse {
+  success: boolean;
+  valid: boolean;
+  message?: string;
+  referrerName?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  fullName?: string;
+}
+
 // Cookie management functions
 function setCookie(name: string, value: string, days: number = 30): void {
   if (typeof window === 'undefined') return;
-  
+
   const expires = new Date();
   expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-  
+
   document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;secure;samesite=strict`;
 }
 
 function getCookie(name: string): string | null {
   if (typeof window === 'undefined') return null;
-  
+
   const nameEQ = name + "=";
   const ca = document.cookie.split(';');
-  
+
   for (let i = 0; i < ca.length; i++) {
     let c = ca[i];
     while (c.charAt(0) === ' ') c = c.substring(1, c.length);
@@ -109,19 +120,21 @@ function deleteCookie(name: string): void {
 }
 
 // Send Email OTC
-export async function sendEmailOtc(emailId: string): Promise<SendEmailOtcResponse> {
+export async function sendEmailOtc(emailId: string, firstName?: string, lastName?: string): Promise<SendEmailOtcResponse> {
   const deviceId = getDeviceId();
   const isApple = isAppleDevice();
-  
+
   // Build query parameters
   const params = new URLSearchParams({
     emailId: emailId,
     deviceId: deviceId,
-    isAppleDevice: isApple.toString()
+    isAppleDevice: isApple.toString(),
+    ...(firstName ? { firstName } : {}),
+    ...(lastName ? { lastName } : {})
   });
 
   try {
-    const response = await fetch(`${API_BASE_URL}/UserFederatedAuth/SendEmailOtc?${params.toString()}`, {
+    const response = await fetch(`${API_BASE_URL}/UserFederatedAuth/LoginEmailOtc?${params.toString()}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -145,11 +158,60 @@ export async function sendEmailOtc(emailId: string): Promise<SendEmailOtcRespons
   }
 }
 
+// Send Email OTC
+export async function createAccountAndSendEmailOtc(emailId: string, firstName?: string, lastName?: string, referralCode?: string): Promise<SendEmailOtcResponse> {
+  const deviceId = getDeviceId();
+  const isApple = isAppleDevice();
+
+  // Build query parameters
+  const params = new URLSearchParams({
+    emailId: emailId,
+    deviceId: deviceId,
+    isAppleDevice: isApple.toString(),
+    ...(firstName ? { fName: firstName } : {}),
+    ...(lastName ? { lName: lastName } : {}),
+    referralCode: referralCode || ''
+  });
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/UserFederatedAuth/SignupEmailOtc?${params.toString()}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if(data.status === 400) {
+      return {
+        userId: data.userId,
+        success: false,
+        message: data.errors
+      }
+    }
+
+    return {
+      userId: data.userId,
+      success: true,
+      message: data.message
+    };
+  } catch (error) {
+    console.error('Send Email OTC error:', error);
+    throw new Error(error instanceof Error ? error.message : 'Failed to send OTC');
+  }
+}
+
 // Verify Email OTC
 export async function verifyEmailOtc(userId: string, otc: number): Promise<VerifyEmailResponse> {
   const deviceId = getDeviceId();
   const isApple = isAppleDevice();
-  
+
   // Build query parameters
   const params = new URLSearchParams({
     userId: userId,
@@ -172,13 +234,13 @@ export async function verifyEmailOtc(userId: string, otc: number): Promise<Verif
     }
 
     const data: UserAuthResponse = await response.json();
-    
+
     // Store JWT as cookie and user data in localStorage
     if (data.jwt) {
       setCookie('stamp_jwt', data.jwt, 30);
       storeUserData(data);
     }
-    
+
     return {
       success: true,
       user: data,
@@ -191,19 +253,20 @@ export async function verifyEmailOtc(userId: string, otc: number): Promise<Verif
 }
 
 // Maintain Google Sign In
-export async function googleSignIn(idToken: string): Promise<VerifyEmailResponse> {
+export async function googleSignIn(idToken: string, referralCode?: string): Promise<VerifyEmailResponse> {
   const deviceId = getDeviceId();
   const isApple = isAppleDevice();
-  
+
   // Build query parameters
   const body = {
     idToken: idToken,
     deviceId: deviceId,
-    isAppleDevice: "false"
+    isAppleDevice: "false",
+    ...(referralCode ? { referralCode } : {})
   };
 
   try {
-    const response = await fetch(`${API_BASE_URL}/UserFederatedAuth/GoogleAuth`, {
+    const response = await fetch(`${API_BASE_URL}/UserFederatedAuth/LoginWithGoogle`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -217,13 +280,13 @@ export async function googleSignIn(idToken: string): Promise<VerifyEmailResponse
     }
 
     const data: UserAuthResponse = await response.json();
-    
+
     // Store JWT as cookie and user data in localStorage
     if (data.jwt) {
       setCookie('stamp_jwt', data.jwt, 30);
       storeUserData(data);
     }
-    
+
     return {
       success: true,
       user: data,
@@ -245,10 +308,10 @@ export function storeUserData(userData: UserAuthResponse): void {
 // Get user data from localStorage
 export function getUserData(): UserAuthResponse | null {
   if (typeof window === 'undefined') return null;
-  
+
   const userData = localStorage.getItem('stamp_user_data');
   if (!userData) return null;
-  
+
   try {
     return JSON.parse(userData);
   } catch {
@@ -274,18 +337,18 @@ export function clearAuthData(): void {
 export function isAuthenticated(): boolean {
   const token = getAuthToken();
   const userData = getUserData();
-  
+
   if (!token || !userData) return false;
-  
+
   // Check if token is expired
   const expiresAt = new Date(userData.expiresAt);
   const now = new Date();
-  
+
   if (now >= expiresAt) {
     clearAuthData();
     return false;
   }
-  
+
   return true;
 }
 
@@ -293,7 +356,7 @@ export function isAuthenticated(): boolean {
 export function isAdmin(): boolean {
   const userData = getUserData();
   if (!userData) return false;
-  
+
   // Check if the user has the admin role ID
   return userData.roleMasterId === ADMIN_ROLE_ID || userData.roleMasterId === SUPER_ADMIN_ROLE_ID;
 }
@@ -302,15 +365,15 @@ export function isAdmin(): boolean {
 export function getUserDisplayName(): string {
   const userData = getUserData();
   if (!userData) return '';
-  
+
   if (userData.firstName && userData.lastName) {
     return `${userData.firstName} ${userData.lastName}`.trim();
   }
-  
+
   if (userData.firstName) {
     return userData.firstName;
   }
-  
+
   return userData.userName || '';
 }
 
@@ -320,10 +383,50 @@ export function getUserAvatar(): string | null {
   return userData?.avatarUrl || null;
 }
 
+// Verify Referral Code
+export async function validateReferralCode(referralCode: string): Promise<ValidateReferralResponse> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/External/ValidateReferralCode/DXAN-62FD-4A77-AC68-CCEFA68AEB1A?referralCode=${referralCode.toUpperCase()}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-STAMP-API-KEY': 'DXAN-23SZAZHfcJMlPeCzc-86H9cYQlDF'
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return {
+        success: false,
+        valid: false,
+        message: errorData.message || `HTTP error! status: ${response.status}`
+      };
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      valid: data.isValid || false,
+      message: data.message,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      fullName: data.fullName,
+    };
+  } catch (error: unknown) {
+    console.error('Verify referral code error:', error);
+    return {
+      success: false,
+      valid: false,
+      message: (error as Error)?.message || 'Failed to verify referral code'
+    };
+  }
+}
+
 // Sign out function
 export function signOut(): void {
   clearAuthData();
-  
+
   // Redirect to login page
   if (typeof window !== 'undefined') {
     window.location.href = '/login';
