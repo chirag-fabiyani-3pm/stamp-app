@@ -94,6 +94,26 @@ export default function RealtimePrecisePanel({
 
                 const data = await response.json()
                 console.log('🎤 Vector search response:', data)
+                console.log('🎤 Structured data:', data.structured)
+                console.log('🎤 Comparison check:', data.structured?.mode === 'comparison')
+
+                // Check for structured data with stamp ID and navigate if found
+                if (data.structured?.mode === 'cards' && data.structured.cards?.length > 0) {
+                    const firstStamp = data.structured.cards[0]
+                    if (firstStamp.id) {
+                        console.log('🎤 Realtime precise search found stamp with ID, navigating to:', firstStamp.id)
+                        router.push(`/stamp-details/${firstStamp.id}`)
+                    }
+                } else if (data.structured?.mode === 'comparison' && data.structured.stampIds?.length > 0) {
+                    const stampIds = data.structured.stampIds.filter(Boolean)
+                    if (stampIds.length > 0) {
+                        console.log('🎤 Realtime precise search found comparison request, navigating to comparison view with IDs:', stampIds)
+                        router.push(`/stamp-comparison?ids=${stampIds.join(',')}`)
+                    }
+                } else if (data.structured?.id) {
+                    console.log('🎤 Realtime precise search found single stamp ID, navigating to:', data.structured.id)
+                    router.push(`/stamp-details/${data.structured.id}`)
+                }
 
                 // Return the search results for the AI to process
                 return {
@@ -415,6 +435,7 @@ export default function RealtimePrecisePanel({
                 },
                 body: JSON.stringify({
                     voice: selectedVoice,
+                    max_tokens: 200,
                     instructions: `You are PhilaGuide AI, a specialized stamp collecting expert providing precise search results. You ONLY respond to philatelic (stamp collecting) related queries.
 
 CRITICAL RESTRICTION - PHILATELIC QUERIES ONLY:
@@ -444,7 +465,8 @@ VOICE RESPONSE GUIDELINES:
 - Be informative but friendly and engaging
 - When describing stamps, include details like country, year, denomination, color, and interesting facts
 - Use natural language for denominations (e.g., "one-third penny" instead of "1/3d")
-- Keep responses concise but informative (2-3 sentences max for voice)
+- Keep responses VERY SHORT - maximum 1-2 sentences for voice
+- Prioritize essential information only (value, denomination, year)
 - Always respond in a natural, conversational manner suitable for voice synthesis
 - Maintain conversation context from previous philatelic messages
 - Reference previous stamp topics when relevant to show continuity

@@ -35,13 +35,13 @@ import {
     X
 } from 'lucide-react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import React, { useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useChatContext } from './chat-provider'
 import { ImageSearch } from './image-search'
 import PreciseVoicePanel from './precise-voice-panel'
-import VoiceChatPanel from './voice-chat-panel'
 
 // Configuration flag for API version
 const USE_RESPONSES_API = true // Set to true to use new Responses API, false for old Assistants API
@@ -612,6 +612,8 @@ export function PhilaGuideChat() {
     const [streamingStatus, setStreamingStatus] = useState('')
     const [loadingStage, setLoadingStage] = useState<'searching' | 'analyzing' | 'processing' | 'compiling' | 'finalizing'>('searching')
     const [abortController, setAbortController] = useState<AbortController | null>(null)
+    const [retryAttempt, setRetryAttempt] = useState<number>(0)
+    const [isRetrying, setIsRetrying] = useState<boolean>(false)
     const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`)
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const { toast } = useToast()
@@ -630,6 +632,8 @@ export function PhilaGuideChat() {
     // Streaming text effect
     const [streamingText, setStreamingText] = useState<string>('')
     const [isStreamingText, setIsStreamingText] = useState(false)
+
+    const router = useRouter()
 
     // Function to create streaming text effect
     const streamText = (text: string, messageId: string) => {
@@ -655,10 +659,9 @@ export function PhilaGuideChat() {
     const handleTranscript = (text: string) => {
         setTranscript(text)
 
-        // In precise mode, allow AI responses from the new RealtimePrecisePanelV2
-        // Only ignore AI responses from the old webkitSpeechRecognition implementation
-        if (voiceMode === 'precise' && (text.includes('AI (General):'))) {
-            console.log('🎤 Ignoring old AI response in precise mode:', text)
+        // Ignore AI responses from the old webkitSpeechRecognition implementation
+        if (text.includes('AI (General):')) {
+            console.log('🎤 Ignoring old AI response:', text)
             return
         }
 
@@ -953,7 +956,8 @@ export function PhilaGuideChat() {
     const [isVoiceProcessing, setIsVoiceProcessing] = useState(false)
     const [voiceSessionId] = useState(() => `voice_session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`)
     const [selectedVoiceFromPanel, setSelectedVoiceFromPanel] = useState('alloy')
-    const [voiceMode, setVoiceMode] = useState<'conversation' | 'precise'>('conversation')
+    // Voice mode is now always 'precise' - no mode selection needed
+    const voiceMode: 'precise' = 'precise'
 
     // NEW: Voice selection state (from original voice chat popup)
     const [selectedVoice, setSelectedVoice] = useState<VoiceOption | null>(null)
@@ -1188,13 +1192,6 @@ export function PhilaGuideChat() {
         }
     }, [isVoiceProcessing, isPreciseSessionActive, recognition, isPreciseListening])
 
-    // Cleanup precise mode session when switching modes
-    useEffect(() => {
-        if (voiceMode !== 'precise' && isPreciseSessionActive) {
-            console.log('🎤 Cleaning up precise mode session due to mode change')
-            stopPreciseVoiceInput()
-        }
-    }, [voiceMode])
 
     // Cleanup on unmount
     useEffect(() => {
@@ -1245,31 +1242,6 @@ export function PhilaGuideChat() {
         }
     }
 
-    // NEW: Auto-send voice message when transcript is ready (only for conversation mode)
-    useEffect(() => {
-        if (transcript && isVoiceMode && voiceMode === 'conversation' && !isVoiceProcessing) {
-            // Only process clean user transcripts, not AI responses or system messages
-            const cleanTranscript = transcript.replace(/\n(You|AI):\s*/g, '').replace(/\[AI_COMPLETE\]/g, '').trim()
-
-            // Skip if this looks like an AI response or system message
-            if (cleanTranscript &&
-                !transcript.includes('[AI_COMPLETE]') &&
-                !transcript.includes('\nAI:') &&
-                transcript.includes('\nYou:')) {
-
-                // Auto-send after a short delay to allow user to review
-                const timer = setTimeout(() => {
-                    if (cleanTranscript) {
-                        console.log('🎤 Auto-sending conversation voice message:', cleanTranscript)
-                        handleVoiceMessage(cleanTranscript)
-                        clearTranscript()
-                    }
-                }, 1500) // 1.5 second delay
-
-                return () => clearTimeout(timer)
-            }
-        }
-    }, [transcript, isVoiceMode, isVoiceProcessing, voiceMode])
 
     // NEW: Debug voice messages changes
     useEffect(() => {
@@ -1405,6 +1377,24 @@ export function PhilaGuideChat() {
                 // Add AI message to UI immediately when response is received
                 setVoiceMessages(prev => [...prev, aiMessage])
                 setMessages(prev => [...prev, aiMessage])
+
+                // Check for structured data with stamp ID and navigate if found
+                if (data.structured?.mode === 'cards' && data.structured.cards?.length > 0) {
+                    const firstStamp = data.structured.cards[0]
+                    if (firstStamp.id) {
+                        console.log('🎤 Voice search found stamp with ID, navigating to:', firstStamp.id)
+                        router.push(`/stamp-details/${firstStamp.id}`)
+                    }
+                } else if (data.structured?.mode === 'comparison' && data.structured.stampIds?.length > 0) {
+                    const stampIds = data.structured.stampIds.filter(Boolean)
+                    if (stampIds.length > 0) {
+                        console.log('🎤 Voice search found comparison request, navigating to comparison view with IDs:', stampIds)
+                        router.push(`/stamp-comparison?ids=${stampIds.join(',')}`)
+                    }
+                } else if (data.structured?.id) {
+                    console.log('🎤 Voice search found single stamp ID, navigating to:', data.structured.id)
+                    router.push(`/stamp-details/${data.structured.id}`)
+                }
 
                 // Start streaming text effect
                 streamText(data.content, aiMessage.id)
@@ -1712,6 +1702,60 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
         console.log('🔄 New chat session started')
     }
 
+    // Fallback response function for when API fails
+    const getFallbackResponse = (query: string): string => {
+        const lowerQuery = query.toLowerCase()
+
+        // Common stamp-related queries and their helpful responses
+        if (lowerQuery.includes('bright') || lowerQuery.includes('orange') || lowerQuery.includes('1d')) {
+            return `I'd be happy to help with information about the 1d Bright Orange stamp! This is a classic British stamp from the Victorian era. While I'm experiencing some technical difficulties, here are some general facts about this stamp:
+
+• **Official Name**: 1d Bright Orange (Penny Red)
+• **Period**: 1841-1864 (Victorian era)
+• **Design**: Queen Victoria profile by William Wyon
+• **Color**: Bright orange-red
+• **Value**: 1 penny
+• **Significance**: One of the most famous British stamps
+
+The 1d Bright Orange is highly collectible and comes in many varieties. For detailed information about specific varieties, values, or condition assessment, please try your query again when the system is fully operational.`
+        }
+
+        if (lowerQuery.includes('stamp') && (lowerQuery.includes('value') || lowerQuery.includes('worth') || lowerQuery.includes('price'))) {
+            return `I'd love to help you determine the value of your stamp! While I'm experiencing some technical difficulties, here are some general factors that affect stamp values:
+
+• **Condition**: Mint, used, or damaged
+• **Rarity**: How many were printed
+• **Age**: Older stamps are often more valuable
+• **Errors**: Misprints can be very valuable
+• **Provenance**: Historical significance
+
+For a detailed valuation, please try your query again when the system is fully operational. You can also consult stamp catalogs like Scott, Stanley Gibbons, or Michel for reference values.`
+        }
+
+        if (lowerQuery.includes('collect') || lowerQuery.includes('collection')) {
+            return `I'd be happy to help with stamp collecting advice! While I'm experiencing some technical difficulties, here are some general collecting tips:
+
+• **Start with a theme**: Countries, time periods, or subjects
+• **Learn about condition**: Understanding grades is crucial
+• **Use proper tools**: Magnifying glass, tongs, album
+• **Store carefully**: Avoid humidity and direct sunlight
+• **Join a club**: Local stamp societies offer great resources
+
+For specific collecting advice or stamp identification, please try your query again when the system is fully operational.`
+        }
+
+        // Generic helpful response
+        return `I apologize, but I'm experiencing some technical difficulties right now. I'm your stamp collecting expert and I'd love to help you with:
+
+• Stamp identification and valuation
+• Historical information about stamps
+• Collecting advice and tips
+• Condition assessment
+• Rarity and market values
+
+Please try your query again in a moment, or feel free to ask about any specific stamp you'd like to learn about!`
+    }
+
     const handleSendMessage = async () => {
         if (!input.trim() || isLoading) return
 
@@ -1741,7 +1785,12 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
             clearTranscript()
         }
 
-        try {
+        // Retry configuration
+        const MAX_RETRIES = 3
+        const RETRY_DELAYS = [1000, 2000, 4000] // Exponential backoff delays in ms
+        let retryCount = 0
+
+        const makeApiRequest = async (attemptNumber: number): Promise<Response> => {
             // Create abort controller for this request
             const controller = new AbortController()
             setAbortController(controller)
@@ -1756,17 +1805,17 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
                     userMessage.content.toLowerCase().includes('vermillion')
 
                 if (isStampQuery) {
-                    // Stamp-specific loading sequence
-                    setTimeout(() => setLoadingStage('analyzing'), 1500)
-                    setTimeout(() => setLoadingStage('processing'), 3000)
-                    setTimeout(() => setLoadingStage('compiling'), 5000)
-                    setTimeout(() => setLoadingStage('finalizing'), 7000)
+                    // Stamp-specific loading sequence with longer intervals for complex queries
+                    setTimeout(() => setLoadingStage('analyzing'), 2000)
+                    setTimeout(() => setLoadingStage('processing'), 5000)
+                    setTimeout(() => setLoadingStage('compiling'), 10000)
+                    setTimeout(() => setLoadingStage('finalizing'), 15000)
                 } else {
                     // General query loading sequence
-                    setTimeout(() => setLoadingStage('analyzing'), 2000)
-                    setTimeout(() => setLoadingStage('processing'), 4000)
-                    setTimeout(() => setLoadingStage('compiling'), 6000)
-                    setTimeout(() => setLoadingStage('finalizing'), 8000)
+                    setTimeout(() => setLoadingStage('analyzing'), 3000)
+                    setTimeout(() => setLoadingStage('processing'), 6000)
+                    setTimeout(() => setLoadingStage('compiling'), 10000)
+                    setTimeout(() => setLoadingStage('finalizing'), 15000)
                 }
             }
 
@@ -1788,14 +1837,14 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
                 `${BACKEND_URL}/api/philaguide-v2/working` :
                 `${BACKEND_URL}/api/philaguide`
 
-            console.log('🌐 Making API request to:', apiEndpoint)
+            console.log(`🌐 Making API request to: ${apiEndpoint} (attempt ${attemptNumber})`)
             console.log('📤 Request payload:', {
                 message: userMessage.content,
                 sessionId: sessionId,
                 isVoiceChat: isFromVoice
             })
 
-            // Make the API request (no retry mechanism)
+            // Make the API request with retry mechanism
             let response: Response
 
             if (USE_RESPONSES_API) {
@@ -1810,7 +1859,7 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
                         sessionId: sessionId,
                         isVoiceChat: isFromVoice
                     }),
-                    signal: AbortSignal.any([controller.signal, AbortSignal.timeout(25000)]) // 25 second timeout
+                    signal: AbortSignal.any([controller.signal, AbortSignal.timeout(60000)]) // 60 second timeout
                 })
             } else {
                 // Old Assistants API call
@@ -1825,13 +1874,72 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
                         voiceChat: isFromVoice,
                         sessionId: sessionId
                     }),
-                    signal: AbortSignal.any([controller.signal, AbortSignal.timeout(30000)]) // 30 second timeout
+                    signal: AbortSignal.any([controller.signal, AbortSignal.timeout(60000)]) // 60 second timeout
                 })
             }
 
             if (!response.ok) {
                 throw new Error(`API request failed: ${response.status} ${response.statusText}`)
             }
+
+            return response
+        }
+
+        // Retry loop for API requests
+        let response: Response | null = null
+        let lastError: Error | null = null
+
+        for (let attempt = 1; attempt <= MAX_RETRIES + 1; attempt++) {
+            try {
+                console.log(`🌐 Making API request (attempt ${attempt}/${MAX_RETRIES + 1})`)
+
+                if (attempt > 1) {
+                    setRetryAttempt(attempt - 1)
+                    setIsRetrying(true)
+                    setStreamingStatus(`Retrying... (attempt ${attempt - 1}/${MAX_RETRIES})`)
+
+                    // Wait before retrying
+                    const retryDelay = RETRY_DELAYS[attempt - 2] || 4000
+                    await new Promise(resolve => setTimeout(resolve, retryDelay))
+                }
+
+                // Make the API request
+                response = await makeApiRequest(attempt)
+                break // Success, exit retry loop
+
+            } catch (error) {
+                lastError = error as Error
+                console.error(`❌ API request attempt ${attempt} failed:`, error)
+
+                // Check if this is a retryable error and we should retry
+                const isRetryableError = error instanceof Error && (
+                    error.name === 'TimeoutError' ||
+                    error.message.includes('timeout') ||
+                    error.message.includes('timed out') ||
+                    error.message.includes('500') ||
+                    error.message.includes('Internal Server Error') ||
+                    error.message.includes('502') ||
+                    error.message.includes('503') ||
+                    error.message.includes('504')
+                )
+
+                if (isRetryableError && attempt <= MAX_RETRIES) {
+                    console.log(`🔄 Retryable error on attempt ${attempt}, will retry...`)
+                    continue // Retry
+                } else {
+                    // Not a retryable error or max retries reached, break out of retry loop
+                    break
+                }
+            }
+        }
+
+        // If all retries failed, throw the last error
+        if (!response) {
+            throw lastError || new Error('All retry attempts failed')
+        }
+
+        try {
+            // Process the successful response
 
             let accumulatedContent = ''
             let structuredData: any = null
@@ -1867,6 +1975,18 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
                     }
 
                     console.log('📝 Responses API - Creating new message:', newMessage)
+
+                    // Check for comparison mode in structured data
+                    if (jsonResponse.structured?.mode === 'comparison' && jsonResponse.structured.stampIds?.length > 0) {
+                        const stampIds = jsonResponse.structured.stampIds.filter(Boolean)
+                        if (stampIds.length > 0) {
+                            console.log('🔄 Responses API - Found comparison request, navigating to comparison view with IDs:', stampIds)
+                            router.push(`/stamp-comparison?ids=${stampIds.join(',')}`)
+                        }
+                    } else if (newMessage.structuredData?.id != null) {
+                        router.push(`/stamp-details/${newMessage.structuredData.id}`)
+                    }
+
 
                     setMessages(prev => {
                         console.log('🔄 Responses API - Previous messages count:', prev.length)
@@ -2132,13 +2252,27 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
             if (error instanceof Error && error.name === 'AbortError') {
                 console.log('🛑 Request was aborted by user')
                 // Don't add error message for aborted requests
-            } else if (error instanceof Error && error.message.includes('timeout')) {
-                console.log('⏰ Request timed out')
+            } else if (error instanceof Error && (error.name === 'TimeoutError' || error.message.includes('timeout') || error.message.includes('timed out'))) {
+                console.log('⏰ Request timed out after all retry attempts')
                 const errorMessage: Message = {
                     id: (Date.now() + 1).toString(),
-                    content: 'The request took too long to process. This might happen if the chat has been idle for a while. Please try again with a fresh query.',
+                    content: 'The request timed out after multiple attempts. Please try again with a shorter query or check your connection.',
                     role: 'assistant',
                     timestamp: new Date()
+                }
+                setMessages(prev => [...prev, errorMessage])
+            } else if (error instanceof Error && (error.message.includes('500') || error.message.includes('Internal Server Error'))) {
+                console.log('🔥 Server error after all retry attempts')
+
+                // Provide a helpful fallback response for common stamp queries
+                const fallbackResponse = getFallbackResponse(userMessage.content)
+
+                const errorMessage: Message = {
+                    id: (Date.now() + 1).toString(),
+                    content: fallbackResponse,
+                    role: 'assistant',
+                    timestamp: new Date(),
+                    source: 'fallback'
                 }
                 setMessages(prev => [...prev, errorMessage])
             } else if (error instanceof Error && error.message.includes('fetch')) {
@@ -2173,6 +2307,8 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
             setIsLoading(false)
             setStreamingStatus('')
             setLoadingStage('searching')
+            setRetryAttempt(0)
+            setIsRetrying(false)
             setAbortController(null) // Clear the abort controller
         }
     }
@@ -2366,10 +2502,7 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
                                             </p>
                                         </div>
                                         <div className="text-xs text-muted-foreground text-center">
-                                            {voiceMode === 'conversation'
-                                                ? 'General chat about stamp collecting and philatelic topics'
-                                                : 'Search for specific stamps using our comprehensive database'
-                                            }
+                                            Search for specific stamps using our comprehensive database
                                         </div>
                                     </div>
                                 ) : (
@@ -2416,25 +2549,6 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
                             </div>
                         )}
 
-                        {/* Function Call Progress Bubble */}
-                        {functionCallProgress.isInProgress && (
-                            <div className="flex gap-4 animate-in slide-in-from-bottom duration-300 justify-start">
-                                <Avatar className="w-9 h-9 flex-shrink-0 border-2 border-primary/20">
-                                    <AvatarImage src="/images/stamp-bot-avatar.png" alt="PhilaGuide AI" />
-                                    <AvatarFallback className="bg-primary/10 text-primary text-sm">PG</AvatarFallback>
-                                </Avatar>
-                                <div className="max-w-[85%] space-y-2 order-2">
-                                    <div className="px-4 py-3 text-sm break-words bg-muted text-foreground rounded-2xl rounded-tl-md mr-auto">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-4 h-4 animate-spin rounded-full border-2 border-yellow-300 border-t-yellow-600" />
-                                            <span className="text-sm font-medium text-yellow-600">
-                                                {functionCallProgress.message || 'Searching database...'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
 
                         {/* NEW: Show messages based on current mode */}
                         {(isVoiceMode ? voiceMessages : messages).map((message) => (
@@ -2670,6 +2784,18 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
                     </div>
                 </ScrollArea>
 
+                {/* Function Call Progress - Fixed at Bottom */}
+                {functionCallProgress.isInProgress && (
+                    <div className="px-6 py-3 border-t border-border bg-background/95 backdrop-blur-sm">
+                        <div className="flex items-center gap-3">
+                            <div className="w-4 h-4 animate-spin rounded-full border-2 border-yellow-300 border-t-yellow-600" />
+                            <span className="text-sm font-medium text-yellow-600">
+                                {functionCallProgress.message || 'Searching database...'}
+                            </span>
+                        </div>
+                    </div>
+                )}
+
                 {/* Input */}
                 <div className="p-6 border-t border-border bg-background animate-in slide-in-from-bottom duration-300 delay-250">
                     {isVoiceMode ? (
@@ -2687,53 +2813,15 @@ REMEMBER: You are a stamp collecting expert. Stay focused on philatelic topics o
                                         </div>
                                     </div>
 
-                                    {/* Mode Selection - Moved to top */}
-                                    <div className="flex items-center justify-center">
-                                        <div className="flex bg-muted rounded-lg p-1">
-                                            <button
-                                                onClick={() => setVoiceMode('conversation')}
-                                                className={`px-3 py-1 text-xs rounded-md transition-colors ${voiceMode === 'conversation'
-                                                    ? 'bg-background text-foreground shadow-sm'
-                                                    : 'text-muted-foreground hover:text-foreground'
-                                                    }`}
-                                            >
-                                                Conversation
-                                            </button>
-                                            <button
-                                                onClick={() => setVoiceMode('precise')}
-                                                className={`px-3 py-1 text-xs rounded-md transition-colors ${voiceMode === 'precise'
-                                                    ? 'bg-background text-foreground shadow-sm'
-                                                    : 'text-muted-foreground hover:text-foreground'
-                                                    }`}
-                                            >
-                                                Precise Search
-                                            </button>
-                                        </div>
-                                    </div>
                                 </div>
 
-                                {/* Voice Input Interface */}
+                                {/* Voice Input Interface - Precise Search Only */}
                                 <div className="p-4 animate-in fade-in duration-300 delay-400">
-                                    {voiceMode === 'precise' ? (
-                                        /* Realtime API Precise Mode with Function Calling */
-                                        <PreciseVoicePanel
-                                            onTranscript={handleTranscript}
-                                            onTranscribingChange={setIsTranscribing}
-                                            onFunctionCallProgress={handleFunctionCallProgress}
-                                        />
-                                    ) : (
-                                        /* WebRTC Voice Chat Panel for Conversation Mode */
-                                        <VoiceChatPanel
-                                            onTranscript={handleTranscript}
-                                            onClose={() => setIsVoiceMode(false)}
-                                            onVoiceChange={setSelectedVoiceFromPanel}
-                                            onSpeakResponse={speakResponse}
-                                            onListeningChange={setIsListening}
-                                            onTranscribingChange={setIsTranscribing}
-                                            onModeChange={setVoiceMode}
-                                            currentMode={voiceMode}
-                                        />
-                                    )}
+                                    <PreciseVoicePanel
+                                        onTranscript={handleTranscript}
+                                        onTranscribingChange={setIsTranscribing}
+                                        onFunctionCallProgress={handleFunctionCallProgress}
+                                    />
                                 </div>
                             </div>
 

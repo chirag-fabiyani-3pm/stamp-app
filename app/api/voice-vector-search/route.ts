@@ -94,106 +94,44 @@ export async function POST(request: NextRequest) {
                     model: 'gpt-4o',
                     input: transcript,
                     temperature: 0,
-                    max_output_tokens: 1000,
-                    instructions: `
-# ROLE & PERSONALITY
+                    max_output_tokens: 300,
+                    instructions: `You are PhilaGuide AI, a stamp expert providing precise responses from the Campbell Peterson catalog.
 
-You are PhilaGuide AI, a world-class philatelic expert providing PRECISE, DATA-DRIVEN responses from the Campbell Peterson catalog.
-When users ask for specific values, return EXACT information from the vector store. Be conversational but accurate.
+CRITICAL RULES - FOLLOW EXACTLY:
+1. If user asks to "show", "display", "see", or "view" a stamp → Return ONLY raw JSON with mode: "cards" (NO markdown, NO text, NO lists, NO explanations)
+2. If user asks to "compare" stamps → Return ONLY raw JSON with mode: "comparison" with MULTIPLE stamp IDs (NO markdown, NO text, NO lists, NO explanations)
+3. If user asks for "value", "worth", or "price" → Return ONLY short text with exact mintValue
+4. Keep ALL responses under 2 sentences maximum
 
-# CRITICAL INSTRUCTIONS FOR PRECISE MODE
-
-## VALUE QUERIES - HIGHEST PRIORITY
-When users ask for mint values, prices, or worth:
-1. SEARCH the vector store for exact matches based on the stamp description
-2. If found, return the EXACT mintValue in NZD with currency symbol
-3. Format: "The mint value for this stamp is $X NZD" (where X is the exact mintValue from the data)
-4. Include additional context like denomination, year, series if available
-5. NEVER give generic value ranges or estimates - use the actual data
-
-## INSUFFICIENT INFORMATION HANDLING
-When the stamp description is too vague to find a specific match:
-1. Ask 2-3 SPECIFIC clarifying questions to narrow down the search
-2. Focus on: denomination, year, country, series, color, or catalog number
-3. Example: "To find the exact value, I need more details. What denomination was it? Do you know the year or series?"
-
-## DATA EXTRACTION RULES
-- Extract mintValue, finestUsedValue from matching records
-- Use denominationDisplay, denominationDescription for denomination info
-- Use colorName, colorDescription for color details
-- Use issueYear, seriesName for temporal context
-- Use catalogNumber when available
-- Currency is always NZD (New Zealand Dollars) with $ symbol
-
-# VOICE RESPONSE GUIDELINES
-
-- Use clear, descriptive language suitable for speech
-- Provide exact values when available: "The mint value is $500 NZD"
-- Be conversational but precise
-- When describing stamps, include denomination, year, color from the data
-- Use natural language for denominations (e.g., "half penny" for "1/2d")
-
-# RESPONSE MODES
-
-## PRECISE VALUE RESPONSE
-When exact stamp match found with mintValue:
-"The mint value for the [denominationDescription] [colorName] stamp from [issueYear] is $[mintValue] NZD."
-
-## CLARIFICATION NEEDED
-When description is insufficient, return JSON format:
+SHOW REQUESTS - Return ONLY this exact JSON format (nothing else):
 {
-  "mode": "clarify",
-  "clarifyingQuestions": [
-    "What denomination was the stamp? For example, was it a penny, halfpenny, or another value?",
-    "Do you know what year it was issued or what series it belonged to?"
-  ]
+  "mode": "cards",
+  "cards": [{"id": "[stampId]", "stampName": "[name]", "country": "[country]", "year": "[year]", "denomination": "[denom]", "color": "[color]", "series": "[series]", "catalogNumber": "[cat#]", "imageUrl": "[url]", "description": "[desc]", "mintValue": "[value]", "finestUsedValue": "[usedValue]"}]
 }
 
-## NO MATCH FOUND
-When no matching stamp in vector store:
-"I couldn't find that specific stamp in the Campbell Peterson catalog. Could you provide more details like the denomination, year, or catalog number?"
+COMPARISON REQUESTS - Return ONLY this exact JSON format (nothing else):
+- When user says "compare", "compare both", "show comparison" → ALWAYS return comparison mode
+- MUST find ALL stamps mentioned in the comparison request
+- MUST return at least 2 stamp IDs, up to 3 maximum
+- Example: "compare 1d orange and 1d red" → find BOTH stamps and return their IDs
+- NEVER return cards mode for comparison requests
+{
+  "mode": "comparison",
+  "stampIds": ["[stampId1]", "[stampId2]", "[stampId3]"]
+}
 
-# SEARCH STRATEGY
+VALUE REQUESTS - Return ONLY this text:
+"The [denomination] [color] stamp from [year] is worth $[mintValue] NZD."
 
-1. Use the user's description to search the vector store for stamps with matching characteristics
-2. Look for matches in: name, denominationDescription, colorName, seriesName, issueYear, catalogNumber
-3. If SINGLE CLEAR MATCH found with mintValue > 0: provide exact value immediately
-4. If MULTIPLE matches: ask clarifying questions to narrow down
-5. If NO matches or vague description: ask for more specific details
-6. Always prefer exact catalog data over estimates
+CLARIFICATION - Return ONLY this JSON:
+{
+  "mode": "clarify", 
+  "clarifyingQuestions": ["What denomination?", "What year or series?"]
+}
 
-# CRITICAL RESPONSE RULES
+NEVER return markdown lists, numbered lists, or explanatory text for show requests. ONLY return the JSON structure above.
 
-## FOR VALUE QUERIES:
-- If exact match found: "The mint value for the [specific details] stamp is $[exact mintValue] NZD"
-- If unclear which stamp: Ask 2-3 specific questions about denomination, year, color, series
-- If no match: "I couldn't find that stamp in the Campbell Peterson catalog. Could you provide [specific details needed]?"
-
-## NEVER DO:
-- Give generic value ranges like "several hundred dollars"
-- Make up values or provide estimates
-- Give broad philatelic advice without specific catalog data
-- Mention the vector store or database mechanics
-
-## ALWAYS DO:
-- Extract exact mintValue, finestUsedValue from matching records
-- Use denominationDescription (e.g., "Half Penny") not codes (e.g., "1/2d")
-- Include year, series, color from the actual stamp record
-- Ask specific clarifying questions when description is ambiguous
-
-# EXAMPLE RESPONSES
-
-## Exact Match Found:
-"The mint value for the Half Penny black stamp from 1897 (Second Sideface series) is $80 NZD."
-
-## Need Clarification:
-"To find the exact value, I need more specific details:
-- What denomination was it? For example, was it a penny, halfpenny, or sixpence?
-- Do you know what year it was issued or what color it was?"
-
-## No Match:
-"I couldn't find that specific stamp in the Campbell Peterson catalog. Could you provide the denomination, year, or any catalog numbers you might know?"
-`,
+Search the vector store for exact matches. Use exact data only.`,
                     tools: [
                         { type: 'file_search', vector_store_ids: [VECTOR_STORE_ID] }
                     ],
@@ -204,77 +142,247 @@ When no matching stamp in vector store:
                 console.log('🔍 Voice search response received:', {
                     responseId: response.id,
                     status: response.status,
-                    outputType: response.output?.[0]?.type
+                    outputType: response.output?.[0]?.type,
+                    outputText: response.output_text?.substring(0, 200) + '...'
                 })
 
                 // Build normalized content text and structured field
                 let structured: any | null = null
                 let contentText = response.output_text
 
-                // Try to extract a JSON object from the output text
-                const jsonStart = response.output_text.indexOf('{')
-                const jsonEnd = response.output_text.lastIndexOf('}')
-                if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
-                    const possibleJson = response.output_text.slice(jsonStart, jsonEnd + 1)
+                console.log('🔍 Raw AI response:', response.output_text)
+
+                // Try to extract JSON from markdown code blocks first
+                let possibleJson = ''
+                const markdownJsonMatch = response.output_text.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/)
+                if (markdownJsonMatch) {
+                    possibleJson = markdownJsonMatch[1]
+                    console.log('🔍 Extracted JSON from markdown:', possibleJson)
+                } else {
+                    // Fallback to original method - look for JSON objects
+                    const jsonStart = response.output_text.indexOf('{')
+                    if (jsonStart !== -1) {
+                        // Find the end of the JSON more carefully
+                        let braceCount = 0
+                        let jsonEnd = jsonStart
+                        let inString = false
+                        let escapeNext = false
+
+                        for (let i = jsonStart; i < response.output_text.length; i++) {
+                            const char = response.output_text[i]
+
+                            if (escapeNext) {
+                                escapeNext = false
+                                continue
+                            }
+
+                            if (char === '\\') {
+                                escapeNext = true
+                                continue
+                            }
+
+                            if (char === '"' && !escapeNext) {
+                                inString = !inString
+                                continue
+                            }
+
+                            if (!inString) {
+                                if (char === '{') {
+                                    braceCount++
+                                } else if (char === '}') {
+                                    braceCount--
+                                    if (braceCount === 0) {
+                                        jsonEnd = i
+                                        break
+                                    }
+                                }
+                            }
+                        }
+
+                        if (braceCount === 0 && jsonEnd > jsonStart) {
+                            possibleJson = response.output_text.slice(jsonStart, jsonEnd + 1)
+                            console.log('🔍 Extracted JSON from plain text:', possibleJson)
+                        } else {
+                            console.log('❌ Incomplete JSON detected, brace count:', braceCount)
+                        }
+                    }
+                }
+
+                if (possibleJson) {
                     try {
                         const parsed = JSON.parse(possibleJson)
                         if (parsed && typeof parsed === 'object' && parsed.mode) {
                             structured = parsed
+                            console.log('✅ Successfully parsed structured data:', structured)
                         }
                     } catch (e) {
-                        // ignore
-                    }
-                }
+                        console.log('❌ JSON parsing failed:', e)
+                        // Try to fix incomplete JSON by adding missing closing brackets
+                        if (possibleJson.includes('"mode": "cards"') && possibleJson.includes('"cards": [')) {
+                            let fixedJson = possibleJson
+                            // Count missing closing brackets
+                            const openBraces = (fixedJson.match(/\{/g) || []).length
+                            const closeBraces = (fixedJson.match(/\}/g) || []).length
+                            const openBrackets = (fixedJson.match(/\[/g) || []).length
+                            const closeBrackets = (fixedJson.match(/\]/g) || []).length
 
-                // Handle structured responses for precise mode
-                if (structured && typeof structured === 'object' && structured.mode) {
-                    if (structured.mode === 'clarify' && Array.isArray(structured.clarifyingQuestions)) {
-                        const questions = structured.clarifyingQuestions.filter(Boolean)
-                        if (questions.length > 0) {
-                            contentText = 'To find the exact value, I need more specific details:\n' + questions.map((q: string) => `- ${q}`).join('\n')
+                            // Add missing closing brackets
+                            for (let i = 0; i < (openBrackets - closeBrackets); i++) {
+                                fixedJson += ']'
+                            }
+                            for (let i = 0; i < (openBraces - closeBraces); i++) {
+                                fixedJson += '}'
+                            }
+
+                            console.log('🔧 Attempting to fix JSON:', fixedJson)
+                            try {
+                                const fixedParsed = JSON.parse(fixedJson)
+                                if (fixedParsed && typeof fixedParsed === 'object' && fixedParsed.mode) {
+                                    structured = fixedParsed
+                                    console.log('✅ Successfully parsed fixed structured data:', structured)
+                                }
+                            } catch (fixError) {
+                                console.log('❌ Fixed JSON parsing also failed:', fixError)
+                            }
                         }
-                    } else if (structured.mode === 'value' && structured.mintValue) {
-                        // Handle precise value responses
-                        const mintValue = structured.mintValue
-                        const denomination = structured.denomination || 'stamp'
-                        const year = structured.year || ''
-                        const color = structured.color || ''
-                        const series = structured.series || ''
-
-                        let valueResponse = `The mint value for the ${denomination}`
-                        if (color) valueResponse += ` ${color}`
-                        valueResponse += ' stamp'
-                        if (year) valueResponse += ` from ${year}`
-                        if (series) valueResponse += ` (${series} series)`
-                        valueResponse += ` is $${mintValue} NZD.`
-
-                        contentText = valueResponse
-                    } else if (structured.mode === 'cards' && Array.isArray(structured.cards)) {
-                        const toCardBlock = (c: any) => [
-                            '## Stamp Information',
-                            `**Stamp Name**: ${c.stampName || ''}`,
-                            `**Country**: ${c.country || ''}`,
-                            `**ID**: ${c.id || ''}`,
-                            `**Image URL**: ${c.imageUrl || '/images/stamps/no-image-available.png'}`,
-                            `**Description**: ${c.description || ''}`,
-                            `**Series**: ${c.series || ''}`,
-                            `**Year**: ${c.year || ''}`,
-                            `**Denomination**: ${c.denomination || ''}`,
-                            `**Catalog Number**: ${c.catalogNumber || ''}`,
-                            `**Theme**: ${c.theme || ''}`,
-                            `**Technical Details**: ${c.technicalDetails || ''}`
-                        ].join('\n')
-
-                        const baseFirst = structured.cards.slice().sort((a: any, b: any) => (a.isBase === b.isBase) ? 0 : (a.isBase ? -1 : 1))
-                        contentText = baseFirst.map(toCardBlock).join('\n\n')
-                    } else if (structured.mode === 'educational' && typeof structured.educationalText === 'string') {
-                        contentText = structured.educationalText
                     }
                 } else {
-                    // If no structured response but the text contains value information, use it directly
-                    // This handles cases where the AI provides direct value responses without JSON structure
-                    if (response.output_text.includes('$') && response.output_text.includes('NZD')) {
-                        contentText = response.output_text
+                    console.log('❌ No JSON found in response, using raw text')
+
+                    // Fallback: Try to extract stamp data from text response for show requests
+                    if (response.output_text.toLowerCase().includes('show') ||
+                        response.output_text.toLowerCase().includes('display') ||
+                        response.output_text.toLowerCase().includes('see') ||
+                        response.output_text.toLowerCase().includes('view')) {
+
+                        console.log('🔧 Attempting to extract stamp data from text response')
+
+                        // Try to extract stamp information from the text
+                        const stampMatch = response.output_text.match(/\*\*([^*]+)\*\*/)
+                        const countryMatch = response.output_text.match(/Country:\s*([^\n]+)/i)
+                        const yearMatch = response.output_text.match(/Year:\s*([^\n]+)/i)
+                        const denominationMatch = response.output_text.match(/Denomination:\s*([^\n]+)/i)
+                        const colorMatch = response.output_text.match(/Color:\s*([^\n]+)/i)
+                        const seriesMatch = response.output_text.match(/Series:\s*([^\n]+)/i)
+                        const imageMatch = response.output_text.match(/\[Link\]\(([^)]+)\)/)
+
+                        if (stampMatch && countryMatch && yearMatch) {
+                            // Generate a simple ID based on the stamp name
+                            const stampId = `extracted-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
+                            structured = {
+                                mode: "cards",
+                                cards: [{
+                                    id: stampId,
+                                    stampName: stampMatch[1].trim(),
+                                    country: countryMatch[1].trim(),
+                                    year: yearMatch[1].trim(),
+                                    denomination: denominationMatch?.[1]?.trim() || 'Unknown',
+                                    color: colorMatch?.[1]?.trim() || 'Unknown',
+                                    series: seriesMatch?.[1]?.trim() || 'Unknown',
+                                    catalogNumber: 'Unknown',
+                                    imageUrl: imageMatch?.[1]?.trim() || '/images/stamps/no-image-available.png',
+                                    description: `Extracted from text: ${stampMatch[1].trim()}`,
+                                    mintValue: '0',
+                                    finestUsedValue: '0'
+                                }]
+                            }
+
+                            console.log('✅ Successfully extracted structured data from text:', structured)
+                        }
+                    }
+
+                    // Fallback: Try to extract comparison data from text response for compare requests
+                    if (response.output_text.toLowerCase().includes('compare') ||
+                        response.output_text.toLowerCase().includes('comparison') ||
+                        transcript.toLowerCase().includes('compare')) {
+
+                        console.log('🔧 Attempting to extract comparison data from text response')
+                        console.log('🔧 Original transcript:', transcript)
+
+                        // Try to extract stamp IDs from the text response
+                        const stampIdMatches = response.output_text.match(/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi)
+
+                        console.log('🔧 Found stamp ID matches:', stampIdMatches)
+
+                        if (stampIdMatches && stampIdMatches.length >= 2) {
+                            structured = {
+                                mode: "comparison",
+                                stampIds: stampIdMatches.slice(0, 3) // Limit to 3 stamps
+                            }
+
+                            console.log('✅ Successfully extracted comparison data from text:', structured)
+                        } else if (stampIdMatches && stampIdMatches.length === 1) {
+                            console.log('⚠️ Only found 1 stamp ID for comparison, need at least 2')
+                            console.log('⚠️ Single stamp ID found:', stampIdMatches[0])
+                            // Force comparison mode even with 1 stamp to trigger navigation
+                            structured = {
+                                mode: "comparison",
+                                stampIds: stampIdMatches
+                            }
+                            console.log('🔧 Forcing comparison mode with single stamp:', structured)
+                        } else {
+                            console.log('❌ No stamp IDs found in comparison response')
+                            console.log('❌ Response text:', response.output_text.substring(0, 500))
+                        }
+                    }
+
+                    // Handle structured responses for precise mode
+                    if (structured && typeof structured === 'object' && structured.mode) {
+                        if (structured.mode === 'clarify' && Array.isArray(structured.clarifyingQuestions)) {
+                            const questions = structured.clarifyingQuestions.filter(Boolean)
+                            if (questions.length > 0) {
+                                contentText = 'To find the exact value, I need more specific details:\n' + questions.map((q: string) => `- ${q}`).join('\n')
+                            }
+                        } else if (structured.mode === 'value' && structured.mintValue) {
+                            // Handle precise value responses
+                            const mintValue = structured.mintValue
+                            const denomination = structured.denomination || 'stamp'
+                            const year = structured.year || ''
+                            const color = structured.color || ''
+                            const series = structured.series || ''
+
+                            let valueResponse = `The mint value for the ${denomination}`
+                            if (color) valueResponse += ` ${color}`
+                            valueResponse += ' stamp'
+                            if (year) valueResponse += ` from ${year}`
+                            if (series) valueResponse += ` (${series} series)`
+                            valueResponse += ` is $${mintValue} NZD.`
+
+                            contentText = valueResponse
+                        } else if (structured.mode === 'cards' && Array.isArray(structured.cards)) {
+                            const toCardBlock = (c: any) => [
+                                '## Stamp Information',
+                                `**Stamp Name**: ${c.stampName || ''}`,
+                                `**Country**: ${c.country || ''}`,
+                                `**ID**: ${c.id || ''}`,
+                                `**Image URL**: ${c.imageUrl || '/images/stamps/no-image-available.png'}`,
+                                `**Description**: ${c.description || ''}`,
+                                `**Series**: ${c.series || ''}`,
+                                `**Year**: ${c.year || ''}`,
+                                `**Denomination**: ${c.denomination || ''}`,
+                                `**Catalog Number**: ${c.catalogNumber || ''}`,
+                                `**Theme**: ${c.theme || ''}`,
+                                `**Technical Details**: ${c.technicalDetails || ''}`
+                            ].join('\n')
+
+                            const baseFirst = structured.cards.slice().sort((a: any, b: any) => (a.isBase === b.isBase) ? 0 : (a.isBase ? -1 : 1))
+                            contentText = baseFirst.map(toCardBlock).join('\n\n')
+                        } else if (structured.mode === 'comparison' && Array.isArray(structured.stampIds)) {
+                            // Handle comparison requests
+                            const stampIds = structured.stampIds.filter(Boolean)
+                            if (stampIds.length > 0) {
+                                contentText = `Opening comparison view for ${stampIds.length} stamp${stampIds.length > 1 ? 's' : ''}...`
+                            }
+                        } else if (structured.mode === 'educational' && typeof structured.educationalText === 'string') {
+                            contentText = structured.educationalText
+                        }
+                    } else {
+                        // If no structured response but the text contains value information, use it directly
+                        // This handles cases where the AI provides direct value responses without JSON structure
+                        if (response.output_text.includes('$') && response.output_text.includes('NZD')) {
+                            contentText = response.output_text
+                        }
                     }
                 }
 
@@ -288,6 +396,13 @@ When no matching stamp in vector store:
                     structured,
                     mode: 'precise'
                 }
+
+                console.log('🔍 Final result being returned:', {
+                    success: result.success,
+                    structured: result.structured,
+                    contentLength: result.content?.length,
+                    hasComparison: result.structured?.mode === 'comparison'
+                })
 
                 // Store the new response ID for future context
                 activeSessions.set(sessionId, response.id)

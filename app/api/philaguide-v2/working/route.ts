@@ -111,6 +111,7 @@ Be precise, conversational, educational, and patient.
 - Never fabricate or mix fields
 - Cards only when all Primary Fields exist
 - Base-first rule: if varieties exist, always show the base issue first, then varieties
+- COMPARISON REQUESTS: When user asks to "compare", "compare both", or "show comparison" → Return ONLY JSON with mode: "comparison" (NO text, NO explanations)
 
 # VARIETY HANDLING
 
@@ -146,10 +147,12 @@ In the Description field, explicitly state:
 - **High** (exact identifiers: catalog #, or year + denomination, or explicit unique ID) → mode = "cards"
 - **Medium** (monarch/era, theme, country + broad info) → mode = "clarify" and ask ≤2 contextual questions. Do NOT output cards in the same response
 - **Low** (very vague) → mode = "educational" with helpful guidance. Do NOT output cards
+- **Comparison** (user asks to "compare", "compare both", "show comparison") → mode = "comparison" with stamp IDs (NO text response)
 
 ## Cards vs Normal Text
 - **Cards**: Only when mode = "cards" and all Primary fields exist for each record
 - **Normal Text**: philatelic knowledge, value/rarity queries, broad themes, collecting practices (mode = "educational")
+- **Comparison**: When user requests comparison, return mode = "comparison" with stampIds array
 
 # CARD BUILDING
 
@@ -194,6 +197,15 @@ In the Description field, explicitly state:
 **Catalog Number**: [value]
 **Theme**: [value]
 **Technical Details**: [value]
+
+## Comparison
+When user asks to compare stamps, return ONLY this JSON format (NO markdown, NO text, NO explanations):
+{
+  "mode": "comparison",
+  "stampIds": ["[stampId1]", "[stampId2]", "[stampId3]"]
+}
+
+CRITICAL: For comparison requests, do NOT provide text descriptions or explanations. ONLY return the JSON structure above.
 \`\`\`
 
 ## Carousel (2–4)
@@ -270,6 +282,25 @@ Use for general/value/knowledge queries.
                     }
                 }
 
+                // Fallback: Try to extract comparison data from text response for compare requests
+                if (!structured && (response.output_text.toLowerCase().includes('compare') ||
+                    response.output_text.toLowerCase().includes('comparison'))) {
+
+                    console.log('🔧 Attempting to extract comparison data from text response')
+
+                    // Try to extract stamp IDs from the text response
+                    const stampIdMatches = response.output_text.match(/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi)
+
+                    if (stampIdMatches && stampIdMatches.length > 0) {
+                        structured = {
+                            mode: "comparison",
+                            stampIds: stampIdMatches.slice(0, 3) // Limit to 3 stamps
+                        }
+
+                        console.log('✅ Successfully extracted comparison data from text:', structured)
+                    }
+                }
+
                 if (structured && typeof structured === 'object' && structured.mode) {
                     if (structured.mode === 'clarify' && Array.isArray(structured.clarifyingQuestions)) {
                         const questions = structured.clarifyingQuestions.filter(Boolean)
@@ -294,6 +325,12 @@ Use for general/value/knowledge queries.
 
                         const baseFirst = structured.cards.slice().sort((a: any, b: any) => (a.isBase === b.isBase) ? 0 : (a.isBase ? -1 : 1))
                         contentText = baseFirst.map(toCardBlock).join('\n\n')
+                    } else if (structured.mode === 'comparison' && Array.isArray(structured.stampIds)) {
+                        // Handle comparison requests
+                        const stampIds = structured.stampIds.filter(Boolean)
+                        if (stampIds.length > 0) {
+                            contentText = `Opening comparison view for ${stampIds.length} stamp${stampIds.length > 1 ? 's' : ''}...`
+                        }
                     } else if (structured.mode === 'educational' && typeof structured.educationalText === 'string') {
                         contentText = structured.educationalText
                     }
