@@ -16,7 +16,7 @@ function SignUpContent({ searchParams }: { searchParams: { redirect?: string } }
 
   return (
     <div className="container flex items-center justify-center py-6 sm:py-12 md:py-24">
-      <Card className="w-full max-w-sm sm:max-w-md md:max-w-4xl lg:max-w-5xl">
+      <Card className="max-w-sm sm:max-w-md md:max-w-4xl lg:max-w-5xl">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Join Stamps of Approval</CardTitle>
           <CardDescription>Create your account and start collecting</CardDescription>

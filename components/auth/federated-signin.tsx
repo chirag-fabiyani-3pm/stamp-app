@@ -30,7 +30,7 @@ export function FederatedSignIn() {
   const [email, setEmail] = useState("")
   const [otp, setOtp] = useState("")
   const [userId, setUserId] = useState("")
-
+  const [otpDigits, setOtpDigits] = useState(Array(6).fill(""))
   // Helper function to determine Google button theme
   const getGoogleButtonTheme = () => {
     const currentTheme = resolvedTheme || theme
@@ -239,6 +239,80 @@ export function FederatedSignIn() {
     }
   }
 
+    // Handle OTP digit input
+    const handleOtpDigitChange = (index: number, value: string) => {
+      // Only allow digits
+      if (value && !/^\d$/.test(value)) return
+  
+      const newDigits = [...otpDigits]
+      newDigits[index] = value
+      setOtpDigits(newDigits)
+      
+      // Update the combined OTP string
+      const newOtp = newDigits.join("")
+      setOtp(newOtp)
+  
+      // Auto-focus next input
+      if (value && index < 5) {
+        const nextInput = document.getElementById(`otp-${index + 1}`)
+        nextInput?.focus()
+      }
+    }
+
+      // Handle OTP digit keydown for navigation
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace') {
+      e.preventDefault()
+      const newDigits = [...otpDigits]
+      
+      if (otpDigits[index]) {
+        // Clear current digit
+        newDigits[index] = ""
+      } else if (index > 0) {
+        // Move to previous and clear
+        newDigits[index - 1] = ""
+        const prevInput = document.getElementById(`otp-${index - 1}`)
+        prevInput?.focus()
+      }
+      
+      setOtpDigits(newDigits)
+      setOtp(newDigits.join(""))
+    } else if (e.key === 'ArrowLeft' && index > 0) {
+      e.preventDefault()
+      const prevInput = document.getElementById(`otp-${index - 1}`)
+      prevInput?.focus()
+    } else if (e.key === 'ArrowRight' && index < 5) {
+      e.preventDefault()
+      const nextInput = document.getElementById(`otp-${index + 1}`)
+      nextInput?.focus()
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      if (otpDigits.join("").length >= 4) {
+        handleOtpVerification(e as any)
+      }
+    }
+  }
+
+    // Handle paste for OTP
+    const handleOtpPaste = (e: React.ClipboardEvent) => {
+      e.preventDefault()
+      const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+      const newDigits = Array(6).fill("")
+      
+      for (let i = 0; i < pastedData.length; i++) {
+        newDigits[i] = pastedData[i]
+      }
+      
+      setOtpDigits(newDigits)
+      setOtp(newDigits.join(""))
+      
+      // Focus the next empty input or the last input
+      const nextEmptyIndex = newDigits.findIndex(digit => digit === "")
+      const targetIndex = nextEmptyIndex === -1 ? 5 : Math.min(nextEmptyIndex, 5)
+      const targetInput = document.getElementById(`otp-${targetIndex}`)
+      targetInput?.focus()
+    }
+
   if (authStep === 'otp') {
     return (
       <div className="grid gap-6">
@@ -249,26 +323,46 @@ export function FederatedSignIn() {
             We sent a verification code to <strong>{email}</strong>
           </p>
         </div>
-        
+
         <form onSubmit={handleOtpVerification}>
-          <div className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="otp">Verification Code</Label>
-              <Input
-                id="otp"
-                placeholder="Enter 6-digit code"
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={6}
-                autoComplete="one-time-code"
-                disabled={isLoading.otp}
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                className="text-center text-lg tracking-widest"
-              />
+          <div className="grid gap-6">
+            <div className="space-y-4">
+              <Label className="text-center block text-sm font-medium">
+                Verification Code
+              </Label>
+              <div className="flex justify-center gap-3">
+                {otpDigits.map((digit, index) => (
+                  <Input
+                    key={index}
+                    id={`otp-${index}`}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleOtpDigitChange(index, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                    onPaste={index === 0 ? handleOtpPaste : undefined}
+                    disabled={isLoading.otp}
+                    className={`w-12 h-12 text-center text-xl font-semibold border-2 rounded-lg transition-all duration-200 bg-background ${
+                      digit 
+                        ? 'border-primary bg-primary/5 text-primary' 
+                        : 'border-border hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20'
+                    }`}
+                    autoComplete="off"
+                    autoFocus={index === 0}
+                  />
+                ))}
+              </div>
+              <p className="text-xs text-center text-muted-foreground">
+                Enter the 6-digit code sent to your email
+              </p>
             </div>
-            <Button disabled={isLoading.otp || otp.length < 4}>
+            <Button 
+              disabled={isLoading.otp || otp.length < 4}
+              className="w-full h-11 font-medium"
+              size="lg"
+            >
               {isLoading.otp && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Verify Code
             </Button>
