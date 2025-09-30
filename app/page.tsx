@@ -6,14 +6,17 @@ import { ArrowRight, Camera, Database, BarChart3, Users } from "lucide-react"
 import HeroSection from "@/components/hero-section"
 import FeatureCard from "@/components/feature-card"
 import { isUserLoggedIn } from "@/lib/client/auth-utils"
-import { ModernCatalogContent } from "@/components/catalog/modern-catalog-content"
-import TestUI from "@/components/catalog/stamp-collection"
 import { Suspense, useState, useEffect } from "react"
 import { Spinner } from "@/components/ui/spinner"
+import { useSubscription } from "@/lib/hooks/useSubscription"
+import { SubscriptionRequired } from "@/components/subscription/subscription-required"
+import { useSearchParams } from "next/navigation"
+import StampCollection from "@/components/catalog/stamp-collection"
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
+  const { subscriptionStatus, isLoading: subscriptionLoading, canAccessFeatures } = useSubscription();
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -24,7 +27,9 @@ export default function Home() {
     checkLoginStatus();
   }, []);
 
-  if (loading) {
+  console.log(loading, subscriptionLoading)
+
+  if (loading || subscriptionLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
         <Spinner size="lg" />
@@ -34,11 +39,17 @@ export default function Home() {
 
   return (
     <>
-      {isLoggedIn ? (<>
-        <Suspense fallback={<div>Loading...</div>}>
-          <ModernCatalogContent />
-        </Suspense>
-      </>) : (
+      {isLoggedIn ? (
+        // Check if user has subscription access
+        canAccessFeatures() ? (
+          <Suspense fallback={<div>Loading...</div>}>
+            <StampCollection />
+          </Suspense>
+        ) : (
+          // Show subscription required screen
+          <SubscriptionRequired userReferralCode={subscriptionStatus.referralToken || undefined} />
+        )
+      ) : (
         <div className="flex flex-col items-center">
           <HeroSection />
 

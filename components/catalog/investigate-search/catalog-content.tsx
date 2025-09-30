@@ -337,6 +337,10 @@ export function CatalogContent() {
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const ITEMS_PER_LOAD = 15
   const INDEXEDDB_PAGE_SIZE = 50
+  
+  // Intersection Observer refs
+  const sentinelRef = useRef<HTMLDivElement>(null)
+  const observerRef = useRef<IntersectionObserver | null>(null)
 
   // Get navigation state from URL
   const navigation = useMemo(() => {
@@ -418,6 +422,8 @@ export function CatalogContent() {
   useEffect(() => {
     // Only update URL after initial load to prevent overwriting pasted URLs
     if (!isInitialized) return
+
+    if(viewMode === 'list') return
 
     const timeoutId = setTimeout(() => {
       updateURLParams()
@@ -762,17 +768,12 @@ export function CatalogContent() {
     return () => clearTimeout(debounceTimer)
   }, [debouncedSearchTerm, groupingLevels, isInitialized, allStampsLoaded])
 
-  // Infinite scroll detection
-  const handleScroll = useCallback(() => {
-    if (isLoadingMore) return
-
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-    const scrollHeight = document.documentElement.scrollHeight
-    const clientHeight = document.documentElement.clientHeight
-
-    // Load more when user is 200px from bottom
-    if (scrollTop + clientHeight >= scrollHeight - 200) {
-      // Calculate current level data within the callback
+  // Intersection observer for infinite scroll
+  const handleIntersection = useCallback((entries: IntersectionObserverEntry[]) => {
+    const entry = entries[0]
+    
+    if (entry.isIntersecting && !isLoadingMore) {
+      // Calculate current level data
       let currentLevelData: GroupedStamps | StampData[] = filteredGroups
 
       for (const pathSegment of navigation.path) {
@@ -823,11 +824,36 @@ export function CatalogContent() {
     }
   }, [isLoadingMore, filteredStamps.length, displayedItemsCount, allStampsLoaded, loadMoreStamps, groupingLevels, filteredGroups, navigation.path, viewMode, navigation.level])
 
-  // Add scroll event listener
+  // Setup intersection observer for infinite scroll
   useEffect(() => {
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [handleScroll])
+    if (!sentinelRef.current) return
+
+    // Disconnect existing observer
+    if (observerRef.current) {
+      observerRef.current.disconnect()
+    }
+
+    // Create new intersection observer
+    observerRef.current = new IntersectionObserver(
+      handleIntersection,
+      {
+        root: null, // Use viewport as root
+        rootMargin: '200px 0px', // Trigger 200px before sentinel enters viewport
+        threshold: 0.1 // Trigger when 10% of sentinel is visible
+      }
+    )
+
+    // Start observing the sentinel element
+    observerRef.current.observe(sentinelRef.current)
+
+    // Cleanup function
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect()
+        observerRef.current = null
+      }
+    }
+  }, [handleIntersection])
 
   // Navigation functions
   const navigateToGroup = (groupName: string) => {
@@ -1625,6 +1651,11 @@ export function CatalogContent() {
           })}
         </Accordion>
 
+        {/* Intersection Observer Sentinel */}
+        {hasMoreGroups && (
+          <div ref={sentinelRef} className="h-4 w-full" />
+        )}
+        
         {/* Loading more accordions */}
         {isLoadingMore && hasMoreGroups && (
           <div className="text-center py-6">
@@ -1681,6 +1712,11 @@ export function CatalogContent() {
               viewMode === 'grid' ? renderStampCard(stamp) : renderStampList(stamp)
             )}
           </div>
+          {/* Intersection Observer Sentinel */}
+          {(hasMore || (!allStampsLoaded && displayedItemsCount >= filteredStamps.length * 0.8)) && (
+            <div ref={sentinelRef} className="h-4 w-full" />
+          )}
+          
           {isLoadingMore && (hasMore || (!allStampsLoaded && displayedItemsCount >= filteredStamps.length * 0.8)) && (
             <div className="text-center py-6">
               <div className="flex items-center justify-center space-x-3">
@@ -1721,6 +1757,11 @@ export function CatalogContent() {
               viewMode === 'grid' ? renderStampCard(stamp) : renderStampList(stamp)
             )}
           </div>
+          {/* Intersection Observer Sentinel */}
+          {(hasMore || (!allStampsLoaded && displayedItemsCount >= currentData.length)) && (
+            <div ref={sentinelRef} className="h-4 w-full" />
+          )}
+          
           {isLoadingMore && (hasMore || (!allStampsLoaded && displayedItemsCount >= currentData.length)) && (
             <div className="text-center py-6">
               <div className="flex items-center justify-center space-x-3">
@@ -1791,6 +1832,11 @@ export function CatalogContent() {
             )
           })}
         </div>
+        {/* Intersection Observer Sentinel */}
+        {hasMore && groupEntries.length > 0 && (
+          <div ref={sentinelRef} className="h-4 w-full" />
+        )}
+        
         {isLoadingMore && hasMore && groupEntries.length > 0 && (
           <div className="text-center py-6">
             <div className="flex items-center justify-center space-x-3">
@@ -1876,23 +1922,6 @@ export function CatalogContent() {
     )
   }
 
-  // Show IndexedDB loading state
-  if (loadingType === 'indexeddb' && !dbReady) {
-    return (
-      <div className="container mx-auto p-6 space-y-6">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Loading Stamp Catalog</h2>
-          <p className="text-muted-foreground mb-6">Retrieving data from local storage...</p>
-        </div>
-        <LoadingStamps count={12} type="grid" />
-      </div>
-    )
-  }
-
-  if (loading && stamps.length === 0 && loadingType === 'none') {
-    return <InvestigateSearchSkeleton />
-  }
-
   if (error) {
     return (
       <div className="container mx-auto p-6">
@@ -1909,7 +1938,7 @@ export function CatalogContent() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Investigate Search</h1>
@@ -1930,6 +1959,7 @@ export function CatalogContent() {
             size="icon"
             onClick={() => {
               setViewMode('list')
+              updateURL([]);
             }}
             disabled={groupingLevels.length === 0}
             title={groupingLevels.length === 0 ? "List view requires grouping levels" : "Switch to hierarchical tree view"}

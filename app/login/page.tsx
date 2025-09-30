@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { FederatedSignIn } from "@/components/auth/federated-signin"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Info } from "lucide-react"
+import Link from "next/link"
 
 export const metadata: Metadata = {
   title: "Login - Stamps of Approval",
@@ -30,6 +31,12 @@ function LoginContent({ searchParams }: { searchParams: { redirect?: string } })
             </Alert>
           )}
           <FederatedSignIn />
+          <div className="text-center text-sm text-muted-foreground">
+            Don&apos;t have an account?{" "}
+            <Link href="/signup" className="text-primary hover:underline">
+              Sign up
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>

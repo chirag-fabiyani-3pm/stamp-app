@@ -124,16 +124,27 @@ export function HeaderActions({ setIsOpen }: HeaderActionsProps) {
         <nav className="hidden md:flex items-center space-x-1">
           <HomeButton />
           <ScanButton />
+          <Link
+            href="/pricing"
+            className="group px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 text-foreground hover:bg-accent"
+          >
+            <span>Pricing</span>
+          </Link>
         </nav>
 
         <ModeToggle />
 
         {/* Chat button will be conditionally rendered after auth check */}
 
-        {/* Default to sign in button during SSR */}
-        <Link href="/login">
-          <Button>Sign in</Button>
-        </Link>
+        {/* Default to sign in/up buttons during SSR */}
+        <div className="flex items-center gap-2">
+          <Link href="/login">
+            <Button variant="ghost">Log in</Button>
+          </Link>
+          <Link href="/signup">
+            <Button>Sign up</Button>
+          </Link>
+        </div>
 
         {/* Mobile Menu */}
         <Sheet>
@@ -152,10 +163,18 @@ export function HeaderActions({ setIsOpen }: HeaderActionsProps) {
                 <span>Scan</span>
                 <span className="ml-auto text-xs text-amber-500">✦</span>
               </Link>
-              <div className="h-px bg-border my-2" />
-              <Link href="/login" className="mt-1">
-                <Button className="w-full" size="lg">Sign in</Button>
+              <Link href="/pricing" className="flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition-colors hover:bg-accent">
+                <span>Pricing</span>
               </Link>
+              <div className="h-px bg-border my-2" />
+              <div className="mt-1 space-y-2">
+                <Link href="/signup">
+                  <Button className="w-full" size="lg">Sign up</Button>
+                </Link>
+                <Link href="/login">
+                  <Button variant="outline" className="w-full" size="lg">Log in</Button>
+                </Link>
+              </div>
             </nav>
           </SheetContent>
         </Sheet>
@@ -169,6 +188,15 @@ export function HeaderActions({ setIsOpen }: HeaderActionsProps) {
       <nav className="hidden md:flex items-center space-x-1">
         <HomeButton />
         <ScanButton />
+        <Link
+          href="/pricing"
+          className={cn(
+            "group px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5",
+            pathname === "/pricing" ? "bg-accent text-accent-foreground" : "text-foreground hover:bg-accent",
+          )}
+        >
+          <span>Pricing</span>
+        </Link>
       </nav>
 
       <ModeToggle />
@@ -223,9 +251,14 @@ export function HeaderActions({ setIsOpen }: HeaderActionsProps) {
           </DropdownMenuContent>
         </DropdownMenu>
       ) : (
-        <Link href="/login">
-          <Button>Sign in</Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/login">
+            <Button variant="ghost">Log in</Button>
+          </Link>
+          <Link href="/signup">
+            <Button>Sign up</Button>
+          </Link>
+        </div>
       )}
 
       {/* Mobile Menu */}
@@ -259,6 +292,17 @@ export function HeaderActions({ setIsOpen }: HeaderActionsProps) {
               <Sparkles className="h-5 w-5 text-amber-500" />
               <span>Scan</span>
               <span className="ml-auto text-xs text-amber-500">✦</span>
+            </Link>
+
+            <Link
+              href="/pricing"
+              className={cn(
+                "flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition-colors",
+                pathname === "/pricing" ? "bg-accent text-accent-foreground" : "hover:bg-accent text-foreground",
+              )}
+              onClick={() => setIsSheetOpen(false)}
+            >
+              <span>Pricing</span>
             </Link>
 
             {isLoggedIn && (
@@ -319,9 +363,12 @@ export function HeaderActions({ setIsOpen }: HeaderActionsProps) {
             )}
 
             {!isLoggedIn && (
-              <div className="mt-2">
+              <div className="mt-2 space-y-2">
+                <Link href="/signup" onClick={() => setIsSheetOpen(false)}>
+                  <Button className="w-full" size="lg">Sign up</Button>
+                </Link>
                 <Link href="/login" onClick={() => setIsSheetOpen(false)}>
-                  <Button className="w-full" size="lg">Sign in</Button>
+                  <Button variant="outline" className="w-full" size="lg">Log in</Button>
                 </Link>
               </div>
             )}

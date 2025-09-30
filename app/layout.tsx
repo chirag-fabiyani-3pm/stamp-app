@@ -7,6 +7,7 @@ import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import type React from "react"
 import "./globals.css"
+import { CatalogDataProvider } from "@/lib/context/catalog-data-context"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -54,7 +55,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             disableTransitionOnChange
           >
             <ChatProvider>
-              <AppContent>{children}</AppContent>
+              <CatalogDataProvider>
+                <AppContent>{children}</AppContent>
+              </CatalogDataProvider>
               <ConditionalChat />
             </ChatProvider>
           </ThemeProvider>

@@ -714,7 +714,7 @@ const fetchStampsForReview = async (
   }
 
   const response = await fetch(
-    `https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/StampMasterCatalog/BaseStamps?pageNumber=${pageNumber}&pageSize=${pageSize}&catalogExtractionProcessId=254c793b-16d0-40a3-8b10-66d987b54474`,
+    `https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1/StampMasterCatalog/BaseStamps?pageNumber=${pageNumber}&pageSize=${pageSize}&catalogExtractionProcessId=254c793b-16d0-40a3-8b10-66d987b54474`,
     {
       method: "GET",
       headers: {
@@ -741,7 +741,7 @@ const updateStamp = async (stampId: string, stampData: Partial<EditableStampData
   const formData = convertToFormData(stampData)
 
   const response = await fetch(
-    `https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/StampMasterCatalog/${stampId}`,
+    `https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1/StampMasterCatalog/${stampId}`,
     {
       method: "PUT",
       headers: {
@@ -770,7 +770,7 @@ const deleteStamp = async (stampId: string): Promise<void> => {
   }
 
   const response = await fetch(
-    `https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/StampMasterCatalog/${stampId}`,
+    `https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1/StampMasterCatalog/${stampId}`,
     {
       method: "DELETE",
       headers: {
@@ -792,7 +792,7 @@ const fetchStampInstances = async (stampId: string): Promise<StampInstanceItem[]
   }
 
   const response = await fetch(
-    `https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/StampMasterCatalog/Instances/${stampId}`,
+    `https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1/StampMasterCatalog/Instances/${stampId}`,
     {
       method: "GET",
       headers: {
@@ -820,7 +820,7 @@ const updateStampInstance = async (instanceId: string, instanceData: Partial<Sta
   const formData = convertToFormData(instanceData)
 
   const response = await fetch(
-    `https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/StampMasterCatalog/${instanceId}`,
+    `https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1/StampMasterCatalog/${instanceId}`,
     {
       method: "PUT",
       headers: {
@@ -848,7 +848,7 @@ const createStampInstance = async (instanceData: Partial<StampInstanceItem>): Pr
   const formData = convertToFormData(instanceData)
 
   const response = await fetch(
-    `https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/StampMasterCatalog`,
+    `https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1/StampMasterCatalog`,
     {
       method: "POST",
       headers: {
@@ -873,7 +873,7 @@ const deleteStampInstance = async (instanceId: string): Promise<void> => {
   }
 
   const response = await fetch(
-    `https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/StampMasterCatalog/${instanceId}`,
+    `https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1/StampMasterCatalog/${instanceId}`,
     {
       method: "DELETE",
       headers: {
@@ -922,7 +922,7 @@ const createStamp = async (stampData: Partial<EditableStampData>): Promise<Stamp
   const formData = convertToFormData(stampToCreate)
 
   const response = await fetch(
-    `https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/StampMasterCatalog`,
+    `https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1/StampMasterCatalog`,
     {
       method: "POST",
       headers: {

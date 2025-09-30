@@ -1,3 +1,4 @@
+import { Store } from 'lucide-react';
 import React from 'react';
 
 const StampGrid = ({ stamps, onStampSelect, selectedStamp }: any) => {
@@ -20,15 +21,16 @@ const StampGrid = ({ stamps, onStampSelect, selectedStamp }: any) => {
   return (
     <div className="theme-card border-2 rounded-2xl shadow-lg p-8">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold theme-text-primary">
-          🎯 Stamps Collection
+        <h2 className="text-2xl font-bold theme-text-primary flex items-center gap-2">
+          <Store />
+          Stamps Collection
         </h2>
         <div className="text-sm theme-text-muted">
           {stamps.length} stamp{stamps.length !== 1 ? 's' : ''} • Sorted by year
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
         {stamps.map((stamp: any, index: number) => (
           <div
             key={stamp.id}
@@ -87,7 +89,7 @@ const StampGrid = ({ stamps, onStampSelect, selectedStamp }: any) => {
             </div>
 
             {/* Quick Price Info on Hover */}
-            <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="mt-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
               <div className="bg-white rounded-lg shadow-md p-2 text-xs border border-stamp-royal-300">
                 <div className="flex justify-between items-center">
                   <span className="text-stamp-royal-600">Used: ${stamp.prices.used}</span>

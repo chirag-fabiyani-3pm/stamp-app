@@ -1,11 +1,8 @@
+import { Table } from 'lucide-react';
 import React, { useState } from 'react';
-import { Layers, Package } from 'lucide-react';
-import { useCatalogData } from '@/lib/context/catalog-data-context';
 
-const StampTable = ({ stamps }: any) => {
+const StampTable = ({ stamps, onStampSelect }: any) => {
   const [sortConfig, setSortConfig] = useState({ key: 'year', direction: 'asc' });
-  const [selectedStamp, setSelectedStamp] = useState<any>(null);
-  const { normalizedStamps, stamps: rawStamps, loading: providerLoading } = useCatalogData()
 
   const handleSort = (key: string) => {
     let direction = 'asc';
@@ -83,21 +80,14 @@ const StampTable = ({ stamps }: any) => {
     );
   }
 
-  const handleSelectedStamp = (stamp: any) => {
-    const instances = normalizedStamps.filter(s => s.parentStampId === stamp.id)
-    setSelectedStamp({
-      ...stamp,
-      instances,
-    })
-  }
-
   return (
     <div className="theme-card border-2 rounded-2xl shadow-lg overflow-hidden">
       {/* Table Header */}
       <div className="px-6 py-4 theme-card border-b theme-border">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold theme-text-primary">
-            📊 Stamp Details Table
+          <h2 className="text-xl font-bold theme-text-primary flex gap-2 items-center">
+            <Table />
+            Stamp Details Table
           </h2>
           <div className="text-sm theme-text-muted">
             {sortedStamps.length} stamp{sortedStamps.length !== 1 ? 's' : ''}
@@ -118,7 +108,7 @@ const StampTable = ({ stamps }: any) => {
                 onClick={() => handleSort('catalogNumber')}
               >
                 <div className="flex items-center space-x-1">
-                  <span>Catalog #</span>
+                  <span>Catalog No.</span>
                   {getSortIcon('catalogNumber')}
                 </div>
               </th>
@@ -188,7 +178,7 @@ const StampTable = ({ stamps }: any) => {
                 className={`hover:bg-stamp-royal-50 transition-colors duration-200 cursor-pointer ${
                   index % 2 === 0 ? 'bg-white' : 'bg-stamp-royal-25'
                 }`}
-                onClick={() => handleSelectedStamp(stamp)}
+                onClick={() => onStampSelect(stamp)}
               >
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="w-12 h-16 rounded border-2 border-stamp-royal-300 overflow-hidden">
@@ -203,7 +193,7 @@ const StampTable = ({ stamps }: any) => {
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-stamp-primary">{stamp.catalogNumber?.toUpperCase()}</div>
+                  <div className="text-sm font-medium text-stamp-primary min-w-28">{stamp.catalogNumber?.toUpperCase()}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-bold text-stamp-primary">{stamp.denomination}</div>
@@ -215,13 +205,13 @@ const StampTable = ({ stamps }: any) => {
                   <div className="text-sm text-stamp-royal-700">{stamp.year}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-semibold text-green-600">${stamp.prices.mint}</div>
+                  <div className="text-sm font-semibold text-green-600 min-w-28">${stamp.prices.mint}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-semibold text-blue-600">${stamp.prices.fineUsed}</div>
+                  <div className="text-sm font-semibold text-blue-600 min-w-28">${stamp.prices.fineUsed}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-semibold text-orange-600">${stamp.prices.used}</div>
+                  <div className="text-sm font-semibold text-orange-600 min-w-28">${stamp.prices.used}</div>
                 </td>
                 <td className="px-6 py-4">
                   <div className="text-sm text-stamp-royal-700 max-w-xs truncate" title={stamp.notes}>
@@ -256,195 +246,6 @@ const StampTable = ({ stamps }: any) => {
           </div>
         </div>
       </div>
-
-      {/* Selected Stamp Modal */}
-      {selectedStamp && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl w-full max-h-[90vh] min-h-[400px] max-w-[95vw] sm:max-w-2xl md:max-w-4xl border-2 border-stamp-royal-300 overflow-y-auto scrollbar-thin">
-            {/* Fixed Header with Close Button */}
-            <div className="flex justify-end p-4 pb-2 sticky top-0 bg-white rounded-t-2xl z-10">
-              <button
-                onClick={() => setSelectedStamp(null)}
-                className="text-stamp-royal-400 hover:text-stamp-royal-600 transition-colors duration-200"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Scrollable Content Area */}
-            <div className="px-4 sm:px-6 pb-6">
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-lg font-bold text-stamp-primary">
-                    {selectedStamp.denomination} - {selectedStamp.catalogNumber?.toUpperCase()}
-                  </h3>
-                </div>
-
-                <div className="text-center mb-4">
-                  <img
-                    src={selectedStamp.image}
-                    alt={selectedStamp.denomination}
-                    className="w-32 h-40 mx-auto rounded-lg shadow-md border-2 border-stamp-royal-300"
-                    onError={(e: any) => {
-                      e.target.src = '/images/stamps/no-image-available.png';
-                    }}
-                  />
-                </div>
-
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-stamp-royal-600">Color:</span>
-                    <span className="font-medium text-stamp-primary">{selectedStamp.color}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-stamp-royal-600">Year:</span>
-                    <span className="font-medium text-stamp-primary">{selectedStamp.year}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-stamp-royal-600">Notes:</span>
-                    <span className="font-medium text-stamp-primary">{selectedStamp.notes || 'None'}</span>
-                  </div>
-                </div>
-
-                <div className="mt-4 pt-4 border-t border-stamp-royal-300">
-                  <h4 className="font-semibold text-stamp-primary mb-2">Current Prices</h4>
-                  <div className="space-y-1 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-stamp-royal-600">Mint:</span>
-                      <span className="font-bold text-green-600">${selectedStamp.prices.mint}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-stamp-royal-600">Fine Used:</span>
-                      <span className="font-bold text-blue-600">${selectedStamp.prices.fineUsed}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-stamp-royal-600">Used:</span>
-                      <span className="font-bold text-orange-600">${selectedStamp.prices.used}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Stamp Instances Section */}
-                {selectedStamp.instances && selectedStamp.instances.length > 0 ? (
-                  <div className="mt-6 theme-card border-2 border-stamp-royal-300 rounded-xl shadow-lg p-4">
-                    <h4 className="text-lg font-bold theme-text-primary mb-3 flex items-center">
-                      <Layers className="w-4 h-4 mr-2 text-stamp-primary" />
-                      Stamp Instances
-                    </h4>
-                    <p className="theme-text-secondary mb-4 text-xs leading-relaxed">
-                      Discover the different varieties and instances of this stamp with their catalog values.
-                    </p>
-
-                    <div className="border border-stamp-royal-300 rounded-lg overflow-hidden">
-                      {/* Desktop Table View */}
-                      <div className="hidden sm:block overflow-x-auto">
-                        <table className="min-w-full divide-y divide-stamp-royal-200">
-                          <thead className="bg-stamp-royal-100">
-                            <tr>
-                              <th className="px-4 py-3 text-left text-xs font-semibold text-stamp-primary uppercase tracking-wider">Instance</th>
-                              <th className="px-4 py-3 text-center text-xs font-semibold text-stamp-primary uppercase tracking-wider">Mint</th>
-                              <th className="px-4 py-3 text-center text-xs font-semibold text-stamp-primary uppercase tracking-wider">Fine Used</th>
-                              <th className="px-4 py-3 text-center text-xs font-semibold text-stamp-primary uppercase tracking-wider">Used</th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-stamp-royal-200">
-                            {selectedStamp.instances.map((instance: any) => (
-                              <tr key={instance.id} className="hover:bg-stamp-royal-50 transition-colors">
-                                <td className="px-4 py-3 font-medium text-stamp-primary">
-                                  <div className="flex flex-col gap-1">
-                                    <span className="font-medium">
-                                      {(instance as any).name}
-                                      {(instance as any).catalogNumber && (instance as any).catalogNumber !== '-' ? ` (${(instance as any).catalogNumber})` : ''}
-                                    </span>
-                                  </div>
-                                </td>
-                                <td className="px-4 py-3 text-center">
-                                  <span className="bg-green-100 text-green-800 px-2 py-1 text-xs font-medium rounded">
-                                    {instance.mintValue ? `$${instance.mintValue}` : '-'}
-                                  </span>
-                                </td>
-                                <td className="px-4 py-3 text-center">
-                                  <span className="bg-blue-100 text-blue-800 px-2 py-1 text-xs font-medium rounded">
-                                    {instance.finestUsedValue ? `$${instance.finestUsedValue}` : '-'}
-                                  </span>
-                                </td>
-                                <td className="px-4 py-3 text-center">
-                                  <span className="bg-orange-100 text-orange-800 px-2 py-1 text-xs font-medium rounded">
-                                    {instance.usedValue ? `$${instance.usedValue}` : '-'}
-                                  </span>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      {/* Mobile Card View */}
-                      <div className="sm:hidden space-y-3 p-3">
-                        {selectedStamp.instances.map((instance: any) => (
-                          <div key={instance.id} className="bg-stamp-royal-50 rounded-lg p-3 border border-stamp-royal-200">
-                            <div className="flex justify-between items-start mb-3">
-                              <div className="flex-1">
-                                <span className="font-medium text-stamp-primary text-sm">
-                                  {(instance as any).name}
-                                  {(instance as any).catalogNumber && (instance as any).catalogNumber !== '-' ? ` (${(instance as any).catalogNumber})` : ''}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-3 gap-2 text-xs">
-                              <div className="text-center">
-                                <div className="text-stamp-royal-600 mb-1">Mint</div>
-                                <span className="bg-green-100 text-green-800 px-2 py-1 text-xs font-medium rounded block">
-                                  {instance.mintValue ? `$${instance.mintValue}` : '-'}
-                                </span>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-stamp-royal-600 mb-1">Fine Used</div>
-                                <span className="bg-blue-100 text-blue-800 px-2 py-1 text-xs font-medium rounded block">
-                                  {instance.finestUsedValue ? `$${instance.finestUsedValue}` : '-'}
-                                </span>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-stamp-royal-600 mb-1">Used</div>
-                                <span className="bg-orange-100 text-orange-800 px-2 py-1 text-xs font-medium rounded block">
-                                  {instance.usedValue ? `$${instance.usedValue}` : '-'}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="mt-6 theme-card border-2 border-stamp-royal-300 rounded-xl shadow-lg p-4">
-                    <h4 className="text-lg font-bold theme-text-primary mb-3 flex items-center">
-                      <Layers className="w-4 h-4 mr-2 text-stamp-primary" />
-                      Stamp Instances
-                    </h4>
-
-                    {/* Empty State */}
-                    <div className="flex flex-col items-center justify-center py-8 px-4">
-                      <div className="w-16 h-16 bg-stamp-royal-100 rounded-full flex items-center justify-center mb-4">
-                        <Package className="w-8 h-8 text-stamp-royal-400" />
-                      </div>
-                      <h5 className="text-lg font-semibold theme-text-primary mb-2">No Instances Available</h5>
-                      <p className="theme-text-secondary text-sm text-center max-w-md leading-relaxed">
-                        This stamp doesn't have multiple instances or varieties catalogued. The main stamp information shows the primary catalog details.
-                      </p>
-                      <div className="mt-4 px-3 py-1.5 bg-stamp-royal-100 rounded-full">
-                        <span className="text-xs font-medium text-stamp-royal-600">
-                          Single Instance Stamp
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
