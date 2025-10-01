@@ -49,7 +49,7 @@ export default function PreciseVoicePanel({
     const audioStreamRef = useRef<MediaStream | null>(null)
     const dataChannelRef = useRef<RTCDataChannel | null>(null)
 
-    // Handle function calls for stamp search
+    // Handle function calls for stamp search with two-phase response
     const handleFunctionCall = useCallback(async (functionName: string, parameters: any) => {
         console.log('🎤 Executing function call:', functionName, parameters)
 
@@ -57,6 +57,8 @@ export default function PreciseVoicePanel({
             if (functionName === 'search_stamp_database') {
                 const query = parameters.query || parameters.search_query || ''
                 const sessionId = `precise_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+
+                console.log('🔍 Starting vector search for:', query)
 
                 const response = await fetch('/api/voice-vector-search', {
                     method: 'POST',
@@ -97,13 +99,25 @@ export default function PreciseVoicePanel({
                     router.push(`/stamp-details/${data.structured.id}`)
                 }
 
-                return data
+                // Return structured data for AI to provide follow-up response
+                return {
+                    success: true,
+                    searchCompleted: true,
+                    results: data.results || [],
+                    structured: data.structured,
+                    content: data.content,
+                    message: 'Search completed successfully'
+                }
             }
 
             return { error: 'Unknown function' }
         } catch (error) {
             console.error('🎤 Function call error:', error)
-            return { error: error instanceof Error ? error.message : 'Unknown error' }
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Unknown error',
+                message: 'I encountered an error while searching. Please try again.'
+            }
         }
     }, [])
 
@@ -431,18 +445,31 @@ CRITICAL RESTRICTION - PHILATELIC QUERIES ONLY:
 
 PRECISE SEARCH MODE:
 - You have access to a comprehensive stamp database through the search_stamp_database function
-- ALWAYS use the search_stamp_database function when users ask about specific stamps
+- ALWAYS use the search_stamp_database function when users ask about specific stamps OR comparisons
 - Call the function with the user's query to find precise stamp information
+- For comparison requests, the function will return structured data with multiple stamp IDs
 - Provide specific, accurate information about stamps when available
 - When you find matching stamps, describe them with precise details
 - Include specific information like catalog numbers, years, denominations, and countries
 - If you cannot find specific stamps, ask clarifying questions to narrow down the search
 
+TWO-PHASE RESPONSE SYSTEM:
+- FIRST: Give an immediate response with basic information while searching
+- SECOND: Call search_stamp_database(query) for precise details
+- Provide engaging initial response, then follow up with exact data
+
+IMMEDIATE RESPONSE EXAMPLES:
+- "I'm searching for that stamp in our database..."
+- "Let me look up those stamp details for you..."
+- "I'll find the precise information about those stamps..."
+- "Searching our comprehensive stamp catalog now..."
+
 FUNCTION CALLING:
-- Use search_stamp_database(query) for any stamp-related search
+- Use search_stamp_database(query) for any stamp-related search OR comparison request
 - The query should be the user's exact words or a refined version
 - Examples: "1D bright orange vermilion", "Penny Black", "US stamps 1950s"
-- Always call the function first, then provide a response based on the results
+- For comparison requests: "compare 1d orange and 1d red", "compare these stamps", "show comparison"
+- ALWAYS provide an immediate response first, then call the function for precise details
 
 VOICE RESPONSE GUIDELINES:
 - Always respond in ENGLISH only, regardless of the user's language
@@ -689,7 +716,7 @@ REMEMBER: You are a stamp collecting expert with access to precise stamp data. A
                             ) : (
                                 <>
                                     <Mic className="w-4 h-4 mr-2" />
-                                    Start Precise Search
+                                    Start Search
                                 </>
                             )}
                         </Button>
