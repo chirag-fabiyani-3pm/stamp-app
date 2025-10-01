@@ -71,7 +71,7 @@ type StampMasterCatalogResponse = {
   hasNextPage: boolean
 }
 
-const BASE_URL = 'https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1/StampMasterCatalog/Published'
+const BASE_URL = 'https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/StampMasterCatalog/Published'
 const JWT_COOKIE_NAME = 'jwt'
 
 export async function fetchStampMasterCatalogPage(params: { pageNumber: number, pageSize: number, catalogExtractionProcessId: string, jwt?: string }): Promise<StampMasterCatalogResponse> {

@@ -869,7 +869,7 @@ function ScanPage() {
       }, 200);
 
       // Make API call
-      const apiResponse = await fetch('https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1/StampMasterCatalog/StampSearchGlobal', {
+      const apiResponse = await fetch('https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/StampMasterCatalog/StampSearchGlobal', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${jwt}`

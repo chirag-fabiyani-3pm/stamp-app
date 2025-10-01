@@ -48,7 +48,7 @@ export const fetchAllStampsFromAPI = async (jwt: string): Promise<StampData[]> =
   try {
     while (hasMorePages) {
       
-      const url = new URL('https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1/StampCatalog')
+      const url = new URL('https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/StampCatalog')
       url.searchParams.append('pageNumber', currentPage.toString())
       url.searchParams.append('pageSize', maxPageSize.toString())
       

@@ -92,8 +92,8 @@ export function CountrySelectionScreen({ selectedTier, onBack, userReferralCode 
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto w-full px-4 md:px-10 py-4">
+    <div className="min-h-screen bg-background container mx-auto w-full px-4 md:px-10 py-4">
+      <div>
         {/* Header */}
         <div className="mb-8">
           <Button 

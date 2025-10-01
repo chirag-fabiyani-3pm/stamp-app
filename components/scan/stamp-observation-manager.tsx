@@ -3996,7 +3996,7 @@ export default function StampObservationManager({
             }
 
             // Make API call
-            const apiResponse = await fetch('https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1/Stamp', {
+            const apiResponse = await fetch('https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/Stamp', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${jwt}`

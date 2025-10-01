@@ -45,7 +45,7 @@ export function PaymentScreen({ selectedTier, onBack, userReferralCode }: Paymen
         initiateProcessOnceRef.current = true
         const userData = getUserData()
         // Create PaymentIntent as soon as the page loads
-        fetch("https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1/Subscription/InitiateProcess", {
+        fetch("https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/Subscription/InitiateProcess", {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAuthToken()}` },
             body: JSON.stringify({
@@ -61,15 +61,9 @@ export function PaymentScreen({ selectedTier, onBack, userReferralCode }: Paymen
             });
     }, []);
 
-    const appearance: Appearance = {
-        // theme: 'stripe',
-    };
-    // Enable the skeleton loader UI for optimal loading.
-    const loader = 'auto';
-
     return (
-        <div className="min-h-screen bg-background">
-            <div className="container mx-auto px-4 md:px-10 py-4">
+        <div className="min-h-screen bg-background container mx-auto px-4 md:px-10 py-4">
+            <div>
                 {/* Header */}
                 <div className="mb-8">
                     <Button
@@ -167,10 +161,6 @@ export function PaymentScreen({ selectedTier, onBack, userReferralCode }: Paymen
                             {clientSecret && subscriptionPaymentIntentId && <Elements stripe={stripePromise}>
                                 <CheckoutForm selectedTier={selectedTier} clientSecret={clientSecret} subscriptionPaymentIntentId={subscriptionPaymentIntentId} />
                             </Elements>}
-                            {/* <CardElement options={cardElementOptions} /> */}
-                            {/* {clientSecret && <Elements options={{ clientSecret, appearance, loader }} stripe={stripePromise}>
-                                <CheckoutForm selectedTier={selectedTier} userReferralCode={userReferralCode} />
-                            </Elements>} */}
                         </CardContent>
                     </Card>
                 </div>

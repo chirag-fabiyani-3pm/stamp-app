@@ -47,7 +47,7 @@ export default function Home() {
           </Suspense>
         ) : (
           // Show subscription required screen
-          <SubscriptionRequired userReferralCode={subscriptionStatus.referralToken || undefined} />
+          <SubscriptionRequired userReferralCode={subscriptionStatus.referralByToken || undefined} />
         )
       ) : (
         <div className="flex flex-col items-center">

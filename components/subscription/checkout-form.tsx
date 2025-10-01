@@ -17,15 +17,13 @@ interface CheckoutFormProps {
     price: number
     description: string
   }
-  userReferralCode?: string
   clientSecret: string
   subscriptionPaymentIntentId: string
 }
 
-export default function CheckoutForm({ selectedTier, userReferralCode, clientSecret, subscriptionPaymentIntentId }: CheckoutFormProps) {
+export default function CheckoutForm({ selectedTier, clientSecret, subscriptionPaymentIntentId }: CheckoutFormProps) {
   const stripe = useStripe();
   const elements = useElements();
-  const router = useRouter()
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -52,6 +50,16 @@ export default function CheckoutForm({ selectedTier, userReferralCode, clientSec
     setErrorMessage(null);
     setIsProcessing(true);
 
+    const userData = await fetch(`https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/User/${getUserData()?.userId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${getAuthToken()}`
+      }
+    })
+    .then(res => res.json())
+
+    console.log(userData)
+
     if (!stripe || !elements) {
       setErrorMessage('Payment system not ready. Please try again.');
       setIsProcessing(false);
@@ -76,13 +84,15 @@ export default function CheckoutForm({ selectedTier, userReferralCode, clientSec
             payment_method: {
               card: elements.getElement(CardElement) as StripeCardElement,
               billing_details: {
-                name: 'Test Customer',
-                email: 'test@example.com',
-                phone: '+91-9876543210',
+                name: userData?.firstName + ' ' + userData?.lastName,
+                email: userData?.email,
+                phone: userData?.mobileNumber,
               },
             },
           }
         );
+
+        const t = await stripe
 
         if (stripeError) {
           setErrorMessage(stripeError.message || 'Payment failed. Please check your card details and try again.');
@@ -90,13 +100,11 @@ export default function CheckoutForm({ selectedTier, userReferralCode, clientSec
           return;
         }
 
-        const userData = getUserData()
-
-        fetch("https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1/Subscription/Finalize", {
+        fetch("https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/Subscription/Finalize", {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAuthToken()}` },
           body: JSON.stringify({
-            userId: userData?.userId,
+            userId: userData?.id,
             planId: selectedTier.id,
             paymentMethodId: setupIntent.payment_method,
             status: setupIntent.status,
@@ -105,7 +113,6 @@ export default function CheckoutForm({ selectedTier, userReferralCode, clientSec
         })
           .then((res) => res.json())
           .then((data) => {
-            console.log(data)
             if (data.result.status === 'Active') {
               window.location.href = "/"
             } else {

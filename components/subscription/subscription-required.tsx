@@ -56,7 +56,7 @@ export function SubscriptionRequired({ userReferralCode }: SubscriptionRequiredP
     setLoadingPricingTier(true)
     const token = getAuthToken()
     if (!token) return
-    fetch(`https://decoded-app-stamp-api-dev.azurewebsites.net/api/v1/UserSubscriptionPlan`, {
+    fetch(`https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/UserSubscriptionPlan`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -99,8 +99,8 @@ export function SubscriptionRequired({ userReferralCode }: SubscriptionRequiredP
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10">
-      <div className="container mx-auto px-4 md:px-10 py-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10 container mx-auto px-4 md:px-10 py-4">
+      <div>
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent mb-4">
@@ -126,15 +126,6 @@ export function SubscriptionRequired({ userReferralCode }: SubscriptionRequiredP
               }`}
             onClick={() => setSelectedTier(tier.id)}
           >
-            {/* <CardHeader className="text-center">
-                <CardTitle className="text-2xl font-bold text-primary">
-                  ${tier.price}
-                  <span className="text-sm font-normal text-muted-foreground">/month</span>
-                </CardTitle>
-                <CardDescription className="font-medium">{tier.countries}</CardDescription>
-                <p className="text-sm text-muted-foreground">{tier.description}</p>
-              </CardHeader> */}
-
             <CardContent className="text-center p-3">
               <CardTitle className="text-2xl font-bold text-primary">
                 ${tier.price}

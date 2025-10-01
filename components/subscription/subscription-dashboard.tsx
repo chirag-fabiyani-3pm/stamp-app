@@ -29,7 +29,7 @@ import { SubscriptionManagement } from "./subscription-management"
 
 export function SubscriptionDashboard() {
     const { toast } = useToast()
-    const { getPricingTier, getReferralProgress } = useSubscription()
+    const { getPricingTier, getReferralProgress, subscriptionStatus } = useSubscription()
     const [referralToken] = useState('REF-' + Math.random().toString(36).substring(2, 8).toUpperCase())
 
     // Component state
@@ -81,10 +81,10 @@ export function SubscriptionDashboard() {
 
     const pricingTier = getPricingTier()
     const referralProgress = getReferralProgress()
-    const remainingForDealer = Math.max(0, 20 - mockData.referralCount)
+    const remainingForDealer = Math.max(0, 20 - subscriptionStatus.referralCount)
 
     const copyReferralCode = () => {
-        navigator.clipboard.writeText(referralToken)
+        navigator.clipboard.writeText(subscriptionStatus.referralToken || '')
         toast({
             title: "Referral token copied!",
             description: "Share this token with friends to start earning commissions.",
@@ -243,13 +243,13 @@ export function SubscriptionDashboard() {
             </div>
 
             {/* Key Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <Card>
                     <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">Active Referrals</p>
-                                <p className="text-2xl font-bold text-purple-600">{mockData.activeReferrals}</p>
+                                <p className="text-2xl font-bold text-purple-600">{subscriptionStatus.referralCount}</p>
                             </div>
                             <Users className="h-8 w-8 text-purple-600" />
                         </div>
@@ -260,8 +260,8 @@ export function SubscriptionDashboard() {
                     <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm font-medium text-muted-foreground">Monthly Commission</p>
-                                <p className="text-2xl font-bold text-green-600">${mockData.monthlyCommission}</p>
+                                <p className="text-sm font-medium text-muted-foreground">Current Month Commission</p>
+                                <p className="text-2xl font-bold text-green-600">${subscriptionStatus.currentMonthCommission}</p>
                             </div>
                             <DollarSign className="h-8 w-8 text-green-600" />
                         </div>
@@ -272,8 +272,20 @@ export function SubscriptionDashboard() {
                     <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm font-medium text-muted-foreground">Account Balance</p>
-                                <p className="text-2xl font-bold text-blue-600">${mockData.accountBalance}</p>
+                                <p className="text-sm font-medium text-muted-foreground">Last Month Commission</p>
+                                <p className="text-2xl font-bold text-yellow-600">${subscriptionStatus.lastMonthCommission}</p>
+                            </div>
+                            <DollarSign className="h-8 w-8 text-yellow-600" />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Wallet Balance</p>
+                                <p className="text-2xl font-bold text-blue-600">${subscriptionStatus.totalWalletBalance}</p>
                             </div>
                             <Wallet className="h-8 w-8 text-blue-600" />
                         </div>
@@ -285,7 +297,7 @@ export function SubscriptionDashboard() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">All-Time Earnings</p>
-                                <p className="text-2xl font-bold text-orange-600">${mockData.totalEarnings}</p>
+                                <p className="text-2xl font-bold text-orange-600">${subscriptionStatus.totalEarnings}</p>
                             </div>
                             <TrendingUp className="w-8 h-8 text-orange-600" />
                         </div>
@@ -297,7 +309,7 @@ export function SubscriptionDashboard() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">Total Withdrawn</p>
-                                <p className="text-2xl font-bold text-red-600">${mockData.totalWithdrawn}</p>
+                                <p className="text-2xl font-bold text-red-600">${subscriptionStatus.totalWithdrawalAmount}</p>
                             </div>
                             <ArrowDownLeft className="w-8 h-8 text-red-600" />
                         </div>
@@ -318,7 +330,7 @@ export function SubscriptionDashboard() {
                     <CardContent className="space-y-4">
                         <div className="flex justify-between items-center">
                             <div>
-                                <h3 className="font-semibold">2 Countries Access</h3>
+                                <h3 className="font-semibold">{subscriptionStatus.countryCount === 1 ? '1 Country' : `${subscriptionStatus.countryCount} Countries`} Access</h3>
                                 <p className="text-sm text-muted-foreground">Premium stamp catalog access</p>
                             </div>
                             <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
@@ -331,22 +343,22 @@ export function SubscriptionDashboard() {
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <p className="text-sm text-muted-foreground">Monthly Cost</p>
-                                <p className="font-semibold">${mockData.subscriptionCost}/month</p>
+                                <p className="font-semibold">${subscriptionStatus.subscriptionCost}/month</p>
                             </div>
                             <div>
                                 <p className="text-sm text-muted-foreground">Next Billing</p>
-                                <p className="font-semibold">{mockData.nextBillingDate}</p>
+                                <p className="font-semibold">{subscriptionStatus.nextBillingDate?.slice(0,10)}</p>
                             </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <p className="text-sm text-muted-foreground">Commission Rate</p>
-                                <p className="font-semibold">{mockData.commissionRate}%</p>
+                                <p className="font-semibold">20%</p>
                             </div>
                             <div>
                                 <p className="text-sm text-muted-foreground">User Type</p>
-                                <p className="font-semibold">{mockData.isDealer ? 'Dealer' : 'Normal Subscriber'}</p>
+                                <p className="font-semibold">{subscriptionStatus.isDealer ? 'Dealer' : 'Normal Subscriber'}</p>
                             </div>
                         </div>
 
@@ -354,9 +366,10 @@ export function SubscriptionDashboard() {
                             variant="outline" 
                             className="w-full"
                             onClick={() => setShowManagement(true)}
+                            disabled={true}
                         >
                             <Settings className="w-4 h-4 mr-2" />
-                            Manage Subscription
+                            Manage Subscription (Coming Soon)
                         </Button>
                     </CardContent>
                 </Card>
@@ -386,7 +399,7 @@ export function SubscriptionDashboard() {
                                 </div>
                             </div>
                             <div className="bg-background p-3 rounded border font-mono text-center text-lg font-bold">
-                                {referralToken}
+                                {subscriptionStatus.referralToken}
                             </div>
                         </div>
 
@@ -394,9 +407,9 @@ export function SubscriptionDashboard() {
                             <div>
                                 <div className="flex justify-between text-sm mb-2">
                                     <span>Progress to Dealer Status</span>
-                                    <span>{mockData.referralCount}/20 referrals</span>
+                                    <span>{subscriptionStatus.referralCount}/20 referrals</span>
                                 </div>
-                                <Progress value={(mockData.referralCount / 20) * 100} className="h-3" />
+                                <Progress value={(subscriptionStatus.referralCount / 20) * 100} className="h-3" />
                                 <p className="text-xs text-muted-foreground mt-1">
                                     {remainingForDealer} more referrals to unlock $2/month subscription
                                 </p>
@@ -420,7 +433,7 @@ export function SubscriptionDashboard() {
                     <CardContent className="space-y-4">
                         <div className="bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-950/20 dark:to-green-950/20 p-6 rounded-lg">
                             <div className="text-center">
-                                <p className="text-3xl font-bold text-blue-600 mb-2">${mockData.accountBalance}</p>
+                                <p className="text-3xl font-bold text-blue-600 mb-2">${subscriptionStatus.accountBalance}</p>
                                 <p className="text-sm text-muted-foreground">Available Balance</p>
                             </div>
                         </div>
@@ -428,24 +441,24 @@ export function SubscriptionDashboard() {
                         <div className="space-y-3">
                             <div className="flex justify-between items-center">
                                 <span className="text-sm font-medium">Total Earnings</span>
-                                <span className="text-sm font-semibold text-green-600">${mockData.totalEarnings}</span>
+                                <span className="text-sm font-semibold text-green-600">${subscriptionStatus.totalEarnings}</span>
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="text-sm font-medium">Total Withdrawn</span>
-                                <span className="text-sm font-semibold text-red-600">${mockData.totalWithdrawn}</span>
+                                <span className="text-sm font-semibold text-red-600">${subscriptionStatus.totalWithdrawalAmount}</span>
                             </div>
                             <Separator />
                             <div className="flex justify-between items-center">
                                 <span className="text-sm font-medium">Available Balance</span>
-                                <span className="text-sm font-semibold">${mockData.accountBalance}</span>
+                                <span className="text-sm font-semibold">${subscriptionStatus.accountBalance}</span>
                             </div>
                         </div>
 
                         <Dialog open={isWithdrawalDialogOpen} onOpenChange={setIsWithdrawalDialogOpen}>
                             <DialogTrigger asChild>
-                                <Button className="w-full" disabled={!bankingDetails || mockData.accountBalance <= 0}>
+                                <Button className="w-full" disabled={true}>
                                     <ArrowDownLeft className="w-4 h-4 mr-2" />
-                                    Withdraw Funds
+                                    Withdraw Funds (Coming Soon)
                                 </Button>
                             </DialogTrigger>
                             <DialogContent className="sm:max-w-md">
@@ -611,8 +624,51 @@ export function SubscriptionDashboard() {
                     </CardContent>
                 </Card>
 
-                {/* Banking Details Management */}
+                {/* Commission Breakdown */}
                 <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Timer className="w-5 h-5" />
+                            Recent Referral Activity
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {!subscriptionStatus?.referralActivity || subscriptionStatus.referralActivity.length === 0 ? (
+                            <div className="text-center py-8">
+                                <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                                <p className="text-sm text-muted-foreground">
+                                    No referral activity yet
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-2">
+                                    Share your referral link to start earning commissions
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {subscriptionStatus.referralActivity.map((referral, index) => (
+                                    <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                                                {referral.name.charAt(0)}
+                                            </div>
+                                            <div>
+                                                <p className="font-medium">{referral.name}</p>
+                                                <p className="text-sm text-muted-foreground">{referral.plan} plan</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="font-semibold text-green-600">{referral.commission}/mo</p>
+                                            <p className="text-xs text-muted-foreground">{referral.date}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Banking Details Management */}
+                {/* <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <CreditCard className="w-5 h-5 text-purple-600" />
@@ -655,43 +711,10 @@ export function SubscriptionDashboard() {
                             </div>
                         )}
                     </CardContent>
-                </Card>
+                </Card> */}
             </div>
 
-            {/* Commission Breakdown */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Timer className="w-5 h-5" />
-                        Recent Referral Activity
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-3">
-                        {[
-                            { name: "John D.", plan: "$8/month", commission: "$1.60", status: "Active", date: "2024-09-15" },
-                            { name: "Sarah M.", plan: "$12/month", commission: "$2.40", status: "Active", date: "2024-09-10" },
-                            { name: "Mike R.", plan: "$6/month", commission: "$1.20", status: "Active", date: "2024-09-05" },
-                        ].map((referral, index) => (
-                            <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                                        {referral.name.charAt(0)}
-                                    </div>
-                                    <div>
-                                        <p className="font-medium">{referral.name}</p>
-                                        <p className="text-sm text-muted-foreground">{referral.plan} plan</p>
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <p className="font-semibold text-green-600">{referral.commission}/mo</p>
-                                    <p className="text-xs text-muted-foreground">{referral.date}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </CardContent>
-            </Card>
+            
         </div>
     )
 }
