@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2, Mail, ArrowLeft, Users, DollarSign, CheckCircle } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
-import { createAccountAndSendEmailOtc, verifyEmailOtc, googleSignIn, validateReferralCode } from "@/lib/api/auth"
+import { createAccountAndSendEmailOtc, verifyEmailOtc, googleSignIn, validateReferralCode, sendEmailOtc } from "@/lib/api/auth"
 import { ADMIN_ROLE_ID, ROUTES } from "@/lib/constants"
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google'
 import Link from "next/link"
@@ -422,7 +422,7 @@ export function FederatedSignUp() {
     setIsLoading(prev => ({ ...prev, email: true }))
 
     try {
-      const response = await createAccountAndSendEmailOtc(email, firstName.trim(), lastName.trim(), referralCode)
+      const response = await sendEmailOtc(email)
 
       if (response.success && response.userId) {
         setUserId(response.userId)

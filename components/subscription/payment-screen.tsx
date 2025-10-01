@@ -36,31 +36,6 @@ interface PaymentScreenProps {
 }
 
 export function PaymentScreen({ selectedTier, onBack, userReferralCode }: PaymentScreenProps) {
-    const [clientSecret, setClientSecret] = useState<string | null>(null)
-    const [subscriptionPaymentIntentId, setSubscriptionPaymentIntentId] = useState<string | null>(null)
-    const initiateProcessOnceRef = useRef<boolean>(false)
-
-    useEffect(() => {
-        if(initiateProcessOnceRef?.current) return;
-        initiateProcessOnceRef.current = true
-        const userData = getUserData()
-        // Create PaymentIntent as soon as the page loads
-        fetch("https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/Subscription/InitiateProcess", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAuthToken()}` },
-            body: JSON.stringify({
-                userId: userData?.userId,
-                planId: selectedTier.id,
-                countryCode: selectedTier.selectedCountries?.map((c: any) => c.countryCode).join(',')
-            }),
-        })
-            .then((res) => res.json())
-            .then((data) => {
-                setClientSecret(data.clientSecret)
-                setSubscriptionPaymentIntentId(data.subscriptionPaymentIntentId)
-            });
-    }, []);
-
     return (
         <div className="min-h-screen bg-background container mx-auto px-4 md:px-10 py-4">
             <div>
@@ -158,9 +133,9 @@ export function PaymentScreen({ selectedTier, onBack, userReferralCode }: Paymen
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            {clientSecret && subscriptionPaymentIntentId && <Elements stripe={stripePromise}>
-                                <CheckoutForm selectedTier={selectedTier} clientSecret={clientSecret} subscriptionPaymentIntentId={subscriptionPaymentIntentId} />
-                            </Elements>}
+                            <Elements stripe={stripePromise}>
+                                <CheckoutForm selectedTier={selectedTier} />
+                            </Elements>
                         </CardContent>
                     </Card>
                 </div>

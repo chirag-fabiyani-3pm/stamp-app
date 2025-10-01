@@ -16,12 +16,15 @@ interface CheckoutFormProps {
     countries: string
     price: number
     description: string
+    selectedCountries?: Array<{
+      id: string
+      name: string
+      flag: string
+    }>
   }
-  clientSecret: string
-  subscriptionPaymentIntentId: string
 }
 
-export default function CheckoutForm({ selectedTier, clientSecret, subscriptionPaymentIntentId }: CheckoutFormProps) {
+export default function CheckoutForm({ selectedTier }: CheckoutFormProps) {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -58,7 +61,15 @@ export default function CheckoutForm({ selectedTier, clientSecret, subscriptionP
     })
     .then(res => res.json())
 
-    console.log(userData)
+    const { clientSecret, subscriptionPaymentIntentId } = await fetch("https://decoded-app-stamp-api-prod-01.azurewebsites.net/api/v1/Subscription/InitiateProcess", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAuthToken()}` },
+      body: JSON.stringify({
+          userId: userData?.id,
+          planId: selectedTier.id,
+          countryCode: selectedTier.selectedCountries?.map((c: any) => c.countryCode).join(',')
+      }),
+    }).then((res) => res.json())
 
     if (!stripe || !elements) {
       setErrorMessage('Payment system not ready. Please try again.');
@@ -91,8 +102,6 @@ export default function CheckoutForm({ selectedTier, clientSecret, subscriptionP
             },
           }
         );
-
-        const t = await stripe
 
         if (stripeError) {
           setErrorMessage(stripeError.message || 'Payment failed. Please check your card details and try again.');
