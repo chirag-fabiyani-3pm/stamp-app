@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from "react"
+import React, { useMemo } from "react"
 import Image from "next/image"
-import { Input } from "@/components/ui/input"
-import { BookOpen, Search } from "lucide-react"
+import { BookOpen, ChevronRight, ChevronDown, Eye } from "lucide-react"
 import { PaperTypeData, StampData } from "@/types/catalog"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 interface PaperTypeModalContentProps {
   paperTypeData: PaperTypeData
@@ -18,7 +18,17 @@ export function PaperTypeModalContent({
   onStampClick,
   isLoading
 }: PaperTypeModalContentProps) {
-  const [searchTerm, setSearchTerm] = useState("")
+  const [expandedStamps, setExpandedStamps] = React.useState<Set<string>>(new Set())
+
+  const toggleStampExpansion = (stampId: string) => {
+    const newExpanded = new Set(expandedStamps)
+    if (newExpanded.has(stampId)) {
+      newExpanded.delete(stampId)
+    } else {
+      newExpanded.add(stampId)
+    }
+    setExpandedStamps(newExpanded)
+  }
 
   const collageStamps = useMemo(() => {
     const seen = new Set<string>()
@@ -99,17 +109,6 @@ export function PaperTypeModalContent({
 
   const primaryStamp = stamps[0]
 
-  const filteredStamps = useMemo(() => {
-    if (!searchTerm) return stamps
-
-    return stamps.filter(
-      (stamp) =>
-        stamp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        stamp.catalogNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        stamp.color.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  }, [stamps, searchTerm])
-
   if (isLoading) {
     return (
       <div className="mt-4 px-2 sm:px-4">
@@ -184,9 +183,9 @@ export function PaperTypeModalContent({
   }
 
   return (
-    <div className="mt-4 px-2 sm:px-4">
+    <div className="p-4">
       {collageStamps.length > 0 && (
-        <div className="mb-6 sm:mb-8">
+        <div className="mb-8">
           <div className={`relative overflow-hidden rounded-lg border border-gray-200/80 dark:border-gray-700/80 shadow-sm ${collageLayout.wrapper}`}>
             <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.7),_transparent_55%)] dark:bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.65),_transparent_60%)]" />
             <div className={`relative px-6 pt-6 pb-4 ${collageLayout.header}`}>
@@ -223,7 +222,7 @@ export function PaperTypeModalContent({
                   return (
                     <div
                       key={stamp.id}
-                      className={`relative aspect-[3/4] overflow-hidden rounded-xl border border-white/80 bg-white/90 dark:border-slate-700/80 dark:bg-slate-900/90 shadow-lg shadow-slate-200/70 dark:shadow-black/30 transition duration-300 ease-out hover:-translate-y-2 hover:shadow-2xl ${rotation} ${offset} ${collageLayout.card}`}
+                      className={`relative aspect-[3/4] overflow-hidden rounded-xl border border-white/80 bg-white/90 dark:border-slate-700/80 dark:bg-slate-900/90 shadow-lg shadow-slate-200/70 dark:shadow-black/30 transition duration-300 ease-out hover:-translate-y-2 hover:shadow-2xl`}
                     >
                       <div className="absolute inset-0 bg-gradient-to-br from-white/70 via-transparent to-white/10 dark:from-slate-900/60 dark:to-slate-900/10" />
                       <div className="relative h-full w-full flex items-center justify-center">
@@ -247,195 +246,232 @@ export function PaperTypeModalContent({
           </div>
         </div>
       )}
-      {/* Header */}
-      <div className="mb-4 sm:mb-6">
-        {/* Search Controls */}
-        <div className="flex flex-col gap-3 sm:gap-4 mb-4 sm:mb-6">
-          <div className="w-full">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 dark:text-gray-400" />
-              <Input
-                placeholder="Search stamps by name, catalog number, or color..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 border-gray-300 focus:border-gray-500 bg-white dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:focus:border-amber-600 text-sm h-10 sm:h-9"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      <div className="border rounded-lg dark:border-gray-700 -mx-4 sm:mx-0 overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-gray-50 dark:bg-gray-800 hidden sm:table-row">
+              <TableHead className="w-[100px] text-gray-700 dark:text-gray-300">Image</TableHead>
+              <TableHead className="text-left py-3 px-4 font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Description</TableHead>
+              <TableHead className="text-center py-3 px-4 font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Mint</TableHead>
+              <TableHead className="text-center py-3 px-4 font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Used</TableHead>
+              <TableHead className="w-[60px] text-center py-3 px-4 font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Actions</TableHead>
+            </TableRow>
+            <TableRow className="bg-gray-50 dark:bg-gray-800 sm:hidden">
+              <TableHead className="text-gray-700 dark:text-gray-300 w-1/2">Description</TableHead>
+              <TableHead className="text-center text-gray-700 dark:text-gray-300 w-1/2">Value</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {stamps.map((stamp, stampIndex) => {
+              const hasInstances = stamp.instances && stamp.instances.length > 0
+              const isExpanded = expandedStamps.has(stamp.id)
 
-      {/* Mobile Card Layout (hidden on md+) */}
-      <div className="md:hidden space-y-3 mb-6">
-        {filteredStamps.map((stamp, index) => (
-          <React.Fragment key={stamp.id}>
-            {/* Main stamp card */}
-            <div
-              className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg p-4 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => onStampClick(stamp)}
-            >
-              <div className="flex justify-between items-start mb-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded text-sm font-medium min-w-fit">
-                      #{index + 1}
+              return (
+                <React.Fragment key={stamp.id}>
+                  {/* Main stamp entry */}
+                  <TableRow
+                    className={`border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${hasInstances ? 'cursor-pointer' : ''}`}
+                    onClick={hasInstances ? () => toggleStampExpansion(stamp.id) : () => onStampClick(stamp)}
+                  >
+                    <TableCell className="py-3 px-4 hidden sm:table-cell">
+                      <div className="flex items-center gap-2">
+                        {hasInstances && (
+                          <div className="flex items-center justify-center w-5">
+                            {isExpanded ? (
+                              <ChevronDown className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                            )}
+                          </div>
+                        )}
+                        <Image
+                          src={stamp.stampImageUrl || "/images/stamps/no-image-available.png"}
+                          alt={`${stamp.denominationValue}${stamp.denominationSymbol} ${stamp.color}`}
+                          width={50}
+                          height={50}
+                          objectFit="contain"
+                          className="rounded"
+                          onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                            e.currentTarget.src = "/images/stamps/no-image-available.png";
+                          }}
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-3 px-4 font-medium text-black dark:text-gray-100 hidden sm:table-cell">
+                      <div className="flex flex-col gap-2">
+                        <span className="font-medium">{stamp.name}{stamp.catalogNumber && stamp.catalogNumber !== '-' ? ` (${stamp.catalogNumber})` : ''}</span>
+                      </div>
+                    </TableCell>
+                  <TableCell className="py-3 px-4 text-center hidden sm:table-cell">
+                    <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
+                      {stamp.mintValue ? `$${stamp.mintValue.toFixed(2)}` : '-'}
                     </span>
-                    <h3 className="font-medium text-gray-900 dark:text-gray-100 truncate">
-                      {stamp.name}
-                    </h3>
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
-                    {(stamp as any).description && (stamp as any).description !== 'N/A' ? (stamp as any).description : 'Stamps with Unknown Description'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Price section */}
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <span className="text-xs text-gray-500 dark:text-gray-400 block mb-1">Mint</span>
-                  <span className="bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300 px-2 py-1 text-sm font-medium rounded">
-                    {stamp.mintValue ? new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(stamp.mintValue) : '-'}
-                  </span>
-                </div>
-                <div className="flex-1">
-                  <span className="text-xs text-gray-500 dark:text-gray-400 block mb-1">Used</span>
-                  <span className="bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 px-2 py-1 text-sm font-medium rounded">
-                    {stamp.usedValue ? new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(stamp.usedValue) : '-'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Varieties/instances as separate cards */}
-            {stamp.instances && stamp.instances.map((instance) => (
-              <div
-                key={instance.id}
-                className="bg-gray-50 dark:bg-gray-800 border-l-4 border-l-gray-400 dark:border-l-gray-600 rounded-lg p-3 ml-4 shadow-sm"
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm mb-1">
-                      {(instance as any).name}
-                    </h4>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
-                      {instance.description && instance.description !== 'N/A' ? instance.description : 'Stamps with Unknown Description'}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Price section for instances */}
-                <div className="flex gap-3">
-                  <div className="flex-1">
-                    <span className="text-xs text-gray-500 dark:text-gray-400 block mb-1">Mint</span>
-                    <span className={`px-2 py-1 text-xs font-medium rounded ${instance.mintValue ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}>
-                      {instance.mintValue ? new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format((instance as any).mintValue) : '-'}
+                  </TableCell>
+                  <TableCell className="py-3 px-4 text-center hidden sm:table-cell">
+                    <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
+                      {stamp.usedValue ? `$${stamp.usedValue.toFixed(2)}` : '-'}
                     </span>
-                  </div>
-                  <div className="flex-1">
-                    <span className="text-xs text-gray-500 dark:text-gray-400 block mb-1">Used</span>
-                    <span className={`px-2 py-1 text-xs font-medium rounded ${instance.usedValue ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}>
-                      {instance.usedValue ? new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format((instance as any).usedValue) : '-'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </React.Fragment>
-        ))}
-      </div>
-
-      {/* Desktop Table Layout (hidden on mobile) */}
-      <div className="hidden md:block bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 shadow-sm mb-8 max-w-5xl mx-auto rounded-lg">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            {/* Table Header */}
-            <thead>
-              <tr className="border-b-2 border-gray-400 dark:border-gray-600">
-                <th className="text-left py-3 px-4 font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">SR No.</th>
-                <th className="text-left py-3 px-4 font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Description</th>
-                <th className="text-center py-3 px-4 font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Mint</th>
-                <th className="text-center py-3 px-4 font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Used</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredStamps.map((stamp, index) => {
-                return (
-                  <React.Fragment key={stamp.id}>
-                    {/* Main stamp entry */}
-                    <tr
-                      className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
-                      onClick={() => onStampClick(stamp)}
+                  </TableCell>
+                  <TableCell className="py-3 px-4 text-center hidden sm:table-cell">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onStampClick(stamp);
+                      }}
+                      className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors group"
+                      title="View stamp details"
                     >
-                      <td className="py-3 px-4 font-medium text-black dark:text-gray-100">
-                        {index + 1}
-                      </td>
-                      <td className="py-3 px-4 text-black dark:text-gray-100 flex flex-col gap-2">
-                        <span className="font-medium">{stamp.name}</span>
-                        <span className="text-gray-600 dark:text-gray-400 block">
-                          {(stamp as any).description && (stamp as any).description !== 'N/A' ? (stamp as any).description : 'Stamps with Unknown Description'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
-                          {stamp.mintValue ? new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(stamp.mintValue) : '-'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
-                          {stamp.usedValue ? new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(stamp.usedValue) : '-'}
-                        </span>
-                      </td>
-                    </tr>
+                      <Eye className="h-4 w-4 text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200" />
+                    </button>
+                  </TableCell>
+                  <TableCell className="py-3 px-4 sm:hidden w-1/2">
+                    <div className="flex items-center gap-2">
+                      {hasInstances && (
+                        <div className="flex items-center justify-center w-4">
+                          {isExpanded ? (
+                            <ChevronDown className="h-3.5 w-3.5 text-gray-600 dark:text-gray-400" />
+                          ) : (
+                            <ChevronRight className="h-3.5 w-3.5 text-gray-600 dark:text-gray-400" />
+                          )}
+                        </div>
+                      )}
+                      <Image
+                        src={stamp.stampImageUrl || "/images/stamps/no-image-available.png"}
+                        alt={`${stamp.denominationValue}${stamp.denominationSymbol} ${stamp.color}`}
+                        width={40}
+                        height={40}
+                        objectFit="contain"
+                        className="rounded"
+                        onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                          e.currentTarget.src = "/images/stamps/no-image-available.png";
+                        }}
+                      />
+                      <div className="flex flex-col gap-1 flex-1">
+                        <div className="flex items-center gap-1">
+                          {hasInstances && (
+                            <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/50 px-1.5 py-0.5 rounded-full flex-shrink-0">
+                              Parent
+                            </span>
+                          )}
+                          <span className="font-medium text-black dark:text-gray-100 text-sm truncate flex-1">
+                            {stamp.denominationValue}{stamp.denominationSymbol} {stamp.color}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-xs text-gray-500 dark:text-gray-400 truncate flex-1">
+                            {stamp.name}{stamp.catalogNumber && stamp.catalogNumber !== '-' ? ` (${stamp.catalogNumber})` : ''}
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onStampClick(stamp);
+                            }}
+                            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors group flex-shrink-0"
+                            title="View stamp details"
+                          >
+                            <Eye className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="py-3 px-4 sm:hidden w-1/2 text-right">
+                    <div className="text-sm mb-1">
+                      <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
+                        Mint: {stamp.mintValue ? `$${stamp.mintValue.toFixed(2)}` : '-'}
+                      </span>
+                    </div>
+                    <div className="text-sm">
+                      <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
+                        Used: {stamp.usedValue ? `$${stamp.usedValue.toFixed(2)}` : '-'}
+                      </span>
+                    </div>
+                  </TableCell>
+                </TableRow>
 
-                    {/* Varieties/instances listed as separate rows with indentation */}
-                    {stamp.instances && stamp.instances.map((instance) => (
-                      <tr
-                        key={instance.id}
-                        className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                      >
-                        <td className="py-2 px-4 text-xs text-gray-600 dark:text-gray-400"></td>
-                        <td className="py-2 px-4 text-xs text-gray-700 dark:text-gray-300 pl-8 flex flex-col gap-2">
-                          <span className="font-medium text-gray-900 dark:text-gray-100">
-                            {(instance as any).name}
+                  {/* Instances as indented table rows */}
+                  {hasInstances && isExpanded && stamp.instances.map((instance, instanceIndex) => (
+                    <TableRow
+                      key={instance.id}
+                      className={`border-b border-gray-100 dark:border-gray-800 hover:bg-gray-25 dark:hover:bg-gray-800/50 transition-colors ${instanceIndex === stamp.instances.length - 1 ? 'border-b-0' : ''}`}
+                    >
+                      <TableCell className="py-3 px-4 hidden sm:table-cell">
+                        <div className="flex items-center gap-3 pl-8">
+                          <div className="flex items-center gap-1">
+                            <div className="w-3 h-px bg-gray-300 dark:bg-gray-600"></div>
+                            <div className="w-1.5 h-1.5 bg-orange-400 dark:bg-orange-500 rounded-full"></div>
+                            <div className="w-3 h-px bg-gray-300 dark:bg-gray-600"></div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-3 px-4 font-medium text-gray-700 dark:text-gray-200 hidden sm:table-cell">
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/50 px-2 py-0.5 rounded-full">
+                            Variety
                           </span>
-                          <span>
-                            {instance.description && instance.description !== 'N/A' ? instance.description : 'Stamps with Unknown Description'}
-                          </span>
-                        </td>
-                        <td className="py-2 px-4 text-center text-xs">
-                          {instance.mintValue ? (
-                            <span className={`px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200`}>
-                              {instance.mintValue ? new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format((instance as any).mintValue) : '-'}
+                          <div className="flex flex-col gap-1">
+                            <span className="font-medium">{(instance as any).name && `${(instance as any).name} ${(instance as any).catalogNumber && (instance as any).catalogNumber !== '-' ? ` (${(instance as any).catalogNumber})` : ''}`}</span>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-3 px-4 text-center hidden sm:table-cell">
+                        <span className="bg-green-100 text-green-800 px-2 py-1 text-xs font-medium rounded dark:bg-green-900 dark:text-green-200">
+                          {instance.mintValue ? `$${Number(instance.mintValue).toFixed(2)}` : '-'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="py-3 px-4 text-center hidden sm:table-cell">
+                        <span className="bg-blue-100 text-blue-800 px-2 py-1 text-xs font-medium rounded dark:bg-blue-900 dark:text-blue-200">
+                          {instance.usedValue ? `$${Number(instance.usedValue).toFixed(2)}` : '-'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="py-3 px-4 text-center hidden sm:table-cell">
+                        {/* Instances don't have individual detail views */}
+                      </TableCell>
+                      <TableCell className="py-3 px-4 sm:hidden w-1/2">
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1 pl-4">
+                            <div className="w-2 h-px bg-gray-300 dark:bg-gray-600"></div>
+                            <div className="w-1 h-1 bg-blue-400 dark:bg-blue-500 rounded-full"></div>
+                            <div className="w-2 h-px bg-gray-300 dark:bg-gray-600"></div>
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/50 px-1.5 py-0.5 rounded-full">
+                                Var {instanceIndex + 1}
+                              </span>
+                              <span className="font-medium text-gray-700 dark:text-gray-200 text-sm">
+                                {(instance as any).name && `${(instance as any).name} ${(instance as any).catalogNumber && (instance as any).catalogNumber !== '-' ? ` (${(instance as any).catalogNumber})` : ''}`}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-3 px-4 sm:hidden w-1/2 text-right">
+                        <div className="space-y-1">
+                          <div className="text-xs">
+                            <span className="bg-green-100 text-green-800 px-2 py-1 text-xs font-medium rounded dark:bg-green-900 dark:text-green-200">
+                              Mint: {instance.mintValue ? `$${Number(instance.mintValue).toFixed(2)}` : '-'}
                             </span>
-                          ) : <span className="px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200">-</span>}
-                        </td>
-                        <td className="py-2 px-4 text-center text-xs">
-                          {instance.usedValue ? (
-                            <span className={`px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200`}>
-                              {instance.usedValue ? new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format((instance as any).usedValue) : '-'}
+                          </div>
+                          <div className="text-xs">
+                            <span className="bg-blue-100 text-blue-800 px-2 py-1 text-xs font-medium rounded dark:bg-blue-900 dark:text-blue-200">
+                              Used: {instance.usedValue ? `$${Number(instance.usedValue).toFixed(2)}` : '-'}
                             </span>
-                          ) : <span className="px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200">-</span>}
-                        </td>
-                      </tr>
-                    ))}
-                  </React.Fragment>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+                          </div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </React.Fragment>
+              )
+            })}
+          </TableBody>
+        </Table>
       </div>
 
-      {filteredStamps.length === 0 && (
-        <div className="text-center py-8 sm:py-12 px-4">
-          <BookOpen className="h-10 w-10 sm:h-12 sm:w-12 text-gray-600 dark:text-gray-400 mx-auto mb-3 sm:mb-4" />
-          <h3 className="text-base sm:text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
-            No stamps found
-          </h3>
-          <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400">
-            Try adjusting your search criteria
-          </p>
+      {stamps.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-gray-600 dark:text-gray-400">No stamps found for this paper type.</p>
         </div>
       )}
     </div>

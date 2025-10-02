@@ -15,6 +15,7 @@ import enLocale from "i18n-iso-countries/langs/en.json"
 import { CountryCatalogSkeleton } from "./investigate-search/loading-skeletons"
 import PinnedStampCard from "./pinned-stamp-card"
 import ModalContent from "./modal-content"
+import { BreadcrumbNavigation } from "./breadcrumb-navigation"
 import { cn } from "@/lib/utils"
 import { useCatalogData } from "@/lib/context/catalog-data-context"
 import { useChatContext } from "../chat-provider"
@@ -29,16 +30,16 @@ export function CountryCatalogContent() {
   // Data via shared provider
   const {
     stamps,
-} = useCatalogData()
-const { isOpen: isChatOpen } = useChatContext()
+  } = useCatalogData()
+  const { isOpen: isChatOpen } = useChatContext()
 
-// Pinned stamp state for comparison
-const [pinnedStamp, setPinnedStamp] = useState<StampData | null>(null)
-const [isPinnedMinimized, setIsPinnedMinimized] = useState(false)
-const [loadingModalContent, setLoadingModalContent] = useState(false)
-const [loading, setLoading] = useState(true)
-const [error, setError] = useState<string | null>(null)
-const [modalStack, setModalStack] = useState<ModalStackItem[]>([])
+  // Pinned stamp state for comparison
+  const [pinnedStamp, setPinnedStamp] = useState<StampData | null>(null)
+  const [isPinnedMinimized, setIsPinnedMinimized] = useState(false)
+  const [loadingModalContent, setLoadingModalContent] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [modalStack, setModalStack] = useState<ModalStackItem[]>([])
 
   const filteredCountries = useMemo(() => {
     if (!searchTerm) return countries
@@ -52,452 +53,463 @@ const [modalStack, setModalStack] = useState<ModalStackItem[]>([])
 
   useEffect(() => {
     try {
-        setLoading(true)
-        if (stamps && stamps.length > 0) {
-            const countriesData = groupStampsByCountry(stamps)
-            setCountries(countriesData as CountryOption[])
-        } else {
-            setCountries([])
-        }
-    } catch (err) {
-        console.error('Error loading initial data:', err)
-        setError('Failed to load catalog data')
-    } finally {
-        setLoading(false)
-    }
-}, [stamps])
-
-  
-    // Navigation handlers updated to use API data grouping
-    const handleCountryClick = async (country: CountryOption) => {
-      setLoadingModalContent(true);
-      try {
-          const series = groupStampsBySeries(stamps, country.code)
-
-          // Check if there are no series (broken hierarchy)
-          if (series.length === 0) {
-              // Get stamps without series for this country
-              const stampsList = getStampDetails(stamps, country.code)
-              if (stampsList.length > 0) {
-                  // Go directly to stamp details
-                  setModalStack([{
-                      type: 'stampDetails',
-                      title: `${country.name} Stamps`,
-                      data: { stamps: stampsList.map(convertApiStampToStampData) },
-                      stampCode: country.code
-                  }])
-                  return
-              }
-          }
-
-          setModalStack([{
-              type: 'country',
-              title: `${country.name} Catalog`,
-              data: { country, series },
-              stampCode: country.code
-          }])
-      } finally {
-          setLoadingModalContent(false);
+      setLoading(true)
+      if (stamps && stamps.length > 0) {
+        const countriesData = groupStampsByCountry(stamps)
+        setCountries(countriesData as CountryOption[])
+      } else {
+        setCountries([])
       }
+    } catch (err) {
+      console.error('Error loading initial data:', err)
+      setError('Failed to load catalog data')
+    } finally {
+      setLoading(false)
+    }
+  }, [stamps])
+
+
+  // Navigation handlers updated to use API data grouping
+  const handleCountryClick = async (country: CountryOption) => {
+    setLoadingModalContent(true);
+    try {
+      const series = groupStampsBySeries(stamps, country.code)
+
+      // Check if there are no series (broken hierarchy)
+      if (series.length === 0) {
+        // Get stamps without series for this country
+        const stampsList = getStampDetails(stamps, country.code)
+        if (stampsList.length > 0) {
+          // Go directly to stamp details
+          setModalStack([{
+            type: 'stampDetails',
+            title: `${country.name} Stamps`,
+            data: { stamps: stampsList.map(convertApiStampToStampData) },
+            stampCode: country.code
+          }])
+          return
+        }
+      }
+
+      setModalStack([{
+        type: 'country',
+        title: `${country.name} Catalog`,
+        data: { country, series },
+        stampCode: country.code
+      }])
+    } finally {
+      setLoadingModalContent(false);
+    }
   }
 
   const handleSeriesClick = async (series: SeriesOption, currentStampCode: string) => {
-      setLoadingModalContent(true);
-      try {
-          const years = groupStampsByYear(stamps, currentStampCode, series.name)
+    setLoadingModalContent(true);
+    try {
+      const years = groupStampsByYear(stamps, currentStampCode, series.name)
 
-          if (years?.length === 1 && (years[0] as any)?.stamps?.length === 1) {
-              const stamp = convertApiStampToStampData((years[0] as any)?.stamps[0])
-              const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
-              stamp.instances = instances as never;
-              const currentModal = modalStack[modalStack.length - 1]
-              const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
-              const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
+      if (years?.length === 1 && (years[0] as any)?.stamps?.length === 1) {
+        const stamp = convertApiStampToStampData((years[0] as any)?.stamps[0])
+        const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+        stamp.instances = instances as never;
+        const currentModal = modalStack[modalStack.length - 1]
+        const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
+        const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
 
-              setModalStack(prev => [...prev, {
-                  type: 'stampDetails',
-                  title: `${stamp.name}`,
-                  data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-                  stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
-                  selectedAdditionalCategories: currentSelectedCategories
-              }])
-              return
-          }
-          // Use the series name directly, encoded to avoid issues with special characters
-          const encodedSeriesName = encodeURIComponent(series.name)
-          const newStampCode = `${currentStampCode}|||${encodedSeriesName}`
-          setModalStack(prev => [...prev, {
-              type: 'series',
-              title: `${series.name} Timeline`,
-              data: { series, years },
-              stampCode: newStampCode
-          }])
-      } finally {
-          setLoadingModalContent(false);
-      }
-  }
-
-  const handleYearClick = async (year: YearOption, currentStampCode: string) => {
-      setLoadingModalContent(true);
-      try {
-          // Extract series name from the stamp code
-          const pathParts = currentStampCode.split('|||')
-          const countryCode = pathParts[0]
-          const encodedSeriesName = pathParts[1] // This is the encoded series name
-
-          // Decode the series name
-          const actualSeriesName = decodeURIComponent(encodedSeriesName)
-
-          const currencies = groupStampsByCurrency(stamps, countryCode, actualSeriesName, year.year)
-
-          // If no currencies available, show stamp details directly
-          if (currencies?.length === 1 && (currencies[0] as any)?.stamps?.length === 1) {
-              const stamp = convertApiStampToStampData((currencies[0] as any)?.stamps[0])
-              const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
-              stamp.instances = instances as never;
-              const currentModal = modalStack[modalStack.length - 1]
-              const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
-              const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
-
-              setModalStack(prev => [...prev, {
-                  type: 'stampDetails',
-                  title: `${stamp.name}`,
-                  data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-                  stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
-                  selectedAdditionalCategories: currentSelectedCategories
-              }])
-              return
-          }
-
-          const newStampCode = `${currentStampCode}|||${year.year}`
-          setModalStack(prev => [...prev, {
-              type: 'year',
-              title: `${year.year} Collection`,
-              data: { year, currencies },
-              stampCode: newStampCode
-          }])
-      } finally {
-          setLoadingModalContent(false);
-      }
-  }
-
-  const handleCurrencyClick = async (currency: CurrencyOption, currentStampCode: string) => {
-      setLoadingModalContent(true);
-      try {
-          // Extract parameters from stamp code
-          const pathParts = currentStampCode.split('|||')
-          const countryCode = pathParts[0]
-          const encodedSeriesName = pathParts[1]
-          const year = parseInt(pathParts[2])
-
-          // Decode the series name
-          const actualSeriesName = decodeURIComponent(encodedSeriesName)
-
-          const denominations = groupStampsByDenomination(stamps, countryCode, actualSeriesName, year, currency.code)
-
-          // Check if there are no denominations (broken hierarchy)
-          if (denominations?.length === 1 && (denominations[0] as any)?.stamps?.length === 1) {
-              const stamp = convertApiStampToStampData((denominations[0] as any)?.stamps[0])
-              const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
-              stamp.instances = instances as never;
-              console.log('Hello', stamp)
-              const currentModal = modalStack[modalStack.length - 1]
-              const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
-              const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
-
-              setModalStack(prev => [...prev, {
-                  type: 'stampDetails',
-                  title: `${stamp.name}`,
-                  data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-                  stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
-                  selectedAdditionalCategories: currentSelectedCategories
-              }])
-              return
-          }
-
-          const newStampCode = `${currentStampCode}|||${currency.code}`
-          setModalStack(prev => [...prev, {
-              type: 'currency',
-              title: `${currency.name} Values`,
-              data: { currency, denominations },
-              stampCode: newStampCode
-          }])
-      } finally {
-          setLoadingModalContent(false);
-      }
-  }
-
-  const handleDenominationClick = async (denomination: DenominationOption, currentStampCode: string) => {
-      setLoadingModalContent(true);
-      try {
-          // Extract parameters from stamp code
-          const pathParts = currentStampCode.split('|||')
-          const countryCode = pathParts[0]
-          const encodedSeriesName = pathParts[1]
-          const year = parseInt(pathParts[2])
-          const currencyCode = pathParts[3]
-
-          // Decode the series name
-          const actualSeriesName = decodeURIComponent(encodedSeriesName)
-
-          const colors = groupStampsByColor(stamps, countryCode, actualSeriesName, year, currencyCode, denomination.value)
-
-          // If no colors available, show stamp details directly
-          if (colors?.length === 1 && (colors[0] as any)?.stamps?.length === 1) {
-              const stamp = convertApiStampToStampData((colors[0] as any)?.stamps[0])
-              const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
-              stamp.instances = instances as never;
-              const currentModal = modalStack[modalStack.length - 1]
-              const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
-              const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
-
-              setModalStack(prev => [...prev, {
-                  type: 'stampDetails',
-                  title: `${stamp.name}`,
-                  data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-                  stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
-                  selectedAdditionalCategories: currentSelectedCategories
-              }])
-              return
-          }
-
-          const newStampCode = `${currentStampCode}|||${denomination.value}${denomination.symbol}`
-          setModalStack(prev => [...prev, {
-              type: 'denomination',
-              title: `${denomination.displayName} Color Variations`,
-              data: { denomination, colors },
-              stampCode: newStampCode
-          }])
-      } finally {
-          setLoadingModalContent(false);
-      }
-  }
-
-  const handleColorClick = async (color: ColorOption, currentStampCode: string) => {
-      setLoadingModalContent(true);
-      try {
-          const { countryCode, actualSeriesName, year, currencyCode, denominationValue } = parseStampCode(currentStampCode)
-
-          const papers = groupStampsByPaper(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, color.code)
-
-          // If no papers available, show stamp details directly
-          if (papers?.length === 1 && (papers[0] as any)?.stamps?.length === 1) {
-              const stamp = convertApiStampToStampData((papers[0] as any)?.stamps[0])
-              const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
-              stamp.instances = instances as never;
-              const currentModal = modalStack[modalStack.length - 1]
-              const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
-              const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
-
-              setModalStack(prev => [...prev, {
-                  type: 'stampDetails',
-                  title: `${stamp.name}`,
-                  data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-                  stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
-                  selectedAdditionalCategories: currentSelectedCategories
-              }])
-              return
-          }
-
-          const newStampCode = `${currentStampCode}|||${color.code}`
-          setModalStack(prev => [...prev, {
-              type: 'color',
-              title: `${color.name} Paper Types`,
-              data: { color, papers },
-              stampCode: newStampCode
-          }])
-      } finally {
-          setLoadingModalContent(false);
-      }
-  }
-
-  const handlePaperClick = async (paper: PaperOption, currentStampCode: string) => {
-      setLoadingModalContent(true);
-      try {
-          const { countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode } = parseStampCode(currentStampCode)
-
-          const watermarks = groupStampsByWatermark(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paper.code)
-
-          // If no watermarks available, show stamp details directly
-          if (watermarks?.length === 1 && (watermarks[0] as any)?.stamps?.length === 1) {
-              const stamp = convertApiStampToStampData((watermarks[0] as any)?.stamps[0])
-              const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
-              stamp.instances = instances as never;
-              const currentModal = modalStack[modalStack.length - 1]
-              const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
-              const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
-
-              setModalStack(prev => [...prev, {
-                  type: 'stampDetails',
-                  title: `${stamp.name}`,
-                  data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-                  stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
-                  selectedAdditionalCategories: currentSelectedCategories
-              }])
-              return
-          }
-
-          const newStampCode = `${currentStampCode}|||${paper.code}`
-          setModalStack(prev => [...prev, {
-              type: 'paper',
-              title: `${paper.name} Watermarks`,
-              data: { paper, watermarks },
-              stampCode: newStampCode
-          }])
-      } finally {
-          setLoadingModalContent(false);
-      }
-  }
-
-  const handleWatermarkClick = async (watermark: WatermarkOption, currentStampCode: string) => {
-      setLoadingModalContent(true);
-      try {
-          const { countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode } = parseStampCode(currentStampCode)
-
-          const perforations = groupStampsByPerforation(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermark.code)
-
-          // If no perforations available, show stamp details directly
-          if (perforations?.length === 1 && (perforations[0] as any)?.stamps?.length === 1) {
-              const stamp = convertApiStampToStampData((perforations[0] as any)?.stamps[0])
-              const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
-              stamp.instances = instances as never;
-              const currentModal = modalStack[modalStack.length - 1]
-              const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
-              const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
-
-              setModalStack(prev => [...prev, {
-                  type: 'stampDetails',
-                  title: `${stamp.name}`,
-                  data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-                  stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
-                  selectedAdditionalCategories: currentSelectedCategories
-              }])
-              return
-          }
-
-          const newStampCode = `${currentStampCode}|||${watermark.code}`
-          setModalStack(prev => [...prev, {
-              type: 'watermark',
-              title: `Perforation Specifications`,
-              data: { watermark, perforations },
-              stampCode: newStampCode
-          }])
-      } finally {
-          setLoadingModalContent(false);
-      }
-  }
-
-  const handlePerforationClick = async (perforation: PerforationOption, currentStampCode: string) => {
-      setLoadingModalContent(true);
-      try {
-          const { countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode } = parseStampCode(currentStampCode)
-
-          const itemTypes = groupStampsByItemType(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforation.code)
-
-          // If no item types available, show stamp details directly
-          if (itemTypes?.length === 1 && (itemTypes[0] as any)?.stamps?.length === 1) {
-              const stamp = convertApiStampToStampData((itemTypes[0] as any)?.stamps[0])
-              const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
-              stamp.instances = instances as never;
-              const currentModal = modalStack[modalStack.length - 1]
-              const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
-              const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
-
-              setModalStack(prev => [...prev, {
-                  type: 'stampDetails',
-                  title: `${stamp.name}`,
-                  data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-                  stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
-                  selectedAdditionalCategories: currentSelectedCategories
-              }])
-              return
-          }
-
-          const newStampCode = `${currentStampCode}|||${perforation.code}`
-          setModalStack(prev => [...prev, {
-              type: 'perforation',
-              title: `Condition Categories`,
-              data: { perforation, itemTypes },
-              stampCode: newStampCode
-          }])
-      } finally {
-          setLoadingModalContent(false);
-      }
-  }
-
-  const handleItemTypeClick = async (itemType: ItemTypeOption, currentStampCode: string) => {
-      setLoadingModalContent(true);
-      try {
-          const { countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode } = parseStampCode(currentStampCode)
-
-          const stampsList = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemType.code)
-
-          if (stampsList?.length === 1) {
-              const stamp = convertApiStampToStampData(stampsList[0])
-              const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
-              stamp.instances = instances as never;
-              const currentModal = modalStack[modalStack.length - 1]
-              const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
-              const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
-
-              setModalStack(prev => [...prev, {
-                  type: 'stampDetails',
-                  title: `${stamp.name}`,
-                  data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
-                  stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
-                  selectedAdditionalCategories: currentSelectedCategories
-              }])
-              return
-          }
-
-          // Always go directly to stamp details - additional categories will be handled within the stamp details modal
-          const newStampCode = `${currentStampCode}|||${itemType.code}`
-          setModalStack(prev => [...prev, {
-              type: 'stampDetails',
-              title: `Approved Collection`,
-              data: { stamps: stampsList.map(convertApiStampToStampData) },
-              stampCode: newStampCode
-          }])
-      } finally {
-          setLoadingModalContent(false);
-      }
-  }
-
-  const closeModal = () => {
-      setModalStack(prev => prev.slice(0, -1))
-  }
-
-  const closeAllModals = () => {
-      setModalStack([])
-      // Clear pinned stamp when closing all modals
-      setPinnedStamp(null)
-  }
-
-  // Pinned stamp handlers
-  const unpinStamp = () => {
-      setPinnedStamp(null)
-      setIsPinnedMinimized(false)
-  }
-
-  const togglePinnedMinimized = () => {
-      setIsPinnedMinimized(prev => !prev)
-  }
-
-  const handleStampDetailClick = (stamp: StampData) => {
-      // Get current modal to propagate selected categories and baseStampCode
-      const currentModal = modalStack[modalStack.length - 1]
-      const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
-      const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
-      const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
-      stamp.instances = instances as never;
-
-      setModalStack(prev => [...prev, {
+        setModalStack(prev => [...prev, {
           type: 'stampDetails',
           title: `${stamp.name}`,
           data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
           stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
           selectedAdditionalCategories: currentSelectedCategories
+        }])
+        return
+      }
+      // Use the series name directly, encoded to avoid issues with special characters
+      const encodedSeriesName = encodeURIComponent(series.name)
+      const newStampCode = `${currentStampCode}|||${encodedSeriesName}`
+      setModalStack(prev => [...prev, {
+        type: 'series',
+        title: `${series.name} Timeline`,
+        data: { series, years },
+        stampCode: newStampCode
       }])
+    } finally {
+      setLoadingModalContent(false);
+    }
+  }
+
+  const handleYearClick = async (year: YearOption, currentStampCode: string) => {
+    setLoadingModalContent(true);
+    try {
+      // Extract series name from the stamp code
+      const pathParts = currentStampCode.split('|||')
+      const countryCode = pathParts[0]
+      const encodedSeriesName = pathParts[1] // This is the encoded series name
+
+      // Decode the series name
+      const actualSeriesName = decodeURIComponent(encodedSeriesName)
+
+      const currencies = groupStampsByCurrency(stamps, countryCode, actualSeriesName, year.year)
+
+      // If no currencies available, show stamp details directly
+      if (currencies?.length === 1 && (currencies[0] as any)?.stamps?.length === 1) {
+        const stamp = convertApiStampToStampData((currencies[0] as any)?.stamps[0])
+        const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+        stamp.instances = instances as never;
+        const currentModal = modalStack[modalStack.length - 1]
+        const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
+        const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
+
+        setModalStack(prev => [...prev, {
+          type: 'stampDetails',
+          title: `${stamp.name}`,
+          data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
+          stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
+          selectedAdditionalCategories: currentSelectedCategories
+        }])
+        return
+      }
+
+      const newStampCode = `${currentStampCode}|||${year.year}`
+      setModalStack(prev => [...prev, {
+        type: 'year',
+        title: `${year.year} Collection`,
+        data: { year, currencies },
+        stampCode: newStampCode
+      }])
+    } finally {
+      setLoadingModalContent(false);
+    }
+  }
+
+  const handleCurrencyClick = async (currency: CurrencyOption, currentStampCode: string) => {
+    setLoadingModalContent(true);
+    try {
+      // Extract parameters from stamp code
+      const pathParts = currentStampCode.split('|||')
+      const countryCode = pathParts[0]
+      const encodedSeriesName = pathParts[1]
+      const year = parseInt(pathParts[2])
+
+      // Decode the series name
+      const actualSeriesName = decodeURIComponent(encodedSeriesName)
+
+      const denominations = groupStampsByDenomination(stamps, countryCode, actualSeriesName, year, currency.code)
+
+      // Check if there are no denominations (broken hierarchy)
+      if (denominations?.length === 1 && (denominations[0] as any)?.stamps?.length === 1) {
+        const stamp = convertApiStampToStampData((denominations[0] as any)?.stamps[0])
+        const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+        stamp.instances = instances as never;
+        console.log('Hello', stamp)
+        const currentModal = modalStack[modalStack.length - 1]
+        const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
+        const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
+
+        setModalStack(prev => [...prev, {
+          type: 'stampDetails',
+          title: `${stamp.name}`,
+          data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
+          stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
+          selectedAdditionalCategories: currentSelectedCategories
+        }])
+        return
+      }
+
+      const newStampCode = `${currentStampCode}|||${currency.code}`
+      setModalStack(prev => [...prev, {
+        type: 'currency',
+        title: `${currency.name} Values`,
+        data: { currency, denominations },
+        stampCode: newStampCode
+      }])
+    } finally {
+      setLoadingModalContent(false);
+    }
+  }
+
+  const handleDenominationClick = async (denomination: DenominationOption, currentStampCode: string) => {
+    setLoadingModalContent(true);
+    try {
+      // Extract parameters from stamp code
+      const pathParts = currentStampCode.split('|||')
+      const countryCode = pathParts[0]
+      const encodedSeriesName = pathParts[1]
+      const year = parseInt(pathParts[2])
+      const currencyCode = pathParts[3]
+
+      // Decode the series name
+      const actualSeriesName = decodeURIComponent(encodedSeriesName)
+
+      const colors = groupStampsByColor(stamps, countryCode, actualSeriesName, year, currencyCode, denomination.value)
+
+      // If no colors available, show stamp details directly
+      if (colors?.length === 1 && (colors[0] as any)?.stamps?.length === 1) {
+        const stamp = convertApiStampToStampData((colors[0] as any)?.stamps[0])
+        const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+        stamp.instances = instances as never;
+        const currentModal = modalStack[modalStack.length - 1]
+        const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
+        const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
+
+        setModalStack(prev => [...prev, {
+          type: 'stampDetails',
+          title: `${stamp.name}`,
+          data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
+          stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
+          selectedAdditionalCategories: currentSelectedCategories
+        }])
+        return
+      }
+
+      const newStampCode = `${currentStampCode}|||${denomination.value}${denomination.symbol}`
+      setModalStack(prev => [...prev, {
+        type: 'denomination',
+        title: `${denomination.displayName} Color Variations`,
+        data: { denomination, colors },
+        stampCode: newStampCode
+      }])
+    } finally {
+      setLoadingModalContent(false);
+    }
+  }
+
+  const handleColorClick = async (color: ColorOption, currentStampCode: string) => {
+    setLoadingModalContent(true);
+    try {
+      const { countryCode, actualSeriesName, year, currencyCode, denominationValue } = parseStampCode(currentStampCode)
+
+      const papers = groupStampsByPaper(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, color.code)
+
+      // If no papers available, show stamp details directly
+      if (papers?.length === 1 && (papers[0] as any)?.stamps?.length === 1) {
+        const stamp = convertApiStampToStampData((papers[0] as any)?.stamps[0])
+        const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+        stamp.instances = instances as never;
+        const currentModal = modalStack[modalStack.length - 1]
+        const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
+        const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
+
+        setModalStack(prev => [...prev, {
+          type: 'stampDetails',
+          title: `${stamp.name}`,
+          data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
+          stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
+          selectedAdditionalCategories: currentSelectedCategories
+        }])
+        return
+      }
+
+      const newStampCode = `${currentStampCode}|||${color.code}`
+      setModalStack(prev => [...prev, {
+        type: 'color',
+        title: `${color.name} Paper Types`,
+        data: { color, papers },
+        stampCode: newStampCode
+      }])
+    } finally {
+      setLoadingModalContent(false);
+    }
+  }
+
+  const handlePaperClick = async (paper: PaperOption, currentStampCode: string) => {
+    setLoadingModalContent(true);
+    try {
+      const { countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode } = parseStampCode(currentStampCode)
+
+      const watermarks = groupStampsByWatermark(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paper.code)
+
+      // If no watermarks available, show stamp details directly
+      if (watermarks?.length === 1 && (watermarks[0] as any)?.stamps?.length === 1) {
+        const stamp = convertApiStampToStampData((watermarks[0] as any)?.stamps[0])
+        const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+        stamp.instances = instances as never;
+        const currentModal = modalStack[modalStack.length - 1]
+        const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
+        const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
+
+        setModalStack(prev => [...prev, {
+          type: 'stampDetails',
+          title: `${stamp.name}`,
+          data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
+          stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
+          selectedAdditionalCategories: currentSelectedCategories
+        }])
+        return
+      }
+
+      const newStampCode = `${currentStampCode}|||${paper.code}`
+      setModalStack(prev => [...prev, {
+        type: 'paper',
+        title: `${paper.name} Watermarks`,
+        data: { paper, watermarks },
+        stampCode: newStampCode
+      }])
+    } finally {
+      setLoadingModalContent(false);
+    }
+  }
+
+  const handleWatermarkClick = async (watermark: WatermarkOption, currentStampCode: string) => {
+    setLoadingModalContent(true);
+    try {
+      const { countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode } = parseStampCode(currentStampCode)
+
+      const perforations = groupStampsByPerforation(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermark.code)
+
+      // If no perforations available, show stamp details directly
+      if (perforations?.length === 1 && (perforations[0] as any)?.stamps?.length === 1) {
+        const stamp = convertApiStampToStampData((perforations[0] as any)?.stamps[0])
+        const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+        stamp.instances = instances as never;
+        const currentModal = modalStack[modalStack.length - 1]
+        const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
+        const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
+
+        setModalStack(prev => [...prev, {
+          type: 'stampDetails',
+          title: `${stamp.name}`,
+          data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
+          stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
+          selectedAdditionalCategories: currentSelectedCategories
+        }])
+        return
+      }
+
+      const newStampCode = `${currentStampCode}|||${watermark.code}`
+      setModalStack(prev => [...prev, {
+        type: 'watermark',
+        title: `Perforation Specifications`,
+        data: { watermark, perforations },
+        stampCode: newStampCode
+      }])
+    } finally {
+      setLoadingModalContent(false);
+    }
+  }
+
+  const handlePerforationClick = async (perforation: PerforationOption, currentStampCode: string) => {
+    setLoadingModalContent(true);
+    try {
+      const { countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode } = parseStampCode(currentStampCode)
+
+      const itemTypes = groupStampsByItemType(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforation.code)
+
+      // If no item types available, show stamp details directly
+      if (itemTypes?.length === 1 && (itemTypes[0] as any)?.stamps?.length === 1) {
+        const stamp = convertApiStampToStampData((itemTypes[0] as any)?.stamps[0])
+        const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+        stamp.instances = instances as never;
+        const currentModal = modalStack[modalStack.length - 1]
+        const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
+        const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
+
+        setModalStack(prev => [...prev, {
+          type: 'stampDetails',
+          title: `${stamp.name}`,
+          data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
+          stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
+          selectedAdditionalCategories: currentSelectedCategories
+        }])
+        return
+      }
+
+      const newStampCode = `${currentStampCode}|||${perforation.code}`
+      setModalStack(prev => [...prev, {
+        type: 'perforation',
+        title: `Condition Categories`,
+        data: { perforation, itemTypes },
+        stampCode: newStampCode
+      }])
+    } finally {
+      setLoadingModalContent(false);
+    }
+  }
+
+  const handleItemTypeClick = async (itemType: ItemTypeOption, currentStampCode: string) => {
+    setLoadingModalContent(true);
+    try {
+      const { countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode } = parseStampCode(currentStampCode)
+
+      const stampsList = getStampDetails(stamps, countryCode, actualSeriesName, year, currencyCode, denominationValue, colorCode, paperCode, watermarkCode, perforationCode, itemType.code)
+
+      if (stampsList?.length === 1) {
+        const stamp = convertApiStampToStampData(stampsList[0])
+        const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+        stamp.instances = instances as never;
+        const currentModal = modalStack[modalStack.length - 1]
+        const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
+        const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
+
+        setModalStack(prev => [...prev, {
+          type: 'stampDetails',
+          title: `${stamp.name}`,
+          data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
+          stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
+          selectedAdditionalCategories: currentSelectedCategories
+        }])
+        return
+      }
+
+      // Always go directly to stamp details - additional categories will be handled within the stamp details modal
+      const newStampCode = `${currentStampCode}|||${itemType.code}`
+      setModalStack(prev => [...prev, {
+        type: 'stampDetails',
+        title: `Approved Collection`,
+        data: { stamps: stampsList.map(convertApiStampToStampData) },
+        stampCode: newStampCode
+      }])
+    } finally {
+      setLoadingModalContent(false);
+    }
+  }
+
+  const closeModal = () => {
+    setModalStack(prev => prev.slice(0, -1))
+  }
+
+  const closeAllModals = () => {
+    setModalStack([])
+    // Clear pinned stamp when closing all modals
+    setPinnedStamp(null)
+  }
+
+  // Pinned stamp handlers
+  const unpinStamp = () => {
+    setPinnedStamp(null)
+    setIsPinnedMinimized(false)
+  }
+
+  const togglePinnedMinimized = () => {
+    setIsPinnedMinimized(prev => !prev)
+  }
+
+  const handleStampDetailClick = (stamp: StampData) => {
+    // Get current modal to propagate selected categories and baseStampCode
+    const currentModal = modalStack[modalStack.length - 1]
+    const currentSelectedCategories = currentModal?.selectedAdditionalCategories || []
+    const baseStampCode = currentModal?.data?.baseStampCode || currentModal?.stampCode
+    const instances = stamps.filter(s => s.parentStampId === stamp.stampId)
+    stamp.instances = instances as never;
+
+    setModalStack(prev => [...prev, {
+      type: 'stampDetails',
+      title: `${stamp.name}`,
+      data: { stamp, selectedAdditionalCategories: currentSelectedCategories },
+      stampCode: baseStampCode ? `${baseStampCode}|||${stamp.categoryCode}` : (stamp.catalogNumber || ''),
+      selectedAdditionalCategories: currentSelectedCategories
+    }])
+  }
+
+  // Breadcrumb navigation handler - jump to any level in the modal stack
+  const handleBreadcrumbNavigate = (index: number) => {
+    if (index === -1) {
+      // Close all modals (Home button)
+      closeAllModals()
+    } else if (index >= 0 && index < modalStack.length - 1) {
+      // Navigate to a specific level by removing all modals after it
+      setModalStack(prev => prev.slice(0, index + 1))
+    }
   }
 
   if (loading) {
@@ -625,26 +637,36 @@ const [modalStack, setModalStack] = useState<ModalStackItem[]>([])
             "relative w-full max-w-7xl h-[95vh] max-h-[95vh] bg-gradient-to-br from-orange-50 to-white dark:from-gray-900 dark:to-gray-950 border-0 shadow-2xl rounded-lg flex flex-col",
             isChatOpen && "max-w-6xl" // Reduce max width when chat is open
           )}>
-            {/* Sticky Close Button */}
-            <div className="sticky top-0 z-20 flex justify-between items-center px-6 pt-4 pb-6 rounded-t-lg border-b border-gray-200 dark:border-gray-700">
-              {/* Header Section */}
-              <div>
-                <h3 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1 md:mb-2">
-                  {modalStack[modalStack.length - 1]?.title}
-                </h3>
-                {modalStack.length > 0 && (
-                  <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                    <span>Level {modalStack.length}</span>
-                    <span>•</span>
+            {/* Sticky Header with Breadcrumb Navigation */}
+            <div className="sticky top-0 z-20 px-6 pt-4 pb-4 rounded-t-lg border-b border-gray-200 dark:border-gray-700 bg-gradient-to-br from-orange-50 to-white dark:from-gray-900 dark:to-gray-950">
+              {/* Top Row: Title and Close Button */}
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex-1">
+                  <h3 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
+                    {modalStack[modalStack.length - 1]?.title}
+                  </h3>
+                  {modalStack.length > 0 &&
                     <code className="bg-primary/10 dark:bg-primary/20 px-2 py-1 rounded font-mono text-xs text-primary dark:text-amber-300 break-all">
                       {decodeURIComponent(modalStack[modalStack.length - 1].stampCode).split('|||').join('.')}
-                    </code>
-                  </div>
-                )}
+                    </code>}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={closeModal}
+                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-200"
+                  title="Close current level"
+                >
+                  <X className="w-5 h-5 md:w-6 md:h-6" />
+                </Button>
               </div>
-              <Button variant="ghost" size="sm" onClick={closeModal} className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-200">
-                <X className="w-5 h-5 md:w-6 md:h-6" />
-              </Button>
+
+              {/* Breadcrumb Navigation */}
+              <BreadcrumbNavigation
+                modalStack={modalStack}
+                onNavigate={handleBreadcrumbNavigate}
+                className="mt-2"
+              />
             </div>
 
             {/* Scrollable Content Area */}

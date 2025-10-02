@@ -40,6 +40,7 @@ import Image from "next/image"
 import { useTheme } from "next-themes"
 import { useToast } from "@/components/ui/use-toast"
 import { ModeToggle } from "@/components/mode-toggle"
+import { useSubscription } from "@/lib/hooks/useSubscription"
 
 interface MobileNavProps {
   setIsOpen: (isOpen: boolean) => void;
@@ -56,6 +57,7 @@ export function MobileNav({ setIsOpen }: MobileNavProps) {
   const [userName, setUserName] = useState<string>("")
   const [userAvatar, setUserAvatar] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
+  const { canAccessFeatures } = useSubscription()
 
   useEffect(() => {
     setMounted(true)
@@ -178,8 +180,12 @@ export function MobileNav({ setIsOpen }: MobileNavProps) {
       <div className="flex items-center gap-2">
         <button
           onClick={() => setIsOpen(true)}
-          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors bg-primary/10 text-primary hover:bg-primary/20"
+          className={cn(
+            "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors bg-primary/10 text-primary hover:bg-primary/20",
+            !canAccessFeatures() && "opacity-50 cursor-not-allowed"
+          )}
           title="AI Chat"
+          disabled={!canAccessFeatures()}
         >
           <MessageSquare className="h-4 w-4" />
           <span className="hidden sm:inline">AI Chat</span>

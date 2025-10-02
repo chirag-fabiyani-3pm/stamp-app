@@ -4,11 +4,12 @@ import {
   useElements,
   CardElement
 } from "@stripe/react-stripe-js";
-import { StripeCardElement, StripePaymentElementOptions } from "@stripe/stripe-js";
+import { StripeCardElement, StripeCardElementOptions, StripePaymentElementOptions } from "@stripe/stripe-js";
 import { getAuthToken, getUserData } from "@/lib/api/auth";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Loader2 } from "lucide-react";
+import { useTheme } from "next-themes";
 
 interface CheckoutFormProps {
   selectedTier: {
@@ -29,24 +30,29 @@ export default function CheckoutForm({ selectedTier }: CheckoutFormProps) {
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const {theme} = useTheme()
 
+  console.log(theme)
 
-  const cardElementOptions = useMemo(() => ({
+  const cardElementOptions: StripeCardElementOptions = useMemo(() => ({
     style: {
       base: {
         fontSize: '16px',
-        color: 'hsl(var(--foreground))',
+        color: theme === 'dark' ? '#F8FAFc' : '#020817',
+        backgroundColor: 'hsl(var(--background))',
         fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
         fontWeight: '400',
         '::placeholder': {
           color: 'hsl(var(--muted-foreground))',
         },
+        iconColor: theme === 'dark' ? '#F8FAFc' : '#020817',
       },
       invalid: {
         color: 'hsl(var(--destructive))',
       },
     },
-  }), []);
+    hidePostalCode: true
+  }), [theme]);
 
   const handleCreatePaymentMethod = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

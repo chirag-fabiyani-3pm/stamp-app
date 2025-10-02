@@ -2,7 +2,8 @@ import React from "react"
 import { StampGroupData, StampData } from "@/types/catalog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import Image from "next/image"
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@/components/ui/skeleton"
+import { ChevronRight, ChevronDown, Eye } from "lucide-react";
 
 interface StampGroupModalContentProps {
   stampGroupData: StampGroupData
@@ -17,6 +18,18 @@ export function StampGroupModalContent({
   onStampClick,
   isLoading
 }: StampGroupModalContentProps) {
+  const [expandedStamps, setExpandedStamps] = React.useState<Set<string>>(new Set())
+
+  const toggleStampExpansion = (stampId: string) => {
+    const newExpanded = new Set(expandedStamps)
+    if (newExpanded.has(stampId)) {
+      newExpanded.delete(stampId)
+    } else {
+      newExpanded.add(stampId)
+    }
+    setExpandedStamps(newExpanded)
+  }
+
   const collageStamps = React.useMemo(() => {
     const seen = new Set<string>()
     const unique: StampData[] = []
@@ -192,7 +205,7 @@ export function StampGroupModalContent({
                   return (
                     <div
                       key={stamp.id}
-                      className={`relative aspect-[3/4] overflow-hidden rounded-xl border border-white/80 bg-white/90 dark:border-slate-700/80 dark:bg-slate-900/90 shadow-lg shadow-slate-200/70 dark:shadow-black/30 transition duration-300 ease-out hover:-translate-y-2 hover:shadow-2xl ${rotation} ${offset} ${collageLayout.card}`}
+                      className={`relative aspect-[3/4] overflow-hidden rounded-xl border border-white/80 bg-white/90 dark:border-slate-700/80 dark:bg-slate-900/90 shadow-lg shadow-slate-200/70 dark:shadow-black/30 transition duration-300 ease-out hover:-translate-y-2 hover:shadow-2xl`}
                     >
                       <div className="absolute inset-0 bg-gradient-to-br from-white/70 via-transparent to-white/10 dark:from-slate-900/60 dark:to-slate-900/10" />
                       <div className="relative h-full w-full flex items-center justify-center">
@@ -225,6 +238,7 @@ export function StampGroupModalContent({
               <TableHead className="text-center py-3 px-4 font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Mint</TableHead>
               <TableHead className="text-center py-3 px-4 font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Finest Used</TableHead>
               <TableHead className="text-center py-3 px-4 font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Used</TableHead>
+              <TableHead className="w-[60px] text-center py-3 px-4 font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Actions</TableHead>
             </TableRow>
             <TableRow className="bg-gray-50 dark:bg-gray-800 sm:hidden">
               <TableHead className="text-gray-700 dark:text-gray-300 w-1/2">Description</TableHead>
@@ -232,32 +246,46 @@ export function StampGroupModalContent({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {stamps.map((stamp) => (
-              <React.Fragment key={stamp.id}>
-                {/* Main stamp entry */}
-                <TableRow 
-                  className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
-                  onClick={() => onStampClick(stamp)}
-                >
-                  <TableCell className="py-3 px-4 hidden sm:table-cell">
-                    <Image
-                      src={stamp.stampImageUrl || "/images/stamps/no-image-available.png"}
-                      alt={`${stamp.denominationValue}${stamp.denominationSymbol} ${stamp.color}`}
-                      width={50}
-                      height={50}
-                      objectFit="contain"
-                      className="rounded"
-                      onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                        e.currentTarget.src = "/images/stamps/no-image-available.png";
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell className="py-3 px-4 font-medium text-black dark:text-gray-100 hidden sm:table-cell">
-                    <div className="flex flex-col gap-2">
-                      <span className="font-medium">{stamp.name}{stamp.catalogNumber ? ` (${stamp.catalogNumber})` : ''}</span>
-                      <span className="text-gray-500 dark:text-gray-400"> {(stamp as any).description}</span>
-                    </div>
-                  </TableCell>
+            {stamps.map((stamp, stampIndex) => {
+              const hasInstances = stamp.instances && stamp.instances.length > 0
+              const isExpanded = expandedStamps.has(stamp.id)
+
+              return (
+                <React.Fragment key={stamp.id}>
+                  {/* Main stamp entry */}
+                  <TableRow
+                    className={`border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${hasInstances ? 'cursor-pointer' : ''}`}
+                    onClick={hasInstances ? () => toggleStampExpansion(stamp.id) : () => onStampClick(stamp)}
+                  >
+                    <TableCell className="py-3 px-4 hidden sm:table-cell">
+                      <div className="flex items-center gap-2">
+                        {hasInstances && (
+                          <div className="flex items-center justify-center w-5">
+                            {isExpanded ? (
+                              <ChevronDown className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                            )}
+                          </div>
+                        )}
+                        <Image
+                          src={stamp.stampImageUrl || "/images/stamps/no-image-available.png"}
+                          alt={`${stamp.denominationValue}${stamp.denominationSymbol} ${stamp.color}`}
+                          width={50}
+                          height={50}
+                          objectFit="contain"
+                          className="rounded"
+                          onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                            e.currentTarget.src = "/images/stamps/no-image-available.png";
+                          }}
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-3 px-4 font-medium text-black dark:text-gray-100 hidden sm:table-cell">
+                      <div className="flex flex-col gap-2">
+                        <span className="font-medium">{stamp.name}{stamp.catalogNumber && stamp.catalogNumber !== '-' ? ` (${stamp.catalogNumber})` : ''}</span>
+                      </div>
+                    </TableCell>
                   <TableCell className="py-3 px-4 text-center hidden sm:table-cell">
                     <span className="bg-gray-100 text-gray-800 px-2 py-1 text-xs font-medium rounded dark:bg-gray-700 dark:text-gray-200">
                       {stamp.mintValue ? `$${stamp.mintValue.toFixed(2)}` : '-'}
@@ -273,8 +301,29 @@ export function StampGroupModalContent({
                       {stamp.usedValue ? `$${stamp.usedValue.toFixed(2)}` : '-'}
                     </span>
                   </TableCell>
+                  <TableCell className="py-3 px-4 text-center hidden sm:table-cell">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onStampClick(stamp);
+                      }}
+                      className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors group"
+                      title="View stamp details"
+                    >
+                      <Eye className="h-4 w-4 text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200" />
+                    </button>
+                  </TableCell>
                   <TableCell className="py-3 px-4 sm:hidden w-1/2">
                     <div className="flex items-center gap-2">
+                      {hasInstances && (
+                        <div className="flex items-center justify-center w-4">
+                          {isExpanded ? (
+                            <ChevronDown className="h-3.5 w-3.5 text-gray-600 dark:text-gray-400" />
+                          ) : (
+                            <ChevronRight className="h-3.5 w-3.5 text-gray-600 dark:text-gray-400" />
+                          )}
+                        </div>
+                      )}
                       <Image
                         src={stamp.stampImageUrl || "/images/stamps/no-image-available.png"}
                         alt={`${stamp.denominationValue}${stamp.denominationSymbol} ${stamp.color}`}
@@ -286,9 +335,33 @@ export function StampGroupModalContent({
                           e.currentTarget.src = "/images/stamps/no-image-available.png";
                         }}
                       />
-                      <span className="font-medium text-black dark:text-gray-100 text-sm truncate">
-                        {stamp.denominationValue}{stamp.denominationSymbol} {stamp.color}
-                      </span>
+                      <div className="flex flex-col gap-1 flex-1">
+                        <div className="flex items-center gap-1">
+                          {hasInstances && (
+                            <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/50 px-1.5 py-0.5 rounded-full flex-shrink-0">
+                              Parent
+                            </span>
+                          )}
+                          <span className="font-medium text-black dark:text-gray-100 text-sm truncate flex-1">
+                            {stamp.denominationValue}{stamp.denominationSymbol} {stamp.color}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-xs text-gray-500 dark:text-gray-400 truncate flex-1">
+                            {stamp.name}{stamp.catalogNumber && stamp.catalogNumber !== '-' ? ` (${stamp.catalogNumber})` : ''}
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onStampClick(stamp);
+                            }}
+                            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors group flex-shrink-0"
+                            title="View stamp details"
+                          >
+                            <Eye className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell className="py-3 px-4 sm:hidden w-1/2 text-right">
@@ -309,72 +382,93 @@ export function StampGroupModalContent({
                     </div>
                   </TableCell>
                 </TableRow>
-                
-                {/* Varieties/instances listed as separate rows with indentation */}
-                {stamp.instances && stamp.instances.map((instance) => (
-                  <TableRow 
-                    key={instance.id}
-                    className="border-b border-gray-100 dark:border-gray-800 transition-colors"
-                  >
-                    <TableCell className="py-2 px-4 text-xs text-gray-600 dark:text-gray-400 hidden sm:table-cell"></TableCell>
-                    <TableCell className="py-2 px-4 text-xs text-gray-700 dark:text-gray-300 pl-8 hidden sm:table-cell">
-                      <div className="flex flex-col gap-2">
-                        <span>{(instance as any).name && `${(instance as any).name} ${(instance as any).catalogNumber && (instance as any).catalogNumber !== '-' ? ` (${(instance as any).catalogNumber})` : ''}`}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-2 px-4 text-center text-xs hidden sm:table-cell">
-                      {instance.mintValue ? (
-                        <span className={`px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200`}>
-                          ${instance.mintValue}
-                        </span>
-                      ) : <span className="px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200">-</span>}
-                    </TableCell>
-                    <TableCell className="py-2 px-4 text-center text-xs hidden sm:table-cell">
-                      {instance.finestUsedValue ? (
-                        <span className={`px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200`}>
-                          ${instance.finestUsedValue}
-                        </span>
-                      ) : <span className="px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200">-</span>}
-                    </TableCell>
-                    <TableCell className="py-2 px-4 text-center text-xs hidden sm:table-cell">
-                      {instance.usedValue ? (
-                        <span className={`px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200`}>
-                          ${instance.usedValue}
-                        </span>
-                      ) : <span className="px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200">-</span>}
-                    </TableCell>
-                    <TableCell className="py-2 px-4 sm:hidden w-1/2">
-                      <span className="text-xs text-gray-700 dark:text-gray-300">
-                      <span>{(instance as any).name && `${(instance as any).name} ${(instance as any).catalogNumber && (instance as any).catalogNumber !== '-' ? ` (${(instance as any).catalogNumber})` : ''}`}</span>
-                      </span>
-                    </TableCell>
-                    <TableCell className="py-2 px-4 sm:hidden w-1/2 text-right">
-                      <div className="text-xs mb-1">
-                        {instance.mintValue ? (
-                          <span className={`px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200`}>
-                            Mint: ${instance.mintValue}
+
+                  {/* Instances as indented table rows */}
+                  {hasInstances && isExpanded && stamp.instances.map((instance, instanceIndex) => (
+                    <TableRow
+                      key={instance.id}
+                      className={`border-b border-gray-100 dark:border-gray-800 hover:bg-gray-25 dark:hover:bg-gray-800/50 transition-colors ${instanceIndex === stamp.instances.length - 1 ? 'border-b-0' : ''}`}
+                    >
+                      <TableCell className="py-3 px-4 hidden sm:table-cell">
+                        <div className="flex items-center gap-3 pl-8">
+                          <div className="flex items-center gap-1">
+                            <div className="w-3 h-px bg-gray-300 dark:bg-gray-600"></div>
+                            <div className="w-1.5 h-1.5 bg-orange-400 dark:bg-orange-500 rounded-full"></div>
+                            <div className="w-3 h-px bg-gray-300 dark:bg-gray-600"></div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-3 px-4 font-medium text-gray-700 dark:text-gray-200 hidden sm:table-cell">
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/50 px-2 py-0.5 rounded-full">
+                            Variety
                           </span>
-                        ) : <span className="px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200">-</span>}
-                      </div>
-                      <div className="text-xs">
-                        {instance.finestUsedValue ? (
-                          <span className={`px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200`}>
-                            Finest Used: ${instance.finestUsedValue}
-                          </span>
-                        ) : <span className="px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200">-</span>}
-                      </div>
-                      <div className="text-xs">
-                        {instance.usedValue ? (
-                          <span className={`px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200`}>
-                            Used: ${instance.usedValue}
-                          </span>
-                        ) : <span className="px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200">-</span>}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </React.Fragment>
-            ))}
+                          <div className="flex flex-col gap-1">
+                            <span className="font-medium">{(instance as any).name && `${(instance as any).name} ${(instance as any).catalogNumber && (instance as any).catalogNumber !== '-' ? ` (${(instance as any).catalogNumber})` : ''}`}</span>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-3 px-4 text-center hidden sm:table-cell">
+                        <span className="bg-green-100 text-green-800 px-2 py-1 text-xs font-medium rounded dark:bg-green-900 dark:text-green-200">
+                          {instance.mintValue ? `$${Number(instance.mintValue).toFixed(2)}` : '-'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="py-3 px-4 text-center hidden sm:table-cell">
+                        <span className="bg-blue-100 text-blue-800 px-2 py-1 text-xs font-medium rounded dark:bg-blue-900 dark:text-blue-200">
+                          {instance.finestUsedValue ? `$${Number(instance.finestUsedValue).toFixed(2)}` : '-'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="py-3 px-4 text-center hidden sm:table-cell">
+                        <span className="bg-purple-100 text-purple-800 px-2 py-1 text-xs font-medium rounded dark:bg-purple-900 dark:text-purple-200">
+                          {instance.usedValue ? `$${Number(instance.usedValue).toFixed(2)}` : '-'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="py-3 px-4 text-center hidden sm:table-cell">
+                        {/* Instances don't have individual detail views */}
+                      </TableCell>
+                      <TableCell className="py-3 px-4 sm:hidden w-1/2">
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1 pl-4">
+                            <div className="w-2 h-px bg-gray-300 dark:bg-gray-600"></div>
+                            <div className="w-1 h-1 bg-blue-400 dark:bg-blue-500 rounded-full"></div>
+                            <div className="w-2 h-px bg-gray-300 dark:bg-gray-600"></div>
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/50 px-1.5 py-0.5 rounded-full">
+                                Var {instanceIndex + 1}
+                              </span>
+                              <span className="font-medium text-gray-700 dark:text-gray-200 text-sm">
+                                {(instance as any).name && `${(instance as any).name} ${(instance as any).catalogNumber && (instance as any).catalogNumber !== '-' ? ` (${(instance as any).catalogNumber})` : ''}`}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-3 px-4 sm:hidden w-1/2 text-right">
+                        <div className="space-y-1">
+                          <div className="text-xs">
+                            <span className="bg-green-100 text-green-800 px-2 py-1 text-xs font-medium rounded dark:bg-green-900 dark:text-green-200">
+                              Mint: {instance.mintValue ? `$${Number(instance.mintValue).toFixed(2)}` : '-'}
+                            </span>
+                          </div>
+                          <div className="text-xs">
+                            <span className="bg-blue-100 text-blue-800 px-2 py-1 text-xs font-medium rounded dark:bg-blue-900 dark:text-blue-200">
+                              Finest: {instance.finestUsedValue ? `$${Number(instance.finestUsedValue).toFixed(2)}` : '-'}
+                            </span>
+                          </div>
+                          <div className="text-xs">
+                            <span className="bg-purple-100 text-purple-800 px-2 py-1 text-xs font-medium rounded dark:bg-purple-900 dark:text-purple-200">
+                              Used: {instance.usedValue ? `$${Number(instance.usedValue).toFixed(2)}` : '-'}
+                            </span>
+                          </div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </React.Fragment>
+              )
+            })}
           </TableBody>
         </Table>
       </div>

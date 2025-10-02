@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { ModeToggle } from "@/components/mode-toggle"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -23,6 +24,7 @@ import {
   isAuthenticated,
   signOut
 } from "@/lib/api/auth"
+import { useSubscription } from "@/lib/hooks/useSubscription"
 import {
   Home,
   Sparkles,
@@ -48,7 +50,9 @@ import {
   PersonStanding,
   Layers,
   BadgeDollarSign,
-  CircleDollarSign
+  CircleDollarSign,
+  Crown,
+  Check
 } from "lucide-react"
 import Image from "next/image"
 import { useTheme } from "next-themes"
@@ -69,6 +73,9 @@ export function Sidebar({ sidebarCollapsed, setActiveSection }: SidebarProps) {
   const [userName, setUserName] = useState<string>("")
   const [userAvatar, setUserAvatar] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
+  
+  // Subscription status
+  const { subscriptionStatus } = useSubscription()
 
   // Avoid hydration mismatch by only showing theme-dependent content after mount
   useEffect(() => {
@@ -275,15 +282,30 @@ export function Sidebar({ sidebarCollapsed, setActiveSection }: SidebarProps) {
                 )}
               >
                 <div className="flex items-center gap-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={userAvatar || "/man-avatar-profile-picture.avif"} alt={userName || "User"} />
-                    <AvatarFallback>{getUserInitials(userName)}</AvatarFallback>
-                  </Avatar>
+                  <div className="relative">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={userAvatar || "/man-avatar-profile-picture.avif"} alt={userName || "User"} />
+                      <AvatarFallback>{getUserInitials(userName)}</AvatarFallback>
+                    </Avatar>
+                    {sidebarCollapsed && subscriptionStatus.isSubscribed && (
+                      <div className="absolute -top-1 -right-1 bg-primary rounded-full p-0.5">
+                        <Crown className="h-2.5 w-2.5 text-primary-foreground" />
+                      </div>
+                    )}
+                  </div>
                   {!sidebarCollapsed && (
-                    <div className="flex flex-col items-start min-w-0">
-                      <p className="text-sm font-medium leading-none truncate w-full">{userName || "User"}</p>
+                    <div className="flex flex-col items-start min-w-0 flex-1">
+                      <div className="flex items-center gap-2 w-full">
+                        <p className="text-sm font-medium leading-none truncate">{userName || "User"}</p>
+                        {subscriptionStatus.isSubscribed && (
+                          <Badge variant="secondary" className="text-xs px-1.5 py-0.5 bg-primary/10 text-primary border-primary/20">
+                            <Crown className="h-3 w-3 mr-1" />
+                            Pro
+                          </Badge>
+                        )}
+                      </div>
                       <p className="text-xs text-muted-foreground">
-                        {userIsAdmin ? "Admin" : "Member"}
+                        {userIsAdmin ? "Admin" : subscriptionStatus.isSubscribed ? "Subscribed Member" : "Free Member"}
                       </p>
                     </div>
                   )}
@@ -293,10 +315,24 @@ export function Sidebar({ sidebarCollapsed, setActiveSection }: SidebarProps) {
             <DropdownMenuContent className="w-56" align="end" side="right">
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{userName || "User"}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium leading-none">{userName || "User"}</p>
+                    {subscriptionStatus.isSubscribed && (
+                      <Badge variant="secondary" className="text-xs px-1.5 py-0.5 bg-primary/10 text-primary border-primary/20">
+                        <Crown className="h-3 w-3 mr-1" />
+                        Pro
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-xs leading-none text-muted-foreground">
-                    {userIsAdmin ? "Administrator" : "Member"}
+                    {userIsAdmin ? "Administrator" : subscriptionStatus.isSubscribed ? "Subscribed Member" : "Free Member"}
                   </p>
+                  {subscriptionStatus.isSubscribed && subscriptionStatus.isDealer && (
+                    <p className="text-xs leading-none text-primary font-medium">
+                      <Check className="h-3 w-3 inline mr-1" />
+                      Dealer Status
+                    </p>
+                  )}
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />

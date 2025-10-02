@@ -362,15 +362,15 @@ export function SubscriptionDashboard() {
                             </div>
                         </div>
 
-                        <Button 
+                        {/* <Button 
                             variant="outline" 
                             className="w-full"
                             onClick={() => setShowManagement(true)}
                             disabled={true}
                         >
                             <Settings className="w-4 h-4 mr-2" />
-                            Manage Subscription (Coming Soon)
-                        </Button>
+                            Manage Subscription
+                        </Button> */}
                     </CardContent>
                 </Card>
 
@@ -458,7 +458,7 @@ export function SubscriptionDashboard() {
                             <DialogTrigger asChild>
                                 <Button className="w-full" disabled={true}>
                                     <ArrowDownLeft className="w-4 h-4 mr-2" />
-                                    Withdraw Funds (Coming Soon)
+                                    Withdraw Funds
                                 </Button>
                             </DialogTrigger>
                             <DialogContent className="sm:max-w-md">

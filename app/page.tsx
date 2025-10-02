@@ -40,15 +40,7 @@ export default function Home() {
   return (
     <>
       {isLoggedIn ? (
-        // Check if user has subscription access
-        canAccessFeatures() ? (
-          <Suspense fallback={<div>Loading...</div>}>
-            <StampCollection />
-          </Suspense>
-        ) : (
-          // Show subscription required screen
-          <SubscriptionRequired userReferralCode={subscriptionStatus.referralByToken || undefined} />
-        )
+        <StampCollection />
       ) : (
         <div className="flex flex-col items-center">
           <HeroSection />

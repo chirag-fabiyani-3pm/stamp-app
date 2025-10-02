@@ -41,7 +41,7 @@ const StampView = ({ series, types, onBack, onBackHome }: any) => {
   return (
     <div className="fade-in">
       {/* Back Button and Header */}
-      <div className="flex md:items-center mb-4 md:justify-between flex-col md:flex-row gap-4">
+      <div className="sticky top-0 z-10 flex md:items-center md:justify-between flex-col md:flex-row gap-4 bg-white/95 backdrop-blur-sm border-b border-gray-200 pb-4 mb-2">
         <div>
           <button
             onClick={onBack}

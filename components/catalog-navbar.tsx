@@ -7,6 +7,7 @@ import { Home, MessageSquare, Sparkles, PanelLeft, SeparatorVertical } from "luc
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useSubscription } from "@/lib/hooks/useSubscription"
 
 interface CatalogNavbarProps {
   className?: string
@@ -29,6 +30,7 @@ const PathToNavMap: Record<string,string> = {
 
 export function CatalogNavbar({ className, setIsOpen, isCollapsed, onCollapseChange }: CatalogNavbarProps) {
   const pathname = usePathname()
+  const { canAccessFeatures } = useSubscription()
 
   return (
     <nav className={cn(
@@ -82,9 +84,11 @@ export function CatalogNavbar({ className, setIsOpen, isCollapsed, onCollapseCha
               onCollapseChange(true)
             }}
             className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors bg-primary/10 text-primary hover:bg-primary/20"
+              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors bg-primary/10 text-primary hover:bg-primary/20",
+              !canAccessFeatures() && "opacity-50 cursor-not-allowed"
             )}
             title={"AI Chat"}
+            disabled={!canAccessFeatures()}
           >
             <MessageSquare className="h-4 w-4" />
             <span>AI Chat</span>

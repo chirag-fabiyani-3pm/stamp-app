@@ -5,6 +5,7 @@ import { useCatalogData } from "@/lib/context/catalog-data-context";
 import { DataFetchingProgress } from "./catalog/investigate-search/loading-skeletons";
 import { useSubscription } from "@/lib/hooks/useSubscription";
 import { Spinner } from "./ui/spinner";
+import { SubscriptionRequired } from "./subscription/subscription-required";
 
 interface CatalogLayoutWrapperProps {
     children: React.ReactNode
@@ -15,15 +16,21 @@ const CatalogLayoutPathNames = ['/', '/catalog/country-catalog', '/catalog/visua
 export function CatalogLayoutWrapper({ children }: CatalogLayoutWrapperProps) {
     const pathName = usePathname();
     const { fetchProgress } = useCatalogData();
-    const { isLoading: subscriptionLoading, canAccessFeatures } = useSubscription();
+    const { isLoading: subscriptionLoading, canAccessFeatures, subscriptionStatus } = useSubscription();
 
-    if ( subscriptionLoading) {
+    if (subscriptionLoading) {
         return (
-          <div className="flex justify-center items-center h-screen">
-            <Spinner size="lg" />
-          </div>
+            <div className="flex justify-center items-center h-0 grow overflow-y-auto">
+                <Spinner size="lg" />
+            </div>
         );
-      }
+    }
+
+    if(!canAccessFeatures()){
+        return <div className="text-foreground h-0 grow overflow-y-auto">
+            <SubscriptionRequired userReferralCode={subscriptionStatus.referralByToken || undefined} />
+        </div>
+    }
 
     return (
         <>

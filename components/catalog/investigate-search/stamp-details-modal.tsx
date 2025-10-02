@@ -167,7 +167,14 @@ export function StampDetailsModal({ selectedStamp, isModalOpen, setIsModalOpen }
                     </div>
 
                     <div className="flex justify-between items-start gap-3">
-                      <span className="text-xs text-muted-foreground">Stamp Catalog Code:</span>
+                      <span className="text-xs text-muted-foreground">Category code:</span>
+                      <span className="text-xs font-medium text-right font-mono">
+                        {selectedStamp.categoryCode}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-start gap-3">
+                      <span className="text-xs text-muted-foreground">Stamp reference:</span>
                       <span className="text-xs font-medium text-right font-mono">
                         {selectedStamp.catalogNumber}
                       </span>

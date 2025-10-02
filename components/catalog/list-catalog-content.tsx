@@ -365,8 +365,10 @@ export function ListCatalogContent() {
   return (
     <div className="min-h-screen text-gray-900 dark:text-gray-100">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 shadow-sm mx-4 mt-4 mb-6 rounded-lg">
-        <div className="p-4 sm:p-6">
+      <div className="container mx-auto px-4 pt-4 pb-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 shadow-sm rounded-lg">
+          <div className="p-4 sm:p-6">
           <div className="text-center mb-4 sm:mb-6">
             <h1 className="text-2xl sm:text-3xl font-bold text-black dark:text-white mb-1">
               {catalogLayout === 'campbell-paterson' ? 'NEW ZEALAND STAMP CATALOGUE' : 'STANLEY GIBBONS CATALOGUE'}
@@ -495,10 +497,12 @@ export function ListCatalogContent() {
           </div>
         </div>
       </div>
+      </div>
+      </div>
 
       {/* Main Content */}
       <div className="container mx-auto px-4 pb-8">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden">
             {catalogLayout === 'campbell-paterson' ? (
               <>
@@ -625,30 +629,52 @@ export function ListCatalogContent() {
         )}
       </div>
 
-      {/* Modal Stack - Render all modals in the stack with increasing z-index */}
-      {modalStack.map((modal, index) => (
-        <Dialog 
-          key={index} 
-          open={true} 
-          onOpenChange={() => index === modalStack.length - 1 && closeModal()}
-        >
-          <DialogContent 
-            className="max-w-md sm:max-w-6xl max-h-[95vh] bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-0 flex flex-col border-0 rounded-lg"
-            style={{ zIndex: 1000 + index * 10 }} // Increasing z-index for stack effect
+      {/* Modal Stack - Render all modals in the stack with progressive depth effect */}
+      {modalStack.map((modal, index) => {
+        const isTopModal = index === modalStack.length - 1;
+        const depthLevel = modalStack.length - index - 1; // 0 for top modal, 1 for second, etc.
+        const scale = 1 - (depthLevel * 0.04); // More pronounced scaling for background modals
+        const opacity = 1 - (depthLevel * 0.25); // Much stronger dimming for background modals
+        const translateY = depthLevel * 12; // Increased vertical offset for better stacking effect
+        
+        return (
+          <Dialog 
+            key={index} 
+            open={true} 
+            onOpenChange={() => isTopModal && closeModal()}
           >
+            <DialogContent 
+              className="max-w-md sm:max-w-6xl max-h-[95vh] bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-0 flex flex-col border-0 rounded-lg transition-all duration-300 ease-out"
+              style={{ 
+                zIndex: 1000 + index * 10,
+                transform: `translate(-50%, -50%) scale(${scale}) translateY(${translateY}px)`,
+                opacity: opacity,
+                filter: !isTopModal ? 'blur(1px) brightness(0.8)' : 'none',
+                pointerEvents: isTopModal ? 'auto' : 'none'
+              }}
+            >
             {/* Sticky Header */}
             <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-6 pb-4 rounded-t-lg">
               <DialogHeader>
-                <DialogTitle className="text-xl font-bold text-black dark:text-white flex items-center justify-between">
-                  {modal.title}
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="bg-white border-gray-300 text-black hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
-                    onClick={closeModal}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                <DialogTitle className="text-xl font-bold text-black dark:text-white">
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex flex-col">
+                      <span>{modal.title}</span>
+                      {modalStack.length > 1 && (
+                        <span className="text-xs font-normal text-gray-500 dark:text-gray-400 mt-1">
+                          Level {index + 1} of {modalStack.length}
+                        </span>
+                      )}
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="bg-white border-gray-300 text-black hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
+                      onClick={closeModal}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </DialogTitle>
               </DialogHeader>
             </div>
@@ -853,7 +879,8 @@ export function ListCatalogContent() {
             </div>
           </DialogContent>
         </Dialog>
-      ))}
+        );
+      })}
     </div>
   )
 } 
