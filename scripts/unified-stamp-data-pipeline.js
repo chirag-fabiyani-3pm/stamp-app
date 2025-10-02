@@ -286,7 +286,6 @@ function toComprehensive(record, index, sourceFile) {
         source_file: sourceFile,
         stamp_core: {
             id: instance.id,
-            stampId: instance.stampId,
             name: instance.name,
             catalogNumber: instance.catalogNumber,
             country: instance.countryName,
