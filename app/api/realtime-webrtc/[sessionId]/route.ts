@@ -115,7 +115,7 @@ export async function PUT(
         console.log('🎤 WebRTC PUT: Received audio data for session:', sessionId)
 
         const body = await request.json()
-        const { audioData, messageType } = body
+        const { audioData, messageType, message, functionCall } = body
 
         // Get the active session
         const session = activeSessions.get(sessionId)
@@ -127,7 +127,101 @@ export async function PUT(
         }
 
         // Handle different message types
-        if (messageType === 'session.update') {
+        if (messageType === 'text.message') {
+            console.log('🎤 WebRTC PUT: Processing text message:', message)
+
+            try {
+                // Call our voice vector search API for text messages
+                const vectorSearchResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/voice-vector-search`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        transcript: message,
+                        sessionId: sessionId,
+                        mode: 'precise'
+                    })
+                })
+
+                if (!vectorSearchResponse.ok) {
+                    throw new Error(`Vector search failed: ${vectorSearchResponse.status}`)
+                }
+
+                const vectorData = await vectorSearchResponse.json()
+
+                console.log('🔍 Vector search result for text message:', {
+                    success: vectorData.success,
+                    structured: vectorData.structured,
+                    contentLength: vectorData.content?.length
+                })
+
+                if (vectorData.success) {
+                    return NextResponse.json({
+                        success: true,
+                        response: vectorData.content,
+                        structured: vectorData.structured,
+                        message: 'Text message processed successfully'
+                    })
+                } else {
+                    return NextResponse.json({
+                        success: false,
+                        error: vectorData.error || 'Search failed',
+                        message: 'Sorry, I encountered an error while processing your request.'
+                    })
+                }
+            } catch (error) {
+                console.error('🎤 WebRTC PUT: Text message processing error:', error)
+                return NextResponse.json({
+                    success: false,
+                    error: error instanceof Error ? error.message : 'Unknown error',
+                    message: 'Sorry, I encountered an error processing your text message.'
+                }, { status: 500 })
+            }
+        } else if (messageType === 'function.call') {
+            console.log('🎤 WebRTC PUT: Processing function call:', functionCall)
+
+            try {
+                // Call our function call handler
+                const functionCallResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/realtime-function-call`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        function_name: functionCall.name,
+                        parameters: functionCall.parameters,
+                        sessionId: sessionId
+                    })
+                })
+
+                if (!functionCallResponse.ok) {
+                    throw new Error(`Function call failed: ${functionCallResponse.status}`)
+                }
+
+                const functionData = await functionCallResponse.json()
+
+                console.log('🔍 Function call result:', {
+                    success: functionData.success,
+                    structured: functionData.structured,
+                    contentLength: functionData.content?.length
+                })
+
+                return NextResponse.json({
+                    success: true,
+                    response: functionData.content,
+                    structured: functionData.structured,
+                    message: 'Function call processed successfully'
+                })
+            } catch (error) {
+                console.error('🎤 WebRTC PUT: Function call processing error:', error)
+                return NextResponse.json({
+                    success: false,
+                    error: error instanceof Error ? error.message : 'Unknown error',
+                    message: 'Sorry, I encountered an error processing the function call.'
+                }, { status: 500 })
+            }
+        } else if (messageType === 'session.update') {
             console.log('🎤 WebRTC PUT: Processing session update...')
 
             try {

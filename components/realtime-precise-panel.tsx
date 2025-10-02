@@ -42,6 +42,9 @@ export default function RealtimePrecisePanel({
     const [isUserSpeaking, setIsUserSpeaking] = useState(false)
     const [isAISpeaking, setIsAISpeaking] = useState(false)
     const [selectedVoice, setSelectedVoice] = useState('alloy')
+
+    // Create a persistent sessionId for maintaining context across function calls
+    const [sessionId] = useState(() => `realtime_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`)
     const [connectionState, setConnectionState] = useState<string>('disconnected')
     const [messageCount, setMessageCount] = useState(0)
 
@@ -72,8 +75,10 @@ export default function RealtimePrecisePanel({
 
         if (functionName === 'search_stamp_database') {
             try {
+                // Use the full query to preserve user intent (e.g., "compare it with 1d red vermillion stamp")
                 const { query } = parameters
                 console.log('🎤 Searching stamp database for:', query)
+                console.log('🔍 Preserving full user intent for context-aware processing')
 
                 // Call the existing vector search API
                 const response = await fetch('/api/voice-vector-search', {
@@ -82,8 +87,8 @@ export default function RealtimePrecisePanel({
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        transcript: query,
-                        sessionId: `realtime_${Date.now()}`,
+                        transcript: query, // Pass the full query to preserve comparison intent
+                        sessionId: sessionId,
                         mode: 'precise'
                     }),
                 })
