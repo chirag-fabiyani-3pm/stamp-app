@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
 
         // Get previous stamp context for this session
         const previousStamps = sessionStampContext.get(sessionId) || []
-        const recentStamps = previousStamps.filter(stamp => Date.now() - stamp.timestamp < 600000) // 10 minutes
+        const recentStamps = previousStamps.filter(stamp => Date.now() - stamp.timestamp < 900000) // 15 minutes
 
         console.log('🎤 Voice vector search request:', {
             transcript: transcript.substring(0, 100) + (transcript.length > 100 ? '...' : ''),
@@ -123,10 +123,12 @@ PREVIOUS STAMP CONTEXT (from recent searches):
 ${recentStamps.map((stamp, i) => `${i + 1}. ID: ${stamp.id}, Name: ${stamp.stampName}, Country: ${stamp.country}, Year: ${stamp.year}, Denomination: ${stamp.denomination}, Color: ${stamp.color}, Series: ${stamp.series}`).join('\n')}
 
 CONTEXT RULES:
-- When user says "compare it with...", "compare them", "compare both" → Use stamps from context + current search
+- When user says "compare it with...", "compare them", "compare both", "show comparison" → Use stamps from context + current search
 - When user says "compare [stamp1] and [stamp2]" → Find both stamps mentioned
 - When user says "compare [stamp] with [context_stamp]" → Use context stamp + search for new stamp
+- When user says "show me", "display", "see", "view" → Return cards mode for detail view
 - Always return at least 2 stamp IDs for comparison mode
+- For detail requests, return cards mode with single stamp ID
 ` : ''
 
                 // Use Responses API like chat mode (no assistant ID needed)
@@ -138,44 +140,75 @@ CONTEXT RULES:
                     instructions: `You are PhilaGuide AI, a stamp expert providing precise responses from the Campbell Peterson catalog.
 
 CRITICAL RULES - FOLLOW EXACTLY:
-1. If user asks to "show", "display", "see", or "view" a stamp → Return ONLY raw JSON with mode: "cards" (NO markdown, NO text, NO lists, NO explanations)
-2. If user asks to "compare" stamps → Return ONLY raw JSON with mode: "comparison" with MULTIPLE stamp IDs (NO markdown, NO text, NO lists, NO explanations)
-3. If user asks for "value", "worth", or "price" → Return ONLY short text with exact mintValue
-4. Keep ALL responses under 2 sentences maximum
+1. ALWAYS return ONLY valid JSON - NO markdown, NO text explanations, NO lists, NO additional content
+2. For ANY stamp query (show, display, see, view, tell me about, details about) → Return ONLY JSON with mode: "cards"
+3. For comparison requests → Return ONLY JSON with mode: "comparison" with MULTIPLE stamp IDs
+4. For value requests → Return ONLY JSON with mode: "value" and mintValue
+5. If no specific stamps found → Return ONLY JSON with mode: "clarify"
 
 ${contextInfo}
 
-SHOW REQUESTS - Return ONLY this exact JSON format (nothing else):
+MANDATORY JSON RESPONSE FORMATS - Return ONLY these exact structures:
+
+DETAIL/SHOW REQUESTS (keywords: "show", "display", "see", "view", "tell me about", "details about"):
 {
   "mode": "cards",
   "cards": [{"id": "[stampId]", "stampName": "[name]", "country": "[country]", "year": "[year]", "denomination": "[denom]", "color": "[color]", "series": "[series]", "catalogNumber": "[cat#]", "imageUrl": "[url]", "description": "[desc]", "mintValue": "[value]", "finestUsedValue": "[usedValue]"}]
 }
 
-COMPARISON REQUESTS - Return ONLY this exact JSON format (nothing else):
-- When user says "compare", "compare both", "show comparison", "compare them" → ALWAYS return comparison mode
-- MUST find ALL stamps mentioned in the comparison request OR use context stamps
-- MUST return at least 2 stamp IDs, up to 3 maximum
-- Example: "compare 1d orange and 1d red" → find BOTH stamps and return their IDs
-- Example: "compare it with red stamp" → use context stamp + find red stamp
-- Example: "compare them" → use recent context stamps
-- NEVER return cards mode for comparison requests
+COMPARISON REQUESTS (keywords: "compare", "compare both", "show comparison", "compare them", "compare it with"):
+- If user says "compare it with [stamp]" → Use the most recent context stamp ID + search for the new stamp
+- If user says "compare [stamp1] and [stamp2]" → Search for both stamps mentioned
+- If user says "compare them" → Use the 2 most recent context stamps
+- ALWAYS return at least 2 stamp IDs for comparison mode
 {
   "mode": "comparison",
-  "stampIds": ["[stampId1]", "[stampId2]", "[stampId3]"]
+  "stampIds": ["[contextStampId]", "[newStampId]"]
 }
 
-VALUE REQUESTS - Return ONLY this text:
-"The [denomination] [color] stamp from [year] is worth $[mintValue] NZD."
+VALUE REQUESTS (keywords: "value", "worth", "price"):
+{
+  "mode": "value",
+  "mintValue": "[value]",
+  "denomination": "[denom]",
+  "year": "[year]",
+  "color": "[color]"
+}
 
-CLARIFICATION - Return ONLY this JSON:
+CLARIFICATION REQUESTS (when stamps not found):
 {
   "mode": "clarify", 
   "clarifyingQuestions": ["What denomination?", "What year or series?"]
 }
 
-NEVER return markdown lists, numbered lists, or explanatory text for show requests. ONLY return the JSON structure above.
+ABSOLUTE REQUIREMENTS:
+- NEVER return plain text responses
+- NEVER use markdown formatting
+- NEVER add explanations or additional text
+- ALWAYS wrap responses in valid JSON
+- ALWAYS use the file_search tool to find stamps in the Campbell Peterson catalog
+- Extract stamp IDs from the file_search results and use them in your JSON response
+- If no stamps found in file_search, return clarify mode
+- Use exact data from the Campbell Peterson catalog only
 
-Search the vector store for exact matches. Use exact data only.`,
+COLOR MATCHING FLEXIBILITY:
+- "bright orange vermillion" → Look for Ruby, Orange, Red, or Vermilion colors
+- "red vermillion" → Look for Red, Ruby, or Vermilion colors  
+- "orange" → Look for Orange, Ruby, or similar warm colors
+- "red" → Look for Red, Ruby, or Vermilion colors
+- Be flexible with color descriptions - find the closest match available
+
+EXAMPLE WORKFLOW:
+1. User asks "show me 1d bright orange vermillion stamp"
+2. Use file_search tool to find the stamp
+3. Extract stamp ID from results
+4. Return: {"mode": "cards", "cards": [{"id": "found-stamp-id", ...}]}
+
+EXAMPLE COMPARISON WORKFLOW:
+1. User asks "compare it with 1d red vermillion stamp" (with context stamp available)
+2. Use file_search tool to find the red stamp
+3. Extract stamp ID from results
+4. Return: {"mode": "comparison", "stampIds": ["context-stamp-id", "found-red-stamp-id"]}`,
                     tools: [
                         { type: 'file_search', vector_store_ids: [VECTOR_STORE_ID] }
                     ],
@@ -187,7 +220,9 @@ Search the vector store for exact matches. Use exact data only.`,
                     responseId: response.id,
                     status: response.status,
                     outputType: response.output?.[0]?.type,
-                    outputText: response.output_text?.substring(0, 200) + '...'
+                    outputText: response.output_text?.substring(0, 200) + '...',
+                    hasFileSearchResults: response.output?.some((output: any) => output.type === 'file_search_call'),
+                    fileSearchResults: response.output?.filter((output: any) => output.type === 'file_search_call').length || 0
                 })
 
                 // Build normalized content text and structured field
@@ -336,12 +371,16 @@ Search the vector store for exact matches. Use exact data only.`,
                         }
                     }
 
-                    // Fallback: Try to extract comparison data from text response for compare requests
-                    if (contentText.toLowerCase().includes('compare') ||
-                        contentText.toLowerCase().includes('comparison') ||
-                        transcript.toLowerCase().includes('compare')) {
+                    // Enhanced fallback: Try to extract comparison data from text response for compare requests
+                    const isComparisonRequest = transcript.toLowerCase().includes('compare') ||
+                        transcript.toLowerCase().includes('comparison') ||
+                        transcript.toLowerCase().includes('compare both') ||
+                        transcript.toLowerCase().includes('compare them') ||
+                        transcript.toLowerCase().includes('compare it with') ||
+                        transcript.toLowerCase().includes('show comparison')
 
-                        console.log('🔧 Attempting to extract comparison data from text response')
+                    if (isComparisonRequest) {
+                        console.log('🔧 Comparison request detected, attempting to extract comparison data')
                         console.log('🔧 Original transcript:', transcript)
                         console.log('🔧 Recent stamps context:', recentStamps)
 
@@ -413,6 +452,73 @@ Search the vector store for exact matches. Use exact data only.`,
                         }
                     }
 
+                    // Enhanced fallback: Try to extract detail/show data from text response
+                    const isDetailRequest = transcript.toLowerCase().includes('show') ||
+                        transcript.toLowerCase().includes('display') ||
+                        transcript.toLowerCase().includes('see') ||
+                        transcript.toLowerCase().includes('view') ||
+                        transcript.toLowerCase().includes('tell me about') ||
+                        transcript.toLowerCase().includes('details about') ||
+                        transcript.toLowerCase().includes('show me') ||
+                        transcript.toLowerCase().includes('show the')
+
+                    if (isDetailRequest && !structured) {
+                        console.log('🔧 Detail request detected, attempting to extract stamp data')
+                        console.log('🔧 Original transcript:', transcript)
+
+                        // Try to extract stamp IDs from the text response
+                        const stampIdMatches = contentText.match(/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi)
+
+                        if (stampIdMatches && stampIdMatches.length > 0) {
+                            // Use the first stamp ID for detail view
+                            const stampId = stampIdMatches[0]
+
+                            // Try to extract stamp details from context or response
+                            const contextStamp = recentStamps.find(stamp => stamp.id === stampId)
+
+                            if (contextStamp) {
+                                structured = {
+                                    mode: "cards",
+                                    cards: [{
+                                        id: contextStamp.id,
+                                        stampName: contextStamp.stampName,
+                                        country: contextStamp.country,
+                                        year: contextStamp.year,
+                                        denomination: contextStamp.denomination,
+                                        color: contextStamp.color,
+                                        series: contextStamp.series,
+                                        catalogNumber: 'Unknown',
+                                        imageUrl: '/images/stamps/no-image-available.png',
+                                        description: `Details for ${contextStamp.stampName}`,
+                                        mintValue: '0',
+                                        finestUsedValue: '0'
+                                    }]
+                                }
+                                console.log('✅ Using context stamp for detail view:', structured)
+                            } else {
+                                // Create minimal card structure for navigation
+                                structured = {
+                                    mode: "cards",
+                                    cards: [{
+                                        id: stampId,
+                                        stampName: 'Stamp Details',
+                                        country: 'Unknown',
+                                        year: 'Unknown',
+                                        denomination: 'Unknown',
+                                        color: 'Unknown',
+                                        series: 'Unknown',
+                                        catalogNumber: 'Unknown',
+                                        imageUrl: '/images/stamps/no-image-available.png',
+                                        description: 'Stamp details requested',
+                                        mintValue: '0',
+                                        finestUsedValue: '0'
+                                    }]
+                                }
+                                console.log('✅ Created minimal card for detail view:', structured)
+                            }
+                        }
+                    }
+
                     // Handle structured responses for precise mode
                     if (structured && typeof structured === 'object' && structured.mode) {
                         if (structured.mode === 'clarify' && Array.isArray(structured.clarifyingQuestions)) {
@@ -426,14 +532,12 @@ Search the vector store for exact matches. Use exact data only.`,
                             const denomination = structured.denomination || 'stamp'
                             const year = structured.year || ''
                             const color = structured.color || ''
-                            const series = structured.series || ''
 
-                            let valueResponse = `The mint value for the ${denomination}`
+                            let valueResponse = `The ${denomination}`
                             if (color) valueResponse += ` ${color}`
                             valueResponse += ' stamp'
                             if (year) valueResponse += ` from ${year}`
-                            if (series) valueResponse += ` (${series} series)`
-                            valueResponse += ` is $${mintValue} NZD.`
+                            valueResponse += ` is worth $${mintValue} NZD.`
 
                             contentText = valueResponse
                         } else if (structured.mode === 'cards' && Array.isArray(structured.cards)) {
@@ -456,8 +560,8 @@ Search the vector store for exact matches. Use exact data only.`,
                                     const filteredContext = currentContext.filter(stamp => stamp.id !== card.id)
                                     filteredContext.push(stampContext)
 
-                                    // Keep only last 5 stamps to avoid context bloat
-                                    sessionStampContext.set(sessionId, filteredContext.slice(-5))
+                                    // Keep only last 10 stamps to avoid context bloat (increased from 5)
+                                    sessionStampContext.set(sessionId, filteredContext.slice(-10))
                                     console.log('💾 Stored stamp context for session:', sessionId, stampContext)
                                 }
                             })
@@ -489,10 +593,47 @@ Search the vector store for exact matches. Use exact data only.`,
                             contentText = structured.educationalText
                         }
                     } else {
-                        // If no structured response but the text contains value information, use it directly
-                        // This handles cases where the AI provides direct value responses without JSON structure
-                        if (response.output_text.includes('$') && response.output_text.includes('NZD')) {
+                        // Enhanced fallback: Try to extract stamp information from plain text responses
+                        console.log('🔧 No structured data found, attempting to extract from plain text')
+
+                        // Check if this looks like a value response
+                        const valueMatch = response.output_text.match(/(\d+(?:\.\d+)?)\s*NZD/i)
+                        const denominationMatch = response.output_text.match(/(\d+(?:\.\d+)?[a-z]?)\s*(?:bright\s+)?(orange|red|blue|green|yellow|brown|black|white|purple|pink)/i)
+                        const yearMatch = response.output_text.match(/(\d{4})/i)
+
+                        if (valueMatch && denominationMatch) {
+                            console.log('🔧 Extracted value information from plain text')
+                            const value = valueMatch[1]
+                            const denomination = denominationMatch[1]
+                            const color = denominationMatch[2]
+                            const year = yearMatch ? yearMatch[1] : ''
+
+                            structured = {
+                                mode: "value",
+                                mintValue: value,
+                                denomination: denomination,
+                                year: year,
+                                color: color
+                            }
+
+                            let valueResponse = `The ${denomination}`
+                            if (color) valueResponse += ` ${color}`
+                            valueResponse += ' stamp'
+                            if (year) valueResponse += ` from ${year}`
+                            valueResponse += ` is worth $${value} NZD.`
+
+                            contentText = valueResponse
+                            console.log('✅ Created structured value response from plain text:', structured)
+                        } else if (response.output_text.includes('$') && response.output_text.includes('NZD')) {
+                            // Fallback to direct text for value responses
                             contentText = response.output_text
+                        } else {
+                            // For non-value responses, try to create a clarification response
+                            structured = {
+                                mode: "clarify",
+                                clarifyingQuestions: ["Could you be more specific about which stamp you're looking for?"]
+                            }
+                            contentText = "I need more specific information to help you find the right stamp. Could you provide more details about the stamp you're looking for?"
                         }
                     }
                 }

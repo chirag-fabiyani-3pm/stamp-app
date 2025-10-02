@@ -42,6 +42,9 @@ export default function PreciseVoicePanel({
     const [currentUserMessage, setCurrentUserMessage] = useState<string>('')
     const [isTranscriptProcessing, setIsTranscriptProcessing] = useState(false)
     const [hasStartedAIResponse, setHasStartedAIResponse] = useState(false)
+
+    // Create a persistent sessionId for maintaining context across function calls
+    const [sessionId] = useState(() => `precise_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`)
     const [isFunctionCallInProgress, setIsFunctionCallInProgress] = useState(false)
 
     // Refs for WebRTC and audio
@@ -55,10 +58,12 @@ export default function PreciseVoicePanel({
 
         try {
             if (functionName === 'search_stamp_database') {
+                // Use the full query to preserve user intent (e.g., "compare it with 1d red vermillion stamp")
                 const query = parameters.query || parameters.search_query || ''
-                const sessionId = `precise_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
                 console.log('🔍 Starting vector search for:', query)
+                console.log('🔍 Using persistent sessionId:', sessionId)
+                console.log('🔍 Preserving full user intent for context-aware processing')
 
                 const response = await fetch('/api/voice-vector-search', {
                     method: 'POST',
@@ -66,7 +71,7 @@ export default function PreciseVoicePanel({
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        transcript: query,
+                        transcript: query, // Pass the full query to preserve comparison intent
                         sessionId: sessionId,
                         mode: 'precise'
                     })
@@ -466,9 +471,12 @@ IMMEDIATE RESPONSE EXAMPLES:
 
 FUNCTION CALLING:
 - Use search_stamp_database(query) for any stamp-related search OR comparison request
-- The query should be the user's exact words or a refined version
-- Examples: "1D bright orange vermilion", "Penny Black", "US stamps 1950s"
-- For comparison requests: "compare 1d orange and 1d red", "compare these stamps", "show comparison"
+- CRITICAL: Pass the user's COMPLETE request as the query parameter, including comparison words
+- Examples: 
+  * User says "show me 1d ruby stamp" → Call search_stamp_database("show me 1d ruby stamp")
+  * User says "compare it with 1d red stamp" → Call search_stamp_database("compare it with 1d red stamp")
+  * User says "compare 1d orange and 1d red" → Call search_stamp_database("compare 1d orange and 1d red")
+- NEVER extract just the stamp description - always include the full user intent
 - ALWAYS provide an immediate response first, then call the function for precise details
 
 VOICE RESPONSE GUIDELINES:
